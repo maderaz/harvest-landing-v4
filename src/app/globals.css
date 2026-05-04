@@ -2990,7 +2990,8 @@ button { font-family: inherit; cursor: pointer; }
   border-radius: 50%;
   filter: blur(110px);
   opacity: 0.92;
-  will-change: transform;
+  /* No will-change: browsers auto-promote during transform animations
+     and a permanent layer just costs memory. */
 }
 .home-hero .h2-blob-1 {
   background: oklch(0.74 0.18 150);
@@ -3126,7 +3127,7 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.4);
 }
 .home-hero-btn-ghost {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.10);
   color: rgba(255, 255, 255, 0.95);
   border: 1px solid rgba(255, 255, 255, 0.16);
   padding: 10px 18px;
@@ -3135,7 +3136,6 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 13.5px;
   cursor: pointer;
   text-decoration: none;
-  backdrop-filter: blur(8px);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 .home-hero-btn-ghost:hover {
@@ -3181,11 +3181,11 @@ button { font-family: inherit; cursor: pointer; }
   align-items: center;
   gap: 14px;
   padding: 14px 16px;
-  background: rgba(255, 255, 255, 0.10);
+  /* Slightly more opaque background so we can drop the expensive
+     backdrop-filter blur without losing the frosted-glass look. */
+  background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.16);
   border-radius: 12px;
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.08) inset,
     0 12px 28px -12px rgba(0, 0, 0, 0.35);
   text-decoration: none;
