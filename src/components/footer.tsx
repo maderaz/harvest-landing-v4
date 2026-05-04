@@ -216,17 +216,20 @@ export async function Footer() {
 
         {/* === Legal compliance === */}
         <div className="foot-legal">
-          <div>
-            &copy; 2026 Harvest Finance · Operating onchain since 2020
-          </div>
-          <div>
-            Data refreshed hourly · See{" "}
+          <div className="foot-legal-line">
+            &copy; 2026 Harvest Finance · Operating onchain since 2020 · Data
+            refreshed hourly · See{" "}
             <Link href="/methodology">methodology</Link> for calculation
-            details.
+            details · All content on this site is published for informational
+            purposes only and does not constitute investment, financial, legal,
+            or tax advice; nothing here should be relied upon as a basis for
+            any investment decision, and past performance does not guarantee
+            future returns.
           </div>
-          <div>
-            DeFi yields are not insured deposits. Past performance does not
-            guarantee future returns.
+          <div className="foot-legal-meta">
+            <Link href="/llms.txt">llms.txt</Link>
+            <span className="foot-legal-sep">·</span>
+            <Link href="/sitemap.xml">sitemap</Link>
           </div>
         </div>
       </div>
