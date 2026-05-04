@@ -3278,26 +3278,19 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--up);
   display: inline-block;
   position: relative;
-  /* sits flush on the baseline at rest; hover triggers a hop keyframe */
+  /* sits flush on the baseline at rest */
   top: 0;
-  /* On hover-out, slide back down with a calm decelerate. Background
-     cross-fades on a separate ease. */
-  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
+  /* Springy cubic-bezier applied via transition so the pip bounces on
+     the way UP (hover-in) AND on the way DOWN (hover-out) instead of
+     using a hover-only keyframe that snapped back instantly. The curve
+     overshoots both ends, giving the landing a small rebound either
+     direction. Color cross-fades on a calmer ease. */
+  transition: transform 0.5s cubic-bezier(0.5, 1.75, 0.5, 1),
     background 0.18s ease;
 }
 .brand:hover .brand-dot {
+  transform: translateY(-7px);
   background: var(--ink);
-  /* Springy keyframe so the pip leaps up, lands at mid-cap, and
-     bounces twice before settling. */
-  animation: brand-dot-hop 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-}
-@keyframes brand-dot-hop {
-  0%   { transform: translateY(0); }
-  35%  { transform: translateY(-9px); }      /* peak overshoot */
-  55%  { transform: translateY(-5px); }      /* first rebound down */
-  72%  { transform: translateY(-8px); }      /* small bounce up */
-  86%  { transform: translateY(-6.5px); }    /* settle drop */
-  100% { transform: translateY(-7px); }      /* rest at target */
 }
 
 /* #yields anchor lands under topnav with breathing room */
