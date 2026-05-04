@@ -255,45 +255,72 @@ export default async function Home() {
     />
     <TickerStrip vaults={vaults} sparklines={sparklines} />
     <main className="page">
-      {/* === Hero === */}
-      <section className="hero">
-        <div>
+      {/* === Hero v2 === */}
+      <section className="home-hero" aria-label="Hero">
+        <div className="h2-mesh" aria-hidden="true">
+          <div className="h2-blob h2-blob-1" />
+          <div className="h2-blob h2-blob-2" />
+          <div className="h2-blob h2-blob-3" />
+          <div className="h2-grain" />
+        </div>
+        <div className="h2-vignette" aria-hidden="true" />
+
+        <div className="home-hero-left">
+          <div className="crumbs">
+            <span className="crumbs-dot" />
+            Onchain Yield Index
+          </div>
           <h1>
             Best DeFi Yields.
-            <br />
             <span className="dim">
               Compare {stats.vaultCount} strategies ranked by APY across USDC, USDT, ETH and Bitcoin.
             </span>
           </h1>
-          <div className="hero-actions">
-            <span className="hero-meta mono">
-              <span className="pulse" /> Live &middot; {stats.vaultCount} vaults
-              tracked
+          <div className="home-hero-actions">
+            <a href="#yields" className="home-hero-btn">Browse top yields →</a>
+            <Link href="/methodology" className="home-hero-btn-ghost">How Harvest ranks</Link>
+            <span className="home-hero-meta">
+              <span className="dot pulse" />
+              Live · {stats.vaultCount} vaults · {formatTVL(stats.totalTVL)} TVL · {stats.chainCount} chains
             </span>
           </div>
         </div>
-        <div className="hero-right">
-          <div className="stat-tile">
-            <div className="stat-label">Total TVL Tracked</div>
-            <div className="stat-val mono">{formatTVL(stats.totalTVL)}</div>
-          </div>
-          <div className="stat-tile">
-            <div className="stat-label">Active Vaults</div>
-            <div className="stat-val mono">{stats.vaultCount}</div>
-          </div>
-          <div className="stat-tile">
-            <div className="stat-label">Avg APY</div>
-            <div className="stat-val mono">{formatAPY(stats.avgAPY)}</div>
-          </div>
-          <div className="stat-tile">
-            <div className="stat-label">Chains Indexed</div>
-            <div className="stat-val mono">{stats.chainCount}</div>
-          </div>
+
+        <div className="home-hero-right" role="group" aria-label="Top yields by asset">
+          {(["USDC", "ETH", "BTC"] as const).map((sym) => {
+            const tile = featuredAssets.find((a) => a.asset === sym);
+            if (!tile) return null;
+            const href = ASSET_PAGES[sym] ?? `/${sym.toLowerCase()}`;
+            const label =
+              sym === "USDC"
+                ? "Stablecoin"
+                : sym === "ETH"
+                  ? "LSTs & restaking"
+                  : "Wrapped & LRTs";
+            const display = sym === "BTC" ? "Bitcoin" : sym;
+            return (
+              <Link key={sym} href={href} className="asset-tile">
+                <div className={`at-icon at-${sym.toLowerCase()}`} aria-hidden="true">
+                  <AssetIcon asset={sym} size={30} />
+                </div>
+                <div className="at-body">
+                  <span className="at-label">{display}</span>
+                  <span className="at-headline">
+                    Up to <strong>{formatAPY(tile.bestApy)}</strong>
+                  </span>
+                  <span className="at-meta">
+                    {label} · {tile.poolCount} products tracked
+                  </span>
+                </div>
+                <span className="at-arrow" aria-hidden="true">→</span>
+              </Link>
+            );
+          })}
         </div>
       </section>
 
       {/* === Ranking table === */}
-      <div className="section-title-bar">
+      <div className="section-title-bar" id="yields">
         <h2>Top yields by APY</h2>
         <span className="mono dim">
           Live &middot; ranked across {stats.chainCount} chain

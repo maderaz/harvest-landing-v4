@@ -25,8 +25,9 @@ export async function Header() {
   return (
     <header className="topnav">
       <div className="topnav-inner">
-        <Link href="/" className="brand">
+        <Link href="/" className="brand" aria-label="Harvest, go to homepage">
           <span className="brand-name">Harvest</span>
+          <span className="brand-dot" aria-hidden="true" />
         </Link>
         <nav className="navlinks">
           {navItems.map((item) => (
