@@ -124,9 +124,30 @@ export function VaultTable({
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const stickyDockRef = useRef<HTMLDivElement | null>(null);
+  const tableWrapRef = useRef<HTMLDivElement | null>(null);
+  const [showStickyFilters, setShowStickyFilters] = useState(false);
   const [openSheet, setOpenSheet] = useState<null | "asset" | "chain">(null);
 
-  // Close the dropdown sheet when a tap lands outside the dock.
+  // The dock shouldn't ride along during the hero — only mount it once
+  // the user has actually scrolled into the ranking. Watch the top of
+  // the table itself, with a rootMargin that delays the trigger until
+  // ~25% of the viewport has been entered by the table.
+  useEffect(() => {
+    const node = tableWrapRef.current;
+    if (!node || typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyFilters(entry.isIntersecting),
+      { rootMargin: "0px 0px -25% 0px", threshold: 0 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  // Close the dropdown sheet when the dock hides or when a tap lands
+  // outside it.
+  useEffect(() => {
+    if (!showStickyFilters) setOpenSheet(null);
+  }, [showStickyFilters]);
   useEffect(() => {
     if (!openSheet) return;
     function handle(e: Event) {
@@ -259,7 +280,7 @@ export function VaultTable({
           </div>
         </div>
       </div>
-      <div className="table-wrap">
+      <div className="table-wrap" ref={tableWrapRef}>
         <table className="ranking">
           <thead>
             <tr>
@@ -381,7 +402,7 @@ export function VaultTable({
           inline bar is the primary control). */}
       <div
         ref={stickyDockRef}
-        className="sticky-filters"
+        className={`sticky-filters${showStickyFilters ? " is-visible" : ""}`}
         aria-label="Quick filters"
       >
         <div className="fdock-buttons">
