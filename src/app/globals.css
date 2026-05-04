@@ -3278,17 +3278,26 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--up);
   display: inline-block;
   position: relative;
-  /* sits flush on the baseline at rest; hover lifts it to mid-cap height */
+  /* sits flush on the baseline at rest; hover triggers a hop keyframe */
   top: 0;
-  /* Springy hop on hover (back-out cubic-bezier) so the pip feels like
-     it leaps up and lands at the apex with a tiny overshoot, instead
-     of teleporting. Color cross-fades on a calmer ease. */
-  transition: transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1),
+  /* On hover-out, slide back down with a calm decelerate. Background
+     cross-fades on a separate ease. */
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1),
     background 0.18s ease;
 }
 .brand:hover .brand-dot {
-  transform: translateY(-7px);
   background: var(--ink);
+  /* Springy keyframe so the pip leaps up, lands at mid-cap, and
+     bounces twice before settling. */
+  animation: brand-dot-hop 0.55s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+@keyframes brand-dot-hop {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(-9px); }      /* peak overshoot */
+  55%  { transform: translateY(-5px); }      /* first rebound down */
+  72%  { transform: translateY(-8px); }      /* small bounce up */
+  86%  { transform: translateY(-6.5px); }    /* settle drop */
+  100% { transform: translateY(-7px); }      /* rest at target */
 }
 
 /* #yields anchor lands under topnav with breathing room */
