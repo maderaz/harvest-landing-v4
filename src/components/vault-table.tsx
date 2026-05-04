@@ -124,22 +124,47 @@ export function VaultTable({
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
   const filterbarRef = useRef<HTMLDivElement | null>(null);
+  const stickyDockRef = useRef<HTMLDivElement | null>(null);
   const [showStickyFilters, setShowStickyFilters] = useState(false);
+  const [openSheet, setOpenSheet] = useState<null | "asset" | "chain">(null);
 
   // Mobile-only: surface a floating filter dock at the bottom of the
-  // viewport once the inline filter bar has scrolled out of view, so
-  // users browsing the ranking can re-pivot by asset/chain without
-  // jumping back to the top.
+  // viewport ONLY after the user has scrolled past the inline filter
+  // bar (filter is above the viewport, not below). Without this guard
+  // the dock would appear on the default homepage view because the
+  // inline bar is below the fold on first paint.
   useEffect(() => {
     const node = filterbarRef.current;
     if (!node || typeof window === "undefined" || !("IntersectionObserver" in window)) return;
     const observer = new IntersectionObserver(
-      ([entry]) => setShowStickyFilters(!entry.isIntersecting),
-      { rootMargin: "-60px 0px 0px 0px", threshold: 0 },
+      ([entry]) => {
+        const aboveViewport = entry.boundingClientRect.bottom <= 0;
+        setShowStickyFilters(aboveViewport);
+      },
+      { threshold: 0 },
     );
     observer.observe(node);
     return () => observer.disconnect();
   }, []);
+
+  // Close any open dropdown sheet when the dock hides or when a tap
+  // lands outside it.
+  useEffect(() => {
+    if (!showStickyFilters) setOpenSheet(null);
+  }, [showStickyFilters]);
+  useEffect(() => {
+    if (!openSheet) return;
+    function handle(e: Event) {
+      if (!stickyDockRef.current) return;
+      if (!stickyDockRef.current.contains(e.target as Node)) setOpenSheet(null);
+    }
+    document.addEventListener("mousedown", handle);
+    document.addEventListener("touchstart", handle, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handle);
+      document.removeEventListener("touchstart", handle);
+    };
+  }, [openSheet]);
 
   const PAGE_SIZE = 50;
 
@@ -375,59 +400,108 @@ export function VaultTable({
         </div>
       </div>
 
-      {/* Mobile sticky filter dock — only mounts on small screens via
-          CSS, only visible after the user has scrolled past the inline
-          filter bar. */}
+      {/* Mobile sticky filter dock — two collapsed buttons that pop a
+          dropdown sheet UPWARD on tap, so the user can re-pivot the
+          ranking by asset or network without scrolling back up. Only
+          mounts on <=700px via CSS, and only after the inline filter
+          bar has scrolled above the viewport. */}
       <div
+        ref={stickyDockRef}
         className={`sticky-filters${showStickyFilters ? " is-visible" : ""}`}
         aria-label="Quick filters"
       >
-        <div className="sf-row">
-          <span className="sf-label">Asset</span>
-          <div className="sf-chips">
-            <button
-              type="button"
-              className={`sf-chip${assetFilter === "All" ? " active" : ""}`}
-              onClick={() => { setAssetFilter("All"); setPage(0); }}
-            >
-              All
-            </button>
-            {assets.map((a) => (
-              <button
-                key={a}
-                type="button"
-                className={`sf-chip${assetFilter === a ? " active" : ""}`}
-                onClick={() => { setAssetFilter(a); setPage(0); }}
-              >
-                <AssetIcon asset={a} size={14} />
-                {a}
-              </button>
-            ))}
-          </div>
+        <div className="fdock-buttons">
+          <button
+            type="button"
+            className={`fdock-btn${openSheet === "asset" ? " is-open" : ""}`}
+            onClick={() => setOpenSheet(openSheet === "asset" ? null : "asset")}
+            aria-haspopup="listbox"
+            aria-expanded={openSheet === "asset"}
+          >
+            <span className="fdock-btn-label">Asset</span>
+            <span className="fdock-btn-value">
+              {assetFilter !== "All" && <AssetIcon asset={assetFilter} size={14} />}
+              <span>{assetFilter}</span>
+              <svg className="fdock-btn-caret" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </button>
+          <button
+            type="button"
+            className={`fdock-btn${openSheet === "chain" ? " is-open" : ""}`}
+            onClick={() => setOpenSheet(openSheet === "chain" ? null : "chain")}
+            aria-haspopup="listbox"
+            aria-expanded={openSheet === "chain"}
+          >
+            <span className="fdock-btn-label">Network</span>
+            <span className="fdock-btn-value">
+              {chainFilter !== "All" && <ChainIcon chain={chainFilter} size={14} />}
+              <span>{chainFilter}</span>
+              <svg className="fdock-btn-caret" width="10" height="10" viewBox="0 0 12 12" aria-hidden="true">
+                <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.6" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </button>
         </div>
-        <div className="sf-row">
-          <span className="sf-label">Network</span>
-          <div className="sf-chips">
-            <button
-              type="button"
-              className={`sf-chip${chainFilter === "All" ? " active" : ""}`}
-              onClick={() => { setChainFilter("All"); setPage(0); }}
-            >
-              All
-            </button>
-            {chains.map((c) => (
+
+        {openSheet === "asset" && (
+          <div className="fdock-sheet" role="listbox" aria-label="Filter by asset">
+            <div className="fdock-sheet-grid">
               <button
-                key={c}
                 type="button"
-                className={`sf-chip${chainFilter === c ? " active" : ""}`}
-                onClick={() => { setChainFilter(c); setPage(0); }}
+                role="option"
+                aria-selected={assetFilter === "All"}
+                className={`fdock-opt${assetFilter === "All" ? " active" : ""}`}
+                onClick={() => { setAssetFilter("All"); setPage(0); setOpenSheet(null); }}
               >
-                <ChainIcon chain={c} size={14} />
-                {c}
+                All
               </button>
-            ))}
+              {assets.map((a) => (
+                <button
+                  key={a}
+                  type="button"
+                  role="option"
+                  aria-selected={assetFilter === a}
+                  className={`fdock-opt${assetFilter === a ? " active" : ""}`}
+                  onClick={() => { setAssetFilter(a); setPage(0); setOpenSheet(null); }}
+                >
+                  <AssetIcon asset={a} size={16} />
+                  {a}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+
+        {openSheet === "chain" && (
+          <div className="fdock-sheet" role="listbox" aria-label="Filter by network">
+            <div className="fdock-sheet-grid">
+              <button
+                type="button"
+                role="option"
+                aria-selected={chainFilter === "All"}
+                className={`fdock-opt${chainFilter === "All" ? " active" : ""}`}
+                onClick={() => { setChainFilter("All"); setPage(0); setOpenSheet(null); }}
+              >
+                All
+              </button>
+              {chains.map((c) => (
+                <button
+                  key={c}
+                  type="button"
+                  role="option"
+                  aria-selected={chainFilter === c}
+                  className={`fdock-opt${chainFilter === c ? " active" : ""}`}
+                  onClick={() => { setChainFilter(c); setPage(0); setOpenSheet(null); }}
+                >
+                  <ChainIcon chain={c} size={16} />
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
