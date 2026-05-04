@@ -3256,12 +3256,21 @@ button { font-family: inherit; cursor: pointer; }
     grid-template-columns: 1fr;
     gap: 36px;
     padding: 44px 28px;
-    min-height: 0;
+    /* Keep enough vertical room so the gradient blobs actually have a
+       canvas to fill, otherwise the panel reads as a black card. */
+    min-height: 620px;
   }
   .home-hero-right { max-width: none; margin-left: 0; }
+  /* Re-distribute the three blobs vertically so the same colorful
+     wash that spans desktop horizontally now spans the mobile column
+     top-to-bottom. Keep the 110px blur and base colors unchanged. */
+  .home-hero .h2-blob { width: 95%; }
+  .home-hero .h2-blob-1 { top: -8%; left: -25%; }
+  .home-hero .h2-blob-2 { top: 28%; left: 18%; right: auto; }
+  .home-hero .h2-blob-3 { top: 60%; right: -25%; left: auto; }
 }
 @media (max-width: 640px) {
-  .home-hero { padding: 36px 22px; gap: 28px; border-radius: 16px; }
+  .home-hero { padding: 36px 22px; gap: 28px; border-radius: 16px; min-height: 560px; }
   .home-hero-actions { gap: 8px; }
   .home-hero-btn,
   .home-hero-btn-ghost { width: 100%; text-align: center; }
