@@ -78,7 +78,7 @@ button { font-family: inherit; cursor: pointer; }
 .brand {
   display: inline-flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 4px;
   padding: 4px 10px;
   border-radius: 6px;
   transition: background 0.12s;
@@ -3278,11 +3278,12 @@ button { font-family: inherit; cursor: pointer; }
   background: var(--up);
   display: inline-block;
   position: relative;
-  top: -1px;
+  /* sits flush on the baseline at rest; hover lifts it to mid-cap height */
+  top: 0;
   transition: transform 0.18s ease, background 0.18s ease;
 }
 .brand:hover .brand-dot {
-  transform: translateY(-2px);
+  transform: translateY(-7px);
   background: var(--ink);
 }
 
