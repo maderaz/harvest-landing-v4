@@ -1,7 +1,7 @@
 "use client";
 
 /* eslint-disable @next/next/no-img-element */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { YieldVault } from "@/lib/types";
 import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
@@ -123,6 +123,23 @@ export function VaultTable({
   const [chainFilter, setChainFilter] = useState("All");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
+  const filterbarRef = useRef<HTMLDivElement | null>(null);
+  const [showStickyFilters, setShowStickyFilters] = useState(false);
+
+  // Mobile-only: surface a floating filter dock at the bottom of the
+  // viewport once the inline filter bar has scrolled out of view, so
+  // users browsing the ranking can re-pivot by asset/chain without
+  // jumping back to the top.
+  useEffect(() => {
+    const node = filterbarRef.current;
+    if (!node || typeof window === "undefined" || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setShowStickyFilters(!entry.isIntersecting),
+      { rootMargin: "-60px 0px 0px 0px", threshold: 0 },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   const PAGE_SIZE = 50;
 
@@ -186,7 +203,7 @@ export function VaultTable({
 
   return (
     <>
-      <div className="filterbar">
+      <div className="filterbar" ref={filterbarRef}>
         <div className="fb-row">
           <div className="fb-tabs">
             <button
@@ -355,6 +372,61 @@ export function VaultTable({
               </button>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Mobile sticky filter dock — only mounts on small screens via
+          CSS, only visible after the user has scrolled past the inline
+          filter bar. */}
+      <div
+        className={`sticky-filters${showStickyFilters ? " is-visible" : ""}`}
+        aria-label="Quick filters"
+      >
+        <div className="sf-row">
+          <span className="sf-label">Asset</span>
+          <div className="sf-chips">
+            <button
+              type="button"
+              className={`sf-chip${assetFilter === "All" ? " active" : ""}`}
+              onClick={() => { setAssetFilter("All"); setPage(0); }}
+            >
+              All
+            </button>
+            {assets.map((a) => (
+              <button
+                key={a}
+                type="button"
+                className={`sf-chip${assetFilter === a ? " active" : ""}`}
+                onClick={() => { setAssetFilter(a); setPage(0); }}
+              >
+                <AssetIcon asset={a} size={14} />
+                {a}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="sf-row">
+          <span className="sf-label">Network</span>
+          <div className="sf-chips">
+            <button
+              type="button"
+              className={`sf-chip${chainFilter === "All" ? " active" : ""}`}
+              onClick={() => { setChainFilter("All"); setPage(0); }}
+            >
+              All
+            </button>
+            {chains.map((c) => (
+              <button
+                key={c}
+                type="button"
+                className={`sf-chip${chainFilter === c ? " active" : ""}`}
+                onClick={() => { setChainFilter(c); setPage(0); }}
+              >
+                <ChainIcon chain={c} size={14} />
+                {c}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
     </>

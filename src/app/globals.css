@@ -3261,13 +3261,13 @@ button { font-family: inherit; cursor: pointer; }
     min-height: 620px;
   }
   .home-hero-right { max-width: none; margin-left: 0; }
-  /* Re-distribute the three blobs vertically so the same colorful
-     wash that spans desktop horizontally now spans the mobile column
-     top-to-bottom. Keep the 110px blur and base colors unchanged. */
-  .home-hero .h2-blob { width: 95%; }
-  .home-hero .h2-blob-1 { top: -8%; left: -25%; }
-  .home-hero .h2-blob-2 { top: 28%; left: 18%; right: auto; }
-  .home-hero .h2-blob-3 { top: 60%; right: -25%; left: auto; }
+  /* Re-distribute the three blobs vertically AND make them larger /
+     less blurred so the color wash actually fills the column instead
+     of fading into black. */
+  .home-hero .h2-blob { width: 140%; filter: blur(90px); opacity: 1; }
+  .home-hero .h2-blob-1 { top: -18%; left: -25%; }
+  .home-hero .h2-blob-2 { top: 22%; left: -10%; right: auto; }
+  .home-hero .h2-blob-3 { top: 52%; right: -25%; left: auto; }
 }
 @media (max-width: 640px) {
   .home-hero { padding: 36px 22px; gap: 28px; border-radius: 16px; min-height: 560px; }
@@ -3311,3 +3311,92 @@ button { font-family: inherit; cursor: pointer; }
 
 /* #yields anchor lands under topnav with breathing room */
 #yields { scroll-margin-top: 80px; }
+
+/* ════════════════════════════════════════════════════════════════
+   Mobile sticky filter dock — anchored to the bottom of the
+   viewport once the inline filter bar has scrolled out of view.
+   Hidden entirely on >700px (the inline bar stays at the top of
+   the table on desktop / tablet).
+   ════════════════════════════════════════════════════════════════ */
+.sticky-filters {
+  display: none;
+}
+@media (max-width: 700px) {
+  .sticky-filters {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: fixed;
+    left: 8px;
+    right: 8px;
+    bottom: 10px;
+    z-index: 40;
+    padding: 10px 12px;
+    background: color-mix(in srgb, var(--panel) 96%, transparent);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.04) inset,
+      0 18px 36px -18px rgba(0, 0, 0, 0.35),
+      0 6px 18px -8px rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    transform: translateY(140%);
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1),
+      opacity 0.22s ease;
+  }
+  .sticky-filters.is-visible {
+    transform: translateY(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.sf-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.sf-label {
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-family: var(--mono);
+  flex-shrink: 0;
+  width: 52px;
+}
+.sf-chips {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  flex: 1;
+  min-width: 0;
+}
+.sf-chips::-webkit-scrollbar { display: none; }
+.sf-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 10px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+.sf-chip:hover { background: var(--panel); color: var(--ink); }
+.sf-chip.active {
+  background: var(--ink);
+  color: var(--accent-ink);
+  border-color: var(--ink);
+}
