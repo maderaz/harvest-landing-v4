@@ -1863,9 +1863,10 @@ button { font-family: inherit; cursor: pointer; }
   .perf-tile-label { font-size: 9px; letter-spacing: 0.04em; }
   .perf-tile-value { font-size: 15px; }
   .perf-tile-sub { display: none; }
-  /* Chart */
+  /* Chart: bumped ~40% taller on mobile so the daily APY/TVL series is
+     actually readable on a phone instead of being a thin strip. */
   .vc-header { gap: 8px; padding: 8px 12px 6px; }
-  .vc-plot { aspect-ratio: 600 / 240; min-height: 140px; }
+  .vc-plot { aspect-ratio: 16 / 9; min-height: 200px; }
   .vc-peak { font-size: 11px; }
   .vc-win-btn { padding: 4px 8px; }
 }
@@ -2077,8 +2078,18 @@ button { font-family: inherit; cursor: pointer; }
   /* Eco rank: hide bar column on very small screens */
   .eco-row { grid-template-columns: 28px 1fr 56px; }
   .er-bar { display: none; }
-  /* Yield sources: compress */
-  .ys-row { grid-template-columns: 80px 1fr auto; gap: 8px; }
+  /* Yield sources: stack the name above the bar+value row so long
+     source names (eg. "Compound Reward") never overrun the progress
+     bar on narrow screens. */
+  .ys-row {
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "name name" "bar val";
+    row-gap: 6px;
+    column-gap: 10px;
+  }
+  .ys-name { grid-area: name; font-size: 13px; min-width: 0; }
+  .ys-bar { grid-area: bar; }
+  .ys-val { grid-area: val; }
   /* Page padding */
   .pp-page { padding-left: var(--shell-pad); padding-right: var(--shell-pad); }
   .pp-page-after-hero > .pp-grid { padding-top: 24px; }
@@ -2303,6 +2314,23 @@ button { font-family: inherit; cursor: pointer; }
   color: #f4f4f1;
   border-color: #4a4a45;
   background: #1a1a17;
+}
+/* Equalize the height of every action button (copy / calculator /
+   view-strategy) inside the dark hero so they sit on a clean baseline. */
+.vh-actions-right .pp-copy-btn,
+.vh-actions-right .vh-btn-primary,
+.vh-actions-right .vh-calc-btn {
+  height: 34px;
+  padding: 0 16px;
+  font-size: 13px;
+  line-height: 1;
+  box-sizing: border-box;
+}
+/* Calculator button is mobile-only — desktop already has the live
+   sticky calculator card in the sidebar. */
+.vh-calc-btn { display: none; text-decoration: none; }
+@media (max-width: 1100px) {
+  .vh-calc-btn { display: inline-flex; align-items: center; justify-content: center; }
 }
 
 /* Sticky tabs strip */

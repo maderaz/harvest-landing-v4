@@ -41,7 +41,7 @@ export function DepositCard({ apy24h, apy30d, asset, chain, contractAddress }: D
   }
 
   return (
-    <div className="dep-calc-card">
+    <div className="dep-calc-card" id="deposit-calc">
       <div className="dc-header">
         <div className="dc-apy-row">
           <div>

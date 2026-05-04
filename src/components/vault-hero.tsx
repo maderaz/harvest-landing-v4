@@ -163,6 +163,9 @@ export function VaultHero({ vault, history, allVaults }: Props) {
           </div>
           <div className="vh-actions-right">
             <CopyAddressButton address={vault.contractAddress} />
+            <a href="#deposit-calc" className="pp-copy-btn vh-calc-btn">
+              Calculator
+            </a>
             <a
               href={harvestAppUrl(vault.chain, vault.contractAddress)}
               target="_blank"
