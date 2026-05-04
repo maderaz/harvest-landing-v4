@@ -3280,7 +3280,11 @@ button { font-family: inherit; cursor: pointer; }
   position: relative;
   /* sits flush on the baseline at rest; hover lifts it to mid-cap height */
   top: 0;
-  transition: transform 0.18s ease, background 0.18s ease;
+  /* Springy hop on hover (back-out cubic-bezier) so the pip feels like
+     it leaps up and lands at the apex with a tiny overshoot, instead
+     of teleporting. Color cross-fades on a calmer ease. */
+  transition: transform 0.36s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 0.18s ease;
 }
 .brand:hover .brand-dot {
   transform: translateY(-7px);
