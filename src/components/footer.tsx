@@ -227,9 +227,11 @@ export async function Footer() {
             future returns.
           </div>
           <div className="foot-legal-meta">
+            <Link href="/sitemap.xml">sitemap</Link>
+            <span className="foot-legal-sep">·</span>
             <Link href="/llms.txt">llms.txt</Link>
             <span className="foot-legal-sep">·</span>
-            <Link href="/sitemap.xml">sitemap</Link>
+            <Link href="/robots.txt">robots.txt</Link>
           </div>
         </div>
       </div>

@@ -770,31 +770,36 @@ button { font-family: inherit; cursor: pointer; }
 .foot-legal {
   font-size: 11px;
   color: var(--ink-4);
-  line-height: 1.6;
+  line-height: 1.55;
   padding-top: 18px;
   border-top: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 24px;
 }
 .foot-legal-line {
-  white-space: nowrap;
+  /* Cap at two visual lines on desktop, ellipsize anything beyond. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 .foot-legal-meta {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  white-space: nowrap;
   color: var(--ink-4);
 }
-.foot-legal-sep { color: var(--ink-4); }
+.foot-legal-sep { color: var(--ink-4); opacity: 0.5; }
 .foot-legal a { color: var(--ink-3); }
 .foot-legal a:hover { color: var(--ink-2); }
-@media (max-width: 900px) {
-  /* Legal blob is too long to fit on one line on tablets/phones, let
-     it wrap there instead of clipping to ellipsis. */
-  .foot-legal-line { white-space: normal; }
+@media (max-width: 700px) {
+  /* Stack the meta row under the legal blob on small screens, and let
+     the blob wrap freely instead of clamping to two lines. */
+  .foot-legal { grid-template-columns: 1fr; gap: 10px; }
+  .foot-legal-line { display: block; -webkit-line-clamp: unset; }
 }
 .foot-copy {
   font-size: 11.5px;
