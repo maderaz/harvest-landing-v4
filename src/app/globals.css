@@ -3070,8 +3070,8 @@ button { font-family: inherit; cursor: pointer; }
   height: 6px;
   border-radius: 50%;
   background: oklch(0.78 0.18 150);
-  box-shadow: 0 0 0 0 oklch(0.78 0.18 150 / 0.6);
-  animation: crumbs-pulse 2.4s ease-out infinite;
+  /* Static — the second pulsing dot lives next to "Live · N vaults"
+     below; two simultaneous pulses on the same hero read as noise. */
 }
 @keyframes crumbs-pulse {
   0% { box-shadow: 0 0 0 0 oklch(0.78 0.18 150 / 0.7); }
@@ -3274,7 +3274,14 @@ button { font-family: inherit; cursor: pointer; }
   .home-hero-actions { gap: 8px; }
   .home-hero-btn,
   .home-hero-btn-ghost { width: 100%; text-align: center; }
-  .home-hero-meta { margin-left: 0; }
+  /* Center the "Live · N vaults · N chains" meta below the CTAs and
+     give it real breathing room from the Open App button above. */
+  .home-hero-meta {
+    margin-left: 0;
+    margin-top: 14px;
+    width: 100%;
+    justify-content: center;
+  }
   .home-hero .asset-tile { padding: 16px 18px; gap: 14px; }
   .home-hero .at-headline { font-size: 19px; }
 }
