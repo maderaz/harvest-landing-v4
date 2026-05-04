@@ -289,7 +289,7 @@ export default async function Home() {
             </a>
             <span className="home-hero-meta">
               <span className="dot pulse" />
-              Live · {stats.vaultCount} vaults · {formatTVL(stats.totalTVL)} TVL · {stats.chainCount} chains
+              Live · {stats.vaultCount} vaults · {stats.chainCount} chains
             </span>
           </div>
         </div>
