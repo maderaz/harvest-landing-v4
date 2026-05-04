@@ -123,35 +123,10 @@ export function VaultTable({
   const [chainFilter, setChainFilter] = useState("All");
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(0);
-  const filterbarRef = useRef<HTMLDivElement | null>(null);
   const stickyDockRef = useRef<HTMLDivElement | null>(null);
-  const [showStickyFilters, setShowStickyFilters] = useState(false);
   const [openSheet, setOpenSheet] = useState<null | "asset" | "chain">(null);
 
-  // Mobile-only: surface a floating filter dock at the bottom of the
-  // viewport ONLY after the user has scrolled past the inline filter
-  // bar (filter is above the viewport, not below). Without this guard
-  // the dock would appear on the default homepage view because the
-  // inline bar is below the fold on first paint.
-  useEffect(() => {
-    const node = filterbarRef.current;
-    if (!node || typeof window === "undefined" || !("IntersectionObserver" in window)) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        const aboveViewport = entry.boundingClientRect.bottom <= 0;
-        setShowStickyFilters(aboveViewport);
-      },
-      { threshold: 0 },
-    );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
-  // Close any open dropdown sheet when the dock hides or when a tap
-  // lands outside it.
-  useEffect(() => {
-    if (!showStickyFilters) setOpenSheet(null);
-  }, [showStickyFilters]);
+  // Close the dropdown sheet when a tap lands outside the dock.
   useEffect(() => {
     if (!openSheet) return;
     function handle(e: Event) {
@@ -228,7 +203,7 @@ export function VaultTable({
 
   return (
     <>
-      <div className="filterbar" ref={filterbarRef}>
+      <div className="filterbar">
         <div className="fb-row">
           <div className="fb-tabs">
             <button
@@ -400,14 +375,13 @@ export function VaultTable({
         </div>
       </div>
 
-      {/* Mobile sticky filter dock — two collapsed buttons that pop a
-          dropdown sheet UPWARD on tap, so the user can re-pivot the
-          ranking by asset or network without scrolling back up. Only
-          mounts on <=700px via CSS, and only after the inline filter
-          bar has scrolled above the viewport. */}
+      {/* Mobile sticky filter dock — replaces the inline filter bar
+          entirely on <=700px. Two collapsed buttons that pop a dropdown
+          sheet UPWARD on tap. Hidden on desktop via CSS (where the
+          inline bar is the primary control). */}
       <div
         ref={stickyDockRef}
-        className={`sticky-filters${showStickyFilters ? " is-visible" : ""}`}
+        className="sticky-filters"
         aria-label="Quick filters"
       >
         <div className="fdock-buttons">
