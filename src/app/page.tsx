@@ -272,13 +272,21 @@ export default async function Home() {
           </div>
           <h1>
             Best DeFi Yields.
+            <br />
             <span className="dim">
               Compare {stats.vaultCount} strategies ranked by APY across USDC, USDT, ETH and Bitcoin.
             </span>
           </h1>
           <div className="home-hero-actions">
             <a href="#yields" className="home-hero-btn">Browse top yields →</a>
-            <Link href="/methodology" className="home-hero-btn-ghost">How Harvest ranks</Link>
+            <a
+              href="https://app.harvest.finance"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="home-hero-btn-ghost"
+            >
+              Open App
+            </a>
             <span className="home-hero-meta">
               <span className="dot pulse" />
               Live · {stats.vaultCount} vaults · {formatTVL(stats.totalTVL)} TVL · {stats.chainCount} chains
