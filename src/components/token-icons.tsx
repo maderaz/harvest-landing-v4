@@ -16,6 +16,7 @@ import sonicIcon from "@/assets/icons/sonic.png";
 const ASSET_ICONS: Record<string, { src: string }> = {
   USDC: usdcIcon,
   USDT: usdtIcon,
+  USDT0: usdtIcon,
   ETH: ethIcon,
   WETH: ethIcon,
   BTC: wbtcIcon,
