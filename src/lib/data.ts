@@ -84,8 +84,21 @@ export async function getVaults(): Promise<YieldVault[]> {
       if (h.apyHistory.length > 0) {
         const derived = deriveApyMetrics(h.apyHistory);
         if (derived) {
-          next.apy24h = derived.apy24h;
-          next.apy30d = derived.apy30d;
+          // Sanity check: the upstream indexer derives APY from realized
+          // share-price growth, so deposit/withdraw/migration spikes can
+          // pollute it for days. If the derived value is > 2.5x the
+          // protocol's published apyBreakdown sum, trust the breakdown
+          // (what the protocol UI itself shows) instead.
+          const breakdownSum = (v.apyBreakdown ?? []).reduce(
+            (s, b) => s + (Number.isFinite(b.apy) ? b.apy : 0),
+            0,
+          );
+          const trusted =
+            breakdownSum > 0 && derived.apy24h > breakdownSum * 2.5
+              ? { apy24h: breakdownSum, apy30d: breakdownSum }
+              : derived;
+          next.apy24h = trusted.apy24h;
+          next.apy30d = trusted.apy30d;
         }
       }
       // Same drift problem on TVL: the upstream value can lag what the
