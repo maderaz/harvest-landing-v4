@@ -38,6 +38,12 @@ export default function AdminLayout({
                   Products
                 </Link>
                 <Link
+                  href="/admin/ranking-rules"
+                  className="text-sm font-medium text-gray-700 hover:text-gray-900"
+                >
+                  Ranking Rules
+                </Link>
+                <Link
                   href="/admin/changelog"
                   className="text-sm font-medium text-gray-700 hover:text-gray-900"
                 >

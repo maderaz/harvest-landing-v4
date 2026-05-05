@@ -114,8 +114,13 @@ export function isLiveVault(v: YieldVault): boolean {
 // vaults aren't false-flagged, then check that every reading inside the
 // 30-day window holds the same exact value. The check resolves false
 // the moment the APY moves, so a recovered vault returns automatically.
-const BROKEN_TVL_THRESHOLD = 10_000;
-const BROKEN_MIN_OBSERVATIONS = 14;
+import {
+  BROKEN_TVL_THRESHOLD,
+  BROKEN_MIN_OBSERVATIONS,
+  STALE_APY_DAYS,
+  HIDE_AERODROME,
+  isAerodromeName,
+} from "./admin-rules";
 
 export function isBrokenLowTvlVault(v: YieldVault): boolean {
   if (v.tvl <= 0 || v.tvl >= BROKEN_TVL_THRESHOLD) return false;
@@ -131,7 +136,9 @@ export function isBrokenLowTvlVault(v: YieldVault): boolean {
   return new Set(recent.map((p) => p.apy)).size === 1;
 }
 
-const STALE_APY_DAYS = 14;
+function isAerodromeVault(v: YieldVault): boolean {
+  return HIDE_AERODROME && isAerodromeName(v.productName, v.category);
+}
 
 function isStaleApyHistory(history: ApyHistoryPoint[]): boolean {
   if (history.length < 2) return false;
@@ -169,7 +176,8 @@ export async function getLiveVaults(): Promise<YieldVault[]> {
     (v) =>
       isLiveVault(v) &&
       !stale.has(v.contractAddress.toLowerCase()) &&
-      !isBrokenLowTvlVault(v),
+      !isBrokenLowTvlVault(v) &&
+      !isAerodromeVault(v),
   );
 }
 
