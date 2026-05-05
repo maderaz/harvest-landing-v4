@@ -2395,7 +2395,24 @@ button { font-family: inherit; cursor: pointer; }
   .vh-tab-short { display: inline; }
   .vh-actions { flex-direction: column; align-items: stretch; gap: 10px; }
   .vh-actions-left { flex-wrap: wrap; }
-  .vh-actions-right { justify-content: flex-start; }
+  /* Three CTAs (Copy / Calculator / View Strategy) were colliding on
+     narrow phones because their natural widths exceeded the row.
+     Switch to a 2-column grid where Copy + Calculator share the top
+     row and the primary "View Strategy" CTA spans full-width below. */
+  .vh-actions-right {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+  .vh-actions-right .vh-btn-primary {
+    grid-column: 1 / -1;
+    justify-content: center;
+  }
+  .vh-actions-right .pp-copy-btn,
+  .vh-actions-right .vh-calc-btn {
+    justify-content: center;
+  }
   /* KPI: 2×2 grid already, reduce cell padding on small screens */
   .vh-kpi { padding: 14px 16px; min-height: 80px; }
   .vh-k-val { font-size: 26px; }
