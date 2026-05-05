@@ -79,15 +79,34 @@ export async function getVaults(): Promise<YieldVault[]> {
     const cache = _historyCache;
     vaults = vaults.map((v) => {
       const h = cache[v.contractAddress] ?? cache[v.contractAddress.toLowerCase()];
-      if (!h || h.apyHistory.length === 0) return v;
-      const derived = deriveApyMetrics(h.apyHistory);
-      if (!derived) return v;
-      return { ...v, apy24h: derived.apy24h, apy30d: derived.apy30d };
+      if (!h) return v;
+      const next = { ...v };
+      if (h.apyHistory.length > 0) {
+        const derived = deriveApyMetrics(h.apyHistory);
+        if (derived) {
+          next.apy24h = derived.apy24h;
+          next.apy30d = derived.apy30d;
+        }
+      }
+      // Same drift problem on TVL: the upstream value can lag what the
+      // chart renders (which reads from cached daily history). Use the
+      // latest tvlHistory point if it's recent enough, so hero +
+      // ranking always agree with the on-page chart.
+      const latestTvl = latestTvlPoint(h.tvlHistory);
+      if (latestTvl !== null) next.tvl = latestTvl;
+      return next;
     });
   }
 
   _vaultCache = vaults;
   return _vaultCache;
+}
+
+function latestTvlPoint(history: { value: number; timestamp: number }[]): number | null {
+  if (!history || history.length === 0) return null;
+  let best = history[0];
+  for (const p of history) if (p.timestamp > best.timestamp) best = p;
+  return Number.isFinite(best.value) && best.value >= 0 ? best.value : null;
 }
 
 function deriveApyMetrics(history: ApyHistoryPoint[]): { apy24h: number; apy30d: number } | null {
