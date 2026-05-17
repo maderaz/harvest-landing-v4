@@ -34,13 +34,29 @@ export function Analytics() {
     setConsentState(getConsent());
   }, []);
 
-  // Track on every route change once consent is granted.
+  // Track on every route change once consent is granted. Defer the
+  // actual POST + fetchGeo through requestIdleCallback (falling back
+  // to a 1-frame setTimeout on Safari) so analytics never competes
+  // with hydration or the LCP paint - the visit row lands during
+  // browser idle time after the user can interact with the page.
   useEffect(() => {
     if (!mounted) return;
     if (consent !== "accepted") return;
     if (!pathname) return;
-    if (pathname.startsWith("/admin")) return; // exclude operator pages
-    void trackVisit(pathname);
+    if (pathname.startsWith("/admin")) return;
+    const run = () => {
+      void trackVisit(pathname);
+    };
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout?: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (typeof w.requestIdleCallback === "function") {
+      const id = w.requestIdleCallback(run, { timeout: 2000 });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(run, 0);
+    return () => window.clearTimeout(id);
   }, [pathname, consent, mounted]);
 
   const accept = () => {

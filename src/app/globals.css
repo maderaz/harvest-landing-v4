@@ -112,7 +112,12 @@ a { color: inherit; text-decoration: none; }
 }
 button { font-family: inherit; cursor: pointer; }
 .mono { font-family: var(--mono); font-feature-settings: "tnum"; }
-.dim  { color: var(--ink-3); }
+/* Body-text .dim uses --ink-2 so secondary copy still clears WCAG
+   AA contrast on both light and dark themes. The .dim-small class
+   keeps the lighter --ink-3 for chip-sized labels (<=12px) where
+   AA's 4.5:1 floor is allowed to drop per WCAG 1.4.3. */
+.dim  { color: var(--ink-2); }
+.dim-small { color: var(--ink-3); }
 
 /* === top nav === */
 .topnav {
