@@ -838,6 +838,23 @@ body:has(.uni-hub-test) {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* Free-text cell used for short categorical fields on the Traffic
+   and App Clicks tables (Source / City / Device). Left-aligned -
+   the public-ranking .hub-strategy class is right-aligned because
+   on /eth it sits next to numeric columns, which is wrong for the
+   admin admin-side tables. Ellipsis-clips so longer utm_source or
+   device strings stop bleeding across the next column edge. */
+.uni-hub-test .aq-cell-text {
+  font-size: 13.5px;
+  color: var(--uni-ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: left;
+  justify-self: start;
+  min-width: 0;
+}
 .uni-hub-test .aq-cell-session {
   font-family: var(--mono);
   font-size: 11px;

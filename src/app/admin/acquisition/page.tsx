@@ -27,9 +27,12 @@ const ROWS_DISPLAY_LIMIT = 200;
 const CHART_DAYS = 30;
 
 // 7-column track for the visits table. Same shape as the hub-table
-// grid on /eth (6 cols) plus one extra for Session.
+// grid on /eth (6 cols) plus one extra for Session. Source / Country
+// / Device are fixed-width so they stop crowding the wider Page +
+// City columns; ellipsis on every free-text cell keeps overflow
+// from bleeding across column edges.
 const TABLE_COLS =
-  "150px minmax(220px, 2fr) 1fr 1fr 1fr 0.7fr 110px";
+  "140px minmax(200px, 1.8fr) 130px 110px minmax(120px, 1fr) 100px 110px";
 
 export default function AcquisitionPage() {
   const [visits, setVisits] = useState<Visit[] | null>(null);
@@ -261,12 +264,12 @@ function TableSection({ visits }: { visits: Visit[] }) {
                     {v.page_path}
                   </span>
                 </span>
-                <span className="hub-cell hub-strategy">{v.source ?? "—"}</span>
-                <span className="hub-cell hub-strategy">
+                <span className="hub-cell aq-cell-text">{v.source ?? "—"}</span>
+                <span className="hub-cell">
                   <CountryFlag country={v.country} />
                 </span>
-                <span className="hub-cell hub-strategy">{v.city ?? "—"}</span>
-                <span className="hub-cell hub-strategy">
+                <span className="hub-cell aq-cell-text">{v.city ?? "—"}</span>
+                <span className="hub-cell aq-cell-text">
                   {v.device_type ?? "—"}
                 </span>
                 <span
