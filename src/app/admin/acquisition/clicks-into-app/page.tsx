@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabaseSelect } from "@/lib/supabase";
+import { CountryFlag } from "@/components/admin/country-flag";
 
 interface Click {
   id: string;
@@ -260,7 +261,9 @@ function TableSection({ clicks }: { clicks: Click[] }) {
                 <span className="hub-cell">{labelForCta(c.source_cta)}</span>
                 <span className="hub-cell aq-cell-page">{c.source_page}</span>
                 <span className="hub-cell">{c.source ?? "—"}</span>
-                <span className="hub-cell">{c.country ?? "—"}</span>
+                <span className="hub-cell">
+                  <CountryFlag country={c.country} />
+                </span>
                 <span className="hub-cell">{c.device_type ?? "—"}</span>
                 <span className="hub-cell aq-cell-session">
                   {(c.session_id || "").slice(0, 8)}

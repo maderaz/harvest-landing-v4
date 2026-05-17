@@ -3693,6 +3693,51 @@ body:has(.admin-shell) .foot {
   color: var(--uni-ink-3);
   font-family: var(--mono);
 }
+
+/* Country cell - tiny PNG flag from flagcdn.com + uppercase ISO
+   code. Flag sits in a thin ring so flags with white edges (Japan,
+   Bangladesh) still read against the row background. Used on the
+   Traffic + App Clicks tables. */
+.country-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.country-flag {
+  display: inline-block;
+  width: 20px;
+  height: 15px;
+  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(25, 23, 23, 0.12);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--uni-tint);
+}
+.country-flag-unknown {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 15px;
+  border-radius: 2px;
+  background: var(--uni-tint);
+  color: var(--uni-ink-3);
+  font-size: 12px;
+  line-height: 1;
+}
+.country-code {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--uni-ink-2);
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:root[data-theme="dark"] .country-flag {
+  box-shadow: 0 0 0 1px rgba(244, 244, 241, 0.18);
+}
 .uni-hub-test .adm-reasons {
   display: flex;
   flex-wrap: wrap;

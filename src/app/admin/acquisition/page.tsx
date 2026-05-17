@@ -9,6 +9,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabaseSelect } from "@/lib/supabase";
+import { CountryFlag } from "@/components/admin/country-flag";
 
 interface Visit {
   id: string;
@@ -261,7 +262,9 @@ function TableSection({ visits }: { visits: Visit[] }) {
                   </span>
                 </span>
                 <span className="hub-cell hub-strategy">{v.source ?? "—"}</span>
-                <span className="hub-cell hub-strategy">{v.country ?? "—"}</span>
+                <span className="hub-cell hub-strategy">
+                  <CountryFlag country={v.country} />
+                </span>
                 <span className="hub-cell hub-strategy">{v.city ?? "—"}</span>
                 <span className="hub-cell hub-strategy">
                   {v.device_type ?? "—"}
