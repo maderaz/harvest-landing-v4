@@ -43,9 +43,6 @@ export default function AdminLayout({
             <Link href="/admin/studio" className="admin-nav-link">
               Studio
             </Link>
-            <Link href="/admin/changelog" className="admin-nav-link">
-              Changelog
-            </Link>
           </div>
           <Link href="/" className="admin-nav-back">
             ← Back to site
