@@ -36,6 +36,10 @@ export function assetHubDescription(
   count: number,
   subAssets?: string[],
 ): string {
+  // Target 140-160 chars so Google's snippet doesn't truncate. The
+  // count + asset family carries the on-page promise; the second
+  // sentence adds network reach so the description doesn't read as
+  // identical across asset hubs.
   const familyName = isUmbrellaAsset(asset)
     ? getSubAssetFamilyName(asset)
     : asset;
@@ -46,9 +50,9 @@ export function assetHubDescription(
         : subAssets.slice(0, -1).join(", ") +
           " and " +
           subAssets[subAssets.length - 1];
-    return `Track ${count}+ ${familyName} yield sources across ${listed}. Compare APY, TVL and performance history. Updated daily.`;
+    return `Compare ${count}+ ${familyName} yield strategies across ${listed} on Ethereum, Base, Arbitrum and more. Live APY, TVL and 30-day history, updated daily.`;
   }
-  return `Track ${count}+ ${asset} yield sources across DeFi. Compare APY, TVL and performance history. Updated daily.`;
+  return `Compare ${count}+ ${asset} yield strategies across DeFi on Ethereum, Base, Arbitrum and other major networks. Live APY, TVL and 30-day history, updated daily.`;
 }
 
 // ─── Network hub ──────────────────────────────────────────────────────────────
@@ -66,7 +70,9 @@ export function networkHubDescription(
   networkDisplay: string,
   count: number,
 ): string {
-  return `Track ${count}+ yield sources on ${networkDisplay}. Compare APY, TVL and performance history across DeFi protocols. Updated daily.`;
+  // 140-160 char floor. Reads as both a stat and an editorial promise
+  // (apples-to-apples ranking) so the snippet stands on its own.
+  return `Compare ${count}+ DeFi yield strategies on ${networkDisplay} side by side. Live APY, TVL and 30-day performance history for every product Harvest indexes, refreshed daily.`;
 }
 
 // ─── Product page ─────────────────────────────────────────────────────────────
@@ -146,7 +152,7 @@ export function productPageDescription(
   const network = vault.chain;
 
   if (trackedDays >= 30 && vault.apy30d > 0) {
-    return `${vault.productName} on ${protocol} (${network}). ${subAsset} yield averaging ${vault.apy30d.toFixed(1)}% APY over 30 days. Track TVL, performance and risk benchmarks.`;
+    return `${vault.productName} on ${protocol} (${network}): ${subAsset} yield averaging ${vault.apy30d.toFixed(1)}% APY over the last 30 days. Track live APY, TVL, performance history and risk benchmarks.`;
   }
 
   // Resolve "live since {month year}" only when the vault has a
@@ -164,10 +170,10 @@ export function productPageDescription(
   }
 
   if (since) {
-    return `${vault.productName} on ${protocol} (${network}). New ${subAsset} yield strategy live since ${since}. Track APY, TVL and performance history.`;
+    return `${vault.productName} on ${protocol} (${network}): new ${subAsset} yield strategy live since ${since}. Track live APY, TVL, performance history and risk benchmarks across the index.`;
   }
 
-  return `${vault.productName} on ${protocol} (${network}). ${subAsset} yield strategy indexed by Harvest. Track APY, TVL and performance history.`;
+  return `${vault.productName} on ${protocol} (${network}): ${subAsset} yield strategy indexed by Harvest. Track live APY, TVL, performance history and risk benchmarks alongside the rest of the cohort.`;
 }
 
 // ─── Breadcrumb data helpers ──────────────────────────────────────────────────

@@ -4,9 +4,9 @@ import { HomeCrumb } from "@/components/home-crumb";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { breadcrumbSchema } from "@/lib/jsonld";
 
-const TITLE = "Privacy Policy | Harvest";
+const TITLE = "Privacy Policy: Data, Cookies & User Rights | Harvest";
 const DESCRIPTION =
-  "How Harvest handles personal data, analytics, cookies, and third-party tools. Includes user rights and data retention.";
+  "How Harvest handles personal data, analytics, cookies and third-party tools across the site and app, plus your access, deletion and retention rights as a user.";
 const URL = `${SITE_URL}/privacy`;
 const LAST_UPDATED = "May 3, 2026";
 

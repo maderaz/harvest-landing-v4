@@ -9,6 +9,10 @@ export const ASSET_COLORS: Record<Asset, string> = {
 };
 
 export const SITE_NAME = "Harvest";
+// 140-160 char floor per Google's recommended description length.
+// Mentions the four anchor assets + the daily-refresh cadence so the
+// snippet that appears in search results carries the value prop on
+// its own line without needing the title for context.
 export const SITE_DESCRIPTION =
-  "Explore and compare onchain yield sources across DeFi. Find the best APY for your crypto assets with credible, neutral data.";
+  "Compare every DeFi yield strategy we track, across Ethereum, Base, Arbitrum and more. Live APY for USDC, USDT, ETH and Bitcoin, refreshed daily.";
 export const SITE_URL = "https://harvest.finance";

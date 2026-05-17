@@ -22,13 +22,29 @@ export function breadcrumbSchema(crumbs: Crumb[]): object {
 }
 
 export function financialProductSchema(vault: YieldVault): object {
+  // provider = the operator publishing the page (Harvest). seller is
+  // the underlying venue (Aave, Morpho, Aerodrome, etc.) where the
+  // strategy actually routes the deposit. Previously both were
+  // collapsed onto `provider`, which made Google read each product
+  // as if Aave / Morpho owned the index page itself.
   const schema: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "FinancialProduct",
     name: vault.productName,
     url: `${SITE_URL}/${vault.slug}`,
     description: vault.description,
+    inLanguage: "en",
     provider: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    brand: {
+      "@type": "Organization",
+      name: SITE_NAME,
+      url: SITE_URL,
+    },
+    seller: {
       "@type": "Organization",
       name: getProtocolLabel(vault),
     },

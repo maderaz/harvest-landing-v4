@@ -4,7 +4,7 @@ import { HomeCrumb } from "@/components/home-crumb";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { breadcrumbSchema } from "@/lib/jsonld";
 
-const TITLE = "Contact | Harvest";
+const TITLE = "Contact Harvest: Support, Press & Security Disclosures";
 const DESCRIPTION =
   "Get in touch with Harvest. General inquiries, support requests, security disclosures and press contacts all route through support@harvest.finance.";
 const URL = `${SITE_URL}/contact`;

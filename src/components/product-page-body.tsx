@@ -220,7 +220,7 @@ export async function ProductPageBody({ vault }: { vault: YieldVault }) {
   ];
 
   return (
-    <div className="uni-shell">
+    <main className="uni-shell">
       <ProductStickyHeader
         productName={displayName}
         asset={vault.asset}
@@ -676,7 +676,7 @@ export async function ProductPageBody({ vault }: { vault: YieldVault }) {
       </section>
 
       <ProductPageFootnote history={history} />
-    </div>
+    </main>
   );
 }
 

@@ -6,7 +6,7 @@ import { breadcrumbSchema } from "@/lib/jsonld";
 
 const TITLE = "Disclosures: Operator Status & Conflicts | Harvest";
 const DESCRIPTION =
-  "Harvest Finance operator disclosures, conflict of interest statement, monetization model, and editorial discretion policy.";
+  "Harvest Finance operator disclosures: conflict of interest statement, monetization model, editorial discretion policy, and how the index relates to the underlying app.";
 const URL = `${SITE_URL}/disclosures`;
 const LAST_UPDATED = "May 3, 2026";
 

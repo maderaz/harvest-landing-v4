@@ -6,7 +6,7 @@ import { breadcrumbSchema } from "@/lib/jsonld";
 
 const TITLE = "About Harvest: Onchain Yield Index Since 2020 | Harvest";
 const DESCRIPTION =
-  "Harvest is an onchain DeFi yield index operating since September 2020. Methodology, transparent data, fair-launch protocol since day one.";
+  "Harvest is an onchain DeFi yield index operating continuously since September 2020. Read about the methodology, the transparent data sources, and the fair-launch protocol that has run without interruption since day one.";
 const URL = `${SITE_URL}/about`;
 
 // Founding day. Used for the structured-data foundingDate and to compute the

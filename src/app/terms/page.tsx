@@ -4,9 +4,9 @@ import { HomeCrumb } from "@/components/home-crumb";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { breadcrumbSchema } from "@/lib/jsonld";
 
-const TITLE = "Terms of Use | Harvest";
+const TITLE = "Terms of Use: Site Conditions & User Agreement | Harvest";
 const DESCRIPTION =
-  "Terms of Use governing access to and use of the Harvest website and app.";
+  "Terms of Use governing access to harvest.finance and the Harvest app: permitted use, intellectual property, disclaimers, liability limits, and dispute resolution.";
 const URL = `${SITE_URL}/terms`;
 const LAST_UPDATED = "May 3, 2026";
 
