@@ -160,6 +160,19 @@ body:has(.uni-hub-test) {
   font-feature-settings: "tnum";
 }
 
+/* === Section spacing ============================================== */
+/* Consistent vertical rhythm between sections inside .uni-hub-test.
+   Pages that want to override (e.g. drop the top gap on the first
+   section after the hero) can pass style={{ marginTop: 0 }} on the
+   first <section>, which is the convention used across /admin and
+   /eth /usdc /btc. */
+.uni-hub-test .uni-hub-section {
+  margin-top: 56px;
+}
+.uni-hub-test .uni-hub-section:first-of-type {
+  margin-top: 0;
+}
+
 /* === Section heading =============================================== */
 .uni-hub-test .uni-hub-section-head {
   display: flex;
