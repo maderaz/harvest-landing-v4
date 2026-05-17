@@ -160,6 +160,19 @@ body:has(.uni-hub-test) {
   font-feature-settings: "tnum";
 }
 
+/* === Section spacing ============================================== */
+/* Consistent vertical rhythm between sections inside .uni-hub-test.
+   Pages that want to override (e.g. drop the top gap on the first
+   section after the hero) can pass style={{ marginTop: 0 }} on the
+   first <section>, which is the convention used across /admin and
+   /eth /usdc /btc. */
+.uni-hub-test .uni-hub-section {
+  margin-top: 56px;
+}
+.uni-hub-test .uni-hub-section:first-of-type {
+  margin-top: 0;
+}
+
 /* === Section heading =============================================== */
 .uni-hub-test .uni-hub-section-head {
   display: flex;
@@ -854,9 +867,14 @@ body:has(.uni-hub-test) {
   flex-direction: column;
   gap: 8px;
 }
+/* Primary tile (Total in Harvest) keeps the flat card surface that
+   every other .uni-hub-stat / .aq-networth-tile uses; the gold tone
+   shows on the value text via the .aq-networth-value override below,
+   so the tile reads as "the highlight number" without the gradient
+   wash. */
 .uni-hub-test .aq-networth-tile-primary {
-  background: linear-gradient(180deg, rgba(255, 185, 54, 0.22), var(--uni-card));
-  border-color: rgba(255, 185, 54, 0.5);
+  background: var(--uni-card);
+  border-color: var(--uni-line);
 }
 .uni-hub-test .aq-networth-label {
   font-family: var(--mono);
