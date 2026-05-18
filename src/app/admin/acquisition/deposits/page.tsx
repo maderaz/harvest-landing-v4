@@ -79,6 +79,7 @@ export default function DepositsPage() {
   const [visits, setVisits] = useState<VisitRow[] | null>(null);
   const [clicks, setClicks] = useState<ClickRow[] | null>(null);
   const [events, setEvents] = useState<VaultEventRow[] | null>(null);
+  const [deposits30d, setDeposits30d] = useState<VaultEventRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
 
@@ -86,12 +87,16 @@ export default function DepositsPage() {
     let cancelled = false;
     (async () => {
       try {
-        // Last 7 days for the event feed; everything else gets the
-        // full table.
+        // Last 7 days for the mixed-event feed; 30 days for the
+        // deposits-with-source table below the charts; everything else
+        // gets the full table.
         const eventCutoff = new Date(
           Date.now() - 7 * 86_400_000,
         ).toISOString();
-        const [w, v, c, e] = await Promise.all([
+        const deposit30dCutoff = new Date(
+          Date.now() - 30 * 86_400_000,
+        ).toISOString();
+        const [w, v, c, e, d30] = await Promise.all([
           supabaseSelectAll<WalletRow>(
             "wallet_connections_prod",
             "select=wallet_address,connected_at,harvest_balance,balance&order=connected_at.desc",
@@ -108,12 +113,17 @@ export default function DepositsPage() {
             "vault_events_prod",
             `select=tx_hash,log_index,block_timestamp,chain,vault_address,vault_slug,event_type,wallet_address,amount_shares&block_timestamp=gte.${eventCutoff}&order=block_timestamp.desc`,
           ),
+          supabaseSelectAll<VaultEventRow>(
+            "vault_events_prod",
+            `select=tx_hash,log_index,block_timestamp,chain,vault_address,vault_slug,event_type,wallet_address,amount_shares&event_type=eq.deposit&block_timestamp=gte.${deposit30dCutoff}&order=block_timestamp.desc`,
+          ),
         ]);
         if (cancelled) return;
         setWallets(w);
         setVisits(v);
         setClicks(c);
         setEvents(e);
+        setDeposits30d(d30);
       } catch (e) {
         if (!cancelled) setErr(String(e));
       }
@@ -227,6 +237,10 @@ export default function DepositsPage() {
             clicks={clicks!}
             wallets={uniqueWallets}
             timeframe={timeframe}
+          />
+          <DepositsWithSourceSection
+            deposits={deposits30d ?? []}
+            wallets={uniqueWallets}
           />
           <RecentDepositorsSection wallets={uniqueWallets} />
           <VaultEventsSection events={events ?? []} />
@@ -738,6 +752,169 @@ function RecentDepositorsSection({ wallets }: { wallets: WalletRow[] }) {
 function shortenAddress(addr: string): string {
   if (!addr || addr.length < 10) return addr || "—";
   return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+}
+
+// ──────────────────────────────────────────────────────────────────
+// 30-day deposits feed with source attribution
+//
+// Sits directly under the charts. Same hub-table chrome as the
+// other recent-events tables, but filtered to event_type=deposit
+// and a 30-day window, with one extra column: Source. Attribution
+// is intentionally simple - a wallet is "Frontend" if it appears in
+// wallet_connections_prod (i.e. we have at least one record of it
+// connecting through the Harvest app, where index-side outbound
+// clicks would have driven traffic to); otherwise "External"
+// (deposited directly via another front-end or contract). The
+// classification is heuristic - it doesn't prove the *individual
+// deposit* was triggered from our flow, but it does separate "this
+// wallet has ever touched our funnel" from "we have no signal at
+// all".
+// ──────────────────────────────────────────────────────────────────
+
+const DEPOSITS_SOURCE_COLS =
+  "150px minmax(180px, 1.6fr) 100px 120px minmax(110px, 0.9fr) 130px 70px";
+
+function DepositsWithSourceSection({
+  deposits,
+  wallets,
+}: {
+  deposits: VaultEventRow[];
+  wallets: WalletRow[] | null;
+}) {
+  const knownWallets = useMemo(() => {
+    const s = new Set<string>();
+    if (wallets) {
+      for (const w of wallets) {
+        const a = (w.wallet_address || "").toLowerCase();
+        if (a) s.add(a);
+      }
+    }
+    return s;
+  }, [wallets]);
+
+  const sorted = useMemo(
+    () =>
+      [...deposits].sort(
+        (a, b) =>
+          new Date(b.block_timestamp).getTime() -
+          new Date(a.block_timestamp).getTime(),
+      ),
+    [deposits],
+  );
+
+  const counts = useMemo(() => {
+    let frontend = 0;
+    let external = 0;
+    for (const d of deposits) {
+      const a = (d.wallet_address || "").toLowerCase();
+      if (a && knownWallets.has(a)) frontend++;
+      else external++;
+    }
+    return { frontend, external, total: deposits.length };
+  }, [deposits, knownWallets]);
+
+  const display = sorted.slice(0, 200);
+
+  return (
+    <section className="uni-hub-section">
+      <header className="uni-hub-section-head">
+        <div className="aq-section-head-left">
+          <h2 className="uni-hub-section-title">
+            Deposits, last 30 days, with source attribution
+          </h2>
+          <span className="uni-hub-section-meta">
+            {counts.total.toLocaleString("en-US")} deposits ·{" "}
+            {counts.frontend.toLocaleString("en-US")} from wallets ever
+            connected through the Harvest app ({" "}
+            {counts.total > 0
+              ? Math.round((counts.frontend / counts.total) * 100)
+              : 0}
+            % ) · {counts.external.toLocaleString("en-US")} external
+          </span>
+        </div>
+      </header>
+
+      {display.length === 0 ? (
+        <div className="uni-hub-empty">
+          No deposits indexed in the last 30 days. The 15-min indexer
+          cron fills the table as new onchain Deposit events occur.
+        </div>
+      ) : (
+        <div className="hub-table-wrap aq-recent-wrap">
+          <div className="hub-table aq-clicks-table aq-recent-table">
+            <div
+              className="hub-thead"
+              style={{ gridTemplateColumns: DEPOSITS_SOURCE_COLS }}
+            >
+              <span className="hub-th">Time</span>
+              <span className="hub-th">Vault</span>
+              <span className="hub-th">Chain</span>
+              <span className="hub-th">Wallet</span>
+              <span className="hub-th">Source</span>
+              <span className="hub-th">Shares</span>
+              <span className="hub-th">Tx</span>
+            </div>
+            {display.map((d) => {
+              const wallet = (d.wallet_address || "").toLowerCase();
+              const isFrontend = wallet && knownWallets.has(wallet);
+              return (
+                <div
+                  key={`${d.tx_hash}-${d.log_index}`}
+                  className="hub-row"
+                  style={{ gridTemplateColumns: DEPOSITS_SOURCE_COLS }}
+                >
+                  <span className="hub-cell aq-cell-time">
+                    {formatTime(d.block_timestamp)}
+                  </span>
+                  <span className="hub-cell aq-cell-vault">
+                    {d.vault_slug ? (
+                      <Link href={`/${d.vault_slug}`} className="aq-vault-link">
+                        {d.vault_slug}
+                      </Link>
+                    ) : (
+                      <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
+                        {shortenAddress(d.vault_address)}
+                      </span>
+                    )}
+                  </span>
+                  <span className="hub-cell">{d.chain}</span>
+                  <span className="hub-cell">
+                    <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
+                      {shortenAddress(d.wallet_address)}
+                    </span>
+                  </span>
+                  <span className="hub-cell">
+                    <span
+                      className={`adm-reason ${
+                        isFrontend
+                          ? "adm-reason-frontend"
+                          : "adm-reason-external"
+                      }`}
+                    >
+                      {isFrontend ? "Frontend" : "External"}
+                    </span>
+                  </span>
+                  <span className="hub-cell" title={d.amount_shares}>
+                    {formatShares(d.amount_shares)}
+                  </span>
+                  <span className="hub-cell">
+                    <a
+                      href={txLink(d.chain, d.tx_hash)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="aq-vault-link"
+                    >
+                      view
+                    </a>
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </section>
+  );
 }
 
 // ──────────────────────────────────────────────────────────────────

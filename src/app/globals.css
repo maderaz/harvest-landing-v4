@@ -3776,9 +3776,23 @@ body:has(.admin-shell) .foot {
   background: var(--uni-tint);
   color: var(--uni-ink-3);
 }
+/* Source-attribution pills for the 30-day deposits feed on the
+   /admin/acquisition/deposits page. Frontend = wallet has at
+   least one record in wallet_connections_prod (we've seen it
+   touch the Harvest app at some point); External = no signal,
+   deposited directly via another front-end or a contract. */
+.uni-hub-test .adm-reason-frontend {
+  background: rgba(31, 124, 77, 0.14);
+  color: #1f7c4d;
+}
+.uni-hub-test .adm-reason-external {
+  background: var(--uni-tint);
+  color: var(--uni-ink-3);
+}
 :root[data-theme="dark"] .uni-hub-test .adm-reason-duplicate { color: #a4a8ff; }
 :root[data-theme="dark"] .uni-hub-test .adm-reason-broken { color: #ff8a82; }
 :root[data-theme="dark"] .uni-hub-test .adm-reason-stale { color: #ffd98a; }
+:root[data-theme="dark"] .uni-hub-test .adm-reason-frontend { color: #6dd0a0; }
 
 /* === Master Rules + Ranking Rules cards =========================
    Card grid used by both /admin/master-rules and /admin/ranking-rules.
