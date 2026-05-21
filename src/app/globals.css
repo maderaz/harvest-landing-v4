@@ -3924,6 +3924,28 @@ body:has(.admin-shell) .foot {
   color: var(--uni-ink);
 }
 
+/* Design-system preview block on /admin/design-system. A pre/code
+   pane that shows the first ~24 lines of tokens.css so the
+   operator can sanity-check the bundle without downloading first. */
+.uni-hub-test .ds-preview {
+  background: var(--uni-card);
+  border: 1px solid var(--uni-line);
+  border-radius: var(--uni-radius);
+  padding: 18px 22px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--uni-ink);
+  overflow-x: auto;
+  white-space: pre;
+  margin: 0;
+}
+.uni-hub-test .ds-preview code {
+  font: inherit;
+  color: inherit;
+  background: transparent;
+}
+
 /* === Admin Products === */
 .adm-header { margin-bottom: 20px; }
 .adm-header h1 { font-size: 22px; font-weight: 600; color: var(--ink); }
