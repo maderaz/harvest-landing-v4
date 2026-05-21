@@ -69,7 +69,7 @@ const ARTEFACTS: Artefact[] = [
 ];
 
 function readSizeBytes(name: string): number | null {
-  const p = join(process.cwd(), "public", "design-system", name);
+  const p = join(process.cwd(), "src", "design-system-bundle", name);
   if (!existsSync(p)) return null;
   try {
     return statSync(p).size;
@@ -86,7 +86,7 @@ function formatBytes(n: number | null): string {
 }
 
 function previewSnippet(name: string, lines: number): string | null {
-  const p = join(process.cwd(), "public", "design-system", name);
+  const p = join(process.cwd(), "src", "design-system-bundle", name);
   if (!existsSync(p)) return null;
   try {
     const raw = readFileSync(p, "utf-8");
