@@ -59,12 +59,20 @@ const ARTEFACTS: Artefact[] = [
     priority: 4,
   },
   {
+    name: "logo.md",
+    href: "/design-system/logo.md",
+    summary: "Brand wordmark + animated dot - how to replicate the Harvest mark.",
+    detail:
+      "Markup, CSS, the cubic-bezier spring on the hover transform, the gold-to-onyx colour flip, prefers-reduced-motion handling, where the mark is and isn't used across the site, and an explicit list of variants you should NOT make.",
+    priority: 5,
+  },
+  {
     name: "README.md",
     href: "/design-system/README.md",
     summary: "60-second integration guide.",
     detail:
       "Import order, next/font setup, the inline theme-resolver script that prevents light-mode flash, and a verification checklist to catch hardcoded colours that don't move when you toggle the theme.",
-    priority: 5,
+    priority: 6,
   },
 ];
 
