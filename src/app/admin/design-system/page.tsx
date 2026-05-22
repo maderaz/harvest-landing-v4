@@ -67,12 +67,20 @@ const ARTEFACTS: Artefact[] = [
     priority: 5,
   },
   {
+    name: "charts.md",
+    href: "/design-system/charts.md",
+    summary: "Bar / line / sparkline charts - palette, layout, hover, annotations.",
+    detail:
+      "How charts look across the site: gold-on-dotted-white plot, no charting library, hand-rolled CSS-grid bars + inline-SVG lines. Covers chart-card chrome, bar height pitfalls (the parent must be align-items: stretch, not flex-end), line-chart gradient fill, sparkline currentColor trick, hover tooltip via ::after, vertical annotation markers in canonical blue, and a list of what NOT to do.",
+    priority: 6,
+  },
+  {
     name: "README.md",
     href: "/design-system/README.md",
     summary: "60-second integration guide.",
     detail:
       "Import order, next/font setup, the inline theme-resolver script that prevents light-mode flash, and a verification checklist to catch hardcoded colours that don't move when you toggle the theme.",
-    priority: 6,
+    priority: 7,
   },
 ];
 
