@@ -41,8 +41,17 @@ const ASSET_ICON_FILE: Record<string, string> = {
   EURC: "EURC.png",
 };
 
-function loadAssetIcon(asset: string): string | null {
-  const file = ASSET_ICON_FILE[asset] ?? ASSET_ICON_FILE[asset.toUpperCase()];
+// chain -> icon file. Mirrors CHAIN_ICONS in token-icons.tsx.
+const CHAIN_ICON_FILE: Record<string, string> = {
+  Base: "base.png",
+  Ethereum: "mainnet.png",
+  Arbitrum: "arbitrum.png",
+  Polygon: "bnb.png",
+  zkSync: "mainnet.png",
+  HyperEVM: "mainnet.png",
+};
+
+function loadIconDataUri(file: string | undefined): string | null {
   if (!file) return null;
   try {
     const buf = readFileSync(join(process.cwd(), "src", "assets", "icons", file));
@@ -50,6 +59,16 @@ function loadAssetIcon(asset: string): string | null {
   } catch {
     return null;
   }
+}
+
+function loadAssetIcon(asset: string): string | null {
+  return loadIconDataUri(
+    ASSET_ICON_FILE[asset] ?? ASSET_ICON_FILE[asset.toUpperCase()],
+  );
+}
+
+function loadChainIcon(chain: string): string | null {
+  return loadIconDataUri(CHAIN_ICON_FILE[chain]);
 }
 
 // Downsample an APY sparkline (up to 30 points) to ~14 normalized
@@ -107,5 +126,6 @@ export default async function ProductOg({
     tvlValue: vault.tvl > 0 ? formatTVL(vault.tvl) : "—",
     bars: toBars(sparkline),
     assetIconDataUri: loadAssetIcon(vault.asset),
+    chainIconDataUri: loadChainIcon(vault.chain),
   });
 }

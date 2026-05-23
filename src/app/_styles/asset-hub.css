@@ -1124,6 +1124,17 @@ body:has(.uni-hub-test) {
   overflow-wrap: normal;
   word-break: normal;
 }
+/* The vault link carries its own nowrap + ellipsis (it's reused on
+   the public ranking tables where columns are fixed). Inside the
+   clicks table it must wrap like every other long cell so the full
+   slug is visible and never bleeds into the CTA column. */
+.uni-hub-test .aq-clicks-table .aq-vault-link {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
 
 
 /* ====================================================================

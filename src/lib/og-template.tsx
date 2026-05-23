@@ -254,13 +254,17 @@ export interface ProductCardOg {
   tvlValue: string; // formatted, e.g. "$1.2M"
   // 0-100 normalized bar heights (already scaled). 12-20 entries.
   bars: number[];
-  // Optional base64 data URI for the asset icon. Falls back to a
-  // gold monogram circle when absent.
+  // Optional base64 data URIs. Fall back to a gold monogram circle
+  // (asset) / nothing (chain) when absent.
   assetIconDataUri?: string | null;
+  chainIconDataUri?: string | null;
 }
 
 export function ogProductCard(p: ProductCardOg) {
-  const bars = p.bars.length > 0 ? p.bars : [40, 55, 48, 62, 70, 58, 75, 82, 78, 90, 86, 95];
+  const bars =
+    p.bars.length > 0
+      ? p.bars
+      : [40, 55, 48, 62, 70, 58, 75, 82, 78, 90, 86, 95, 88, 96];
 
   return new ImageResponse(
     (
@@ -270,28 +274,54 @@ export function ogProductCard(p: ProductCardOg) {
           height: "100%",
           display: "flex",
           flexDirection: "row",
-          background: BG,
-          backgroundImage: `radial-gradient(${BG_DOT} 1.5px, transparent 1.5px)`,
-          backgroundSize: "22px 22px",
+          alignItems: "center",
+          // Flagship Sunflower Gold canvas - matches the homepage
+          // hero exactly: solid gold base + a warm corner glow + the
+          // dark-ink dot raster. Layered as absolute children below
+          // because Satori doesn't reliably composite multiple
+          // comma-separated background images.
+          position: "relative",
+          background: GOLD,
           fontFamily: "Inter, system-ui, sans-serif",
         }}
       >
-        {/* Left column: centred Harvest wordmark (black) + tagline */}
+        {/* Dot raster (ink dots on gold, 12px grid) */}
         <div
           style={{
-            width: 440,
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "radial-gradient(circle, rgba(25, 23, 23, 0.07) 1px, transparent 1.3px)",
+            backgroundSize: "12px 12px",
+          }}
+        />
+        {/* Warm corner glow, top-right */}
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundImage:
+              "radial-gradient(circle at 88% 18%, rgba(255, 145, 30, 0.42) 0%, rgba(255, 185, 54, 0) 55%)",
+          }}
+        />
+
+        {/* Left column: centred Harvest wordmark (onyx on gold) + tagline */}
+        <div
+          style={{
+            width: 430,
             height: "100%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             padding: "0 40px",
+            position: "relative",
           }}
         >
           <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
             <div
               style={{
-                fontSize: 64,
+                fontSize: 66,
                 fontWeight: 700,
                 letterSpacing: "-0.03em",
                 color: INK,
@@ -305,26 +335,27 @@ export function ogProductCard(p: ProductCardOg) {
                 width: 14,
                 height: 14,
                 borderRadius: 3,
-                background: GOLD,
-                marginBottom: 8,
+                background: INK,
+                marginBottom: 9,
               }}
             />
           </div>
           <div
             style={{
               marginTop: 16,
-              fontSize: 19,
-              fontWeight: 500,
-              letterSpacing: "0.06em",
+              fontSize: 18,
+              fontWeight: 600,
+              letterSpacing: "0.08em",
               textTransform: "uppercase",
-              color: INK_3,
+              color: INK_2,
+              opacity: 0.7,
             }}
           >
             Onchain yield index
           </div>
         </div>
 
-        {/* Right column: the product card */}
+        {/* Right column: white product card (mirrors prevcard) */}
         <div
           style={{
             flex: 1,
@@ -332,6 +363,7 @@ export function ogProductCard(p: ProductCardOg) {
             display: "flex",
             alignItems: "center",
             paddingRight: 56,
+            position: "relative",
           }}
         >
           <div
@@ -339,35 +371,36 @@ export function ogProductCard(p: ProductCardOg) {
               width: "100%",
               display: "flex",
               flexDirection: "column",
+              gap: 22,
               background: "#ffffff",
-              borderRadius: 28,
-              border: "1px solid #e7e3da",
-              boxShadow: "0 24px 60px -20px rgba(25, 23, 23, 0.28)",
-              padding: "34px 38px",
+              borderRadius: 18,
+              padding: "32px 36px",
+              boxShadow:
+                "0 18px 40px -16px rgba(25, 23, 23, 0.32), 0 1px 0 rgba(25, 23, 23, 0.04)",
             }}
           >
             {/* Head: icon + name + byline */}
-            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               {p.assetIconDataUri ? (
                 <img
                   src={p.assetIconDataUri}
-                  width={56}
-                  height={56}
+                  width={52}
+                  height={52}
                   style={{ borderRadius: 999, display: "block" }}
                   alt=""
                 />
               ) : (
                 <div
                   style={{
-                    width: 56,
-                    height: 56,
+                    width: 52,
+                    height: 52,
                     borderRadius: 999,
                     background: GOLD,
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
                     color: INK,
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: 700,
                   }}
                 >
@@ -377,43 +410,47 @@ export function ogProductCard(p: ProductCardOg) {
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: p.productName.length > 26 ? 30 : 36,
-                    fontWeight: 700,
-                    letterSpacing: "-0.02em",
+                    fontSize: p.productName.length > 28 ? 28 : 33,
+                    fontWeight: 600,
+                    letterSpacing: "-0.018em",
                     color: INK,
-                    lineHeight: 1.05,
+                    lineHeight: 1.1,
                   }}
                 >
                   {p.productName}
                 </div>
                 <div
                   style={{
-                    marginTop: 8,
-                    fontSize: 18,
+                    marginTop: 7,
+                    fontSize: 17,
                     fontWeight: 500,
-                    color: INK_3,
+                    color: INK_2,
                     display: "flex",
+                    alignItems: "center",
+                    gap: 7,
                   }}
                 >
+                  {p.chainIconDataUri ? (
+                    <img
+                      src={p.chainIconDataUri}
+                      width={18}
+                      height={18}
+                      style={{ borderRadius: 999, display: "block" }}
+                      alt=""
+                    />
+                  ) : null}
                   {p.chain} · {p.protocol} · {p.vaultType}
                 </div>
               </div>
             </div>
 
             {/* Bignum */}
-            <div
-              style={{
-                marginTop: 28,
-                display: "flex",
-                alignItems: "flex-end",
-                gap: 14,
-              }}
-            >
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
               <div
                 style={{
-                  fontSize: 72,
-                  fontWeight: 700,
-                  letterSpacing: "-0.03em",
+                  fontSize: 58,
+                  fontWeight: 600,
+                  letterSpacing: "-0.022em",
                   color: INK,
                   lineHeight: 1,
                 }}
@@ -422,26 +459,58 @@ export function ogProductCard(p: ProductCardOg) {
               </div>
               <div
                 style={{
-                  fontSize: 18,
+                  fontSize: 16,
                   fontWeight: 600,
-                  letterSpacing: "0.08em",
+                  letterSpacing: "0.06em",
                   textTransform: "uppercase",
                   color: INK_3,
-                  marginBottom: 10,
+                  marginBottom: 7,
                 }}
               >
                 {p.apyLabel}
               </div>
             </div>
 
+            {/* Range pill rail (static snapshot, 30D active) */}
+            <div style={{ display: "flex" }}>
+              <div
+                style={{
+                  display: "flex",
+                  gap: 2,
+                  padding: 4,
+                  borderRadius: 999,
+                  background: "rgba(25, 23, 23, 0.04)",
+                }}
+              >
+                {["24H", "7D", "30D", "All"].map((r) => {
+                  const active = r === "30D";
+                  return (
+                    <div
+                      key={r}
+                      style={{
+                        padding: "5px 14px",
+                        borderRadius: 999,
+                        fontSize: 14,
+                        fontWeight: 600,
+                        letterSpacing: "0.04em",
+                        color: active ? GOLD : INK_3,
+                        background: active ? INK : "transparent",
+                      }}
+                    >
+                      {r}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Gold bar chart */}
             <div
               style={{
-                marginTop: 22,
-                height: 132,
+                height: 120,
                 display: "flex",
                 alignItems: "flex-end",
-                gap: 6,
+                gap: 4,
               }}
             >
               {bars.map((h, i) => (
@@ -451,43 +520,55 @@ export function ogProductCard(p: ProductCardOg) {
                     flex: 1,
                     height: `${Math.max(6, Math.min(100, h))}%`,
                     background: GOLD,
-                    borderRadius: "6px 6px 0 0",
+                    borderRadius: "3px 3px 0 0",
                   }}
                 />
               ))}
             </div>
 
-            {/* Footer chips */}
-            <div style={{ marginTop: 24, display: "flex", gap: 12 }}>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 8,
-                  padding: "8px 16px",
-                  borderRadius: 999,
-                  background: "rgba(25, 23, 23, 0.05)",
-                  fontSize: 18,
-                  fontWeight: 600,
-                  color: INK_2,
-                }}
-              >
-                TVL {p.tvlValue}
+            {/* Footer: metric tabs (APY active) + TVL chip */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
+              <div style={{ display: "flex", gap: 18 }}>
+                {["TVL", "APY", "Share price"].map((t) => {
+                  const active = t === "APY";
+                  return (
+                    <div
+                      key={t}
+                      style={{
+                        fontSize: 16,
+                        fontWeight: 600,
+                        color: active ? INK : INK_3,
+                        borderBottom: active
+                          ? `2px solid ${GOLD}`
+                          : "2px solid transparent",
+                        paddingBottom: 4,
+                      }}
+                    >
+                      {t}
+                    </div>
+                  );
+                })}
               </div>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 8,
-                  padding: "8px 16px",
+                  padding: "7px 15px",
                   borderRadius: 999,
-                  background: "rgba(255, 185, 54, 0.18)",
-                  fontSize: 18,
+                  background: "rgba(25, 23, 23, 0.05)",
+                  fontSize: 16,
                   fontWeight: 600,
-                  color: "#946208",
+                  color: INK_2,
                 }}
               >
-                {p.chain}
+                TVL {p.tvlValue}
               </div>
             </div>
           </div>
