@@ -260,7 +260,50 @@ export interface ProductCardOg {
   chainIconDataUri?: string | null;
 }
 
-export function ogProductCard(p: ProductCardOg) {
+// Brand fonts for the OG card, fetched once per build from Google
+// Fonts and cached at module scope. Inter Tight is the homepage
+// display face (the wordmark + product name + bignum); Inter is the
+// body face. Returns [] on any failure so the build never breaks -
+// Satori then falls back to its bundled default font.
+type OgFont = { name: string; data: ArrayBuffer; weight: 400 | 500 | 600 | 700; style: "normal" };
+let _ogFontsCache: OgFont[] | null = null;
+
+export async function loadOgFonts(): Promise<OgFont[]> {
+  if (_ogFontsCache) return _ogFontsCache;
+  const families: { name: string; css: string; weight: OgFont["weight"] }[] = [
+    {
+      name: "Inter Tight",
+      css: "https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600",
+      weight: 600,
+    },
+    {
+      name: "Inter",
+      css: "https://fonts.googleapis.com/css2?family=Inter:wght@500",
+      weight: 500,
+    },
+  ];
+  const fonts: OgFont[] = [];
+  for (const f of families) {
+    try {
+      // Node's fetch sends a non-browser UA, so the css2 API returns
+      // TTF src URLs (Satori needs ttf/otf, not woff2).
+      const css = await (await fetch(f.css)).text();
+      const m = css.match(/src:\s*url\((https:\/\/[^)]+\.ttf)\)/);
+      if (!m) continue;
+      const data = await (await fetch(m[1])).arrayBuffer();
+      fonts.push({ name: f.name, data, weight: f.weight, style: "normal" });
+    } catch {
+      // skip - default font fallback
+    }
+  }
+  _ogFontsCache = fonts;
+  return fonts;
+}
+
+const DISPLAY = "Inter Tight";
+const SANS = "Inter";
+
+export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
   const bars =
     p.bars.length > 0
       ? p.bars
@@ -274,15 +317,13 @@ export function ogProductCard(p: ProductCardOg) {
           height: "100%",
           display: "flex",
           flexDirection: "row",
-          alignItems: "center",
           // Flagship Sunflower Gold canvas - matches the homepage
-          // hero exactly: solid gold base + a warm corner glow + the
-          // dark-ink dot raster. Layered as absolute children below
-          // because Satori doesn't reliably composite multiple
-          // comma-separated background images.
+          // hero: solid gold + warm corner glow + dark-ink dot
+          // raster, layered as absolute children (Satori won't
+          // composite comma-separated background images).
           position: "relative",
           background: GOLD,
-          fontFamily: "Inter, system-ui, sans-serif",
+          fontFamily: SANS,
         }}
       >
         {/* Dot raster (ink dots on gold, 12px grid) */}
@@ -305,25 +346,28 @@ export function ogProductCard(p: ProductCardOg) {
           }}
         />
 
-        {/* Left column: centred Harvest wordmark (onyx on gold) + tagline */}
+        {/* Left column: Harvest wordmark + tagline, left-aligned as a
+            group, vertically centred. */}
         <div
           style={{
             width: 430,
             height: "100%",
             display: "flex",
             flexDirection: "column",
-            alignItems: "center",
+            alignItems: "flex-start",
             justifyContent: "center",
-            padding: "0 40px",
+            paddingLeft: 72,
+            paddingRight: 24,
             position: "relative",
           }}
         >
           <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
             <div
               style={{
+                fontFamily: DISPLAY,
                 fontSize: 66,
-                fontWeight: 700,
-                letterSpacing: "-0.03em",
+                fontWeight: 600,
+                letterSpacing: "-0.02em",
                 color: INK,
                 lineHeight: 1,
               }}
@@ -332,8 +376,8 @@ export function ogProductCard(p: ProductCardOg) {
             </div>
             <div
               style={{
-                width: 14,
-                height: 14,
+                width: 13,
+                height: 13,
                 borderRadius: 3,
                 background: INK,
                 marginBottom: 9,
@@ -343,9 +387,9 @@ export function ogProductCard(p: ProductCardOg) {
           <div
             style={{
               marginTop: 16,
-              fontSize: 18,
+              fontSize: 17,
               fontWeight: 600,
-              letterSpacing: "0.08em",
+              letterSpacing: "0.1em",
               textTransform: "uppercase",
               color: INK_2,
               opacity: 0.7,
@@ -355,30 +399,55 @@ export function ogProductCard(p: ProductCardOg) {
           </div>
         </div>
 
-        {/* Right column: white product card (mirrors prevcard) */}
+        {/* Right column: white product card, anchored to the bottom
+            edge so it reads as rising from the floor (like the hero
+            preview). Rounded top corners, square bottom flush to the
+            canvas edge. */}
         <div
           style={{
             flex: 1,
             height: "100%",
             display: "flex",
-            alignItems: "center",
+            flexDirection: "column",
+            justifyContent: "flex-end",
             paddingRight: 56,
             position: "relative",
           }}
         >
           <div
             style={{
+              position: "relative",
               width: "100%",
               display: "flex",
               flexDirection: "column",
               gap: 22,
               background: "#ffffff",
-              borderRadius: 18,
-              padding: "32px 36px",
+              borderRadius: "18px 18px 0 0",
+              padding: "32px 36px 38px",
               boxShadow:
-                "0 18px 40px -16px rgba(25, 23, 23, 0.32), 0 1px 0 rgba(25, 23, 23, 0.04)",
+                "0 -6px 18px -10px rgba(25, 23, 23, 0.16), 0 18px 40px -18px rgba(25, 23, 23, 0.34)",
             }}
           >
+            {/* View CTA, top-right corner */}
+            <div
+              style={{
+                position: "absolute",
+                top: 22,
+                right: 26,
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+                padding: "8px 16px",
+                borderRadius: 999,
+                background: GOLD,
+                color: INK,
+                fontSize: 15,
+                fontWeight: 600,
+              }}
+            >
+              View ↗
+            </div>
+
             {/* Head: icon + name + byline */}
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
               {p.assetIconDataUri ? (
@@ -400,8 +469,9 @@ export function ogProductCard(p: ProductCardOg) {
                     alignItems: "center",
                     justifyContent: "center",
                     color: INK,
+                    fontFamily: DISPLAY,
                     fontSize: 20,
-                    fontWeight: 700,
+                    fontWeight: 600,
                   }}
                 >
                   {p.asset.slice(0, 4)}
@@ -410,7 +480,8 @@ export function ogProductCard(p: ProductCardOg) {
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                 <div
                   style={{
-                    fontSize: p.productName.length > 28 ? 28 : 33,
+                    fontFamily: DISPLAY,
+                    fontSize: p.productName.length > 26 ? 28 : 33,
                     fontWeight: 600,
                     letterSpacing: "-0.018em",
                     color: INK,
@@ -448,6 +519,7 @@ export function ogProductCard(p: ProductCardOg) {
             <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
               <div
                 style={{
+                  fontFamily: DISPLAY,
                   fontSize: 58,
                   fontWeight: 600,
                   letterSpacing: "-0.022em",
@@ -587,6 +659,9 @@ export function ogProductCard(p: ProductCardOg) {
         />
       </div>
     ),
-    { ...OG_SIZE },
+    {
+      ...OG_SIZE,
+      ...(fonts.length > 0 ? { fonts } : {}),
+    },
   );
 }

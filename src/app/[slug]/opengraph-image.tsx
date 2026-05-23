@@ -13,7 +13,12 @@ import { getAllSlugs, getVaultBySlug, getAllSparklines } from "@/lib/data";
 import { formatAPY, formatTVL } from "@/lib/format";
 import { getCanonicalDisplayName } from "@/lib/lp-pair";
 import { stripChainSuffix } from "@/lib/format";
-import { ogProductCard, OG_SIZE, OG_CONTENT_TYPE } from "@/lib/og-template";
+import {
+  ogProductCard,
+  loadOgFonts,
+  OG_SIZE,
+  OG_CONTENT_TYPE,
+} from "@/lib/og-template";
 
 export const dynamic = "force-static";
 export const size = OG_SIZE;
@@ -95,19 +100,23 @@ export default async function ProductOg({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const fonts = await loadOgFonts();
   const vault = await getVaultBySlug(slug);
   if (!vault) {
-    return ogProductCard({
-      productName: "Strategy not found",
-      asset: "USDC",
-      chain: "Ethereum",
-      protocol: "Harvest",
-      vaultType: "Vault",
-      apyValue: "—",
-      apyLabel: "24h APY",
-      tvlValue: "—",
-      bars: [],
-    });
+    return ogProductCard(
+      {
+        productName: "Strategy not found",
+        asset: "USDC",
+        chain: "Ethereum",
+        protocol: "Harvest",
+        vaultType: "Vault",
+        apyValue: "—",
+        apyLabel: "24h APY",
+        tvlValue: "—",
+        bars: [],
+      },
+      fonts,
+    );
   }
 
   const sparklines = await getAllSparklines();
@@ -115,17 +124,20 @@ export default async function ProductOg({
     sparklines[vault.contractAddress] ??
     sparklines[vault.contractAddress.toLowerCase()];
 
-  return ogProductCard({
-    productName: getCanonicalDisplayName(vault),
-    asset: vault.asset,
-    chain: vault.chain,
-    protocol: stripChainSuffix(vault.category, vault.chain) || "Harvest",
-    vaultType: vault.vaultType ?? "Vault",
-    apyValue: vault.apy24h > 0 ? formatAPY(vault.apy24h) : "—",
-    apyLabel: "24h APY",
-    tvlValue: vault.tvl > 0 ? formatTVL(vault.tvl) : "—",
-    bars: toBars(sparkline),
-    assetIconDataUri: loadAssetIcon(vault.asset),
-    chainIconDataUri: loadChainIcon(vault.chain),
-  });
+  return ogProductCard(
+    {
+      productName: getCanonicalDisplayName(vault),
+      asset: vault.asset,
+      chain: vault.chain,
+      protocol: stripChainSuffix(vault.category, vault.chain) || "Harvest",
+      vaultType: vault.vaultType ?? "Vault",
+      apyValue: vault.apy24h > 0 ? formatAPY(vault.apy24h) : "—",
+      apyLabel: "24h APY",
+      tvlValue: vault.tvl > 0 ? formatTVL(vault.tvl) : "—",
+      bars: toBars(sparkline),
+      assetIconDataUri: loadAssetIcon(vault.asset),
+      chainIconDataUri: loadChainIcon(vault.chain),
+    },
+    fonts,
+  );
 }
