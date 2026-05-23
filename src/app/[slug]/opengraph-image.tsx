@@ -9,10 +9,9 @@
 
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { getAllSlugs, getVaultBySlug, getAllSparklines } from "@/lib/data";
-import { formatAPY, formatTVL } from "@/lib/format";
+import { getAllSlugs, getVaultBySlug } from "@/lib/data";
+import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
 import { getCanonicalDisplayName } from "@/lib/lp-pair";
-import { stripChainSuffix } from "@/lib/format";
 import {
   ogProductCard,
   loadOgFonts,
@@ -76,22 +75,13 @@ function loadChainIcon(chain: string): string | null {
   return loadIconDataUri(CHAIN_ICON_FILE[chain]);
 }
 
-// Downsample an APY sparkline (up to 30 points) to ~14 normalized
-// bar heights (0-100). Min-max scaled so the trend fills the plot;
-// flat series fall back to a mid-height bar so the chart never reads
-// as empty.
-function toBars(sparkline: number[] | undefined, count = 14): number[] {
-  if (!sparkline || sparkline.length < 2) return [];
-  const step = sparkline.length / count;
-  const sampled: number[] = [];
-  for (let i = 0; i < count; i++) {
-    sampled.push(sparkline[Math.min(sparkline.length - 1, Math.floor(i * step))]);
-  }
-  const min = Math.min(...sampled);
-  const max = Math.max(...sampled);
-  const span = max - min;
-  if (span <= 0) return sampled.map(() => 55);
-  return sampled.map((v) => 18 + ((v - min) / span) * 82);
+// Small deterministic hash of a string -> integer seed. Drives the
+// synthetic share-price growth line so each product card's curve
+// varies slightly without being random per build.
+function seedFrom(s: string): number {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) % 233280;
+  return h;
 }
 
 export default async function ProductOg({
@@ -105,38 +95,28 @@ export default async function ProductOg({
   if (!vault) {
     return ogProductCard(
       {
-        productName: "Strategy not found",
-        asset: "USDC",
-        chain: "Ethereum",
-        protocol: "Harvest",
-        vaultType: "Vault",
-        apyValue: "—",
-        apyLabel: "24h APY",
+        title: "Strategy not found",
+        byline: "No longer indexed by Harvest",
+        iconFallback: "?",
+        metricValue: "—",
         tvlValue: "—",
-        bars: [],
+        seed: 1,
       },
       fonts,
     );
   }
 
-  const sparklines = await getAllSparklines();
-  const sparkline =
-    sparklines[vault.contractAddress] ??
-    sparklines[vault.contractAddress.toLowerCase()];
-
   return ogProductCard(
     {
-      productName: getCanonicalDisplayName(vault),
-      asset: vault.asset,
-      chain: vault.chain,
-      protocol: stripChainSuffix(vault.category, vault.chain) || "Harvest",
-      vaultType: vault.vaultType ?? "Vault",
-      apyValue: vault.apy24h > 0 ? formatAPY(vault.apy24h) : "—",
-      apyLabel: "24h APY",
+      title: getCanonicalDisplayName(vault),
+      byline: `${vault.chain} · ${stripChainSuffix(vault.category, vault.chain) || "Harvest"} · ${vault.vaultType ?? "Vault"}`,
+      iconDataUri: loadAssetIcon(vault.asset),
+      iconFallback: vault.asset,
+      bylineIconDataUri: loadChainIcon(vault.chain),
+      metricValue: vault.apy24h > 0 ? formatAPY(vault.apy24h) : "—",
+      metricLabel: "Perf.",
       tvlValue: vault.tvl > 0 ? formatTVL(vault.tvl) : "—",
-      bars: toBars(sparkline),
-      assetIconDataUri: loadAssetIcon(vault.asset),
-      chainIconDataUri: loadChainIcon(vault.chain),
+      seed: seedFrom(slug),
     },
     fonts,
   );

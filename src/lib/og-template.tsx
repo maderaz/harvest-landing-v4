@@ -244,20 +244,25 @@ export function ogImageResponse(props: OgProps) {
 // sparkline-bar chart, and TVL + chain chips). Classic 1200x630
 // social ratio.
 export interface ProductCardOg {
-  productName: string;
-  asset: string;
-  chain: string;
-  protocol: string;
-  vaultType: string;
-  apyValue: string; // formatted, e.g. "5.42%"
-  apyLabel: string; // e.g. "24h APY"
-  tvlValue: string; // formatted, e.g. "$1.2M"
-  // 0-100 normalized bar heights (already scaled). 12-20 entries.
-  bars: number[];
-  // Optional base64 data URIs. Fall back to a gold monogram circle
-  // (asset) / nothing (chain) when absent.
-  assetIconDataUri?: string | null;
-  chainIconDataUri?: string | null;
+  // Head name (product name, asset ticker, or network name).
+  title: string;
+  // Sub line under the title. For products: "chain · protocol ·
+  // type". For money / network cards: "N strategies tracked" etc.
+  byline: string;
+  // Head circle icon (asset icon on product/money cards, chain icon
+  // on network cards). Monogram fallback when absent.
+  iconDataUri?: string | null;
+  iconFallback: string;
+  // Optional small icon rendered before the byline text (the chain
+  // glyph on product cards). Omitted on money / network cards.
+  bylineIconDataUri?: string | null;
+  // Headline rate (the "Perf." number), e.g. "12.4%".
+  metricValue: string;
+  metricLabel?: string; // default "Perf."
+  tvlValue: string;
+  // Varies the synthetic share-price growth line so cards aren't
+  // pixel-identical. Any integer.
+  seed?: number;
 }
 
 // Brand fonts for the OG card, fetched once per build from Google
@@ -303,11 +308,43 @@ export async function loadOgFonts(): Promise<OgFont[]> {
 const DISPLAY = "Inter Tight";
 const SANS = "Inter";
 
+// Synthetic "share price" growth line. Share price compounds upward,
+// so every card shows an always-rising curve (up and to the right)
+// with a small seed-driven wobble so cards aren't identical. Returns
+// an SVG line path + a filled area path over a 0-100 viewBox (SVG y
+// is inverted, so growth = decreasing y).
+function growthPaths(seed: number): { line: string; area: string } {
+  const n = 26;
+  let s = Math.abs(seed) % 233280 || 7;
+  const rand = () => {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+  const pts: [number, number][] = [];
+  for (let i = 0; i < n; i++) {
+    const t = i / (n - 1);
+    const base = 84 - 70 * t; // 84 (low) -> 14 (high)
+    const wob = (rand() - 0.5) * 7;
+    pts.push([t * 100, base + wob]);
+  }
+  // Force monotonic growth (y never climbs back up) so it always reads
+  // as a rising share price.
+  for (let i = 1; i < n; i++) {
+    if (pts[i][1] > pts[i - 1][1] - 0.4) {
+      pts[i][1] = pts[i - 1][1] - 0.4 - rand() * 2.2;
+    }
+  }
+  for (const p of pts) p[1] = Math.max(8, Math.min(92, p[1]));
+  const coords = pts.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`);
+  return {
+    line: "M " + coords.join(" L "),
+    area: `M 0 100 L ${coords.join(" L ")} L 100 100 Z`,
+  };
+}
+
 export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
-  const bars =
-    p.bars.length > 0
-      ? p.bars
-      : [40, 55, 48, 62, 70, 58, 75, 82, 78, 90, 86, 95, 88, 96];
+  const metricLabel = p.metricLabel ?? "Perf.";
+  const { line, area } = growthPaths(p.seed ?? 1);
 
   return new ImageResponse(
     (
@@ -450,9 +487,9 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
 
             {/* Head: icon + name + byline */}
             <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-              {p.assetIconDataUri ? (
+              {p.iconDataUri ? (
                 <img
-                  src={p.assetIconDataUri}
+                  src={p.iconDataUri}
                   width={52}
                   height={52}
                   style={{ borderRadius: 999, display: "block" }}
@@ -474,21 +511,21 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
                     fontWeight: 600,
                   }}
                 >
-                  {p.asset.slice(0, 4)}
+                  {p.iconFallback.slice(0, 4)}
                 </div>
               )}
               <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
                 <div
                   style={{
                     fontFamily: DISPLAY,
-                    fontSize: p.productName.length > 26 ? 28 : 33,
+                    fontSize: p.title.length > 26 ? 28 : 34,
                     fontWeight: 600,
                     letterSpacing: "-0.018em",
                     color: INK,
                     lineHeight: 1.1,
                   }}
                 >
-                  {p.productName}
+                  {p.title}
                 </div>
                 <div
                   style={{
@@ -501,21 +538,21 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
                     gap: 7,
                   }}
                 >
-                  {p.chainIconDataUri ? (
+                  {p.bylineIconDataUri ? (
                     <img
-                      src={p.chainIconDataUri}
+                      src={p.bylineIconDataUri}
                       width={18}
                       height={18}
                       style={{ borderRadius: 999, display: "block" }}
                       alt=""
                     />
                   ) : null}
-                  {p.chain} · {p.protocol} · {p.vaultType}
+                  {p.byline}
                 </div>
               </div>
             </div>
 
-            {/* Bignum */}
+            {/* Bignum: the headline rate (Perf.) */}
             <div style={{ display: "flex", alignItems: "flex-end", gap: 12 }}>
               <div
                 style={{
@@ -527,7 +564,7 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
                   lineHeight: 1,
                 }}
               >
-                {p.apyValue}
+                {p.metricValue}
               </div>
               <div
                 style={{
@@ -539,12 +576,42 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
                   marginBottom: 7,
                 }}
               >
-                {p.apyLabel}
+                {metricLabel}
               </div>
             </div>
 
-            {/* Range pill rail (static snapshot, 30D active) */}
-            <div style={{ display: "flex" }}>
+            {/* Share-price growth chart (always rising) */}
+            <div style={{ display: "flex", height: 132 }}>
+              <svg
+                width="100%"
+                height="100%"
+                viewBox="0 0 100 100"
+                preserveAspectRatio="none"
+                style={{ display: "block" }}
+              >
+                <path d={area} fill="rgba(255, 185, 54, 0.20)" />
+                <path
+                  d={line}
+                  fill="none"
+                  stroke={GOLD}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+
+            {/* Footer: metric toggle as a dark-bg pill rail (Share
+                price active) + TVL chip with the real number. */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+              }}
+            >
               <div
                 style={{
                   display: "flex",
@@ -554,73 +621,18 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
                   background: "rgba(25, 23, 23, 0.04)",
                 }}
               >
-                {["24H", "7D", "30D", "All"].map((r) => {
-                  const active = r === "30D";
-                  return (
-                    <div
-                      key={r}
-                      style={{
-                        padding: "5px 14px",
-                        borderRadius: 999,
-                        fontSize: 14,
-                        fontWeight: 600,
-                        letterSpacing: "0.04em",
-                        color: active ? GOLD : INK_3,
-                        background: active ? INK : "transparent",
-                      }}
-                    >
-                      {r}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Gold bar chart */}
-            <div
-              style={{
-                height: 120,
-                display: "flex",
-                alignItems: "flex-end",
-                gap: 4,
-              }}
-            >
-              {bars.map((h, i) => (
-                <div
-                  key={i}
-                  style={{
-                    flex: 1,
-                    height: `${Math.max(6, Math.min(100, h))}%`,
-                    background: GOLD,
-                    borderRadius: "3px 3px 0 0",
-                  }}
-                />
-              ))}
-            </div>
-
-            {/* Footer: metric tabs (APY active) + TVL chip */}
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                gap: 12,
-              }}
-            >
-              <div style={{ display: "flex", gap: 18 }}>
-                {["TVL", "APY", "Share price"].map((t) => {
-                  const active = t === "APY";
+                {["TVL", "Perf.", "Share price"].map((t) => {
+                  const active = t === "Share price";
                   return (
                     <div
                       key={t}
                       style={{
-                        fontSize: 16,
+                        padding: "6px 15px",
+                        borderRadius: 999,
+                        fontSize: 15,
                         fontWeight: 600,
-                        color: active ? INK : INK_3,
-                        borderBottom: active
-                          ? `2px solid ${GOLD}`
-                          : "2px solid transparent",
-                        paddingBottom: 4,
+                        color: active ? GOLD : INK_3,
+                        background: active ? INK : "transparent",
                       }}
                     >
                       {t}
@@ -632,7 +644,7 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  padding: "7px 15px",
+                  padding: "8px 16px",
                   borderRadius: 999,
                   background: "rgba(25, 23, 23, 0.05)",
                   fontSize: 16,
