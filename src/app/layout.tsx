@@ -3,7 +3,7 @@ import { Inter, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
 import { Analytics } from "@/components/analytics";
-import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/constants";
+import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, OG_BASE_URL } from "@/lib/constants";
 import "./globals.css";
 
 // Self-hosted at build time by next/font. Eliminates the render-blocking
@@ -39,7 +39,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL(SITE_URL),
+  metadataBase: new URL(OG_BASE_URL),
   title: {
     default: DEFAULT_TITLE,
     template: `%s | ${SITE_NAME}`,

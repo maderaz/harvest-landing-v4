@@ -311,40 +311,33 @@ const SANS = "Inter";
 // Synthetic "share price" growth line. Share price compounds upward,
 // so every card shows an always-rising curve (up and to the right)
 // with a small seed-driven wobble so cards aren't identical. Returns
-// an SVG line path + a filled area path over a 0-100 viewBox (SVG y
-// is inverted, so growth = decreasing y).
-function growthPaths(seed: number): { line: string; area: string } {
-  const n = 26;
+// an array of bar heights (0-100) that climb left -> right, so the
+// bar chart always reads as a rising share price.
+function growthBars(seed: number, n = 22): number[] {
   let s = Math.abs(seed) % 233280 || 7;
   const rand = () => {
     s = (s * 9301 + 49297) % 233280;
     return s / 233280;
   };
-  const pts: [number, number][] = [];
+  const bars: number[] = [];
+  let last = 0;
   for (let i = 0; i < n; i++) {
     const t = i / (n - 1);
-    const base = 84 - 70 * t; // 84 (low) -> 14 (high)
-    const wob = (rand() - 0.5) * 7;
-    pts.push([t * 100, base + wob]);
+    const base = 22 + 74 * t; // 22 (low) -> 96 (high)
+    const wob = (rand() - 0.5) * 10;
+    // Keep each bar at least a touch above the previous so the trend
+    // never visibly dips - a growing share price.
+    let h = Math.max(base + wob, last + 1.5);
+    h = Math.max(8, Math.min(100, h));
+    bars.push(h);
+    last = h;
   }
-  // Force monotonic growth (y never climbs back up) so it always reads
-  // as a rising share price.
-  for (let i = 1; i < n; i++) {
-    if (pts[i][1] > pts[i - 1][1] - 0.4) {
-      pts[i][1] = pts[i - 1][1] - 0.4 - rand() * 2.2;
-    }
-  }
-  for (const p of pts) p[1] = Math.max(8, Math.min(92, p[1]));
-  const coords = pts.map(([x, y]) => `${x.toFixed(2)} ${y.toFixed(2)}`);
-  return {
-    line: "M " + coords.join(" L "),
-    area: `M 0 100 L ${coords.join(" L ")} L 100 100 Z`,
-  };
+  return bars;
 }
 
 export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
   const metricLabel = p.metricLabel ?? "Perf.";
-  const { line, area } = growthPaths(p.seed ?? 1);
+  const bars = growthBars(p.seed ?? 1);
 
   return new ImageResponse(
     (
@@ -580,26 +573,28 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
               </div>
             </div>
 
-            {/* Share-price growth chart (always rising) */}
-            <div style={{ display: "flex", height: 132 }}>
-              <svg
-                width="100%"
-                height="100%"
-                viewBox="0 0 100 100"
-                preserveAspectRatio="none"
-                style={{ display: "block" }}
-              >
-                <path d={area} fill="rgba(255, 185, 54, 0.20)" />
-                <path
-                  d={line}
-                  fill="none"
-                  stroke={GOLD}
-                  strokeWidth={2.5}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  vectorEffect="non-scaling-stroke"
+            {/* Share-price growth chart - rising gold bars (always
+                trends up). Chart area bumped ~25% taller (132 -> 165)
+                to give the whole card more height. */}
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 5,
+                height: 165,
+              }}
+            >
+              {bars.map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: `${Math.max(6, Math.min(100, h))}%`,
+                    background: GOLD,
+                    borderRadius: "4px 4px 0 0",
+                  }}
                 />
-              </svg>
+              ))}
             </div>
 
             {/* Footer: metric toggle as a dark-bg pill rail (Share
