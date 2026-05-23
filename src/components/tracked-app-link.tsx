@@ -22,6 +22,7 @@ import {
   deriveSource,
   parseUserAgent,
   fetchGeo,
+  readCachedGeo,
   getSessionId,
   getConsent,
 } from "@/lib/analytics";
@@ -88,12 +89,12 @@ function appendSessionParam(href: string, sessionId: string): string {
   }
 }
 
-async function fireClick(opts: {
+function fireClick(opts: {
   href: string;
   cta: string;
   vaultSlug?: string;
   vaultAddress?: string;
-}): Promise<void> {
+}): void {
   try {
     if (typeof window === "undefined") return;
     if (window.location.pathname.startsWith("/admin")) return;
@@ -103,11 +104,19 @@ async function fireClick(opts: {
     const referrer = document.referrer || "";
     const source = deriveSource(referrer);
     const ua = parseUserAgent(navigator.userAgent);
-    // Geo is sessionStorage-cached on first call so this is free
-    // after the visitor's first tracked event.
-    const geo = await fetchGeo();
+    // Read geo from the sessionStorage cache SYNCHRONOUSLY. We must
+    // not `await fetchGeo()` here: on the visitor's first click of a
+    // session geo isn't cached yet, so awaiting it does a network
+    // round-trip (200-800ms, sometimes failing) - and if the CTA
+    // navigates the same tab, the page unloads before the insert is
+    // ever sent and the click is lost. That's why outbound_clicks
+    // was under-recording. Fire the insert immediately with whatever
+    // geo we have (often {} on first click), then warm the cache in
+    // the background for subsequent clicks.
+    const geo = readCachedGeo();
+    void fetchGeo();
 
-    await supabaseInsert("outbound_clicks", {
+    void supabaseInsert("outbound_clicks", {
       session_id: sessionId,
       source_page: window.location.pathname,
       source_cta: opts.cta,

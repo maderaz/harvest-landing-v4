@@ -108,9 +108,20 @@ for (const [vault, buckets] of perVaultBuckets) {
     if (b) lastVal = b.value;
     filled.set(k, lastVal);
   }
-  // Stamp today with the live vaults.json number (source of truth
-  // for the most recent point - covers indexer-lag undercount).
-  if (alive) filled.set(todayKey, liveNow);
+  // Stamp today with the live vaults.json number ONLY when it's
+  // higher than the forward-filled history value. The live number
+  // exists to recover indexer lag (history undercounting the latest
+  // day). When the live snapshot reads LOWER than the last history
+  // point - which happens daily because vaults.json carries a
+  // partial / lagging subset of vaults - overwriting today with it
+  // produces a phantom drop on the final bar (the live sum can sit
+  // $1-2M under the forward-filled trend). Guarding the override to
+  // "upward only" keeps the most-recent bar consistent with the
+  // rest of the series instead of dipping to the live undercount.
+  if (alive) {
+    const filledToday = filled.get(todayKey) ?? lastVal;
+    if (liveNow > filledToday) filled.set(todayKey, liveNow);
+  }
   filledPerVault.set(vault, filled);
 }
 

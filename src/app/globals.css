@@ -5476,6 +5476,11 @@ body:has(.methodology-page) {
   border-bottom: 1px solid var(--hub-line);
   backdrop-filter: blur(6px);
 }
+/* Admin pages hide the public 52px topnav, so the sticky thead must
+   pin at the very top of the scroll container instead of 52px down.
+   With top: 52px the header floated down over the first data row,
+   making the inventory look like it started at row 2. */
+.admin-shell .hub-thead { top: 0; }
 .hub-th {
   font-family: var(--sans);
   font-size: 13px;

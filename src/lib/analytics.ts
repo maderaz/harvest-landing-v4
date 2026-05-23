@@ -247,3 +247,18 @@ export async function fetchGeo(): Promise<Geo> {
   }
   return out;
 }
+
+// Synchronous read of whatever geo is already cached in
+// sessionStorage. Returns {} when nothing is cached yet. Used by
+// click tracking, which must fire its insert on the same tick as the
+// click (before the browser can unload the page on navigation) and
+// therefore cannot await the async network fetchGeo().
+export function readCachedGeo(): Geo {
+  try {
+    const cached = sessionStorage.getItem(GEO_CACHE_KEY);
+    if (cached) return JSON.parse(cached) as Geo;
+  } catch {
+    // ignore
+  }
+  return {};
+}

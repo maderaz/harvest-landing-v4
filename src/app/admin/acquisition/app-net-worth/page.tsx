@@ -169,6 +169,18 @@ export default function UserNetworthPage() {
             connections={connections}
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
+            metric="balance"
+            title="Daily wallet net worth"
+            noun="total wallet balance"
+            showTimeframe
+          />
+          <ChartSection
+            connections={connections}
+            timeframe={timeframe}
+            onTimeframeChange={setTimeframe}
+            metric="harvest_balance"
+            title="Daily harvest balance"
+            noun="harvest_balance"
           />
           <NetworthCard stats={stats} totalConnections={connections.length} />
           <TableSection
@@ -225,10 +237,21 @@ function ChartSection({
   connections,
   timeframe,
   onTimeframeChange,
+  metric,
+  title,
+  noun,
+  showTimeframe = false,
 }: {
   connections: WalletConnection[];
   timeframe: Timeframe;
   onTimeframeChange: (tf: Timeframe) => void;
+  // Which per-wallet field to aggregate. "balance" = the wallet's
+  // entire net worth; "harvest_balance" = just the portion held in
+  // Harvest vaults. Two charts, same binning, different field.
+  metric: "balance" | "harvest_balance";
+  title: string;
+  noun: string;
+  showTimeframe?: boolean;
 }) {
   const [hovered, setHovered] = useState<Bin | null>(null);
 
@@ -252,9 +275,9 @@ function ChartSection({
         (now - new Date(c.connected_at).getTime()) / dayMs,
       );
       if (daysAgo < 0 || daysAgo >= days) continue;
-      const hbal = Number(c.harvest_balance ?? 0);
-      if (!Number.isFinite(hbal) || hbal <= 0) continue;
-      sums[days - 1 - daysAgo] += hbal;
+      const val = Number(c[metric] ?? 0);
+      if (!Number.isFinite(val) || val <= 0) continue;
+      sums[days - 1 - daysAgo] += val;
     }
     const bins: Bin[] = sums.map((v, i) => ({
       v,
@@ -277,21 +300,23 @@ function ChartSection({
       peak: Math.max(0, ...bins.filter((b) => !b.outlier).map((b) => b.v)),
       outlierDays: bins.filter((b) => b.outlier).length,
     };
-  }, [connections, days]);
+  }, [connections, days, metric]);
 
   return (
     <section className="uni-hub-section" style={{ marginTop: 0 }}>
       <header className="uni-hub-section-head">
         <div className="aq-section-head-left">
           <h2 className="uni-hub-section-title">
-            Daily harvest balance, last {days} days
+            {title}, last {days} days
           </h2>
           <span className="uni-hub-section-meta">
             today {formatTVL(latest)} · peak {formatTVL(peak)}/day
             {outlierDays > 0 ? ` · ${outlierDays} outlier day(s)` : ""}
           </span>
         </div>
-        <TimeframeSelector value={timeframe} onChange={onTimeframeChange} />
+        {showTimeframe && (
+          <TimeframeSelector value={timeframe} onChange={onTimeframeChange} />
+        )}
       </header>
       <div className="aq-chart-card">
         <div className="aq-chart-bignum">
@@ -299,8 +324,8 @@ function ChartSection({
         </div>
         <div className="aq-chart-bignum-label">
           {hovered
-            ? `${hovered.outlier ? "outlier snapshot, " : ""}harvest_balance ${labelForDaysAgo(hovered.daysAgo)}`
-            : `cumulative harvest_balance snapshots over the trailing ${days} days`}
+            ? `${hovered.outlier ? "outlier snapshot, " : ""}${noun} ${labelForDaysAgo(hovered.daysAgo)}`
+            : `cumulative ${noun} snapshots over the trailing ${days} days`}
         </div>
 
         <div className="aq-chart">
