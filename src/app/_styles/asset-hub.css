@@ -1098,6 +1098,33 @@ body:has(.uni-hub-test) {
   }
 }
 
+/* App Clicks + recent-events tables: show the FULL value in every
+   cell - no ellipsis. Long source_page paths, vault slugs and
+   target URLs wrap onto multiple lines inside their column instead
+   of truncating or bleeding into the neighbour. Rows grow taller as
+   needed; the column tracks keep their min-widths and the table
+   still scrolls horizontally on narrow viewports. Cells top-align
+   so a 3-line URL doesn't vertically centre against a 1-line time
+   stamp. The short fixed-width columns (time, session) stay on one
+   line - wrapping a timestamp reads as broken. */
+.uni-hub-test .aq-clicks-table .hub-row {
+  align-items: start;
+}
+.uni-hub-test .aq-clicks-table .hub-cell {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.4;
+}
+.uni-hub-test .aq-clicks-table .aq-cell-time,
+.uni-hub-test .aq-clicks-table .aq-cell-session {
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
 
 /* ====================================================================
    Admin responsive

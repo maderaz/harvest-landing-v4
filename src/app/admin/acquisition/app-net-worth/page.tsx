@@ -494,9 +494,15 @@ function TableSection({
                     {formatTime(c.connected_at)}
                   </span>
                   <span className="hub-cell aq-cell-vault">
-                    <span className="aq-vault-link" title={c.wallet_address}>
+                    <a
+                      href={`https://debank.com/profile/${c.wallet_address}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="aq-vault-link"
+                      title={`Open ${c.wallet_address} on DeBank`}
+                    >
                       {truncateAddress(c.wallet_address)}
-                    </span>
+                    </a>
                   </span>
                   <span className="hub-cell">
                     {bal > 0 ? formatTVL(bal) : "—"}
