@@ -574,14 +574,14 @@ export function ogProductCard(p: ProductCardOg, fonts: OgFont[] = []) {
             </div>
 
             {/* Share-price growth chart - rising gold bars (always
-                trends up). Chart area bumped ~25% taller (132 -> 165)
-                to give the whole card more height. */}
+                trends up). Chart area tall (198px) so the whole card
+                reads as a substantial, screenshot-like preview. */}
             <div
               style={{
                 display: "flex",
                 alignItems: "flex-end",
                 gap: 5,
-                height: 165,
+                height: 198,
               }}
             >
               {bars.map((h, i) => (

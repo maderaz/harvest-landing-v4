@@ -17,20 +17,16 @@ export const SITE_DESCRIPTION =
   "Compare every DeFi yield strategy we track, across Ethereum, Base, Arbitrum and more. Live APY for USDC, USDT, ETH and Bitcoin, refreshed daily.";
 export const SITE_URL = "https://harvest.finance";
 
-// Base URL used for metadataBase (so og:image / twitter:image
-// absolute URLs resolve to a domain the scraper can actually fetch).
-// Resolution order at build time:
-//   1. NEXT_PUBLIC_SITE_URL    - explicit override
-//   2. VERCEL_PROJECT_PRODUCTION_URL - the project's stable production
-//      domain (currently harvest-flame.vercel.app; auto-updates to
-//      harvest.finance once that's the production domain)
-//   3. SITE_URL                - the eventual canonical domain
-// Canonical links + sitemap + JSON-LD keep using SITE_URL; only the
-// OG/Twitter image base follows the live deploy so previews work on
-// the staging domain before the harvest.finance cutover.
+// Base URL used for metadataBase, so og:image / twitter:image
+// ABSOLUTE urls resolve to a domain the social scraper can actually
+// fetch. Until the harvest.finance cutover the project lives on the
+// Vercel staging domain, so that's the default here - otherwise the
+// emitted og:image would point at harvest.finance (which doesn't
+// serve this build yet) and Telegram / X / etc. show no preview.
+//
+// At cutover: set NEXT_PUBLIC_SITE_URL=https://harvest.finance in
+// the Vercel env (it takes priority), or flip the default below.
+// Canonical links + sitemap + JSON-LD keep using SITE_URL.
 export const OG_BASE_URL = (
-  process.env.NEXT_PUBLIC_SITE_URL ||
-  (process.env.VERCEL_PROJECT_PRODUCTION_URL
-    ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-    : SITE_URL)
+  process.env.NEXT_PUBLIC_SITE_URL || "https://harvest-flame.vercel.app"
 ).replace(/\/$/, "");
