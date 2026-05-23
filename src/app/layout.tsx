@@ -63,8 +63,15 @@ export const metadata: Metadata = {
   publisher: SITE_NAME,
   robots: { index: true, follow: true },
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
+    // SVG favicon (H + pip on the gold dotted tile) for the browser
+    // tab; PNG fallback for clients that don't take SVG, and the
+    // apple-touch icon. The raster /icon.png also backs the JSON-LD
+    // logo + the static-page OG fallback, so it stays.
+    icon: [
+      { url: "/icon.svg", type: "image/svg+xml" },
+      { url: "/icon.png", type: "image/png", sizes: "any" },
+    ],
+    shortcut: "/icon.svg",
     apple: "/icon.png",
   },
   openGraph: {
