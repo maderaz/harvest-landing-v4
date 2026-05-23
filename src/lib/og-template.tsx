@@ -236,3 +236,276 @@ export function ogImageResponse(props: OgProps) {
     { ...OG_SIZE },
   );
 }
+
+// Product-card OG renderer. Mirrors the hero / studio 1:1 preview
+// card: a left column with the centred Harvest wordmark (black) and
+// a right column holding a white product card filled with real
+// vault data (asset icon, name, byline, big APY number, a gold
+// sparkline-bar chart, and TVL + chain chips). Classic 1200x630
+// social ratio.
+export interface ProductCardOg {
+  productName: string;
+  asset: string;
+  chain: string;
+  protocol: string;
+  vaultType: string;
+  apyValue: string; // formatted, e.g. "5.42%"
+  apyLabel: string; // e.g. "24h APY"
+  tvlValue: string; // formatted, e.g. "$1.2M"
+  // 0-100 normalized bar heights (already scaled). 12-20 entries.
+  bars: number[];
+  // Optional base64 data URI for the asset icon. Falls back to a
+  // gold monogram circle when absent.
+  assetIconDataUri?: string | null;
+}
+
+export function ogProductCard(p: ProductCardOg) {
+  const bars = p.bars.length > 0 ? p.bars : [40, 55, 48, 62, 70, 58, 75, 82, 78, 90, 86, 95];
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "row",
+          background: BG,
+          backgroundImage: `radial-gradient(${BG_DOT} 1.5px, transparent 1.5px)`,
+          backgroundSize: "22px 22px",
+          fontFamily: "Inter, system-ui, sans-serif",
+        }}
+      >
+        {/* Left column: centred Harvest wordmark (black) + tagline */}
+        <div
+          style={{
+            width: 440,
+            height: "100%",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "0 40px",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 10 }}>
+            <div
+              style={{
+                fontSize: 64,
+                fontWeight: 700,
+                letterSpacing: "-0.03em",
+                color: INK,
+                lineHeight: 1,
+              }}
+            >
+              Harvest
+            </div>
+            <div
+              style={{
+                width: 14,
+                height: 14,
+                borderRadius: 3,
+                background: GOLD,
+                marginBottom: 8,
+              }}
+            />
+          </div>
+          <div
+            style={{
+              marginTop: 16,
+              fontSize: 19,
+              fontWeight: 500,
+              letterSpacing: "0.06em",
+              textTransform: "uppercase",
+              color: INK_3,
+            }}
+          >
+            Onchain yield index
+          </div>
+        </div>
+
+        {/* Right column: the product card */}
+        <div
+          style={{
+            flex: 1,
+            height: "100%",
+            display: "flex",
+            alignItems: "center",
+            paddingRight: 56,
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              background: "#ffffff",
+              borderRadius: 28,
+              border: "1px solid #e7e3da",
+              boxShadow: "0 24px 60px -20px rgba(25, 23, 23, 0.28)",
+              padding: "34px 38px",
+            }}
+          >
+            {/* Head: icon + name + byline */}
+            <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
+              {p.assetIconDataUri ? (
+                <img
+                  src={p.assetIconDataUri}
+                  width={56}
+                  height={56}
+                  style={{ borderRadius: 999, display: "block" }}
+                  alt=""
+                />
+              ) : (
+                <div
+                  style={{
+                    width: 56,
+                    height: 56,
+                    borderRadius: 999,
+                    background: GOLD,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    color: INK,
+                    fontSize: 22,
+                    fontWeight: 700,
+                  }}
+                >
+                  {p.asset.slice(0, 4)}
+                </div>
+              )}
+              <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+                <div
+                  style={{
+                    fontSize: p.productName.length > 26 ? 30 : 36,
+                    fontWeight: 700,
+                    letterSpacing: "-0.02em",
+                    color: INK,
+                    lineHeight: 1.05,
+                  }}
+                >
+                  {p.productName}
+                </div>
+                <div
+                  style={{
+                    marginTop: 8,
+                    fontSize: 18,
+                    fontWeight: 500,
+                    color: INK_3,
+                    display: "flex",
+                  }}
+                >
+                  {p.chain} · {p.protocol} · {p.vaultType}
+                </div>
+              </div>
+            </div>
+
+            {/* Bignum */}
+            <div
+              style={{
+                marginTop: 28,
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 14,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 72,
+                  fontWeight: 700,
+                  letterSpacing: "-0.03em",
+                  color: INK,
+                  lineHeight: 1,
+                }}
+              >
+                {p.apyValue}
+              </div>
+              <div
+                style={{
+                  fontSize: 18,
+                  fontWeight: 600,
+                  letterSpacing: "0.08em",
+                  textTransform: "uppercase",
+                  color: INK_3,
+                  marginBottom: 10,
+                }}
+              >
+                {p.apyLabel}
+              </div>
+            </div>
+
+            {/* Gold bar chart */}
+            <div
+              style={{
+                marginTop: 22,
+                height: 132,
+                display: "flex",
+                alignItems: "flex-end",
+                gap: 6,
+              }}
+            >
+              {bars.map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: `${Math.max(6, Math.min(100, h))}%`,
+                    background: GOLD,
+                    borderRadius: "6px 6px 0 0",
+                  }}
+                />
+              ))}
+            </div>
+
+            {/* Footer chips */}
+            <div style={{ marginTop: 24, display: "flex", gap: 12 }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 16px",
+                  borderRadius: 999,
+                  background: "rgba(25, 23, 23, 0.05)",
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: INK_2,
+                }}
+              >
+                TVL {p.tvlValue}
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  padding: "8px 16px",
+                  borderRadius: 999,
+                  background: "rgba(255, 185, 54, 0.18)",
+                  fontSize: 18,
+                  fontWeight: 600,
+                  color: "#946208",
+                }}
+              >
+                {p.chain}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right-edge gold accent stripe */}
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            right: 0,
+            width: 8,
+            height: "100%",
+            background: `linear-gradient(180deg, ${GOLD} 0%, ${GOLD_SOFT} 100%)`,
+          }}
+        />
+      </div>
+    ),
+    { ...OG_SIZE },
+  );
+}
