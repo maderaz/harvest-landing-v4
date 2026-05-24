@@ -94,13 +94,16 @@ function classifyChannel(raw: string | null): string {
   if (s.includes("t.me") || s.includes("telegram")) return "Telegram";
   if (s.includes("discord")) return "Discord";
   if (s.includes("medium")) return "Medium";
+  // Referred by our own index site (e.g. landed in the app from the
+  // homepage CTA) - owned traffic, not external.
+  if (s.includes("harvest.finance")) return "Homepage";
   if (s === "direct" || s === "(direct)" || s === "(none)") return "Direct";
   return "Referral";
 }
 
 function channelTone(
   name: string,
-): "search" | "ai" | "social" | "direct" | "neutral" {
+): "search" | "ai" | "social" | "owned" | "direct" | "neutral" {
   if (name === "Google" || name === "Bing" || name === "DuckDuckGo") return "search";
   if (name === "ChatGPT" || name === "Perplexity" || name === "Claude" || name === "Gemini") return "ai";
   if (
@@ -112,18 +115,20 @@ function channelTone(
     name === "Medium"
   )
     return "social";
+  if (name === "Homepage") return "owned";
   if (name === "Direct") return "direct";
   return "neutral";
 }
 
 const SAMPLE_CHANNELS: ReadonlyArray<{ name: string; weight: number }> = [
-  { name: "Google", weight: 32 },
-  { name: "Direct", weight: 22 },
-  { name: "ChatGPT", weight: 13 },
-  { name: "X / Twitter", weight: 10 },
-  { name: "Referral", weight: 8 },
+  { name: "Google", weight: 24 },
+  { name: "Homepage", weight: 18 },
+  { name: "Direct", weight: 16 },
+  { name: "ChatGPT", weight: 12 },
+  { name: "X / Twitter", weight: 8 },
   { name: "Reddit", weight: 6 },
-  { name: "Bing", weight: 5 },
+  { name: "Referral", weight: 6 },
+  { name: "Bing", weight: 6 },
   { name: "Perplexity", weight: 4 },
 ];
 const SAMPLE_COUNTRIES: ReadonlyArray<{ iso: string; weight: number }> = [
@@ -523,16 +528,17 @@ function formatTime(iso: string): string {
   }
 }
 
-// "just now", "Nmin ago", "Nh ago" up to a day, then the absolute date.
+// Compact relative age: "now", "Nm", "Nh" up to a day, then the
+// absolute date. Full timestamp is on the cell title for hover.
 function relativeTime(iso: string): string {
   const then = new Date(iso).getTime();
   if (Number.isNaN(then)) return iso;
   const diffMs = Date.now() - then;
-  if (diffMs < 60_000) return "just now";
+  if (diffMs < 60_000) return "now";
   const min = Math.floor(diffMs / 60_000);
-  if (min < 60) return `${min}min ago`;
+  if (min < 60) return `${min}m`;
   const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr}h ago`;
+  if (hr < 24) return `${hr}h`;
   return formatTime(iso);
 }
 

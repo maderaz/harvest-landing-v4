@@ -1060,6 +1060,9 @@ body:has(.uni-hub-test) {
 /* Social referrers (Reddit, X, Discord, etc.) get a purple of their
    own so they read as active traffic, not the muted "no signal" grey. */
 .uni-hub-test .lf-badge-social { background: rgba(147, 51, 234, 0.13); color: #9333ea; }
+/* Owned traffic (landed in the app from our own homepage) reads gold,
+   the brand colour, so first-party referrals stand out. */
+.uni-hub-test .lf-badge-owned { background: rgba(255, 185, 54, 0.18); color: #946208; }
 .uni-hub-test .lf-badge-neutral { background: var(--uni-tint); color: var(--uni-ink-2); }
 .uni-hub-test .lf-badge-direct {
   background: transparent;
@@ -1069,6 +1072,7 @@ body:has(.uni-hub-test) {
 :root[data-theme="dark"] .uni-hub-test .lf-badge-search { background: rgba(96, 165, 250, 0.16); color: #93c5fd; }
 :root[data-theme="dark"] .uni-hub-test .lf-badge-ai { background: rgba(167, 139, 250, 0.18); color: #c4b5fd; }
 :root[data-theme="dark"] .uni-hub-test .lf-badge-social { background: rgba(192, 132, 252, 0.18); color: #d8b4fe; }
+:root[data-theme="dark"] .uni-hub-test .lf-badge-owned { background: rgba(255, 185, 54, 0.2); color: var(--uni-gold-soft); }
 
 /* Live Feed filter bar: activity pills (reusing the timeframe pill
    styling) on the left, a source dropdown on the right. */
