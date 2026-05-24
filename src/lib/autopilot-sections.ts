@@ -341,9 +341,17 @@ export function buildPerformanceOverview(
     // Anchor "30 days ago" to the latest indexed TVL reading, not
     // wall-clock now, so the comparison point is real indexed data.
     const tvlLatestTs = tvlSorted[tvlSorted.length - 1].timestamp;
-    const target = tvlLatestTs - 30 * 86400;
-    const past = closestPoint(tvlSorted, target);
-    if (past && past.value > 0 && past.timestamp <= tvlLatestTs - 7 * 86400) {
+    const windowStart = tvlLatestTs - 30 * 86400;
+    // Baseline = earliest reading INSIDE the 30-day window, matching the
+    // 30-day stats grid exactly. A closest-to-30-days-ago lookup could
+    // instead return a reading just OUTSIDE the window when there's a
+    // gap around the 30-day mark (e.g. a pre-deposit $30K point 40 days
+    // old), producing a "+573% from $30K" line that flatly contradicts
+    // the grid's $203K 30-day low.
+    const past = tvlSorted.find(
+      (p) => p.timestamp >= windowStart && p.value > 0,
+    );
+    if (past && past.timestamp <= tvlLatestTs - 7 * 86400) {
       const current = vault.tvl;
       const pastLabel = hasFullMonth ? "30 days ago" : "at launch";
       const windowLabel = hasFullMonth

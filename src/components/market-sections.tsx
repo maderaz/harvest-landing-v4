@@ -243,17 +243,32 @@ function ClosingBenchmark({
   const tvlSorted = [...sameAsset].sort((a, b) => b.tvl - a.tvl);
   const tvlRank = tvlSorted.findIndex((v) => v.id === vault.id) + 1;
 
+  // See EcosystemIntro: when the product APY and cohort average round to
+  // the same displayed value, report "roughly in line with" instead of a
+  // sub-percent relative delta that contradicts the visible numbers (and
+  // drop the per-month-delta clause, which would read "~0 per month").
+  const sameRounded = vault.apy24h.toFixed(2) === avgApy.toFixed(2);
   return (
     <p style={{ marginTop: 14 }}>
       Among the {total} {vault.asset} strategies we currently monitor,
       this product ranks <strong>#{rank}</strong>. Its{" "}
       {formatAPY(vault.apy24h)} yield runs{" "}
-      <strong>
-        {Math.abs(vsAvg).toFixed(1)}% {direction}
-      </strong>{" "}
-      than the cohort average of {formatAPY(avgApy)}. On a {ref.label}{" "}
-      position, that&apos;s {deltaPhrase} per month {direction} than the
-      cohort average. {apySummary} It currently holds{" "}
+      {sameRounded ? (
+        <>
+          <strong>roughly in line with</strong> the cohort average of{" "}
+          {formatAPY(avgApy)}.{" "}
+        </>
+      ) : (
+        <>
+          <strong>
+            {Math.abs(vsAvg).toFixed(1)}% {direction}
+          </strong>{" "}
+          than the cohort average of {formatAPY(avgApy)}. On a {ref.label}{" "}
+          position, that&apos;s {deltaPhrase} per month {direction} than the
+          cohort average.{" "}
+        </>
+      )}
+      {apySummary} It currently holds{" "}
       {formatTVL(vault.tvl)} in TVL, ranking #{tvlRank} of {total} by
       TVL.
     </p>
@@ -462,12 +477,27 @@ function EcosystemIntro({
   // average below already cover the comparison; the previous
   // "delivering well above that benchmark" was an intensifier
   // comparison violating the universal hard rule.
+  // When the product's APY and the network average round to the same
+  // displayed value (common when 2-3 products share a yield, e.g. two
+  // BTC vaults both shown at 0.41%), a sub-percent relative delta like
+  // "0.3% higher" contradicts the visibly-equal numbers. Say "roughly in
+  // line with" instead so the prose matches what's on screen.
+  const sameRounded = vault.apy24h.toFixed(2) === networkAvg.toFixed(2);
   return (
     <p>
       On <Link href={`/${chainToSlug(vault.chain)}`}>{vault.chain}</Link>, this
       product{"'"}s yield runs{" "}
-      <strong>{Math.abs(vsNetAvg).toFixed(1)}% {vsNetAvg >= 0 ? "higher" : "lower"}</strong> than
-      the network average across the {vault.asset} strategies we monitor. By APY it ranks{" "}
+      {sameRounded ? (
+        <>
+          <strong>roughly in line with</strong> the network average
+        </>
+      ) : (
+        <>
+          <strong>{Math.abs(vsNetAvg).toFixed(1)}% {vsNetAvg >= 0 ? "higher" : "lower"}</strong>{" "}
+          than the network average
+        </>
+      )}{" "}
+      across the {vault.asset} strategies we monitor. By APY it ranks{" "}
       <strong>#{rank} of {sameChainCount}</strong> in that set. Yields on {vault.chain} for {vault.asset} have averaged {networkAvg.toFixed(2)}% in our index.
     </p>
   );
