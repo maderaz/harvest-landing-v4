@@ -62,8 +62,20 @@ export function HistoricalNarrative({ history, asset }: Props) {
     );
     const first = sorted[0].sharePrice;
     const last = sorted[sorted.length - 1].sharePrice;
+    // Annualize over the canonical tracked age (the APY-history span,
+    // which is the "Tracked for N days" value in the header / Strategy
+    // details / Yield trajectory) rather than the share-price span,
+    // which can run a few days longer (e.g. 260 vs 256) and contradict
+    // the rest of the page. The share-price endpoints stay real, so the
+    // sentence remains self-consistent: first -> last over N days yields
+    // the stated CAGR.
+    const apyStamps = history.apyHistory
+      .filter((p) => p.apy >= 0)
+      .map((p) => p.timestamp);
     const daySpan =
-      (sorted[sorted.length - 1].timestamp - sorted[0].timestamp) / 86400;
+      apyStamps.length >= 2
+        ? (Math.max(...apyStamps) - Math.min(...apyStamps)) / 86400
+        : (sorted[sorted.length - 1].timestamp - sorted[0].timestamp) / 86400;
     // Suppress the lifetime CAGR sentence when the share-price series
     // contains a re-index / migration step. Annualising across a
     // discontinuity produces a growth figure (e.g. 93%) that

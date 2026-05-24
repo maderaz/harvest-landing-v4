@@ -91,9 +91,6 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
     return Math.round((Math.max(...stamps) - Math.min(...stamps)) / 86400);
   };
   const apyTrackedDays = trackedDaysOf(allApy.map((p) => p.timestamp));
-  const tvlTrackedDays = trackedDaysOf(
-    history.tvlHistory.filter((p) => p.value > 0).map((p) => p.timestamp),
-  );
 
   const apyValues = apy30d.map((p) => p.apy);
   const allApyValues = allApy.map((p) => p.apy);
@@ -142,14 +139,17 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
   // Window prefix for the range rows. On vaults with under a month of
   // history "30D" overstates the window, so we show the real span
   // ("13D Low") - never a 30-day claim the data can't back.
-  const apyWin = apyTrackedDays > 0 && apyTrackedDays < 30 ? `${apyTrackedDays}D` : "30D";
-  const tvlWin = tvlTrackedDays > 0 && tvlTrackedDays < 30 ? `${tvlTrackedDays}D` : "30D";
+  // One canonical day count for BOTH grids (the APY-history span, which
+  // is the "Tracked for N days" age in the header). The two grids must
+  // never disagree on the window or lifetime span - e.g. "256d" vs
+  // "248d" side by side reads as a data-integrity fault to YMYL crawlers.
+  const win = apyTrackedDays > 0 && apyTrackedDays < 30 ? `${apyTrackedDays}D` : "30D";
 
   const apyRows = apyStats
     ? [
-        { label: `${apyWin} Low`, value: formatAPY(apyStats.low) },
-        { label: `${apyWin} High`, value: formatAPY(apyStats.high) },
-        { label: `${apyWin} Average`, value: formatAPY(apyStats.avg) },
+        { label: `${win} Low`, value: formatAPY(apyStats.low) },
+        { label: `${win} High`, value: formatAPY(apyStats.high) },
+        { label: `${win} Average`, value: formatAPY(apyStats.avg) },
         { label: `Lifetime avg (${apyTrackedDays}d)`, value: formatAPY(apyStats.lifetimeAvg) },
         { label: "Median APY", value: formatAPY(apyStats.med) },
         { label: "Best day", value: `${formatAPY(apyStats.bestDay.apy)} · ${formatDate(apyStats.bestDay.timestamp)}` },
@@ -161,10 +161,10 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
 
   const tvlRows = tvlStats
     ? [
-        { label: `${tvlWin} Low`, value: formatTVL(tvlStats.low) },
-        { label: `${tvlWin} High`, value: formatTVL(tvlStats.high) },
-        { label: `${tvlWin} Average`, value: formatTVL(tvlStats.avg) },
-        { label: `Lifetime avg (${tvlTrackedDays}d)`, value: formatTVL(tvlStats.lifetimeAvg) },
+        { label: `${win} Low`, value: formatTVL(tvlStats.low) },
+        { label: `${win} High`, value: formatTVL(tvlStats.high) },
+        { label: `${win} Average`, value: formatTVL(tvlStats.avg) },
+        { label: `Lifetime avg (${apyTrackedDays}d)`, value: formatTVL(tvlStats.lifetimeAvg) },
         { label: "Median TVL", value: formatTVL(tvlStats.med) },
         { label: "Best day", value: `${formatTVL(tvlStats.bestDay.value)} · ${formatDate(tvlStats.bestDay.timestamp)}` },
         { label: "Worst day", value: `${formatTVL(tvlStats.worstDay.value)} · ${formatDate(tvlStats.worstDay.timestamp)}` },
