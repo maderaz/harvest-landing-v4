@@ -1,19 +1,24 @@
 "use client";
 
 // Admin > Live Feed. Reverse-chron stream of every deposit and
-// withdrawal we index, with the acquisition channel that brought the
-// wallet in. Time / Event / Product / Wallet / Tx are live off
-// vault_events_prod; the Source column is sample data until the .app
-// persists wallet<->hsid (the index session id we append to outbound
-// app links) into Supabase. Once that link exists, Source resolves
-// real via first-touch:
+// withdrawal we index, with the acquisition channel + country that
+// brought the wallet in. Time / Event / Product / Wallet / Tx are live
+// off vault_events_prod; Source and Country are sample data until the
+// .app persists wallet<->hsid (the index session id we append to
+// outbound app links) into Supabase. Once that link exists, both
+// resolve real via first-touch:
 //   event.wallet -> wallet_session_links.hsid
-//                -> frontpage_visits.session_id -> .source -> channel
+//                -> frontpage_visits.session_id -> .source / .country
 // taking the earliest session per wallet as the acquisition source.
+//
+// Visual language is the public ranking table (.uni-hub-table), not the
+// dense admin recent-events table, so it reads cleanly and reflows to
+// labelled cards on mobile with no horizontal scroll.
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { supabaseSelectAll } from "@/lib/supabase";
+import { CountryFlag } from "@/components/admin/country-flag";
 import "../../_styles/asset-hub.css";
 
 interface VaultEventRow {
@@ -29,35 +34,77 @@ interface VaultEventRow {
 }
 
 const FEED_LIMIT = 200;
-const FEED_COLS = "150px 130px 105px minmax(180px, 1.6fr) 130px 60px";
+const FEED_COLS = "150px 138px 104px 96px minmax(160px, 1.6fr) 132px 58px";
 
 // Sample acquisition channels, weighted to look realistic and assigned
 // deterministically per wallet (a wallet's first-touch source is fixed,
-// so the same wallet always shows the same channel). This whole block
-// is replaced by the real frontpage_visits.source join once hsid
-// tracking lands; the column shape does not change.
+// so the same wallet always shows the same channel). Replaced by the
+// real frontpage_visits.source join once hsid tracking lands; the
+// column shape does not change.
 const SAMPLE_CHANNELS: ReadonlyArray<{ name: string; weight: number }> = [
-  { name: "Google", weight: 34 },
-  { name: "Direct", weight: 24 },
-  { name: "ChatGPT", weight: 12 },
+  { name: "Google", weight: 32 },
+  { name: "Direct", weight: 22 },
+  { name: "ChatGPT", weight: 13 },
   { name: "X / Twitter", weight: 10 },
   { name: "Referral", weight: 8 },
   { name: "Reddit", weight: 6 },
-  { name: "Bing", weight: 4 },
-  { name: "Perplexity", weight: 2 },
+  { name: "Bing", weight: 5 },
+  { name: "Perplexity", weight: 4 },
 ];
 
+// Sample first-touch countries (ISO 3166-1 alpha-2), same deterministic
+// per-wallet assignment. Replaced by frontpage_visits.country.
+const SAMPLE_COUNTRIES: ReadonlyArray<{ iso: string; weight: number }> = [
+  { iso: "US", weight: 28 },
+  { iso: "GB", weight: 11 },
+  { iso: "DE", weight: 9 },
+  { iso: "IN", weight: 8 },
+  { iso: "BR", weight: 7 },
+  { iso: "FR", weight: 6 },
+  { iso: "CA", weight: 5 },
+  { iso: "NL", weight: 5 },
+  { iso: "PL", weight: 4 },
+  { iso: "JP", weight: 4 },
+  { iso: "SG", weight: 3 },
+  { iso: "AU", weight: 3 },
+  { iso: "KR", weight: 3 },
+  { iso: "AE", weight: 2 },
+  { iso: "TR", weight: 2 },
+];
+
+function hashStr(s: string, salt: number): number {
+  let h = salt >>> 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return h;
+}
+
+function weightedPick<T extends { weight: number }>(
+  items: ReadonlyArray<T>,
+  hash: number,
+): T {
+  let n = hash % 100;
+  for (const it of items) {
+    if (n < it.weight) return it;
+    n -= it.weight;
+  }
+  return items[items.length - 1];
+}
+
 function sampleChannel(wallet: string): string {
-  let h = 0;
-  for (let i = 0; i < wallet.length; i++) {
-    h = (h * 31 + wallet.charCodeAt(i)) >>> 0;
-  }
-  let n = h % 100;
-  for (const c of SAMPLE_CHANNELS) {
-    if (n < c.weight) return c.name;
-    n -= c.weight;
-  }
-  return "Direct";
+  return weightedPick(SAMPLE_CHANNELS, hashStr(wallet, 7)).name;
+}
+
+function sampleCountry(wallet: string): string {
+  return weightedPick(SAMPLE_COUNTRIES, hashStr(wallet, 1009)).iso;
+}
+
+// Channel -> badge tone. Search engines read blue, AI assistants purple,
+// Direct stays plain (outlined), everything else neutral.
+function channelTone(name: string): "search" | "ai" | "direct" | "neutral" {
+  if (name === "Google" || name === "Bing") return "search";
+  if (name === "ChatGPT" || name === "Perplexity") return "ai";
+  if (name === "Direct") return "direct";
+  return "neutral";
 }
 
 // Fallback stream shown only if vault_events_prod is empty, so the page
@@ -165,10 +212,10 @@ export default function LiveFeedPage() {
             <h1 className="uni-hub-h1">Live Feed</h1>
             <p className="uni-hub-sub aq-sub-full">
               Every deposit and withdrawal we index, newest first, with the
-              acquisition channel that first brought the wallet in. Time,
-              event, product, wallet and tx are live; Source is first-touch
-              and resolves real once the app writes wallet-to-hsid into
-              Supabase.
+              acquisition channel and country that first brought the wallet
+              in. Time, event, product, wallet and tx are live; Source and
+              Country are first-touch and resolve real once the app writes
+              wallet-to-hsid into Supabase.
             </p>
           </div>
         </div>
@@ -183,8 +230,8 @@ export default function LiveFeedPage() {
             </h2>
             <span className="uni-hub-section-meta">
               {eventsAreSample
-                ? "preview stream, sample events and sample source pending the hsid wallet-session join"
-                : `${rows.length} most recent events · Source column is sample data pending hsid wallet-session tracking`}
+                ? "preview stream, sample events with sample source and country pending the hsid wallet-session join"
+                : `${rows.length} most recent events · Source and Country are sample data pending hsid wallet-session tracking`}
             </span>
           </div>
         </header>
@@ -198,72 +245,78 @@ export default function LiveFeedPage() {
         {loading ? (
           <div className="uni-hub-empty">Loading feed…</div>
         ) : (
-          <div className="hub-table-wrap aq-recent-wrap lf-wrap">
-            <div className="hub-table aq-clicks-table aq-recent-table lf-table">
+          <div className="lf-scroll">
+            <div className="uni-hub-table lf-table">
               <div
-                className="hub-thead"
+                className="uni-hub-thead"
                 style={{ gridTemplateColumns: FEED_COLS }}
               >
-                <span className="hub-th">Time</span>
-                <span className="hub-th">Source</span>
-                <span className="hub-th">Event</span>
-                <span className="hub-th">Product</span>
-                <span className="hub-th">Wallet</span>
-                <span className="hub-th">Tx</span>
+                <span className="uni-hub-th">Time</span>
+                <span className="uni-hub-th">Source</span>
+                <span className="uni-hub-th">Country</span>
+                <span className="uni-hub-th">Event</span>
+                <span className="uni-hub-th">Product</span>
+                <span className="uni-hub-th">Wallet</span>
+                <span className="uni-hub-th">Tx</span>
               </div>
-              {rows.map((e) => (
-                <div
-                  key={`${e.tx_hash}-${e.log_index}`}
-                  className="hub-row"
-                  style={{ gridTemplateColumns: FEED_COLS }}
-                >
-                  <span className="hub-cell aq-cell-time" data-label="Time">
-                    {formatTime(e.block_timestamp)}
-                  </span>
-                  <span className="hub-cell" data-label="Source">
-                    <span className="lf-source">
-                      {sampleChannel(e.wallet_address)}
-                    </span>
-                  </span>
-                  <span className="hub-cell" data-label="Event">
-                    <span
-                      style={{
-                        color:
-                          e.event_type === "deposit" ? "#15803d" : "#b91c1c",
-                        fontWeight: 600,
-                      }}
+              <div className="uni-hub-tbody">
+                {rows.map((e) => {
+                  const channel = sampleChannel(e.wallet_address);
+                  return (
+                    <div
+                      key={`${e.tx_hash}-${e.log_index}`}
+                      className="uni-hub-row"
+                      style={{ gridTemplateColumns: FEED_COLS }}
                     >
-                      {e.event_type}
-                    </span>
-                  </span>
-                  <span className="hub-cell aq-cell-vault" data-label="Product">
-                    {e.vault_slug ? (
-                      <Link href={`/${e.vault_slug}`} className="aq-vault-link">
-                        {e.vault_slug}
-                      </Link>
-                    ) : (
-                      <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
-                        {shortenAddress(e.vault_address)}
+                      <span className="uni-hub-cell lf-time" data-label="Time">
+                        {formatTime(e.block_timestamp)}
                       </span>
-                    )}
-                  </span>
-                  <span className="hub-cell" data-label="Wallet">
-                    <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
-                      {shortenAddress(e.wallet_address)}
-                    </span>
-                  </span>
-                  <span className="hub-cell" data-label="Tx">
-                    <a
-                      href={txLink(e.chain, e.tx_hash)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="aq-vault-link"
-                    >
-                      view
-                    </a>
-                  </span>
-                </div>
-              ))}
+                      <span className="uni-hub-cell" data-label="Source">
+                        <span className={`lf-badge lf-badge-${channelTone(channel)}`}>
+                          {channel}
+                        </span>
+                      </span>
+                      <span className="uni-hub-cell" data-label="Country">
+                        <CountryFlag country={sampleCountry(e.wallet_address)} />
+                      </span>
+                      <span className="uni-hub-cell" data-label="Event">
+                        <span className={`lf-event lf-event-${e.event_type}`}>
+                          {e.event_type}
+                        </span>
+                      </span>
+                      <span
+                        className="uni-hub-cell lf-product"
+                        data-label="Product"
+                      >
+                        {e.vault_slug ? (
+                          <Link href={`/${e.vault_slug}`} className="lf-product-link">
+                            {e.vault_slug}
+                          </Link>
+                        ) : (
+                          <span className="lf-mono">
+                            {shortenAddress(e.vault_address)}
+                          </span>
+                        )}
+                      </span>
+                      <span className="uni-hub-cell" data-label="Wallet">
+                        <span className="lf-mono">
+                          {shortenAddress(e.wallet_address)}
+                        </span>
+                      </span>
+                      <span className="uni-hub-cell" data-label="Tx">
+                        <a
+                          href={txLink(e.chain, e.tx_hash)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="lf-tx"
+                        >
+                          view
+                        </a>
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
