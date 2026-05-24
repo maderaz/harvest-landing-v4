@@ -48,6 +48,19 @@ export function HistoricalNarrative({ history, asset }: Props) {
   // misleading bullets.
   if (computeTrackedDays(history) < 30) return null;
 
+  // Canonical tracked age = APY-history span (the "Tracked for N days"
+  // header value). Used to keep every derived duration on this card (the
+  // lifetime-CAGR window and the drawdown duration) from exceeding it:
+  // the share-price / TVL series can start earlier than APY indexing
+  // began, which otherwise prints day counts longer than the header.
+  const apyStamps = history.apyHistory
+    .filter((p) => p.apy >= 0)
+    .map((p) => p.timestamp);
+  const trackedDays =
+    apyStamps.length >= 2
+      ? Math.round((Math.max(...apyStamps) - Math.min(...apyStamps)) / 86400)
+      : 0;
+
   const ref = depositRef(asset);
 
   const items: Array<{
@@ -69,12 +82,9 @@ export function HistoricalNarrative({ history, asset }: Props) {
     // the rest of the page. The share-price endpoints stay real, so the
     // sentence remains self-consistent: first -> last over N days yields
     // the stated CAGR.
-    const apyStamps = history.apyHistory
-      .filter((p) => p.apy >= 0)
-      .map((p) => p.timestamp);
     const daySpan =
-      apyStamps.length >= 2
-        ? (Math.max(...apyStamps) - Math.min(...apyStamps)) / 86400
+      trackedDays > 0
+        ? trackedDays
         : (sorted[sorted.length - 1].timestamp - sorted[0].timestamp) / 86400;
     // Suppress the lifetime CAGR sentence when the share-price series
     // contains a re-index / migration step. Annualising across a
@@ -141,7 +151,14 @@ export function HistoricalNarrative({ history, asset }: Props) {
     }
 
     if (maxDrawdownPct >= 15 && peakVal > 0) {
-      const daysDown = Math.round((troughTs - peakTs) / 86400);
+      // Cap at the canonical tracked age. The peak can predate APY
+      // indexing (the TVL series starts earlier), which would otherwise
+      // print a drawdown duration longer than the "Tracked for N days"
+      // header - a longevity contradiction crawlers flag.
+      const daysDown = Math.min(
+        Math.round((troughTs - peakTs) / 86400),
+        trackedDays > 0 ? trackedDays : Number.POSITIVE_INFINITY,
+      );
       const currentTvl = sorted[sorted.length - 1].value;
       const atPeak = currentTvl >= peakVal * 0.9;
       const currentVsPeakPct = peakVal > 0
