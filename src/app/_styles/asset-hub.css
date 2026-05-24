@@ -941,6 +941,27 @@ body:has(.uni-hub-test) {
   gap: 4px;
   min-width: 0;
 }
+/* Inline "sample data" marker beside a section title - flags seeded
+   preview rows so they are never mistaken for live data. */
+.uni-hub-test .aq-sample-badge {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--uni-gold-bg);
+  border: 1px solid var(--uni-gold-soft);
+  color: #946208;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+:root[data-theme="dark"] .uni-hub-test .aq-sample-badge {
+  color: var(--uni-gold-soft);
+}
 .uni-hub-test .aq-timeframe {
   display: inline-flex;
   gap: 2px;

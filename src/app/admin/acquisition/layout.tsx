@@ -5,6 +5,7 @@
 
 import "../../_styles/asset-hub.css";
 import { AcquisitionFunnelNav } from "@/components/admin/acquisition-funnel-nav";
+import { AcquisitionCohortFunnel } from "@/components/admin/acquisition-cohort-funnel";
 
 export const metadata = {
   title: "Acquisition | Admin",
@@ -30,6 +31,8 @@ export default function AcquisitionLayout({
           </div>
         </div>
       </header>
+
+      <AcquisitionCohortFunnel />
 
       <AcquisitionFunnelNav />
 

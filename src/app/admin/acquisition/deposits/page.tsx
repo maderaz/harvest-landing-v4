@@ -2,16 +2,17 @@
 
 // Acquisition funnel - step 04: Deposits (TVL).
 // Network-wide Harvest TVL aggregated from per-vault history, paired
-// with a daily new-wallets chart and a cohort funnel that walks
-// visits -> clicks -> new wallet connects -> depositors for the
-// selected timeframe.
+// with a daily new-wallets chart, a deposits-with-source feed, and the
+// raw onchain event stream. The visits -> clicks -> wallets ->
+// depositors cohort funnel now lives in the shared acquisition layout
+// (fixed 180-day window), above the step nav, so it shows on every
+// page rather than only here.
 //
 // Data sources:
 //  - Network TVL: precomputed at build time by
 //    scripts/build-network-tvl.mjs into src/data/network-tvl-daily.json
 //  - Wallet connects: wallet_connections_prod (Supabase)
-//  - Visits / clicks: frontpage_visits and outbound_clicks (Supabase),
-//    used for the cohort funnel.
+//  - Deposits / events: vault_events_prod (Supabase)
 //
 // Depositor proxy: a wallet is treated as a "depositor" if its
 // harvest_balance is currently > 0 (and below the outlier cap). This
@@ -46,16 +47,11 @@ interface VaultEventRow {
   event_type: "deposit" | "withdraw" | "transfer";
   wallet_address: string;
   amount_shares: string;
-}
-
-interface VisitRow {
-  created_at: string;
-  session_id: string;
-}
-
-interface ClickRow {
-  created_at: string;
-  session_id: string;
+  // Only set on the seeded sample rows below, to demonstrate the
+  // Frontend/External split before the real attribution join exists.
+  // Live Supabase rows never carry it (source is derived from
+  // wallet_connections_prod membership instead).
+  demoSource?: "Frontend" | "External";
 }
 
 interface DailyTvlPoint {
@@ -76,8 +72,6 @@ const DAY_MS = 86_400_000;
 
 export default function DepositsPage() {
   const [wallets, setWallets] = useState<WalletRow[] | null>(null);
-  const [visits, setVisits] = useState<VisitRow[] | null>(null);
-  const [clicks, setClicks] = useState<ClickRow[] | null>(null);
   const [events, setEvents] = useState<VaultEventRow[] | null>(null);
   const [deposits30d, setDeposits30d] = useState<VaultEventRow[] | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -88,26 +82,19 @@ export default function DepositsPage() {
     (async () => {
       try {
         // Last 7 days for the mixed-event feed; 30 days for the
-        // deposits-with-source table below the charts; everything else
-        // gets the full table.
+        // deposits-with-source table below the charts. The visit/click
+        // cohort funnel now lives in the shared acquisition layout
+        // (last 180 days), so this page no longer pulls those tables.
         const eventCutoff = new Date(
           Date.now() - 7 * 86_400_000,
         ).toISOString();
         const deposit30dCutoff = new Date(
           Date.now() - 30 * 86_400_000,
         ).toISOString();
-        const [w, v, c, e, d30] = await Promise.all([
+        const [w, e, d30] = await Promise.all([
           supabaseSelectAll<WalletRow>(
             "wallet_connections_prod",
             "select=wallet_address,connected_at,harvest_balance,balance&order=connected_at.desc",
-          ),
-          supabaseSelectAll<VisitRow>(
-            "frontpage_visits",
-            "select=created_at,session_id&order=created_at.desc",
-          ),
-          supabaseSelectAll<ClickRow>(
-            "outbound_clicks",
-            "select=created_at,session_id&order=created_at.desc",
           ),
           supabaseSelectAll<VaultEventRow>(
             "vault_events_prod",
@@ -120,8 +107,6 @@ export default function DepositsPage() {
         ]);
         if (cancelled) return;
         setWallets(w);
-        setVisits(v);
-        setClicks(c);
         setEvents(e);
         setDeposits30d(d30);
       } catch (e) {
@@ -170,7 +155,7 @@ export default function DepositsPage() {
       ? walletStats.trackedBalance / walletStats.activeDepositors
       : null;
 
-  const loading = wallets === null || visits === null || clicks === null;
+  const loading = wallets === null;
 
   return (
     <>
@@ -232,15 +217,14 @@ export default function DepositsPage() {
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
           />
-          <FunnelSection
-            visits={visits!}
-            clicks={clicks!}
-            wallets={uniqueWallets}
-            timeframe={timeframe}
-          />
           <DepositsWithSourceSection
-            deposits={deposits30d ?? []}
+            deposits={
+              deposits30d && deposits30d.length > 0
+                ? deposits30d
+                : SAMPLE_DEPOSITS_30D
+            }
             wallets={uniqueWallets}
+            sample={!deposits30d || deposits30d.length === 0}
           />
           <RecentDepositorsSection wallets={uniqueWallets} />
           <VaultEventsSection events={events ?? []} />
@@ -468,173 +452,6 @@ function labelForDaysAgo(d: number): string {
   return `${d} days ago`;
 }
 
-// ──────────────────────────────────────────────────────────────────
-// Funnel - cohort attribution for the selected timeframe. Four
-// counts (visits / clicks / new wallets / depositors) with three
-// step-conversion rates between them. No claim that a specific
-// visitor became a specific depositor; this is rate-level only and
-// honest about that until wallet_session_links is populated by the
-// app side.
-// ──────────────────────────────────────────────────────────────────
-
-function FunnelSection({
-  visits,
-  clicks,
-  wallets,
-  timeframe,
-}: {
-  visits: VisitRow[];
-  clicks: ClickRow[];
-  wallets: WalletRow[];
-  timeframe: Timeframe;
-}) {
-  const oldestMs = useMemo(() => {
-    if (visits.length === 0) return null;
-    let oldest = Infinity;
-    for (const v of visits) {
-      const t = new Date(v.created_at).getTime();
-      if (t < oldest) oldest = t;
-    }
-    return Number.isFinite(oldest) ? oldest : null;
-  }, [visits]);
-  const days = resolveDays(timeframe, oldestMs);
-
-  const cohort = useMemo(() => {
-    const now = Date.now();
-    const cutoff = now - days * DAY_MS;
-    let visitCount = 0;
-    let visitSessions = new Set<string>();
-    for (const v of visits) {
-      const t = new Date(v.created_at).getTime();
-      if (t >= cutoff) {
-        visitCount++;
-        visitSessions.add(v.session_id);
-      }
-    }
-    let clickCount = 0;
-    let clickSessions = new Set<string>();
-    for (const c of clicks) {
-      const t = new Date(c.created_at).getTime();
-      if (t >= cutoff) {
-        clickCount++;
-        clickSessions.add(c.session_id);
-      }
-    }
-    let newWallets = 0;
-    let depositors = 0;
-    let depositorTvl = 0;
-    for (const w of wallets) {
-      const t = new Date(w.connected_at).getTime();
-      if (t >= cutoff) {
-        newWallets++;
-        const b =
-          typeof w.harvest_balance === "number" ? w.harvest_balance : 0;
-        if (b > 0 && b < WALLET_OUTLIER_CAP) {
-          depositors++;
-          depositorTvl += b;
-        }
-      }
-    }
-    return {
-      visitCount,
-      uniqueVisitors: visitSessions.size,
-      clickCount,
-      clickSessions: clickSessions.size,
-      newWallets,
-      depositors,
-      depositorTvl,
-    };
-  }, [visits, clicks, wallets, days]);
-
-  const pct = (num: number, den: number): string =>
-    den === 0 ? "—" : `${((num / den) * 100).toFixed(1)}%`;
-
-  return (
-    <section className="uni-hub-section">
-      <header className="uni-hub-section-head">
-        <div className="aq-section-head-left">
-          <h2 className="uni-hub-section-title">
-            Cohort funnel — last {days} days
-          </h2>
-          <span className="uni-hub-section-meta">
-            cohort rates, not individual attribution (pending
-            wallet_session_links)
-          </span>
-        </div>
-      </header>
-
-      <div className="aq-cohort-funnel">
-        <CohortStep
-          rank="01"
-          label="Visits"
-          value={cohort.visitCount.toLocaleString("en-US")}
-          sub={`${cohort.uniqueVisitors.toLocaleString("en-US")} unique sessions`}
-        />
-        <CohortArrow
-          rate={pct(cohort.clickCount, cohort.visitCount)}
-          caption="click-through"
-        />
-        <CohortStep
-          rank="02"
-          label="App clicks"
-          value={cohort.clickCount.toLocaleString("en-US")}
-          sub={`${cohort.clickSessions.toLocaleString("en-US")} sessions clicked`}
-        />
-        <CohortArrow
-          rate={pct(cohort.newWallets, cohort.clickSessions)}
-          caption="connect rate (clicks to new wallets)"
-        />
-        <CohortStep
-          rank="03"
-          label="New wallets"
-          value={cohort.newWallets.toLocaleString("en-US")}
-          sub="first-seen in this window"
-        />
-        <CohortArrow
-          rate={pct(cohort.depositors, cohort.newWallets)}
-          caption="deposit rate (new wallets to depositors)"
-        />
-        <CohortStep
-          rank="04"
-          label="Depositors"
-          value={cohort.depositors.toLocaleString("en-US")}
-          sub={`${formatUsd(cohort.depositorTvl)} TVL`}
-        />
-      </div>
-    </section>
-  );
-}
-
-function CohortStep({
-  rank,
-  label,
-  value,
-  sub,
-}: {
-  rank: string;
-  label: string;
-  value: string;
-  sub: string;
-}) {
-  return (
-    <div className="aq-cohort-step">
-      <div className="aq-cohort-rank">{rank}</div>
-      <div className="aq-cohort-label">{label}</div>
-      <div className="aq-cohort-value">{value}</div>
-      <div className="aq-cohort-sub">{sub}</div>
-    </div>
-  );
-}
-
-function CohortArrow({ rate, caption }: { rate: string; caption: string }) {
-  return (
-    <div className="aq-cohort-arrow">
-      <div className="aq-cohort-rate">{rate}</div>
-      <div className="aq-cohort-arrow-caption">{caption}</div>
-    </div>
-  );
-}
-
 function formatUsd(n: number): string {
   if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(2)}B`;
   if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
@@ -774,12 +591,74 @@ function shortenAddress(addr: string): string {
 const DEPOSITS_SOURCE_COLS =
   "150px minmax(180px, 1.6fr) 100px 120px minmax(110px, 0.9fr) 130px 70px";
 
+// ──────────────────────────────────────────────────────────────────
+// Seeded sample deposits. Rendered only when the live 30-day query
+// returns nothing, so the operator can see the table fully wired
+// (vault links, chain, source split, shares, tx link) before the
+// onchain indexer has any real Deposit events. Timestamps are relative
+// to now so rows always read as recent; the set is dropped the moment
+// vault_events_prod returns real deposits. Spans all six chains and a
+// realistic Frontend/External mix.
+// ──────────────────────────────────────────────────────────────────
+
+const SAMPLE_DEPOSIT_SEED: ReadonlyArray<{
+  slug: string;
+  chain: string;
+  source: "Frontend" | "External";
+  wallet: string;
+  shares: string;
+  hoursAgo: number;
+}> = [
+  { slug: "usdc-aerodrome-aero-base", chain: "Base", source: "Frontend", wallet: "0x8a3fce21b9d47a0c6f5e2d18b4c7a90e3f1d6b24", shares: "5200000000000000000000", hoursAgo: 2 },
+  { slug: "eth-baseswap-bswap-base", chain: "Base", source: "External", wallet: "0x4d7e9a1c0b3f8e25d6a4c91278fb0e3a5c8d2f17", shares: "4180000000000000000", hoursAgo: 7 },
+  { slug: "usdc-morpho-clearstar-core-v2-ethereum", chain: "Ethereum", source: "Frontend", wallet: "0xb1c5f8093a2e7d46c0918bf35e7a2d4c6098e1f3", shares: "18500000000000000000000", hoursAgo: 19 },
+  { slug: "eth-stake-dao-onlyboost-ethereum", chain: "Ethereum", source: "Frontend", wallet: "0x2f9a4c7e1d05b836a9c4e2f70d18b35c6a4e9d02", shares: "12400000000000000000", hoursAgo: 33 },
+  { slug: "usdc-morpho-gauntlet-balanced-v2-arbitrum", chain: "Arbitrum", source: "External", wallet: "0xc6e0a91f4d2b75308e1c6a9b04f3d27e5a8c1b96", shares: "940000000000000000000", hoursAgo: 52 },
+  { slug: "usdc-autopilot-arbitrum", chain: "Arbitrum", source: "Frontend", wallet: "0x7d31b8e0a45c29f6d108e3b7c05a4f29d6e1c830", shares: "6750000000000000000000", hoursAgo: 88 },
+  { slug: "usdc-aave-polygon", chain: "Polygon", source: "External", wallet: "0x0e9c4a6f3b18d7254a09f1c83b6e0d472a5c91fe", shares: "2300000000000000000000", hoursAgo: 140 },
+  { slug: "usdc-venus-zksync", chain: "zkSync", source: "Frontend", wallet: "0x93b1e7c0a4d28f56309c1b8e4a07f2d96c5e3a18", shares: "1180000000000000000000", hoursAgo: 210 },
+  { slug: "wbtc-reactorfusion-zksync", chain: "zkSync", source: "Frontend", wallet: "0x5c8e2a9140d7b36f0e1a4c97285bd03e6a9f1c47", shares: "85000000000000000", hoursAgo: 380 },
+  { slug: "usdc-hypurr-hyperevm", chain: "HyperEVM", source: "External", wallet: "0xa07f3c91e6b2d8540c19a3f7b08e2d45c6019e8b", shares: "8900000000000000000000", hoursAgo: 640 },
+];
+
+const SAMPLE_TX_HASHES: readonly string[] = [
+  "0x9f2c1ab73e08d45c6a1f90b3e27d4c85a06f1e93b2d7c40859a1e6f3c08d24b71",
+  "0x3b7e0d92a14c6f85309e1b4a7c0d28f6e5a9c1340b8d6e2f7019a4c83e6d50f29",
+  "0xc1a6e3920d74b85f016c9a3e7b0d42f8e5690a1c34b7d6e2f80193a4c56e0d8b",
+  "0x6d04b9e2a71c8f3508e1a6c94b0d27f3e5a8019c6d2b4e7f0a91c83560de4f218",
+  "0x2e8c1f04a93d76b850c1e6a4b079d2f3568a0c194e7b6d2f8013a9c46e05d8f37",
+  "0xb40e9c1a73d28f650a1c9e34b7f08d265c0a9143e6b8d7f201943c856e0d2f49a",
+  "0x7c1a9e30b46d2f8501e6c9a47b08d3f25690a1c834e7b6d0f29143a85c6e0d97b",
+  "0x0a9e6c3140b87d2f5e019a4c7b36d802596a1c0e349b7d6f8021a94c5e63d08f4",
+  "0xe6309c1a47b02d8f5106a9c34e7b0d28f495a6c10394b8d7e02f1a9c465e0d83c",
+  "0x4b8e1c0a93d672f50e1a96c47b30d8f2650a9c1e348b7d6f0219a4c8356e0df21",
+];
+
+function buildSampleDeposits(): VaultEventRow[] {
+  return SAMPLE_DEPOSIT_SEED.map((s, i) => ({
+    tx_hash: SAMPLE_TX_HASHES[i],
+    log_index: i,
+    block_timestamp: new Date(Date.now() - s.hoursAgo * 3_600_000).toISOString(),
+    chain: s.chain,
+    vault_address: "0x0000000000000000000000000000000000000000",
+    vault_slug: s.slug,
+    event_type: "deposit" as const,
+    wallet_address: s.wallet,
+    amount_shares: s.shares,
+    demoSource: s.source,
+  }));
+}
+
+const SAMPLE_DEPOSITS_30D: VaultEventRow[] = buildSampleDeposits();
+
 function DepositsWithSourceSection({
   deposits,
   wallets,
+  sample = false,
 }: {
   deposits: VaultEventRow[];
   wallets: WalletRow[] | null;
+  sample?: boolean;
 }) {
   const knownWallets = useMemo(() => {
     const s = new Set<string>();
@@ -791,6 +670,14 @@ function DepositsWithSourceSection({
     }
     return s;
   }, [wallets]);
+
+  // Seeded sample rows carry an explicit demoSource; live rows derive
+  // "Frontend" from ever having connected through the Harvest app.
+  const isFrontendRow = (d: VaultEventRow): boolean => {
+    if (d.demoSource) return d.demoSource === "Frontend";
+    const a = (d.wallet_address || "").toLowerCase();
+    return !!a && knownWallets.has(a);
+  };
 
   const sorted = useMemo(
     () =>
@@ -806,11 +693,11 @@ function DepositsWithSourceSection({
     let frontend = 0;
     let external = 0;
     for (const d of deposits) {
-      const a = (d.wallet_address || "").toLowerCase();
-      if (a && knownWallets.has(a)) frontend++;
+      if (isFrontendRow(d)) frontend++;
       else external++;
     }
     return { frontend, external, total: deposits.length };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deposits, knownWallets]);
 
   const display = sorted.slice(0, 200);
@@ -821,8 +708,14 @@ function DepositsWithSourceSection({
         <div className="aq-section-head-left">
           <h2 className="uni-hub-section-title">
             Deposits, last 30 days, with source attribution
+            {sample && <span className="aq-sample-badge">sample data</span>}
           </h2>
           <span className="uni-hub-section-meta">
+            {sample && (
+              <>
+                preview rows, no live deposits indexed yet ·{" "}
+              </>
+            )}
             {counts.total.toLocaleString("en-US")} deposits ·{" "}
             {counts.frontend.toLocaleString("en-US")} from wallets ever
             connected through the Harvest app ({" "}
@@ -855,8 +748,7 @@ function DepositsWithSourceSection({
               <span className="hub-th">Tx</span>
             </div>
             {display.map((d) => {
-              const wallet = (d.wallet_address || "").toLowerCase();
-              const isFrontend = wallet && knownWallets.has(wallet);
+              const isFrontend = isFrontendRow(d);
               return (
                 <div
                   key={`${d.tx_hash}-${d.log_index}`}
