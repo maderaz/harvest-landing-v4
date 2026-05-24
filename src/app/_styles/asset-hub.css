@@ -1003,12 +1003,37 @@ body:has(.uni-hub-test) {
   text-underline-offset: 2px;
 }
 .uni-hub-test .lf-tx:hover { color: var(--uni-gold); }
-/* Event: colour is the only differentiator, font stays standard. */
-.uni-hub-test .lf-event { text-transform: capitalize; }
-.uni-hub-test .lf-event-deposit { color: #1f7c4d; }
-.uni-hub-test .lf-event-withdraw { color: #b13129; }
-:root[data-theme="dark"] .uni-hub-test .lf-event-deposit { color: #6dd0a0; }
-:root[data-theme="dark"] .uni-hub-test .lf-event-withdraw { color: #ff8a82; }
+/* Event badge: a compact, slightly-rounded (not pill) chip with a
+   direction arrow - green for deposits (in), red for withdrawals (out).
+   Colour + icon are the differentiators. */
+.uni-hub-test .lf-event {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 6px;
+  border-radius: 7px;
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+.uni-hub-test .lf-event svg { flex-shrink: 0; }
+.uni-hub-test .lf-event-deposit {
+  background: rgba(31, 124, 77, 0.12);
+  color: #1f7c4d;
+}
+.uni-hub-test .lf-event-withdraw {
+  background: rgba(177, 49, 41, 0.12);
+  color: #b13129;
+}
+:root[data-theme="dark"] .uni-hub-test .lf-event-deposit {
+  background: rgba(109, 208, 160, 0.16);
+  color: #6dd0a0;
+}
+:root[data-theme="dark"] .uni-hub-test .lf-event-withdraw {
+  background: rgba(255, 138, 130, 0.16);
+  color: #ff8a82;
+}
 
 /* Source badges: the pill background is the standout, not the font.
    Search engines read blue, AI assistants purple, Direct plain

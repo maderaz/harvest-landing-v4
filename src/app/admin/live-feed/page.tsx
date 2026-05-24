@@ -268,8 +268,12 @@ export default function LiveFeedPage() {
                       className="uni-hub-row"
                       style={{ gridTemplateColumns: FEED_COLS }}
                     >
-                      <span className="uni-hub-cell lf-time" data-label="Time">
-                        {formatTime(e.block_timestamp)}
+                      <span
+                        className="uni-hub-cell lf-time"
+                        data-label="Time"
+                        title={formatTime(e.block_timestamp)}
+                      >
+                        {relativeTime(e.block_timestamp)}
                       </span>
                       <span className="uni-hub-cell" data-label="Source">
                         <span className={`lf-badge lf-badge-${channelTone(channel)}`}>
@@ -281,6 +285,7 @@ export default function LiveFeedPage() {
                       </span>
                       <span className="uni-hub-cell" data-label="Event">
                         <span className={`lf-event lf-event-${e.event_type}`}>
+                          <EventIcon type={e.event_type} />
                           {e.event_type}
                         </span>
                       </span>
@@ -361,4 +366,49 @@ function formatTime(iso: string): string {
   } catch {
     return iso;
   }
+}
+
+// Relative time for the live feed: "just now", "Nmin ago", "Nh ago" up
+// to a day, then the absolute date. The absolute timestamp is on the
+// cell's title attribute for hover.
+function relativeTime(iso: string): string {
+  const then = new Date(iso).getTime();
+  if (Number.isNaN(then)) return iso;
+  const diffMs = Date.now() - then;
+  if (diffMs < 60_000) return "just now";
+  const min = Math.floor(diffMs / 60_000);
+  if (min < 60) return `${min}min ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  return formatTime(iso);
+}
+
+// Compact direction arrow for the event badge: deposit points in
+// (down), withdraw points out (up). Inherits the badge's colour.
+function EventIcon({ type }: { type: "deposit" | "withdraw" | "transfer" }) {
+  return (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {type === "withdraw" ? (
+        <>
+          <path d="M12 19V5" />
+          <path d="m5 12 7-7 7 7" />
+        </>
+      ) : (
+        <>
+          <path d="M12 5v14" />
+          <path d="m19 12-7 7-7-7" />
+        </>
+      )}
+    </svg>
+  );
 }
