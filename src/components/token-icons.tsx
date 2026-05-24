@@ -12,6 +12,9 @@ import mainnetIcon from "@/assets/icons/mainnet.png";
 import bnbIcon from "@/assets/icons/bnb.png";
 import avaxIcon from "@/assets/icons/avax.png";
 import sonicIcon from "@/assets/icons/sonic.png";
+import polygonIcon from "@/assets/icons/polygon.svg";
+import zksyncIcon from "@/assets/icons/zksync.svg";
+import hyperevmIcon from "@/assets/icons/hyperevm.svg";
 
 const ASSET_ICONS: Record<string, { src: string }> = {
   USDC: usdcIcon,
@@ -30,9 +33,9 @@ const CHAIN_ICONS: Record<string, { src: string }> = {
   Base: baseIcon,
   Ethereum: mainnetIcon,
   Arbitrum: arbitrumIcon,
-  Polygon: bnbIcon,
-  zkSync: mainnetIcon,
-  HyperEVM: mainnetIcon,
+  Polygon: polygonIcon,
+  zkSync: zksyncIcon,
+  HyperEVM: hyperevmIcon,
   BNB: bnbIcon,
   Avalanche: avaxIcon,
   Sonic: sonicIcon,

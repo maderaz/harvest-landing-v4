@@ -41,8 +41,13 @@
   overflow-x: clip;
 }
 
+/* The hub wrapper defines --uni-bg on itself, but custom properties do
+   not inherit upward to <body>, so reading var(--uni-bg) here resolved
+   to nothing and the page fell back to the global --bg (#fafaf9). Pin a
+   literal white so the area outside the hub margins matches every other
+   page. */
 body:has(.uni-hub-test) {
-  background: var(--uni-bg) !important;
+  background: #ffffff !important;
   overflow-x: clip;
 }
 
@@ -66,7 +71,7 @@ body:has(.uni-hub-test) {
   --uni-tint-strong: rgba(244, 244, 241, 0.14);
 }
 :root[data-theme="dark"] body:has(.uni-hub-test) {
-  background: var(--uni-bg) !important;
+  background: var(--bg) !important;
 }
 
 /* === Breadcrumb ==================================================== */

@@ -50,16 +50,17 @@ const CHAIN_ICON_FILE: Record<string, string> = {
   Base: "base.png",
   Ethereum: "mainnet.png",
   Arbitrum: "arbitrum.png",
-  Polygon: "bnb.png",
-  zkSync: "mainnet.png",
-  HyperEVM: "mainnet.png",
+  Polygon: "polygon.svg",
+  zkSync: "zksync.svg",
+  HyperEVM: "hyperevm.svg",
 };
 
 function loadIconDataUri(file: string | undefined): string | null {
   if (!file) return null;
   try {
     const buf = readFileSync(join(process.cwd(), "src", "assets", "icons", file));
-    return `data:image/png;base64,${buf.toString("base64")}`;
+    const mime = file.endsWith(".svg") ? "image/svg+xml" : "image/png";
+    return `data:${mime};base64,${buf.toString("base64")}`;
   } catch {
     return null;
   }
