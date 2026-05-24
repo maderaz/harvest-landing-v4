@@ -336,21 +336,6 @@ export async function ProductPageBody({ vault }: { vault: YieldVault }) {
 
       <div className="uni-divider" aria-hidden="true" />
 
-      {/* Single low-liquidity advisory for the whole page. Replaces the
-          inline badge that used to sit next to the TVL stat - stated
-          once, with context, rather than as a cramped marker. */}
-      {isLowLiquidityTvl(vault.tvl) && (
-        <div className="uni-lowliq-note" role="note">
-          <span className="uni-lowliq-note-tag">Low liquidity</span>
-          <p>
-            This strategy currently holds {formatTVL(vault.tvl)}, below our{" "}
-            {formatTVL(LOW_LIQUIDITY_TVL_THRESHOLD)} liquidity mark. Thin
-            liquidity can mean higher slippage on entry and exit, and the
-            headline yield can be skewed by a small number of holders.
-          </p>
-        </div>
-      )}
-
       {/* Main grid: chart + sidebar stats */}
       <div className="uni-detail-grid">
         <div className="uni-detail-main">
@@ -521,6 +506,21 @@ export async function ProductPageBody({ vault }: { vault: YieldVault }) {
         )}
 
         <VaultStabilityCard history={history} asset={vault.asset} />
+
+        {/* Single low-liquidity advisory, placed under Strategy
+            stability rather than next to the TVL stat - stated once,
+            with context, where it reads as part of the risk picture. */}
+        {isLowLiquidityTvl(vault.tvl) && (
+          <div className="uni-lowliq-note" role="note">
+            <span className="uni-lowliq-note-tag">Low liquidity</span>
+            <p>
+              This strategy currently holds {formatTVL(vault.tvl)}, below our{" "}
+              {formatTVL(LOW_LIQUIDITY_TVL_THRESHOLD)} liquidity mark. Thin
+              liquidity can mean higher slippage on entry and exit, and the
+              headline yield can be skewed by a small number of holders.
+            </p>
+          </div>
+        )}
 
         <HistoricalNarrative history={history} asset={vault.asset} />
 
