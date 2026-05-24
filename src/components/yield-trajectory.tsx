@@ -21,7 +21,6 @@ function formatDate(ts: number): string {
 }
 
 export function YieldTrajectory({ history, productName, apy24h, asset }: Props) {
-  const now = Math.floor(Date.now() / 1000);
   const ref = depositRef(asset);
   const isNativeAsset = asset === "ETH" || asset === "BTC";
 
@@ -30,6 +29,12 @@ export function YieldTrajectory({ history, productName, apy24h, asset }: Props) 
     .sort((a, b) => a.timestamp - b.timestamp);
 
   if (validApy.length < 14) return null;
+
+  // Anchor every window (7/14/30-day, streak, WoW) to the latest
+  // indexed reading rather than wall-clock now, so the framing stays
+  // consistent with the rest of the page on vaults whose newest
+  // reading is a few days stale.
+  const now = validApy[validApy.length - 1].timestamp;
 
   const thirtyDaysAgo = now - 30 * 86400;
   const recent30d = validApy.filter((p) => p.timestamp >= thirtyDaysAgo);

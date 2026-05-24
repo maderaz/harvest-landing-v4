@@ -7,7 +7,12 @@
 import type { YieldVault } from "./types";
 import type { FullVaultHistory } from "./history-api";
 import { formatAPY } from "./format";
-import { depositRef, apyToMonthly, fmtEarnings } from "./contextualize";
+import {
+  depositRef,
+  apyToMonthly,
+  fmtEarnings,
+  hasSharePriceDiscontinuity,
+} from "./contextualize";
 
 // USD-pegged tickers. The Yield-trajectory spec collapses the
 // underlying-balance lines to noise for these (sharePrice ratio is
@@ -115,7 +120,13 @@ export function buildYieldTrajectory(
   if (ageDays >= 30) {
     const target30d = nowTs - 30 * 86400;
     const p30 = closestPoint(sp, target30d);
-    if (p30) {
+    // Skip the 30-day value line if a share-price discontinuity falls
+    // inside the window - the ratio would be a re-index artifact, not
+    // realised yield.
+    const window30 = p30
+      ? sp.filter((p) => p.timestamp >= p30.timestamp)
+      : [];
+    if (p30 && !hasSharePriceDiscontinuity(window30)) {
       const ratio30 = spNow / p30.sharePrice;
       if (stable) {
         const usdValue = 1000 * ratio30;
@@ -139,24 +150,29 @@ export function buildYieldTrajectory(
 
   // Inception lines: render whenever we have at least one earlier
   // share-price sample (which we do given length >= 2). Same
-  // stable/non-stable split as the 30-day lines above.
+  // stable/non-stable split as the 30-day lines above. Suppressed when
+  // the lifetime share-price series contains a discontinuity: a launch
+  // value computed across a re-index step (e.g. "$1,000 -> $1,955")
+  // contradicts the indexed APY shown elsewhere on the page.
   const ratioInception = spNow; // sharePriceHistory is normalized to start at 1.0
-  if (stable) {
-    const usdInception = 1000 * ratioInception;
-    const usdInceptionDelta = usdInception - 1000;
-    const inceptionPhrase = gainLossPhrase(usdInceptionDelta);
-    lines.push(
-      `$1,000 deposited at launch (${ageDays} days ago) would now be worth ~$${formatUsdInt(
-        usdInception,
-      )}, ${inceptionPhrase} of ~$${formatUsdInt(Math.abs(usdInceptionDelta))}.`,
-    );
-  } else {
-    lines.push(
-      `1 ${ticker} deposited at launch (${ageDays} days ago) would now be ~${formatUnderlying(
-        ratioInception,
-        decimals,
-      )} ${ticker}.`,
-    );
+  if (!hasSharePriceDiscontinuity(sp)) {
+    if (stable) {
+      const usdInception = 1000 * ratioInception;
+      const usdInceptionDelta = usdInception - 1000;
+      const inceptionPhrase = gainLossPhrase(usdInceptionDelta);
+      lines.push(
+        `$1,000 deposited at launch (${ageDays} days ago) would now be worth ~$${formatUsdInt(
+          usdInception,
+        )}, ${inceptionPhrase} of ~$${formatUsdInt(Math.abs(usdInceptionDelta))}.`,
+      );
+    } else {
+      lines.push(
+        `1 ${ticker} deposited at launch (${ageDays} days ago) would now be ~${formatUnderlying(
+          ratioInception,
+          decimals,
+        )} ${ticker}.`,
+      );
+    }
   }
 
   return { lines };
@@ -206,9 +222,16 @@ export function buildPerformanceOverview(
     }
   }
 
-  // Line 02: 30-day APY range + monthly earnings at high/low.
-  const now = Date.now() / 1000;
-  const thirtyDaysAgo = now - 30 * 86400;
+  // Line 02: 30-day APY range + monthly earnings at high/low. Anchor
+  // the window to the latest indexed APY reading (matching the
+  // stability card and hero KPIs) so "averaging X%" agrees with the
+  // rest of the page instead of drifting on vaults whose newest
+  // reading is a few days stale.
+  const apyLatestTs = history.apyHistory.reduce(
+    (m, p) => (Number.isFinite(p.timestamp) ? Math.max(m, p.timestamp) : m),
+    0,
+  );
+  const thirtyDaysAgo = apyLatestTs - 30 * 86400;
   const trailing = history.apyHistory
     .filter(
       (p) =>
@@ -274,9 +297,12 @@ export function buildPerformanceOverview(
     (a, b) => a.timestamp - b.timestamp,
   );
   if (tvlSorted.length >= 2 && vault.tvl > 0) {
-    const target = now - 30 * 86400;
+    // Anchor "30 days ago" to the latest indexed TVL reading, not
+    // wall-clock now, so the comparison point is real indexed data.
+    const tvlLatestTs = tvlSorted[tvlSorted.length - 1].timestamp;
+    const target = tvlLatestTs - 30 * 86400;
     const past = closestPoint(tvlSorted, target);
-    if (past && past.value > 0 && past.timestamp <= now - 7 * 86400) {
+    if (past && past.value > 0 && past.timestamp <= tvlLatestTs - 7 * 86400) {
       const current = vault.tvl;
       const TVL_PCT_THRESHOLD = 50_000;
       const bothEndpointsSmall =

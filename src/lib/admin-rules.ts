@@ -24,6 +24,17 @@ export const BROKEN_MIN_OBSERVATIONS = 14;
 export const HIDE_AERODROME = false;
 export const HIDE_LP_PAIR = true;
 
+// Strategies under this TVL are still ranked (an operator decision -
+// see RANKING_RULES note below) but carry a "Low liquidity" marker in
+// every ranking-style view and on their own page, so a thin pool can't
+// read as an unqualified "best" pick. This is a label, not a filter:
+// it never hides a vault. Tune the floor here.
+export const LOW_LIQUIDITY_TVL_THRESHOLD = 50_000;
+
+export function isLowLiquidityTvl(tvl: number): boolean {
+  return tvl > 0 && tvl < LOW_LIQUIDITY_TVL_THRESHOLD;
+}
+
 export const RANKING_RULES: RankingRule[] = [
   {
     id: "live-only",

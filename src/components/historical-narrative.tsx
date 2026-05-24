@@ -1,5 +1,11 @@
 import { formatTVL } from "@/lib/format";
-import { depositRef, apyToMonthly, fmtEarnings } from "@/lib/contextualize";
+import {
+  depositRef,
+  apyToMonthly,
+  fmtEarnings,
+  hasSharePriceDiscontinuity,
+  isErraticTvl,
+} from "@/lib/contextualize";
 import type { FullVaultHistory } from "@/lib/history-api";
 
 interface Props {
@@ -58,7 +64,11 @@ export function HistoricalNarrative({ history, asset }: Props) {
     const last = sorted[sorted.length - 1].sharePrice;
     const daySpan =
       (sorted[sorted.length - 1].timestamp - sorted[0].timestamp) / 86400;
-    if (first > 0 && daySpan >= 30) {
+    // Suppress the lifetime CAGR sentence when the share-price series
+    // contains a re-index / migration step. Annualising across a
+    // discontinuity produces a growth figure (e.g. 93%) that
+    // contradicts the indexed APY shown everywhere else on the page.
+    if (first > 0 && daySpan >= 30 && !hasSharePriceDiscontinuity(sorted)) {
       const totalReturn = (last - first) / first;
       const cagr = (Math.pow(1 + totalReturn, 365 / daySpan) - 1) * 100;
 
@@ -89,8 +99,11 @@ export function HistoricalNarrative({ history, asset }: Props) {
     }
   }
 
-  // TVL drawdown story (#12)
-  if (history.tvlHistory.length >= 10) {
+  // TVL drawdown story (#12). Skip entirely when the TVL series is
+  // erratic: a "peak" that is a one-day index spike surrounded by
+  // sub-$100 readings is noise, and the drawdown / days-down / percent
+  // computed from it are meaningless.
+  if (history.tvlHistory.length >= 10 && !isErraticTvl(history.tvlHistory)) {
     const sorted = [...history.tvlHistory].sort(
       (a, b) => a.timestamp - b.timestamp,
     );
@@ -156,7 +169,15 @@ export function HistoricalNarrative({ history, asset }: Props) {
         // wording, no trailing "had bottomed by" date (which was
         // grammatically awkward past-perfect for a one-time event
         // and redundant with daysDown already shown above).
-        text = `TVL experienced a ${formatDrawdownPct(maxDrawdownPct, troughVal)}% drawdown from its ${formatTVL(peakVal)} peak, bottoming at ${formatTVL(troughVal)} over ${daysDown} days. It currently stands at ${formatTVL(currentTvl)}, ${currentVsPeakPct}% of the peak value.`;
+        // Drop the "over N days" clause when peak and trough fall on
+        // the same indexed day (daysDown rounds to 0) so the sentence
+        // never reads "over 0 days". Show "<1" rather than "0" when
+        // the current value is a non-zero sub-percent of the peak.
+        const daysClause =
+          daysDown >= 1 ? ` over ${daysDown} day${daysDown === 1 ? "" : "s"}` : "";
+        const pctVsPeakStr =
+          currentVsPeakPct < 1 && currentTvl > 0 ? "<1" : `${currentVsPeakPct}`;
+        text = `TVL experienced a ${formatDrawdownPct(maxDrawdownPct, troughVal)}% drawdown from its ${formatTVL(peakVal)} peak, bottoming at ${formatTVL(troughVal)}${daysClause}. It currently stands at ${formatTVL(currentTvl)}, ${pctVsPeakStr}% of the peak value.`;
         trajectory = "down";
       }
 

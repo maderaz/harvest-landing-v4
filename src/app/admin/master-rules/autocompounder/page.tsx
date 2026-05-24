@@ -635,7 +635,19 @@ not OR).`}</CodeBlock>
           little history to make annualised CAGR, peak/trough, or best/worst
           month informative.
         </p>
-        <CodeBlock>{`Bullet 1 (share-price CAGR, render if daySpan >= 30):
+        <p>
+          Data-quality guards (src/lib/contextualize.ts): bullet 1 is
+          suppressed when the share-price series has a discontinuity (a single
+          step implying &gt; 5%/day growth, i.e. a re-index / migration
+          artifact, not realised yield - it would annualise to a CAGR that
+          contradicts the indexed APY). Bullet 2 is suppressed when the TVL
+          series is erratic (max &gt; 50x the median of positive readings),
+          since a transient one-day spike is not a real peak. The same guards
+          drop the "deposited at launch worth $X" line in Yield trajectory and
+          fall the Historical-statistics TVL paragraph back to its peak-free
+          form.
+        </p>
+        <CodeBlock>{`Bullet 1 (share-price CAGR, render if daySpan >= 30 AND no discontinuity):
   "Share price has compounded at an annualized rate of {CAGR}% over {DAYS}
    days, growing from {FIRST} to {LAST}."
   If daySpan >= 90, append:
@@ -648,7 +660,8 @@ not OR).`}</CodeBlock>
   NEVER render "minimal returns" - always quantitative gain in underlying
   units.
 
-Bullet 2 (TVL story, render if tvlHistory >= 10 AND maxDrawdownPct >= 15):
+Bullet 2 (TVL story, render if tvlHistory >= 10 AND maxDrawdownPct >= 15
+  AND NOT erratic):
   at-peak (current >= 0.9 * peak):
     daysAtPeak = days since first crossing of 0.8 * peak in upward direction
     if daysAtPeak >= 1:
@@ -662,8 +675,12 @@ Bullet 2 (TVL story, render if tvlHistory >= 10 AND maxDrawdownPct >= 15):
     pct >= 95         → "99"
     else              → Math.round(pct)
     "TVL experienced a {PCT}% drawdown from its {PEAK} peak, bottoming at
-     {TROUGH} over {DAYS_DOWN} days. It currently stands at {CURRENT},
+     {TROUGH}[ over {DAYS_DOWN} days]. It currently stands at {CURRENT},
      {PCT_VS_PEAK}% of the peak value."
+  Drop the " over N days" clause when DAYS_DOWN rounds to 0 (peak and
+  trough on the same indexed day) so it never reads "over 0 days".
+  PCT_VS_PEAK renders "<1" instead of "0" when current is a non-zero
+  sub-percent of the peak.
   No trailing "TVL had bottomed by..." sentence.
 
 Bullet 3 (best/worst month, render if apyHistory >= 60 AND >= 3 distinct
@@ -681,6 +698,10 @@ Bullet 3 (best/worst month, render if apyHistory >= 60 AND >= 3 distinct
           APY narrative paragraph (three modes)
         </h3>
         <CodeBlock>{`apy_tracked_days = (latest - earliest) / 86400  (over lifetime APY)
+  NB: this is a DAY SPAN, not the reading COUNT (apyStats.dataPoints).
+  The "(Nd)" suffix on the Lifetime-avg rows and the "over N days"
+  sentence below both use this span. Using dataPoints (count) as days
+  was the "138d vs 371 days" contradiction.
 
 if apy_tracked_days < 7:
   "Tracked for {N} day(s). APY data is still accumulating; the first
@@ -689,13 +710,18 @@ if apy_tracked_days < 7:
 elif apyStats.dataPoints >= 60 AND |changePct| > 10:
   earlyAvg = avg of first quarter
   lateAvg  = avg of last quarter
-  "Over the past {dataPoints} days, this vault's APY has moved from
+  "Over the past {trackedDays} days, this vault's APY has moved from
    {earlyAvg}% to {lateAvg}%, a {ABS_CHANGE}% {increase|decrease}. At the
    start of the window, {REF} would have earned {EARLY_EARN}/mo at then-
    current rates; at recent rates, {LATE_EARN}/mo."
-  (Second sentence renders unconditionally - no $1/mo gate.)
+  (Gate is on the reading count >= 60; the displayed number is the day
+   span. Second sentence renders unconditionally - no $1/mo gate.)
 
-else: no APY narrative paragraph (table renders alone).`}</CodeBlock>
+else: no APY narrative paragraph (table renders alone).
+
+30-day stat windows (30D Low/High/Average, Best/Worst day) anchor to
+the latest indexed reading (latest_ts - 30d), NOT wall-clock now, so
+they agree with the stability card / hero KPIs on stale vaults.`}</CodeBlock>
 
         <h3 className="mt-6 mb-2 text-sm font-semibold uppercase tracking-wide text-gray-700">
           TVL narrative paragraph (decoupled from 30d window)

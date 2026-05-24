@@ -1,5 +1,10 @@
 import { formatAPY, formatTVL } from "@/lib/format";
-import { depositRef, apyToMonthly, fmtEarnings } from "@/lib/contextualize";
+import {
+  depositRef,
+  apyToMonthly,
+  fmtEarnings,
+  isErraticTvl,
+} from "@/lib/contextualize";
 import type { FullVaultHistory } from "@/lib/history-api";
 
 function median(arr: number[]): number {
@@ -52,14 +57,39 @@ function tooltipFor(label: string, kind: "apy" | "tvl"): string | undefined {
 }
 
 export function HistoricalStats({ history, asset }: { history: FullVaultHistory; asset: string }) {
-  const now = Math.floor(Date.now() / 1000);
-  const thirtyDaysAgo = now - 30 * 86400;
-
-  const apy30d = history.apyHistory.filter((p) => p.apy >= 0 && p.timestamp >= thirtyDaysAgo);
+  // Anchor the 30-day window to the latest indexed reading per series,
+  // not wall-clock now. The stability card, hero KPIs and yield
+  // trajectory all anchor this way; anchoring here to build-time now
+  // made this section's "30D Average / High" disagree with those for
+  // any vault whose newest reading is a few days stale (the 15.59% vs
+  // 16.58% / 17.33% vs 25.53% split that read as conflicting facts).
   const allApy = history.apyHistory.filter((p) => p.apy >= 0);
-  const tvl30d = history.tvlHistory.filter((p) => p.timestamp >= thirtyDaysAgo);
+  const apyLatestTs = allApy.reduce((m, p) => Math.max(m, p.timestamp), 0);
+  const tvlLatestTs = history.tvlHistory.reduce(
+    (m, p) => Math.max(m, p.timestamp),
+    0,
+  );
+  const apy30d = allApy.filter((p) => p.timestamp >= apyLatestTs - 30 * 86400);
+  const tvl30d = history.tvlHistory.filter(
+    (p) => p.timestamp >= tvlLatestTs - 30 * 86400,
+  );
 
   if (allApy.length < 3 && tvl30d.length < 3) return null;
+
+  // Lifetime tracked-day SPANS (latest minus earliest reading) per
+  // series. These drive the "(Nd)" suffix on the Lifetime-avg rows and
+  // the "over N days" APY narrative below. They are distinct from the
+  // reading COUNT (shown as "Data points" in the history table):
+  // labelling the count as days was the source of the "138d" vs
+  // "371 days" contradiction.
+  const trackedDaysOf = (stamps: number[]): number => {
+    if (stamps.length < 2) return 0;
+    return Math.round((Math.max(...stamps) - Math.min(...stamps)) / 86400);
+  };
+  const apyTrackedDays = trackedDaysOf(allApy.map((p) => p.timestamp));
+  const tvlTrackedDays = trackedDaysOf(
+    history.tvlHistory.filter((p) => p.value > 0).map((p) => p.timestamp),
+  );
 
   const apyValues = apy30d.map((p) => p.apy);
   const allApyValues = allApy.map((p) => p.apy);
@@ -110,7 +140,7 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
         { label: "30D Low", value: formatAPY(apyStats.low) },
         { label: "30D High", value: formatAPY(apyStats.high) },
         { label: "30D Average", value: formatAPY(apyStats.avg) },
-        { label: `Lifetime avg (${apyStats.dataPoints}d)`, value: formatAPY(apyStats.lifetimeAvg) },
+        { label: `Lifetime avg (${apyTrackedDays}d)`, value: formatAPY(apyStats.lifetimeAvg) },
         { label: "Median APY", value: formatAPY(apyStats.med) },
         { label: "Best day", value: `${formatAPY(apyStats.bestDay.apy)} · ${formatDate(apyStats.bestDay.timestamp)}` },
         { label: "Worst day", value: `${formatAPY(apyStats.worstDay.apy)} · ${formatDate(apyStats.worstDay.timestamp)}` },
@@ -124,7 +154,7 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
         { label: "30D Low", value: formatTVL(tvlStats.low) },
         { label: "30D High", value: formatTVL(tvlStats.high) },
         { label: "30D Average", value: formatTVL(tvlStats.avg) },
-        { label: `Lifetime avg (${tvlStats.dataPoints}d)`, value: formatTVL(tvlStats.lifetimeAvg) },
+        { label: `Lifetime avg (${tvlTrackedDays}d)`, value: formatTVL(tvlStats.lifetimeAvg) },
         { label: "Median TVL", value: formatTVL(tvlStats.med) },
         { label: "Best day", value: `${formatTVL(tvlStats.bestDay.value)} · ${formatDate(tvlStats.bestDay.timestamp)}` },
         { label: "Worst day", value: `${formatTVL(tvlStats.worstDay.value)} · ${formatDate(tvlStats.worstDay.timestamp)}` },
@@ -143,20 +173,10 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
   // Narrative intro paragraph: trend direction over lifetime
   const narratives: string[] = [];
 
-  // Days of indexed APY history. Used to choose between three modes:
+  // APY narrative mode is chosen from apyTrackedDays (computed above):
   // < 7 days  -> minimal "still accumulating" notice
   // 7..59     -> no APY narrative (table renders alone)
-  // >= 60     -> full lifetime-change paragraph
-  let apyTrackedDays = 0;
-  if (allApy.length >= 2) {
-    const sortedApyLife = [...allApy].sort((a, b) => a.timestamp - b.timestamp);
-    apyTrackedDays = Math.round(
-      (sortedApyLife[sortedApyLife.length - 1].timestamp -
-        sortedApyLife[0].timestamp) /
-        86400,
-    );
-  }
-
+  // >= 60 readings -> full lifetime-change paragraph
   if (apyStats && apyTrackedDays < 7) {
     narratives.push(
       `Tracked for ${apyTrackedDays} day${apyTrackedDays === 1 ? "" : "s"}. APY data is still accumulating; the first meaningful summary requires at least a week of readings.`,
@@ -174,7 +194,12 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
       // persistence and forecastability the data may not support.
       // State endpoints + delta neutrally; let the user infer.
       const direction = changePct > 0 ? "increase" : "decrease";
-      let text = `Over the past ${apyStats.dataPoints} days, this vault's APY has moved from ${earlyAvg.toFixed(2)}% to ${lateAvg.toFixed(2)}%, a ${Math.abs(changePct).toFixed(1)}% ${direction}.`;
+      // "early average" / "recent average" (not bare endpoints): these
+      // are first-quarter and last-quarter means, so the closing figure
+      // is deliberately not the single latest reading shown in the hero.
+      // Labelling them as averages stops the recent value reading as a
+      // stale contradiction of the headline 24h APY.
+      let text = `Over the past ${apyTrackedDays} days, this vault's APY has moved from an early average of ${earlyAvg.toFixed(2)}% to a recent average of ${lateAvg.toFixed(2)}%, a ${Math.abs(changePct).toFixed(1)}% ${direction}.`;
 
       // Always render the monthly-earnings comparison. The outer
       // gate (changePct > 10%) already filters out windows where the
@@ -224,18 +249,29 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
           (sorted[sorted.length - 1].timestamp - sorted[0].timestamp) / 86400,
         ),
       );
-      if (sorted.length >= 10 && peak.value > 0 && last >= 0.8 * peak.value) {
+      // When the TVL series is erratic (transient index spikes), the
+      // "peak" is noise. Fall through to the minimal fallback so we
+      // never cite a $932K all-time peak that the vault never really
+      // held - which also avoids the "$95 is 0% of peak" rounding.
+      const erratic = isErraticTvl(history.tvlHistory);
+      if (
+        sorted.length >= 10 &&
+        peak.value > 0 &&
+        last >= 0.8 * peak.value &&
+        !erratic
+      ) {
         // Narrative A: growth-since-inception (no %, just endpoints).
         narratives.push(
           `Total value locked currently sits at ${formatTVL(last)}, up from ${formatTVL(first)} at the start of tracking. The vault has been live for ${days} days.`,
         );
-      } else if (sorted.length >= 10 && peak.value > 0) {
+      } else if (sorted.length >= 10 && peak.value > 0 && !erratic) {
         // Narrative B: peak-and-current. Peak date is derived from
         // the peak snapshot's timestamp, formatted Month YYYY. If
         // the timestamp is missing or unparseable, drop the date
         // clause as graceful degradation rather than rendering "on
         // Invalid Date".
-        const pct = Math.round((last / peak.value) * 100);
+        const pctRaw = Math.round((last / peak.value) * 100);
+        const pct = pctRaw < 1 && last > 0 ? "<1" : `${pctRaw}`;
         let peakDate: string | null = null;
         if (Number.isFinite(peak.timestamp) && peak.timestamp > 0) {
           const d = new Date(peak.timestamp * 1000);

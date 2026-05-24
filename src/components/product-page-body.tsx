@@ -10,6 +10,8 @@ import {
   getHoldersMap,
 } from "@/lib/data";
 import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
+import { isLowLiquidityTvl } from "@/lib/admin-rules";
+import { LowLiquidityBadge } from "@/components/low-liquidity-badge";
 import type { FullVaultHistory } from "@/lib/history-api";
 import { productPageCrumbs } from "@/lib/seo";
 import { SITE_URL } from "@/lib/constants";
@@ -399,7 +401,10 @@ export async function ProductPageBody({ vault }: { vault: YieldVault }) {
               >
                 TVL
               </div>
-              <div className="uni-side-value">{formatTVL(vault.tvl)}</div>
+              <div className="uni-side-value">
+                {formatTVL(vault.tvl)}
+                {isLowLiquidityTvl(vault.tvl) && <LowLiquidityBadge />}
+              </div>
             </div>
 
             <div className="uni-side-stat">
@@ -863,18 +868,30 @@ function latestHistoryTimestamp(h: FullVaultHistory): number {
   return Math.max(...stamps);
 }
 
-function formatRelativeUpdated(ts: number, now: number = Date.now()): string {
-  if (!ts) return "Last updated recently";
+// Per-vault data freshness line. Names the latest indexed data point
+// explicitly (absolute date + relative age) rather than "Last updated
+// N ago", which read as contradicting the footer's site-wide "Data
+// refreshed hourly". They mean different things: the footer is the
+// rebuild cadence; this is when THIS vault last got a new reading,
+// which for a near-dead vault can legitimately be days old.
+function formatLatestReading(ts: number, now: number = Date.now()): string {
+  if (!ts) return "Latest data point indexed recently";
+  const d = new Date(ts * 1000);
+  const dateStr = d.toLocaleDateString("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
   const diffSec = Math.max(0, Math.floor((now - ts * 1000) / 1000));
   const min = Math.floor(diffSec / 60);
   const hour = Math.floor(diffSec / 3600);
   const day = Math.floor(diffSec / 86400);
-  if (diffSec < 60) return "Last updated just now";
-  if (hour < 1) return `Last updated ${min} minute${min === 1 ? "" : "s"} ago`;
-  if (day < 1) return `Last updated ${hour} hour${hour === 1 ? "" : "s"} ago`;
-  if (day <= 7) return `Last updated ${day} day${day === 1 ? "" : "s"} ago`;
-  const d = new Date(ts * 1000);
-  return `Last updated on ${d.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`;
+  let rel: string;
+  if (diffSec < 60) rel = "just now";
+  else if (hour < 1) rel = `${min} minute${min === 1 ? "" : "s"} ago`;
+  else if (day < 1) rel = `${hour} hour${hour === 1 ? "" : "s"} ago`;
+  else rel = `${day} day${day === 1 ? "" : "s"} ago`;
+  return `Latest data point: ${dateStr} (${rel})`;
 }
 
 // Bottom-of-page stack: a per-product "last updated" relative
@@ -885,10 +902,10 @@ function formatRelativeUpdated(ts: number, now: number = Date.now()): string {
 // rather than a compliance banner.
 function ProductPageFootnote({ history }: { history: FullVaultHistory }) {
   const ts = latestHistoryTimestamp(history);
-  const updated = formatRelativeUpdated(ts);
+  const latestReading = formatLatestReading(ts);
   return (
     <section className="pp-footnote" aria-label="Page metadata and disclosures">
-      <p className="pp-footnote-updated">{updated}</p>
+      <p className="pp-footnote-updated">{latestReading}</p>
       <p className="pp-footnote-disclosure">
         Harvest is an independent onchain yield index. Performance
         data reflects historical onchain activity and is not a

@@ -5,8 +5,10 @@ import Link from "next/link";
 import { YieldVault } from "@/lib/types";
 import { formatAPY, stripChainSuffix } from "@/lib/format";
 import { isLpPairVault, getCanonicalDisplayName } from "@/lib/lp-pair";
+import { isLowLiquidityTvl } from "@/lib/admin-rules";
 import { AssetIcon, ChainIcon } from "./token-icons";
 import { LpBadge } from "./lp-badge";
+import { LowLiquidityBadge } from "./low-liquidity-badge";
 
 type SortKey = "apy24h";
 type SortDir = "asc" | "desc";
@@ -315,6 +317,7 @@ function Row({
         <span className="hub-vault-name">
           {getCanonicalDisplayName(vault)}
           {isLpPairVault(vault) && <LpBadge />}
+          {isLowLiquidityTvl(vault.tvl) && <LowLiquidityBadge />}
         </span>
       </span>
       <span className="hub-cell hub-num hub-apy">{formatAPY(vault.apy24h)}</span>
