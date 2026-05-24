@@ -303,7 +303,7 @@ function TableSection({ visits }: { visits: Visit[] }) {
                 <span className="hub-cell hub-vault">
                   <span
                     className="hub-vault-name"
-                    style={{ fontFamily: "var(--mono)", fontSize: 13 }}
+                    style={{ fontFamily: "var(--sans)", fontSize: 12.5, fontWeight: 400 }}
                   >
                     {v.page_path}
                   </span>
@@ -319,8 +319,8 @@ function TableSection({ visits }: { visits: Visit[] }) {
                 <span
                   className="hub-cell"
                   style={{
-                    fontFamily: "var(--mono)",
-                    fontSize: 11,
+                    fontFamily: "var(--sans)",
+                    fontSize: 12.5,
                     color: "var(--hub-ink-3)",
                   }}
                 >

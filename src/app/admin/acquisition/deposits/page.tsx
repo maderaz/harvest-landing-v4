@@ -512,7 +512,7 @@ function RecentDepositorsSection({ wallets }: { wallets: WalletRow[] }) {
                   {formatTime(w.connected_at)}
                 </span>
                 <span className="hub-cell aq-cell-vault">
-                  <span style={{ fontFamily: "var(--mono)", fontSize: 12.5 }}>
+                  <span style={{ fontFamily: "var(--sans)", fontSize: 12.5 }}>
                     {shortenAddress(w.wallet_address)}
                   </span>
                 </span>
@@ -632,7 +632,7 @@ function VaultEventsSection({ events }: { events: VaultEventRow[] }) {
                       {e.vault_slug}
                     </Link>
                   ) : (
-                    <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
+                    <span style={{ fontFamily: "var(--sans)", fontSize: 12.5 }}>
                       {shortenAddress(e.vault_address)}
                     </span>
                   )}
@@ -654,7 +654,7 @@ function VaultEventsSection({ events }: { events: VaultEventRow[] }) {
                   </span>
                 </span>
                 <span className="hub-cell">
-                  <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
+                  <span style={{ fontFamily: "var(--sans)", fontSize: 12.5 }}>
                     {shortenAddress(e.wallet_address)}
                   </span>
                 </span>
