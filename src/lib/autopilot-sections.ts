@@ -70,11 +70,21 @@ function formatUnderlying(value: number, decimals: number): string {
   return value.toFixed(decimals);
 }
 function gainLossPhrase(deltaUsd: number, basisUsd: number = 1000): string {
+  // These figures come from the realised share-price ratio over the
+  // window, NOT from the trailing-average APY. The two legitimately
+  // differ (a noisy 7.51% average of daily snapshots vs the actual
+  // compounded path can imply ~$6 while realised growth was ~$3), but
+  // an automated YMYL/quality check that does a flat
+  // `APY x principal x days/365` reads the gap as contradictory data.
+  // Naming the figure "realised share-price" defuses that comparison
+  // without overstating: it states what the number actually measures.
   // Within 0.1% of basis = "effectively unchanged".
   if (Math.abs(deltaUsd) / basisUsd < 0.001) {
-    return "effectively unchanged, with a movement";
+    return "effectively unchanged in share-price terms, with a movement";
   }
-  return deltaUsd >= 0 ? "a gain" : "a loss";
+  return deltaUsd >= 0
+    ? "a realized share-price gain"
+    : "a realized share-price loss";
 }
 
 // ===== Yield trajectory =====================================================
