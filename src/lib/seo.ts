@@ -1,7 +1,7 @@
 import { YieldVault } from "./types";
 import { SITE_NAME, SITE_URL } from "./constants";
 import { getSubAsset, getSubAssetFamilyName, isUmbrellaAsset } from "./sub-asset";
-import { stripChainSuffix } from "./format";
+import { stripChainSuffix, formatTVL } from "./format";
 import { getCanonicalDisplayName } from "./lp-pair";
 
 const MAX_TITLE_CHARS = 58;
@@ -15,6 +15,30 @@ export function getProtocolLabel(vault: YieldVault): string {
 function clampTitle(full: string): string {
   if (full.length <= MAX_TITLE_CHARS) return full;
   return full.replace(/ \| Harvest$/, "");
+}
+
+// Build-time freshness stamp ("May 2026"). Because the site is a static
+// export rebuilt by the vault-data cron roughly hourly, this is always
+// the current month at deploy time - the Google-endorsed freshness
+// signal, and genuinely accurate rather than cosmetic.
+function currentMonthYear(): string {
+  return new Date().toLocaleString("en-US", { month: "long", year: "numeric" });
+}
+
+// "ETH Aerodrome" style lead: ticker + product name, without doubling
+// the asset when the product name already carries it (e.g. "USDC Aave"
+// stays "USDC Aave", not "USDC USDC Aave").
+function tickerProduct(vault: YieldVault): string {
+  const subAsset = getSubAsset(vault);
+  const name = vault.productName.trim();
+  const lower = name.toLowerCase();
+  if (
+    lower.includes(subAsset.toLowerCase()) ||
+    lower.includes(vault.asset.toLowerCase())
+  ) {
+    return name;
+  }
+  return `${subAsset} ${name}`;
 }
 
 // ─── Asset hub ────────────────────────────────────────────────────────────────
@@ -136,7 +160,16 @@ export function productPageTitle(
     ? `${subAsset} on ${protocol}: Yield, APY & TVL Stats`
     : `${subAsset} on ${protocol}: ${disambig} Yield, APY & TVL`;
 
-  return clampTitle(`${core} | ${SITE_NAME}`);
+  // Freshness stamp last, before the brand suffix. APY stays out of the
+  // title on purpose (it is what Google caches between crawls and is the
+  // most volatile field); the month/year is always true and signals an
+  // actively-maintained page. Only keep the stamp when the core still
+  // fits the SERP width with it - for long disambiguated titles the
+  // keyword-complete core matters more than the month, so we drop the
+  // stamp rather than let it truncate.
+  const stamped = `${core} - ${currentMonthYear()}`;
+  const finalCore = stamped.length <= MAX_TITLE_CHARS ? stamped : core;
+  return clampTitle(`${finalCore} | ${SITE_NAME}`);
 }
 
 export function productPageH1(vault: YieldVault): string {
@@ -150,30 +183,27 @@ export function productPageDescription(
   const subAsset = getSubAsset(vault);
   const protocol = getProtocolLabel(vault);
   const network = vault.chain;
+  const lead = `${tickerProduct(vault)} on ${protocol} (${network})`;
+  const monthYear = currentMonthYear();
 
-  if (trackedDays >= 30 && vault.apy30d > 0) {
-    return `${vault.productName} on ${protocol} (${network}): ${subAsset} yield averaging ${vault.apy30d.toFixed(1)}% APY over the last 30 days. Track live APY, TVL, performance history and risk benchmarks.`;
+  // Lead with the live number whenever the 30-day rate is positive.
+  // apy30d is the exact figure rendered in the page's "30-day" stat, so
+  // the snippet stays aligned with what the visitor lands on (Google's
+  // YMYL bar), and the 30-day window barely moves between hourly builds,
+  // so a cached SERP snippet does not drift from the live page. TVL is
+  // added only when it is non-zero. The closing sentence signals the
+  // population is what we track, not the whole market.
+  if (vault.apy30d > 0) {
+    const tvl = vault.tvl > 0 ? `, ${formatTVL(vault.tvl)} TVL` : "";
+    return `${lead}: ${vault.apy30d.toFixed(1)}% 30-day APY${tvl}, as of ${monthYear}. Among the ${subAsset} yield strategies we track on ${network}. Live APY, TVL & risk.`;
   }
 
-  // Resolve "live since {month year}" only when the vault has a
-  // valid launchDate. Anything else falls back to a generic "in our
-  // index" line that doesn't promise a date the data can't back up.
-  let since: string | null = null;
-  if (vault.launchDate) {
-    const d = new Date(vault.launchDate);
-    if (!Number.isNaN(d.getTime())) {
-      since = d.toLocaleDateString("en-US", {
-        month: "long",
-        year: "numeric",
-      });
-    }
-  }
-
-  if (since) {
-    return `${vault.productName} on ${protocol} (${network}): new ${subAsset} yield strategy live since ${since}. Track live APY, TVL, performance history and risk benchmarks across the index.`;
-  }
-
-  return `${vault.productName} on ${protocol} (${network}): ${subAsset} yield strategy indexed by Harvest. Track live APY, TVL, performance history and risk benchmarks alongside the rest of the cohort.`;
+  // No usable rate to state: stay honest, lean on freshness + scope and
+  // surface tracking longevity when we have it, rather than printing a
+  // 0% APY the page would contradict.
+  const longevity =
+    trackedDays >= 30 ? ` tracked for ${trackedDays}+ days,` : "";
+  return `${lead}: one of the ${subAsset} yield strategies we track on ${network},${longevity} with live APY, TVL, performance history & risk benchmarks. Updated ${monthYear}.`;
 }
 
 // ─── Breadcrumb data helpers ──────────────────────────────────────────────────
