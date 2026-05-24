@@ -44,7 +44,7 @@ type FeedItem =
       kind: "visit";
       id: string;
       time: string;
-      source: string | null;
+      channel: string;
       country: string | null;
       pagePath: string;
     }
@@ -52,6 +52,8 @@ type FeedItem =
       kind: "event";
       id: string;
       time: string;
+      channel: string;
+      country: string | null;
       eventType: "deposit" | "withdraw";
       wallet: string;
       vaultSlug: string | null;
@@ -59,6 +61,15 @@ type FeedItem =
       chain: string;
       tx: string;
     };
+
+type ActivityFilter = "all" | "visits" | "app" | "deposits" | "withdrawals";
+const ACTIVITY_OPTIONS: ReadonlyArray<{ value: ActivityFilter; label: string }> = [
+  { value: "all", label: "All" },
+  { value: "visits", label: "Visits" },
+  { value: "app", label: "App" },
+  { value: "deposits", label: "Deposits" },
+  { value: "withdrawals", label: "Withdrawals" },
+];
 
 const FEED_LIMIT = 200;
 const FEED_COLS = "150px 138px 104px 96px minmax(170px, 1.7fr) 132px 58px";
@@ -87,9 +98,20 @@ function classifyChannel(raw: string | null): string {
   return "Referral";
 }
 
-function channelTone(name: string): "search" | "ai" | "direct" | "neutral" {
+function channelTone(
+  name: string,
+): "search" | "ai" | "social" | "direct" | "neutral" {
   if (name === "Google" || name === "Bing" || name === "DuckDuckGo") return "search";
   if (name === "ChatGPT" || name === "Perplexity" || name === "Claude" || name === "Gemini") return "ai";
+  if (
+    name === "X / Twitter" ||
+    name === "Reddit" ||
+    name === "Discord" ||
+    name === "Telegram" ||
+    name === "GitHub" ||
+    name === "Medium"
+  )
+    return "social";
   if (name === "Direct") return "direct";
   return "neutral";
 }
@@ -215,6 +237,9 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
 
   const eventsAreSample = !events || events.length === 0;
 
+  const [activity, setActivity] = useState<ActivityFilter>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
+
   const items = useMemo<FeedItem[]>(() => {
     const now = Date.now();
     const vSrc = visits && visits.length > 0 ? visits : sampleVisits(now);
@@ -224,7 +249,7 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         kind: "visit" as const,
         id: `v-${v.session_id}-${v.created_at}-${i}`,
         time: v.created_at,
-        source: v.source,
+        channel: classifyChannel(v.source),
         country: v.country,
         pagePath: v.page_path || "/",
       })),
@@ -232,6 +257,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         kind: "event" as const,
         id: `e-${e.tx_hash}-${e.log_index}`,
         time: e.block_timestamp,
+        channel: sampleChannel(e.wallet_address),
+        country: sampleCountry(e.wallet_address),
         eventType: e.event_type as "deposit" | "withdraw",
         wallet: e.wallet_address,
         vaultSlug: e.vault_slug,
@@ -244,6 +271,36 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
       .slice(0, FEED_LIMIT);
   }, [visits, events]);
+
+  // Distinct source channels present, most-frequent first, for the
+  // source dropdown.
+  const availableSources = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const it of items) counts.set(it.channel, (counts.get(it.channel) ?? 0) + 1);
+    return [...counts.keys()].sort(
+      (a, b) => (counts.get(b)! - counts.get(a)!) || a.localeCompare(b),
+    );
+  }, [items]);
+
+  const filtered = useMemo(
+    () =>
+      items.filter((it) => {
+        if (sourceFilter !== "all" && it.channel !== sourceFilter) return false;
+        switch (activity) {
+          case "visits":
+            return it.kind === "visit";
+          case "app":
+            return it.kind === "event";
+          case "deposits":
+            return it.kind === "event" && it.eventType === "deposit";
+          case "withdrawals":
+            return it.kind === "event" && it.eventType === "withdraw";
+          default:
+            return true;
+        }
+      }),
+    [items, activity, sourceFilter],
+  );
 
   const loading = (visits === null || events === null) && !err;
 
@@ -283,11 +340,45 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
               )}
             </h2>
             <span className="uni-hub-section-meta">
-              {items.length} most recent · visits real, deposit/withdraw source
-              and country are sample pending the hsid wallet-session join
+              {filtered.length === items.length
+                ? `${items.length} most recent`
+                : `${filtered.length} of ${items.length}`}{" "}
+              · visits real, deposit/withdraw source and country are sample
+              pending the hsid wallet-session join
             </span>
           </div>
         </header>
+
+        <div className="lf-filterbar">
+          <div className="aq-timeframe" role="group" aria-label="Activity filter">
+            {ACTIVITY_OPTIONS.map((o) => (
+              <button
+                key={o.value}
+                type="button"
+                className={`aq-timeframe-tab${activity === o.value ? " active" : ""}`}
+                aria-pressed={activity === o.value}
+                onClick={() => setActivity(o.value)}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+          <label className="lf-source-filter">
+            <span className="lf-source-filter-label">Source</span>
+            <select
+              className="lf-select"
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value)}
+            >
+              <option value="all">All sources</option>
+              {availableSources.map((s) => (
+                <option key={s} value={s}>
+                  {s}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         {err && (
           <div className="uni-hub-empty" style={{ color: "#b91c1c" }}>
@@ -310,13 +401,10 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
                 <span className="uni-hub-th">Tx</span>
               </div>
               <div className="uni-hub-tbody">
-                {items.map((item) => {
-                  const channel =
-                    item.kind === "visit"
-                      ? classifyChannel(item.source)
-                      : sampleChannel(item.wallet);
-                  const country =
-                    item.kind === "visit" ? item.country : sampleCountry(item.wallet);
+                {filtered.length === 0 && (
+                  <div className="uni-hub-empty">No activity matches this filter.</div>
+                )}
+                {filtered.map((item) => {
                   return (
                     <div
                       key={item.id}
@@ -331,12 +419,12 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
                         {relativeTime(item.time)}
                       </span>
                       <span className="uni-hub-cell" data-label="Source">
-                        <span className={`lf-badge lf-badge-${channelTone(channel)}`}>
-                          {channel}
+                        <span className={`lf-badge lf-badge-${channelTone(item.channel)}`}>
+                          {item.channel}
                         </span>
                       </span>
                       <span className="uni-hub-cell" data-label="Country">
-                        <CountryFlag country={country} />
+                        <CountryFlag country={item.country} />
                       </span>
                       <span className="uni-hub-cell" data-label="Event">
                         {item.kind === "visit" ? (
