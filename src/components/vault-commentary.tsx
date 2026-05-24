@@ -34,8 +34,19 @@ export function VaultCommentary({
 
   const paragraphs: string[] = [];
 
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const thirtyDaysAgo = nowSeconds - 30 * 24 * 60 * 60;
+  // Anchor the 30-day windows to the latest indexed reading per series
+  // (not wall-clock now), matching the stability card / hero KPIs so
+  // the numbers agree with the rest of the page on stale vaults.
+  const apyLatestTs = history.apyHistory.reduce(
+    (m, p) => (Number.isFinite(p.timestamp) ? Math.max(m, p.timestamp) : m),
+    0,
+  );
+  const tvlLatestTs = history.tvlHistory.reduce(
+    (m, p) => (Number.isFinite(p.timestamp) ? Math.max(m, p.timestamp) : m),
+    0,
+  );
+  const apyThirtyDaysAgo = apyLatestTs - 30 * 86400;
+  const tvlThirtyDaysAgo = tvlLatestTs - 30 * 86400;
 
   // 1. APY Ranking: is this competitive?
   if (vault.apy24h > 0 && sameAssetVaults.length > 1) {
@@ -44,19 +55,26 @@ export function VaultCommentary({
       .sort((a, b) => b.apy24h - a.apy24h);
     const rank = sorted.findIndex((v) => v.id === vault.id) + 1;
     if (rank > 0) {
-      const outperformPct = Math.round(
-        ((sorted.length - rank) / sorted.length) * 100,
-      );
-      paragraphs.push(
-        `This vault's ${formatAPY(vault.apy24h)} APY ranks #${rank} among the ${sorted.length} ${vault.asset} vaults we monitor, outperforming ${outperformPct}% of them.`,
-      );
+      // Neutral rank framing per the editorial spec - no "outperforming
+      // X%" (a banned phrasing, and an overstatement when the vault sits
+      // mid-cohort). Mirrors buildPerformanceOverview.
+      const head = `This vault's ${formatAPY(vault.apy24h)} APY ranks #${rank} among the ${sorted.length} ${vault.asset} vaults we monitor`;
+      if (rank / sorted.length <= 0.25) {
+        paragraphs.push(`${head}, placing it in the top quarter of the cohort.`);
+      } else {
+        const above = rank - 1;
+        const noun = above === 1 ? "strategy" : "strategies";
+        paragraphs.push(
+          `${head}, with ${above} ${noun} currently delivering higher APY.`,
+        );
+      }
     }
   }
 
   // 2. APY Stability: is this APY reliable? (#3 contextualization)
   if (history.apyHistory.length >= 5) {
     const validApy = history.apyHistory.filter((p) => p.apy >= 0);
-    const recent30d = validApy.filter((p) => p.timestamp >= thirtyDaysAgo);
+    const recent30d = validApy.filter((p) => p.timestamp >= apyThirtyDaysAgo);
 
     if (recent30d.length >= 5) {
       const apyValues = recent30d.map((p) => p.apy);
@@ -115,7 +133,7 @@ export function VaultCommentary({
   // 4. TVL Trend: is money flowing in or out?
   if (history.tvlHistory.length >= 2) {
     const recent = [...history.tvlHistory]
-      .filter((p) => p.timestamp >= thirtyDaysAgo && p.value > 0)
+      .filter((p) => p.timestamp >= tvlThirtyDaysAgo && p.value > 0)
       .sort((a, b) => a.timestamp - b.timestamp);
     if (recent.length >= 2) {
       const oldest = recent[0].value;
