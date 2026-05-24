@@ -111,7 +111,22 @@ export function buildAutocompounderAbout(
   }
   const apyBits: string[] = [];
   if (vault.apy24h > 0) apyBits.push(`a ${apy24h} 24-hour APY`);
-  if (vault.apy30d > 0) apyBits.push(`${apy30d} across the trailing 30 days`);
+  if (vault.apy30d > 0) {
+    // "Trailing 30 days" overstates the window on vaults with under a
+    // month of indexed history; say "since launch" instead.
+    const apyTs = history.apyHistory
+      .filter((p) => p.apy >= 0)
+      .map((p) => p.timestamp);
+    const td =
+      apyTs.length >= 2
+        ? Math.round((Math.max(...apyTs) - Math.min(...apyTs)) / 86400)
+        : 0;
+    apyBits.push(
+      td > 0 && td < 30
+        ? `${apy30d} since launch`
+        : `${apy30d} across the trailing 30 days`,
+    );
+  }
   if (apyBits.length > 0) {
     if (parts.length > 0 && parts[parts.length - 1].endsWith(", ")) {
       parts[parts.length - 1] = `${parts[parts.length - 1]}with ${apyBits.join(" and ")}.`;

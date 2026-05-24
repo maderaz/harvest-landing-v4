@@ -13,6 +13,7 @@ import {
   fmtEarnings,
   hasSharePriceDiscontinuity,
 } from "./contextualize";
+import { isLowLiquidityTvl } from "./admin-rules";
 
 // USD-pegged tickers. The Yield-trajectory spec collapses the
 // underlying-balance lines to noise for these (sharePrice ratio is
@@ -112,12 +113,21 @@ export function buildYieldTrajectory(
   const spNow = sp[sp.length - 1].sharePrice;
   const inceptionTs = sp[0].timestamp;
   const nowTs = sp[sp.length - 1].timestamp;
-  // ageDays = days of indexed share-price history. Equivalent to
-  // `tracked_days`, not on-chain inception age. Used in the
-  // "at launch (N days ago)" template because we can only compute
-  // $1,000-deposited values for dates within our index, never
-  // earlier than sp[0].timestamp.
+  // ageDays = days of indexed share-price history. Drives the 30-day
+  // gating + the deposit-value math (we can only value dates inside the
+  // index). The share-price series sometimes starts a couple of blocks
+  // before the APY series, so for the *label* we use the APY span
+  // (labelAgeDays) instead - that matches the "Tracked for N days"
+  // header and Strategy-details, killing the "13 days" header vs
+  // "15 days ago" trajectory mismatch.
   const ageDays = Math.max(0, Math.round((nowTs - inceptionTs) / 86400));
+  const apyTs = history.apyHistory
+    .filter((p) => p.apy >= 0)
+    .map((p) => p.timestamp);
+  const labelAgeDays =
+    apyTs.length >= 2
+      ? Math.round((Math.max(...apyTs) - Math.min(...apyTs)) / 86400)
+      : ageDays;
 
   // 30-day lines: only render when the vault has at least 30 days
   // of history (per the spec, skip when the window doesn't apply).
@@ -171,13 +181,13 @@ export function buildYieldTrajectory(
       const usdInceptionDelta = usdInception - 1000;
       const inceptionPhrase = gainLossPhrase(usdInceptionDelta);
       lines.push(
-        `$1,000 deposited at launch (${ageDays} days ago) would now be worth ~$${formatUsdInt(
+        `$1,000 deposited at launch (${labelAgeDays} days ago) would now be worth ~$${formatUsdInt(
           usdInception,
         )}, ${inceptionPhrase} of ~$${formatUsdInt(Math.abs(usdInceptionDelta))}.`,
       );
     } else {
       lines.push(
-        `1 ${ticker} deposited at launch (${ageDays} days ago) would now be ~${formatUnderlying(
+        `1 ${ticker} deposited at launch (${labelAgeDays} days ago) would now be ~${formatUnderlying(
           ratioInception,
           decimals,
         )} ${ticker}.`,
@@ -201,6 +211,19 @@ export function buildPerformanceOverview(
 ): PerformanceOverviewResult {
   const lines: string[] = [];
   const ticker = vault.asset.toUpperCase();
+
+  // Days of indexed APY history (matches the "Tracked for N days"
+  // header). Under a full month we must not advertise a "30-day"
+  // window: claiming 30 days of performance on a 13-day-old vault reads
+  // as synthetic/fake data to YMYL quality scanners.
+  const apyTsAll = history.apyHistory
+    .filter((p) => p.apy >= 0)
+    .map((p) => p.timestamp);
+  const trackedDays =
+    apyTsAll.length >= 2
+      ? Math.round((Math.max(...apyTsAll) - Math.min(...apyTsAll)) / 86400)
+      : 0;
+  const hasFullMonth = trackedDays >= 30;
 
   // Line 01: asset-cohort rank with conditional wording. Three
   // variants based on rank/total ratio:
@@ -262,8 +285,13 @@ export function buildPerformanceOverview(
     const ref = depositRef(vault.asset);
     const earnHigh = apyToMonthly(hi, ref.amount);
     const earnLow = apyToMonthly(lo, ref.amount);
+    const windowPhrase = hasFullMonth
+      ? "Over the past 30 days"
+      : trackedDays >= 2
+        ? `Over the ${trackedDays} days since launch`
+        : "Since launch";
     lines.push(
-      `Over the past 30 days, APY has ranged from ${formatAPY(lo)} to ${formatAPY(hi)}, averaging ${formatAPY(
+      `${windowPhrase}, APY has ranged from ${formatAPY(lo)} to ${formatAPY(hi)}, averaging ${formatAPY(
         avg,
       )}. At the ${formatAPY(hi)} high, ${ref.label} would earn ${fmtEarnings(
         earnHigh,
@@ -295,14 +323,18 @@ export function buildPerformanceOverview(
     );
   }
 
-  // Line 04: TVL 30d change. Suppress the percentage framing only
-  // when BOTH endpoints are below $50K - those are the cases where
-  // single-deposit noise dominates (e.g. $95 -> $95 producing
-  // "0.0%" or $26 -> $782K producing "2907.7%"). When at least one
-  // endpoint is above $50K, the percentage reflects an actual TVL
-  // movement: hiding it (the previous OR-gate behaviour) was
-  // suppressing the signal users most need to see, e.g. $86K ->
-  // $36K is a real 58% decrease, not noise.
+  // Line 04: TVL change vs ~30 days ago (or since launch on young
+  // vaults). Three guards on the framing:
+  //  - BOTH endpoints < $50K -> single-deposit noise dominates; state
+  //    endpoints without a percentage.
+  //  - |pct| >= 1000% -> a near-zero start (e.g. a $26 inception
+  //    reading) explodes the percentage into a 7-digit float
+  //    (1,212,275.2%), a programmatic-leak smell; state endpoints.
+  //  - otherwise the percentage reflects a real movement (e.g. $86K ->
+  //    $36K = -58%) and is shown.
+  // Window label is "over the past 30 days" only with a full month of
+  // history; younger vaults say "since launch" so we never advertise a
+  // 30-day window we don't have.
   const tvlSorted = [...history.tvlHistory].sort(
     (a, b) => a.timestamp - b.timestamp,
   );
@@ -314,23 +346,42 @@ export function buildPerformanceOverview(
     const past = closestPoint(tvlSorted, target);
     if (past && past.value > 0 && past.timestamp <= tvlLatestTs - 7 * 86400) {
       const current = vault.tvl;
+      const pastLabel = hasFullMonth ? "30 days ago" : "at launch";
+      const windowLabel = hasFullMonth
+        ? "over the past 30 days"
+        : `in the ${trackedDays} days since launch`;
       const TVL_PCT_THRESHOLD = 50_000;
       const bothEndpointsSmall =
         current < TVL_PCT_THRESHOLD && past.value < TVL_PCT_THRESHOLD;
-      if (!bothEndpointsSmall) {
-        const pct = ((current - past.value) / past.value) * 100;
+      const pct = ((current - past.value) / past.value) * 100;
+      if (bothEndpointsSmall) {
+        lines.push(
+          `TVL stands at ${formatTvlShort(current)}, compared to ${formatTvlShort(past.value)} ${pastLabel}.`,
+        );
+      } else if (Math.abs(pct) >= 1000) {
+        const verb = current >= past.value ? "grown" : "fallen";
+        lines.push(
+          `TVL has ${verb} from ${formatTvlShort(past.value)} ${pastLabel} to ${formatTvlShort(current)}.`,
+        );
+      } else {
         const direction = pct >= 0 ? "increased" : "decreased";
         lines.push(
-          `TVL has ${direction} ${Math.abs(pct).toFixed(1)}% over the past 30 days, from ${formatTvlShort(
+          `TVL has ${direction} ${Math.abs(pct).toFixed(1)}% ${windowLabel}, from ${formatTvlShort(
             past.value,
           )} to ${formatTvlShort(current)}.`,
         );
-      } else {
-        lines.push(
-          `TVL stands at ${formatTvlShort(current)}, compared to ${formatTvlShort(past.value)} 30 days ago.`,
-        );
       }
     }
+  }
+
+  // Low-liquidity context (factual, gated on the existing < $50K badge
+  // threshold): explains why TVL can swing on these pools without
+  // inventing capital-routing mechanics. TVL-only phrasing - the builder
+  // has no holder count.
+  if (isLowLiquidityTvl(vault.tvl)) {
+    lines.push(
+      `With only ${formatTvlShort(vault.tvl)} in TVL, a single inflow or outflow can move this vault's total value locked sharply.`,
+    );
   }
 
   return { lines };

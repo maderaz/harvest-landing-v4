@@ -68,11 +68,27 @@ export function buildAutocompounderFaqItems(
     : null;
   const vol = has30d ? stddev(trailing) : null;
 
+  // "30-day" framing overstates the window on vaults with under a month
+  // of indexed history; switch the FAQ copy to "since launch".
+  const faqApyTs = history.apyHistory
+    .filter((p) => p.apy >= 0)
+    .map((p) => p.timestamp);
+  const faqTrackedDays =
+    faqApyTs.length >= 2
+      ? Math.round((Math.max(...faqApyTs) - Math.min(...faqApyTs)) / 86400)
+      : 0;
+  const faqYoung = faqTrackedDays > 0 && faqTrackedDays < 30;
+  const avgPhrase = faqYoung
+    ? `an average of ${apy30d} since launch`
+    : `a 30-day average of ${apy30d}`;
+  const rangeWindow = faqYoung ? "Since launch" : "Over the last 30 days";
+  const rangeRef = faqYoung ? "range since launch" : "30-day range";
+
   // Parallel answer + answerText so the schema in <head> matches
   // what the page actually renders. Q1 uses singular "protocol's"
   // (one underlying venue) and Q3 uses singular "underlying venue"
   // - both differ from the Autopilot wording on purpose.
-  const q1Text = `${productName} is showing a 24-hour APY of ${apy24h}, with a 30-day average of ${apy30d}. Rates are variable and move with market conditions, liquidity, and the underlying protocol's incentives. The figures reflect the realised yield over the trailing window; they are not a forward guarantee.`;
+  const q1Text = `${productName} is showing a 24-hour APY of ${apy24h}, with ${avgPhrase}. Rates are variable and move with market conditions, liquidity, and the underlying protocol's incentives. The figures reflect the realised yield over the trailing window; they are not a forward guarantee.`;
   const q2Text = rewardSameAsTicker
     ? `The strategy holds positions in ${venue} and the yield that accrues is added back to the vault on a recurring basis, increasing the value of each holder's share. The process repeats automatically; holders are not required to claim or add anything back themselves. Autocompounding events run when economically feasible, anywhere from hourly to several days apart, with gas costs socialised across all holders.`
     : `The strategy holds positions in ${venue} and periodically claims any rewards that accrue. Those rewards (${reward}) are then converted into more ${ticker} and added back to the vault, increasing the value of each holder's share. The process repeats automatically; holders are not required to claim, swap, or add anything back themselves. Autocompounding events run when economically feasible, anywhere from hourly to several days apart, with gas costs socialised across all holders.`;
@@ -82,12 +98,12 @@ export function buildAutocompounderFaqItems(
     ? `Yield is sourced from ${venue}. The income stream is interest paid by the underlying market, added back to the vault on a recurring basis. The rate moves with the underlying venue's utilisation.`
     : `Yield is sourced from ${venue}. The income stream is a combination of interest paid by the underlying market and reward emissions in ${reward}, which the strategy claims and converts back into ${ticker} on a recurring basis. The rate moves with the underlying venue's utilisation and incentive schedule.`;
   const q5Text = has30d
-    ? `Over the last 30 days, this vault's APY has ranged from ${formatAPY(lo!)} to ${formatAPY(hi!)}, averaging ${formatAPY(avg!)}, with measured volatility of ±${vol!.toFixed(2)}%. The Strategy stability section above shows where this falls on the scale from very volatile to very consistent.`
+    ? `${rangeWindow}, this vault's APY has ranged from ${formatAPY(lo!)} to ${formatAPY(hi!)}, averaging ${formatAPY(avg!)}, with measured volatility of ±${vol!.toFixed(2)}%. The Strategy stability section above shows where this falls on the scale from very volatile to very consistent.`
     : "There isn't yet enough 30-day APY history to score stability for this vault. The Strategy stability section above will populate once a meaningful window of records is available.";
   const q6Text =
     holderCount && holderCount > 0
-      ? `The vault currently holds ${tvl} in TVL across ${holderCount} holders. The Historical statistics section above shows how this compares to the vault's 30-day range and lifetime peak.`
-      : `The vault currently holds ${tvl} in TVL. The Historical statistics section above shows how this compares to the vault's 30-day range and lifetime peak.`;
+      ? `The vault currently holds ${tvl} in TVL across ${holderCount} holders. The Historical statistics section above shows how this compares to the vault's ${rangeRef} and lifetime peak.`
+      : `The vault currently holds ${tvl} in TVL. The Historical statistics section above shows how this compares to the vault's ${rangeRef} and lifetime peak.`;
   // No reference to an Autopilot engine in Q7 because there isn't
   // one here. Halborn audit stays - it covers Harvest's core
   // vault infrastructure that Autocompounders use too.
