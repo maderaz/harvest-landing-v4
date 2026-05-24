@@ -105,3 +105,32 @@ export function isErraticTvl(
   const max = sorted[sorted.length - 1];
   return max / median > 50;
 }
+
+// Strip transient single-reading TVL spikes: an interior point whose
+// value deviates from BOTH of its time-neighbours by >= 50x, in either
+// direction (a near-zero dip that bounces straight back, or a one-
+// reading jump and back). At the indexer's ~1-2 day cadence such round
+// trips are not real flows - they are dust / zero reads (e.g. a vault
+// logging exactly $20 between $30K readings, or $178K between two $100
+// readings). Left in, they poison every derived TVL figure: 30D
+// low/high, "largest daily change", the all-time peak, the drawdown
+// story, and the "$X 30 days ago" comparison. First and last points are
+// never dropped, so the tracked-day span is preserved. Threshold mirrors
+// the 50x factor isErraticTvl already uses for series-level detection.
+export function sanitizeTvlSeries<T extends { value: number; timestamp: number }>(
+  points: T[],
+): T[] {
+  if (!points || points.length < 3) return points;
+  const sorted = [...points].sort((a, b) => a.timestamp - b.timestamp);
+  const keep = new Array<boolean>(sorted.length).fill(true);
+  for (let i = 1; i < sorted.length - 1; i++) {
+    const prev = sorted[i - 1].value;
+    const cur = sorted[i].value;
+    const next = sorted[i + 1].value;
+    if (cur <= 0) continue;
+    const dip = prev >= cur * 50 && next >= cur * 50;
+    const jump = prev > 0 && next > 0 && cur >= prev * 50 && cur >= next * 50;
+    if (dip || jump) keep[i] = false;
+  }
+  return sorted.filter((_, i) => keep[i]);
+}

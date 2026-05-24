@@ -6,6 +6,7 @@ import {
   type FullVaultHistory,
   type ApyHistoryPoint,
 } from "./history-api";
+import { sanitizeTvlSeries } from "./contextualize";
 import { readFileSync, existsSync } from "fs";
 import { join } from "path";
 
@@ -52,7 +53,16 @@ function loadHistoryFromFile(): Record<string, FullVaultHistory> | null {
   try {
     if (!existsSync(HISTORY_FILE)) return null;
     const raw = readFileSync(HISTORY_FILE, "utf-8");
-    return JSON.parse(raw) as Record<string, FullVaultHistory>;
+    const parsed = JSON.parse(raw) as Record<string, FullVaultHistory>;
+    // Strip transient indexer glitches from TVL once, at load, so every
+    // consumer (product grid, chart, narrative, JSON-LD, sparklines)
+    // reads the same clean series rather than each re-deriving guards.
+    for (const entry of Object.values(parsed)) {
+      if (entry?.tvlHistory) {
+        entry.tvlHistory = sanitizeTvlSeries(entry.tvlHistory);
+      }
+    }
+    return parsed;
   } catch {
     return null;
   }

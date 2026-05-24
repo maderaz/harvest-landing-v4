@@ -194,7 +194,12 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
       // persistence and forecastability the data may not support.
       // State endpoints + delta neutrally; let the user infer.
       const direction = changePct > 0 ? "increase" : "decrease";
-      let text = `Over the past ${apyTrackedDays} days, this vault's APY has moved from ${earlyAvg.toFixed(2)}% to ${lateAvg.toFixed(2)}%, a ${Math.abs(changePct).toFixed(1)}% ${direction}.`;
+      // "early average" / "recent average" (not bare endpoints): these
+      // are first-quarter and last-quarter means, so the closing figure
+      // is deliberately not the single latest reading shown in the hero.
+      // Labelling them as averages stops the recent value reading as a
+      // stale contradiction of the headline 24h APY.
+      let text = `Over the past ${apyTrackedDays} days, this vault's APY has moved from an early average of ${earlyAvg.toFixed(2)}% to a recent average of ${lateAvg.toFixed(2)}%, a ${Math.abs(changePct).toFixed(1)}% ${direction}.`;
 
       // Always render the monthly-earnings comparison. The outer
       // gate (changePct > 10%) already filters out windows where the
