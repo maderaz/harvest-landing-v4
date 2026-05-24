@@ -105,14 +105,26 @@ function labelColorForScore(score: number): string {
 export function VaultStabilityCard({ history, asset }: Props) {
   const s = computeStability(history);
 
+  // Window framing: with under a month of data, "the last 30 days"
+  // overstates the window, so the subtitle / sublabel / range say
+  // "since launch" instead of claiming a 30-day window.
+  const apyTs = history.apyHistory
+    .filter((p) => p.apy >= 0)
+    .map((p) => p.timestamp);
+  const trackedDays =
+    apyTs.length >= 2
+      ? Math.round((Math.max(...apyTs) - Math.min(...apyTs)) / 86400)
+      : 0;
+  const young = trackedDays > 0 && trackedDays < 30;
+  const subtitle = young
+    ? "Based on APY volatility since launch. Higher scores indicate steadier yields."
+    : "Based on APY volatility over the last 30 days. Higher scores indicate steadier yields.";
+
   if (!s) {
     return (
       <section className="pp-section uni-stability" id="consistency">
         <h2>Strategy stability</h2>
-        <p className="uni-stability-subtitle">
-          Based on APY volatility over the last 30 days. Higher scores
-          indicate steadier yields.
-        </p>
+        <p className="uni-stability-subtitle">{subtitle}</p>
         <div className="uni-stability-card">
           <p className="uni-stability-empty">
             Insufficient APY history to score stability for this strategy yet.
@@ -126,10 +138,7 @@ export function VaultStabilityCard({ history, asset }: Props) {
   return (
     <section className="pp-section uni-stability" id="consistency">
       <h2>Strategy stability</h2>
-      <p className="uni-stability-subtitle">
-        Based on APY volatility over the last 30 days. Higher scores
-        indicate steadier yields.
-      </p>
+      <p className="uni-stability-subtitle">{subtitle}</p>
       <div className="uni-stability-card">
         <div className="uni-stability-grid">
         <div className="uni-stability-left">
@@ -161,7 +170,7 @@ export function VaultStabilityCard({ history, asset }: Props) {
                   {s.label}
                 </div>
                 <div className="uni-stability-sublabel">
-                  Last 30 days · {s.dataPoints} {s.dataPoints === 1 ? "reading" : "readings"} indexed
+                  {young ? "Since launch" : "Last 30 days"} · {s.dataPoints} {s.dataPoints === 1 ? "reading" : "readings"} indexed
                 </div>
               </div>
             </div>
@@ -225,7 +234,7 @@ export function VaultStabilityCard({ history, asset }: Props) {
               className="uni-stability-stat-label"
               data-tooltip="Lowest and highest single APY observation in the last 30 days."
             >
-              30-day range
+              {young ? "Range since launch" : "30-day range"}
             </div>
             <div className="uni-stability-stat-value">
               {s.minApy.toFixed(2)}% to {s.maxApy.toFixed(2)}%

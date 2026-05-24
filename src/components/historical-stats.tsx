@@ -53,7 +53,11 @@ function tooltipFor(label: string, kind: "apy" | "tvl"): string | undefined {
       ? "Mean APY across the entire indexed history of this strategy."
       : "Mean TVL across the entire indexed history of this strategy.";
   }
-  return kind === "apy" ? APY_LABEL_TOOLTIPS[label] : TVL_LABEL_TOOLTIPS[label];
+  // Young vaults render the window prefix as the real span ("13D Low")
+  // instead of "30D Low"; normalise back to the "30D" map key so the
+  // tooltip still resolves.
+  const key = label.replace(/^\d+D /, "30D ");
+  return kind === "apy" ? APY_LABEL_TOOLTIPS[key] : TVL_LABEL_TOOLTIPS[key];
 }
 
 export function HistoricalStats({ history, asset }: { history: FullVaultHistory; asset: string }) {
@@ -135,11 +139,17 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
     dataPoints: allTvl.length,
   } : null;
 
+  // Window prefix for the range rows. On vaults with under a month of
+  // history "30D" overstates the window, so we show the real span
+  // ("13D Low") - never a 30-day claim the data can't back.
+  const apyWin = apyTrackedDays > 0 && apyTrackedDays < 30 ? `${apyTrackedDays}D` : "30D";
+  const tvlWin = tvlTrackedDays > 0 && tvlTrackedDays < 30 ? `${tvlTrackedDays}D` : "30D";
+
   const apyRows = apyStats
     ? [
-        { label: "30D Low", value: formatAPY(apyStats.low) },
-        { label: "30D High", value: formatAPY(apyStats.high) },
-        { label: "30D Average", value: formatAPY(apyStats.avg) },
+        { label: `${apyWin} Low`, value: formatAPY(apyStats.low) },
+        { label: `${apyWin} High`, value: formatAPY(apyStats.high) },
+        { label: `${apyWin} Average`, value: formatAPY(apyStats.avg) },
         { label: `Lifetime avg (${apyTrackedDays}d)`, value: formatAPY(apyStats.lifetimeAvg) },
         { label: "Median APY", value: formatAPY(apyStats.med) },
         { label: "Best day", value: `${formatAPY(apyStats.bestDay.apy)} · ${formatDate(apyStats.bestDay.timestamp)}` },
@@ -151,9 +161,9 @@ export function HistoricalStats({ history, asset }: { history: FullVaultHistory;
 
   const tvlRows = tvlStats
     ? [
-        { label: "30D Low", value: formatTVL(tvlStats.low) },
-        { label: "30D High", value: formatTVL(tvlStats.high) },
-        { label: "30D Average", value: formatTVL(tvlStats.avg) },
+        { label: `${tvlWin} Low`, value: formatTVL(tvlStats.low) },
+        { label: `${tvlWin} High`, value: formatTVL(tvlStats.high) },
+        { label: `${tvlWin} Average`, value: formatTVL(tvlStats.avg) },
         { label: `Lifetime avg (${tvlTrackedDays}d)`, value: formatTVL(tvlStats.lifetimeAvg) },
         { label: "Median TVL", value: formatTVL(tvlStats.med) },
         { label: "Best day", value: `${formatTVL(tvlStats.bestDay.value)} · ${formatDate(tvlStats.bestDay.timestamp)}` },

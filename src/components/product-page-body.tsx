@@ -421,9 +421,13 @@ export async function ProductPageBody({ vault }: { vault: YieldVault }) {
             <div className="uni-side-stat">
               <div
                 className="uni-side-label"
-                data-tooltip="Mean 24-hour APY across the last 30 days of indexed observations."
+                data-tooltip={
+                  trackedDays > 0 && trackedDays < 30
+                    ? `Mean 24-hour APY across all ${trackedDays} days of indexed history so far.`
+                    : "Mean 24-hour APY across the last 30 days of indexed observations."
+                }
               >
-                30d avg APY
+                {trackedDays > 0 && trackedDays < 30 ? "Avg APY" : "30d avg APY"}
               </div>
               <div className="uni-side-value">{formatAPY(vault.apy30d)}</div>
             </div>

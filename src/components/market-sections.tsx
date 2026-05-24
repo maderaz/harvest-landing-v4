@@ -20,7 +20,14 @@ export function MarketBenchmark({ vault, allVaults }: Props) {
   if (sameAsset.length < 2) return null;
 
   const rank = sameAsset.findIndex((v) => v.id === vault.id) + 1;
-  const avgApy = sameAsset.reduce((s, v) => s + v.apy24h, 0) / sameAsset.length;
+  // Average over funded strategies only: a near-empty pool (e.g. $4 TVL
+  // at 51% APY) otherwise drags the cohort mean and makes well-funded
+  // products look worse than they are. Rankings and counts still span
+  // every pool; only the average excludes negligible-liquidity ones.
+  // Fall back to the full set if every pool is sub-threshold.
+  const fundedSameAsset = sameAsset.filter((v) => !isLowLiquidityTvl(v.tvl));
+  const avgBasis = fundedSameAsset.length >= 1 ? fundedSameAsset : sameAsset;
+  const avgApy = avgBasis.reduce((s, v) => s + v.apy24h, 0) / avgBasis.length;
   const vsAvg = avgApy > 0 ? ((vault.apy24h - avgApy) / avgApy) * 100 : 0;
 
   // Row layout per the editorial spec.
@@ -85,7 +92,7 @@ export function MarketBenchmark({ vault, allVaults }: Props) {
         <div>
           <div
             className="bs-l"
-            data-tooltip={`Mean 24-hour APY across every ${vault.asset} strategy currently in our index. Stale and broken vaults are excluded.`}
+            data-tooltip={`Mean 24-hour APY across the funded ${vault.asset} strategies in our index. Stale, broken, and negligible-liquidity (sub-$50K) pools are excluded so a near-empty pool can't skew the average.`}
           >
             Asset average APY
           </div>
@@ -259,7 +266,13 @@ export function EcosystemContext({ vault, allVaults }: Props) {
 
   if (sameChain.length < 2) return null;
 
-  const networkAvg = sameChain.reduce((s, v) => s + v.apy24h, 0) / sameChain.length;
+  // Average over funded strategies only (see MarketBenchmark) so a $4
+  // ghost pool at 51% APY can't distort the network mean. Rank still
+  // spans every pool; fall back to all if none clear the threshold.
+  const fundedSameChain = sameChain.filter((v) => !isLowLiquidityTvl(v.tvl));
+  const netAvgBasis = fundedSameChain.length >= 1 ? fundedSameChain : sameChain;
+  const networkAvg =
+    netAvgBasis.reduce((s, v) => s + v.apy24h, 0) / netAvgBasis.length;
   const rank = sameChain.findIndex((v) => v.id === vault.id) + 1;
   const maxApy = sameChain[0]?.apy24h || 1;
   const vsNetAvg = networkAvg > 0 ? ((vault.apy24h - networkAvg) / networkAvg) * 100 : 0;
