@@ -42,13 +42,19 @@
 }
 
 /* The hub wrapper defines --uni-bg on itself, but custom properties do
-   not inherit upward to <body>, so reading var(--uni-bg) here resolved
-   to nothing and the page fell back to the global --bg (#fafaf9). Pin a
-   literal white so the area outside the hub margins matches every other
-   page. */
+   not inherit upward, so reading var(--uni-bg) on the page shell
+   resolved to nothing and the surface fell back to the global --bg
+   (#fafaf9). Pin literal white on BOTH <html> and <body> - painting
+   only <body> left the <html> backdrop (still --bg) showing through in
+   the overscroll gutter and anywhere the content is shorter than the
+   viewport, which read as the grey the page was "supposed to" lose. */
+html:has(.uni-hub-test),
 body:has(.uni-hub-test) {
   background: #ffffff !important;
+}
+body:has(.uni-hub-test) {
   overflow-x: clip;
+  overscroll-behavior-y: contain;
 }
 
 /* Dark theme overrides for the asset/network hub pages. Mirrors the
@@ -70,6 +76,7 @@ body:has(.uni-hub-test) {
   --uni-tint-thin:   rgba(244, 244, 241, 0.04);
   --uni-tint-strong: rgba(244, 244, 241, 0.14);
 }
+:root[data-theme="dark"] html:has(.uni-hub-test),
 :root[data-theme="dark"] body:has(.uni-hub-test) {
   background: var(--bg) !important;
 }
