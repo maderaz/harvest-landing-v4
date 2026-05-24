@@ -51,9 +51,14 @@ export function buildAutopilotFaqItems(
   const tvl = formatTVL(vault.tvl);
   const protocolInsert = protocolInsertFor(vault.contractAddress);
 
-  // 30-day APY window stats - powers Q5.
-  const now = Date.now() / 1000;
-  const thirtyDaysAgo = now - 30 * 86400;
+  // 30-day APY window stats - powers Q5. Anchor to the latest indexed
+  // reading (not wall-clock now) so the range / volatility match the
+  // Strategy stability card Q5 points the reader to.
+  const apyLatestTs = history.apyHistory.reduce(
+    (m, p) => (Number.isFinite(p.timestamp) ? Math.max(m, p.timestamp) : m),
+    0,
+  );
+  const thirtyDaysAgo = apyLatestTs - 30 * 86400;
   const trailing = history.apyHistory
     .filter(
       (p) => p.timestamp >= thirtyDaysAgo && Number.isFinite(p.apy) && p.apy >= 0,

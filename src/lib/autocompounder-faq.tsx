@@ -45,9 +45,16 @@ export function buildAutocompounderFaqItems(
   const reward = rewardTokenLabel(vault);
   const rewardSameAsTicker = reward.toUpperCase() === ticker;
 
-  // 30-day APY window stats power Q5.
-  const now = Date.now() / 1000;
-  const thirtyDaysAgo = now - 30 * 86400;
+  // 30-day APY window stats power Q5. Anchor the window to the latest
+  // indexed reading (not wall-clock now) so the range / volatility
+  // here match the Strategy stability card that Q5 points the reader
+  // to - on a stale vault a now-anchored window drifts and the two
+  // disagree (e.g. ±1.45% here vs ±3.28% on the card).
+  const apyLatestTs = history.apyHistory.reduce(
+    (m, p) => (Number.isFinite(p.timestamp) ? Math.max(m, p.timestamp) : m),
+    0,
+  );
+  const thirtyDaysAgo = apyLatestTs - 30 * 86400;
   const trailing = history.apyHistory
     .filter(
       (p) => p.timestamp >= thirtyDaysAgo && Number.isFinite(p.apy) && p.apy >= 0,

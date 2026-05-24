@@ -1880,6 +1880,25 @@ body:has(.uni-shell) {
   white-space: nowrap;
 }
 
+/* "Low liquidity" caution marker. Same pill geometry as .lp-badge but
+   a muted amber tint so it reads as a soft caution next to the product
+   name / TVL stat rather than a neutral category tag. Never hides the
+   vault - it only flags thin TVL in ranking-style views. */
+.lowliq-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 5px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+  border-radius: 3px;
+  background: rgba(244, 128, 26, 0.13);
+  color: #b5560a;
+  vertical-align: 1px;
+  white-space: nowrap;
+}
+
 /* eco-chart: inherit hero-chart visual language so the two charts on
    the page read as siblings. Bar radius bumped to 5px (hero) and the
    inset shadow + lift-on-hover are dropped (hero just dims). The
