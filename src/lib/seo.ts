@@ -1,7 +1,7 @@
 import { YieldVault } from "./types";
 import { SITE_NAME, SITE_URL } from "./constants";
 import { getSubAsset, getSubAssetFamilyName, isUmbrellaAsset } from "./sub-asset";
-import { stripChainSuffix, formatTVL } from "./format";
+import { stripChainSuffix } from "./format";
 import { getCanonicalDisplayName } from "./lp-pair";
 
 const MAX_TITLE_CHARS = 58;
@@ -39,6 +39,18 @@ function tickerProduct(vault: YieldVault): string {
     return name;
   }
   return `${subAsset} ${name}`;
+}
+
+// Direction word for the yield, derived from the live 24h rate against
+// the 30-day average (the same comparison the product page makes). A
+// >5% band counts as a move; smaller is "holding steady". Returns a
+// leading-comma fragment, or "" when there's no live rate to judge.
+function apyTrendPhrase(apy24h: number, apy30d: number): string {
+  if (apy24h <= 0 || apy30d <= 0) return "";
+  const diff = (apy24h - apy30d) / apy30d;
+  if (diff > 0.05) return ", trending up";
+  if (diff < -0.05) return ", trending down";
+  return ", holding steady";
 }
 
 // ─── Asset hub ────────────────────────────────────────────────────────────────
@@ -190,12 +202,13 @@ export function productPageDescription(
   // apy30d is the exact figure rendered in the page's "30-day" stat, so
   // the snippet stays aligned with what the visitor lands on (Google's
   // YMYL bar), and the 30-day window barely moves between hourly builds,
-  // so a cached SERP snippet does not drift from the live page. TVL is
-  // added only when it is non-zero. The closing sentence signals the
-  // population is what we track, not the whole market.
+  // so a cached SERP snippet does not drift from the live page. Instead
+  // of a TVL dollar figure (volatile, and a bare number reads as noise
+  // in a snippet) we describe the rate's direction in words. The closing
+  // sentence signals the population is what we track, not the market.
   if (vault.apy30d > 0) {
-    const tvl = vault.tvl > 0 ? `, ${formatTVL(vault.tvl)} TVL` : "";
-    return `${lead}: ${vault.apy30d.toFixed(1)}% 30-day APY${tvl}, as of ${monthYear}. Among the ${subAsset} yield strategies we track on ${network}. Live APY, TVL & risk.`;
+    const trend = apyTrendPhrase(vault.apy24h, vault.apy30d);
+    return `${lead}: ${vault.apy30d.toFixed(1)}% 30-day APY${trend}, as of ${monthYear}. Among the ${subAsset} yield strategies we track on ${network}. Live APY, TVL & risk.`;
   }
 
   // No usable rate to state: stay honest, lean on freshness + scope and
