@@ -1241,3 +1241,59 @@ body:has(.uni-hub-test) {
   .uni-hub-test .rules-card { padding: 16px; }
   .uni-hub-test .rules-card-blurb { font-size: 13px; }
 }
+
+/* ====================================================================
+   Live Feed: reflow to stacked, labelled cards on mobile so the feed
+   never scrolls sideways. The shared .aq-recent-table forces a 1180px
+   min-width for the desktop horizontal-scroll layout; on phones we drop
+   that, hide the header row, turn each row into a card, and surface the
+   column name from data-label so every value stays readable in one
+   column. Scoped to .lf-table so the other admin tables keep their
+   established scroll behaviour.
+   ==================================================================== */
+@media (max-width: 900px) {
+  .uni-hub-test .lf-wrap {
+    overflow-x: visible;
+    scrollbar-gutter: auto;
+  }
+  .uni-hub-test .lf-table {
+    min-width: 0;
+  }
+  .uni-hub-test .lf-table .hub-thead {
+    display: none;
+  }
+  .uni-hub-test .lf-table .hub-row {
+    display: block !important;
+    padding: 14px 16px;
+  }
+  .uni-hub-test .lf-table .hub-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+    padding: 4px 0;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .uni-hub-test .lf-table .hub-cell::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    color: var(--uni-ink-3);
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  /* Value side hugs the right and may wrap (long product slugs). */
+  .uni-hub-test .lf-table .hub-cell > * {
+    text-align: right;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .uni-hub-test .lf-table .aq-cell-time {
+    color: var(--uni-ink-3);
+  }
+}

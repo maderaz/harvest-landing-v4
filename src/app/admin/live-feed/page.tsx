@@ -198,8 +198,8 @@ export default function LiveFeedPage() {
         {loading ? (
           <div className="uni-hub-empty">Loading feed…</div>
         ) : (
-          <div className="hub-table-wrap aq-recent-wrap">
-            <div className="hub-table aq-clicks-table aq-recent-table">
+          <div className="hub-table-wrap aq-recent-wrap lf-wrap">
+            <div className="hub-table aq-clicks-table aq-recent-table lf-table">
               <div
                 className="hub-thead"
                 style={{ gridTemplateColumns: FEED_COLS }}
@@ -217,15 +217,15 @@ export default function LiveFeedPage() {
                   className="hub-row"
                   style={{ gridTemplateColumns: FEED_COLS }}
                 >
-                  <span className="hub-cell aq-cell-time">
+                  <span className="hub-cell aq-cell-time" data-label="Time">
                     {formatTime(e.block_timestamp)}
                   </span>
-                  <span className="hub-cell">
+                  <span className="hub-cell" data-label="Source">
                     <span className="lf-source">
                       {sampleChannel(e.wallet_address)}
                     </span>
                   </span>
-                  <span className="hub-cell">
+                  <span className="hub-cell" data-label="Event">
                     <span
                       style={{
                         color:
@@ -236,7 +236,7 @@ export default function LiveFeedPage() {
                       {e.event_type}
                     </span>
                   </span>
-                  <span className="hub-cell aq-cell-vault">
+                  <span className="hub-cell aq-cell-vault" data-label="Product">
                     {e.vault_slug ? (
                       <Link href={`/${e.vault_slug}`} className="aq-vault-link">
                         {e.vault_slug}
@@ -247,12 +247,12 @@ export default function LiveFeedPage() {
                       </span>
                     )}
                   </span>
-                  <span className="hub-cell">
+                  <span className="hub-cell" data-label="Wallet">
                     <span style={{ fontFamily: "var(--mono)", fontSize: 12 }}>
                       {shortenAddress(e.wallet_address)}
                     </span>
                   </span>
-                  <span className="hub-cell">
+                  <span className="hub-cell" data-label="Tx">
                     <a
                       href={txLink(e.chain, e.tx_hash)}
                       target="_blank"
