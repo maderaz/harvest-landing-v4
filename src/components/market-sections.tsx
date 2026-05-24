@@ -4,6 +4,7 @@ import { formatAPY, formatTVL } from "@/lib/format";
 import { depositRef, apyToMonthly, fmtEarnings } from "@/lib/contextualize";
 import { chainToSlug } from "@/lib/networks";
 import { isLpPairVault, getCanonicalDisplayName } from "@/lib/lp-pair";
+import { isLowLiquidityTvl } from "@/lib/admin-rules";
 import { AssetIcon, ChainIcon } from "./token-icons";
 import { LpBadge } from "./lp-badge";
 

@@ -13,7 +13,6 @@ import {
   fmtEarnings,
   hasSharePriceDiscontinuity,
 } from "./contextualize";
-import { isLowLiquidityTvl } from "./admin-rules";
 
 // USD-pegged tickers. The Yield-trajectory spec collapses the
 // underlying-balance lines to noise for these (sharePrice ratio is
@@ -372,16 +371,6 @@ export function buildPerformanceOverview(
         );
       }
     }
-  }
-
-  // Low-liquidity context (factual, gated on the existing < $50K badge
-  // threshold): explains why TVL can swing on these pools without
-  // inventing capital-routing mechanics. TVL-only phrasing - the builder
-  // has no holder count.
-  if (isLowLiquidityTvl(vault.tvl)) {
-    lines.push(
-      `With only ${formatTvlShort(vault.tvl)} in TVL, a single inflow or outflow can move this vault's total value locked sharply.`,
-    );
   }
 
   return { lines };
