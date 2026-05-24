@@ -4,10 +4,8 @@ import { formatAPY, formatTVL } from "@/lib/format";
 import { depositRef, apyToMonthly, fmtEarnings } from "@/lib/contextualize";
 import { chainToSlug } from "@/lib/networks";
 import { isLpPairVault, getCanonicalDisplayName } from "@/lib/lp-pair";
-import { isLowLiquidityTvl } from "@/lib/admin-rules";
 import { AssetIcon, ChainIcon } from "./token-icons";
 import { LpBadge } from "./lp-badge";
-import { LowLiquidityBadge } from "./low-liquidity-badge";
 
 interface Props {
   vault: YieldVault;
@@ -151,7 +149,6 @@ export function MarketBenchmark({ vault, allVaults }: Props) {
                   <strong>
                     {getCanonicalDisplayName(v)}
                     {isLpPairVault(v) && <LpBadge />}
-                    {isLowLiquidityTvl(v.tvl) && <LowLiquidityBadge />}
                   </strong>
                 </span>
                 {isYou && <span className="here-pill">You are here</span>}
@@ -396,7 +393,6 @@ function EcosystemChart({
                 <span className="eco-legend-name-text">
                   {getCanonicalDisplayName(v)}
                   {isLpPairVault(v) && <LpBadge />}
-                  {isLowLiquidityTvl(v.tvl) && <LowLiquidityBadge />}
                 </span>
                 {isYou && <span className="here-pill">You</span>}
               </span>

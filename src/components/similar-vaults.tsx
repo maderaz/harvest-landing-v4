@@ -10,10 +10,8 @@ import Link from "next/link";
 import { YieldVault } from "@/lib/types";
 import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
 import { isLpPairVault, getCanonicalDisplayName } from "@/lib/lp-pair";
-import { isLowLiquidityTvl } from "@/lib/admin-rules";
 import { AssetIcon, ChainIcon } from "./token-icons";
 import { LpBadge } from "./lp-badge";
-import { LowLiquidityBadge } from "./low-liquidity-badge";
 
 interface Props {
   vault: YieldVault;
@@ -93,7 +91,6 @@ export function SimilarVaults({ vault, allVaults }: Props) {
                 <div className="uni-similar-name">
                   {getCanonicalDisplayName(v)}
                   {isLpPairVault(v) && <LpBadge />}
-                  {isLowLiquidityTvl(v.tvl) && <LowLiquidityBadge />}
                 </div>
                 <div className="uni-similar-meta">
                   <ChainIcon chain={v.chain} size={12} />

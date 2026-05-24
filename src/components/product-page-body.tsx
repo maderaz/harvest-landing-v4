@@ -10,8 +10,7 @@ import {
   getHoldersMap,
 } from "@/lib/data";
 import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
-import { isLowLiquidityTvl } from "@/lib/admin-rules";
-import { LowLiquidityBadge } from "@/components/low-liquidity-badge";
+import { isLowLiquidityTvl, LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
 import type { FullVaultHistory } from "@/lib/history-api";
 import { productPageCrumbs } from "@/lib/seo";
 import { SITE_URL } from "@/lib/constants";
@@ -337,6 +336,21 @@ export async function ProductPageBody({ vault }: { vault: YieldVault }) {
 
       <div className="uni-divider" aria-hidden="true" />
 
+      {/* Single low-liquidity advisory for the whole page. Replaces the
+          inline badge that used to sit next to the TVL stat - stated
+          once, with context, rather than as a cramped marker. */}
+      {isLowLiquidityTvl(vault.tvl) && (
+        <div className="uni-lowliq-note" role="note">
+          <span className="uni-lowliq-note-tag">Low liquidity</span>
+          <p>
+            This strategy currently holds {formatTVL(vault.tvl)}, below our{" "}
+            {formatTVL(LOW_LIQUIDITY_TVL_THRESHOLD)} liquidity mark. Thin
+            liquidity can mean higher slippage on entry and exit, and the
+            headline yield can be skewed by a small number of holders.
+          </p>
+        </div>
+      )}
+
       {/* Main grid: chart + sidebar stats */}
       <div className="uni-detail-grid">
         <div className="uni-detail-main">
@@ -401,10 +415,7 @@ export async function ProductPageBody({ vault }: { vault: YieldVault }) {
               >
                 TVL
               </div>
-              <div className="uni-side-value">
-                {formatTVL(vault.tvl)}
-                {isLowLiquidityTvl(vault.tvl) && <LowLiquidityBadge />}
-              </div>
+              <div className="uni-side-value">{formatTVL(vault.tvl)}</div>
             </div>
 
             <div className="uni-side-stat">
