@@ -40,7 +40,11 @@
 
   --mono: var(--font-jetbrains-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
   --sans: var(--font-inter), system-ui, -apple-system, sans-serif;
-  --display: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif;
+  /* Headings/display text use the same Inter as body paragraphs - only
+     weight and size vary, never the family. The brand logo is the one
+     exception and keeps Inter Tight via --logo. */
+  --display: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --logo: var(--font-inter-tight), var(--font-inter), system-ui, sans-serif;
 }
 
 /* Dark theme. Warm graphite vibe to match the paper-feel of the
@@ -146,7 +150,7 @@ button { font-family: inherit; cursor: pointer; }
 .brand:hover { background: var(--bg-2); }
 .brand:active { background: var(--line); }
 .brand-name {
-  font-family: var(--display);
+  font-family: var(--logo);
   font-weight: 600; letter-spacing: -0.02em;
   font-size: 15px;
 }

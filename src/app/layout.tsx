@@ -15,9 +15,11 @@ const inter = Inter({
   variable: "--font-inter",
   display: "swap",
 });
+// Inter Tight is now used only by the brand logo (--logo, weight 600);
+// every other heading/display surface uses Inter via --display.
 const interTight = Inter_Tight({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["600"],
   variable: "--font-inter-tight",
   display: "swap",
 });
