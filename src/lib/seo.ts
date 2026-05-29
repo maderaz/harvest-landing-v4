@@ -86,9 +86,9 @@ export function assetHubDescription(
         : subAssets.slice(0, -1).join(", ") +
           " and " +
           subAssets[subAssets.length - 1];
-    return `Compare ${count}+ ${familyName} yield strategies across ${listed} on Ethereum, Base, Arbitrum and more. Live APY, TVL and 30-day history, updated daily.`;
+    return `Compare ${count}+ ${familyName} yield strategies across ${listed} on Ethereum, Base, Arbitrum and more. Live APY, TVL and 30-day history, updated hourly.`;
   }
-  return `Compare ${count}+ ${asset} yield strategies across DeFi on Ethereum, Base, Arbitrum and other major networks. Live APY, TVL and 30-day history, updated daily.`;
+  return `Compare ${count}+ ${asset} yield strategies across DeFi on Ethereum, Base, Arbitrum and other major networks. Live APY, TVL and 30-day history, updated hourly.`;
 }
 
 // ─── Network hub ──────────────────────────────────────────────────────────────

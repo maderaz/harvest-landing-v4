@@ -149,7 +149,7 @@ export async function Footer() {
             <p className="foot-blurb">
               Harvest is an onchain yield index tracking{" "}
               {vaults.length}+ DeFi yield strategies across major networks.
-              APY, TVL and performance data are updated daily and derive from
+              APY, TVL and performance data are updated hourly and derive from
               our own indexer monitoring vault contracts continuously since
               2020. See <Link href="/methodology">methodology</Link> for how
               data is collected and calculated.

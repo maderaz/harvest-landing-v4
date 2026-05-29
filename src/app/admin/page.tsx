@@ -45,7 +45,7 @@ export default async function AdminPage() {
     slug: "/",
     title: "Best DeFi Yields: Compare Top APY Rankings | Harvest",
     description:
-      "Track and compare yield sources across DeFi. Find the best APY for USDC, ETH, Bitcoin and USDT across the strategies we index on Ethereum, Base, Arbitrum and more. Updated daily.",
+      "Track and compare yield sources across DeFi. Find the best APY for USDC, ETH, Bitcoin and USDT across the strategies we index on Ethereum, Base, Arbitrum and more. Updated hourly.",
     chain: "—",
     apy: "—",
     tvl: formatTVL(vaults.reduce((s, v) => s + v.tvl, 0)),
