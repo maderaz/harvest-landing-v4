@@ -1040,7 +1040,13 @@ body:has(.uni-hub-test) {
   background: var(--uni-tint);
   color: var(--uni-ink-2);
 }
-/* Placeholder dash for columns that don't apply to a visit row. */
+/* App click (CTA into the app): gold, since it's our own funnel step. */
+.uni-hub-test .lf-event-click {
+  background: rgba(255, 185, 54, 0.16);
+  color: #946208;
+}
+:root[data-theme="dark"] .uni-hub-test .lf-event-click { color: var(--uni-gold-soft); }
+/* Placeholder dash for columns that don't apply to a visit/click row. */
 .uni-hub-test .lf-dim { color: var(--uni-ink-3); }
 
 /* Source badges: the pill background is the standout, not the font.
@@ -1068,6 +1074,13 @@ body:has(.uni-hub-test) {
   background: transparent;
   border: 1px solid var(--uni-line);
   color: var(--uni-ink-2);
+}
+/* External: an on-chain event from a wallet that never touched the
+   index. Muted + dashed so it reads as "not our funnel", not an error. */
+.uni-hub-test .lf-badge-external {
+  background: transparent;
+  border: 1px dashed var(--uni-line);
+  color: var(--uni-ink-3);
 }
 :root[data-theme="dark"] .uni-hub-test .lf-badge-search { background: rgba(96, 165, 250, 0.16); color: #93c5fd; }
 :root[data-theme="dark"] .uni-hub-test .lf-badge-ai { background: rgba(167, 139, 250, 0.18); color: #c4b5fd; }
