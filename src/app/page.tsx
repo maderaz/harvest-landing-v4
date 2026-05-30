@@ -15,11 +15,11 @@ import "./_styles/home.css";
 export const metadata: Metadata = {
   title: "Best DeFi Yields: Compare Top APY Rankings | Harvest",
   description:
-    "Track and compare yield sources across DeFi. Find the best APY for USDC, ETH, Bitcoin and USDT across the strategies we index on Ethereum, Base, Arbitrum and more. Updated daily.",
+    "Track and compare yield sources across DeFi. Find the best APY for USDC, ETH, Bitcoin and USDT across the strategies we index on Ethereum, Base, Arbitrum and more. Updated hourly.",
   openGraph: {
     title: "Best DeFi Yields: Compare Top APY Rankings | Harvest",
     description:
-      "Track and compare yield sources across DeFi. Best APY for USDC, ETH, Bitcoin and USDT. Updated daily.",
+      "Track and compare yield sources across DeFi. Best APY for USDC, ETH, Bitcoin and USDT. Updated hourly.",
     url: SITE_URL,
     siteName: SITE_NAME,
     type: "website",

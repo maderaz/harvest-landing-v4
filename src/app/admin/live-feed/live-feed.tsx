@@ -34,6 +34,7 @@ interface VaultEventRow {
   vault_slug: string | null;
   event_type: "deposit" | "withdraw" | "transfer";
   wallet_address: string;
+  amount_shares: string | null;
 }
 interface VisitRow {
   created_at: string;
@@ -55,6 +56,31 @@ interface ConnectionRow {
   wallet_address: string;
   connected_at: string;
   session_id: string | null;
+  balance: number | null;
+}
+
+// One assembled SEO -> deposit journey, keyed off the hsid (session_id)
+// spine: a deposit (vault_events_prod) attributed back through the
+// wallet -> wallet_connections_prod.session_id link to the visit and
+// click that share that same hsid. Every field except wallet/shares/tx
+// (which come from the on-chain event) is reconstructed from the hsid.
+interface JourneyRow {
+  id: string;
+  time: string; // deposit block_timestamp (terminal step)
+  channel: string; // first-touch acquisition source
+  country: string | null;
+  attributed: boolean; // false when the wallet never touched the index
+  hsid: string | null; // the session_id that ties the path together
+  landingPage: string | null; // first page of the session
+  hasClick: boolean; // session fired a [View strategy] CTA click
+  clickVault: string | null; // vault slug the CTA pointed at
+  vaultSlug: string | null; // vault actually deposited into
+  vaultAddress: string;
+  chain: string;
+  wallet: string;
+  netWorth: number | null; // DeBank balance at connect time (app-written)
+  shares: string | null; // on-chain deposit size, raw share units
+  tx: string;
 }
 
 type FeedItem =
@@ -105,6 +131,10 @@ const DISPLAY_LIMIT = 200; // rows rendered
 const FETCH_LIMIT = 500; // visits/clicks/events pulled for merge + map
 const MAP_LIMIT = 2000; // connections pulled for the attribution map only
 const FEED_COLS = "132px 132px 92px 104px minmax(170px, 1.7fr) 128px 54px";
+// Journeys view: one row per attributed deposit, full SEO -> deposit path.
+const JOURNEY_COLS =
+  "96px 120px 64px minmax(140px, 1.3fr) minmax(140px, 1.3fr) minmax(150px, 1.4fr) 104px 104px 124px 54px";
+type ViewMode = "stream" | "journeys";
 
 // ── Source channel classification ──────────────────────────────────
 // Visit / click sources arrive as a referrer URL or utm_source string.
@@ -200,11 +230,11 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
           ),
           supabaseSelect<VaultEventRow>(
             "vault_events_prod",
-            `select=tx_hash,log_index,block_timestamp,chain,vault_address,vault_slug,event_type,wallet_address&event_type=in.(deposit,withdraw)&order=block_timestamp.desc&limit=${FETCH_LIMIT}`,
+            `select=tx_hash,log_index,block_timestamp,chain,vault_address,vault_slug,event_type,wallet_address,amount_shares&event_type=in.(deposit,withdraw)&order=block_timestamp.desc&limit=${FETCH_LIMIT}`,
           ),
           supabaseSelect<ConnectionRow>(
             "wallet_connections_prod",
-            `select=wallet_address,connected_at,session_id&order=connected_at.desc&limit=${MAP_LIMIT}`,
+            `select=wallet_address,connected_at,session_id,balance&order=connected_at.desc&limit=${MAP_LIMIT}`,
           ),
         ]);
         if (cancelled) return;
@@ -244,18 +274,60 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     return m;
   }, [visits, clicks]);
 
-  // wallet (lowercased) -> earliest connection session_id.
+  // wallet (lowercased) -> earliest connection { session_id (hsid),
+  // net worth }. First-touch: the connection that first tied this wallet
+  // to an index session wins, and we carry its DeBank balance for the
+  // journey row.
   const walletSession = useMemo(() => {
-    const m = new Map<string, { session: string | null; t: number }>();
+    const m = new Map<
+      string,
+      { session: string | null; t: number; balance: number | null }
+    >();
     for (const w of connections ?? []) {
       const a = (w.wallet_address || "").toLowerCase();
       if (!a) continue;
       const t = new Date(w.connected_at).getTime();
       const prev = m.get(a);
-      if (!prev || t < prev.t) m.set(a, { session: w.session_id, t });
+      if (!prev || t < prev.t)
+        m.set(a, { session: w.session_id, t, balance: w.balance });
     }
     return m;
   }, [connections]);
+
+  // hsid -> first landing page (earliest visit for that session). The
+  // landing step of the journey.
+  const sessionLanding = useMemo(() => {
+    const m = new Map<
+      string,
+      { page: string; source: string | null; country: string | null; t: number }
+    >();
+    for (const v of visits ?? []) {
+      if (!v.session_id) continue;
+      const t = new Date(v.created_at).getTime();
+      const prev = m.get(v.session_id);
+      if (!prev || t < prev.t)
+        m.set(v.session_id, {
+          page: v.page_path || "/",
+          source: v.source,
+          country: v.country,
+          t,
+        });
+    }
+    return m;
+  }, [visits]);
+
+  // hsid -> earliest CTA click for that session. The "clicked into the
+  // app" step, with the vault the CTA pointed at.
+  const sessionClick = useMemo(() => {
+    const m = new Map<string, { vaultSlug: string | null; t: number }>();
+    for (const c of clicks ?? []) {
+      if (!c.session_id) continue;
+      const t = new Date(c.created_at).getTime();
+      const prev = m.get(c.session_id);
+      if (!prev || t < prev.t) m.set(c.session_id, { vaultSlug: c.vault_slug, t });
+    }
+    return m;
+  }, [clicks]);
 
   // Resolve an on-chain event's wallet back to its acquisition source.
   function resolveWallet(wallet: string): {
@@ -279,6 +351,7 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
 
   const [activity, setActivity] = useState<ActivityFilter>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
+  const [viewMode, setViewMode] = useState<ViewMode>("stream");
 
   const items = useMemo<FeedItem[]>(() => {
     if (!loaded) return [];
@@ -397,6 +470,106 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     [items, activity, sourceFilter],
   );
 
+  // ── Journeys: one row per attributed deposit, hsid-stitched ─────────
+  // Spine: deposit.wallet -> walletSession (wallet_connections_prod) ->
+  // session_id (hsid) -> sessionLanding / sessionClick / sessionFirstTouch.
+  // Every step shares the same hsid; only the wallet -> session hop is
+  // address-based, because on-chain events carry no hsid of their own.
+  const journeys = useMemo<JourneyRow[]>(() => {
+    if (!loaded) return [];
+    const now = Date.now();
+
+    if (realEmpty) {
+      const sampleLanding: Record<string, string> = {
+        "weth-autopilot-base": "/eth",
+        "usdc-aerodrome-aero-base": "/usdc",
+        "usdc-hypurr-hyperevm": "/usdc",
+      };
+      const sampleNet: Record<string, number> = {
+        "weth-autopilot-base": 12500,
+        "usdc-aerodrome-aero-base": 84000,
+        "usdc-hypurr-hyperevm": 3100,
+      };
+      const sampleShares: Record<string, string> = {
+        "weth-autopilot-base": "4200000000000000000",
+        "usdc-aerodrome-aero-base": "61000000000000000000000",
+        "usdc-hypurr-hyperevm": "950000000000000000000",
+      };
+      return SAMPLE_EVENT_SEED.filter((s) => s.type === "deposit").map(
+        (s, i) => {
+          const ext = s.channel === "External";
+          return {
+            id: `sj-${i}`,
+            time: new Date(now - s.minsAgo * 60_000).toISOString(),
+            channel: s.channel,
+            country: s.country,
+            attributed: !ext,
+            hsid: ext ? null : `sample-hsid-${i}`,
+            landingPage: ext ? null : sampleLanding[s.slug] ?? "/",
+            hasClick: !ext,
+            clickVault: ext ? null : s.slug,
+            vaultSlug: s.slug,
+            vaultAddress: "0x0000000000000000000000000000000000000000",
+            chain: s.chain,
+            wallet: s.wallet,
+            netWorth: ext ? null : sampleNet[s.slug] ?? null,
+            shares: ext ? "0" : sampleShares[s.slug] ?? "0",
+            tx: SAMPLE_TX[i],
+          };
+        },
+      );
+    }
+
+    const rows: JourneyRow[] = [];
+    for (const e of events ?? []) {
+      if (e.event_type !== "deposit") continue;
+      const link = walletSession.get((e.wallet_address || "").toLowerCase());
+      const hsid = link?.session ?? null;
+      const landing = hsid ? sessionLanding.get(hsid) : undefined;
+      const click = hsid ? sessionClick.get(hsid) : undefined;
+      const ft = hsid ? sessionFirstTouch.get(hsid) : undefined;
+      const source = landing?.source ?? ft?.source ?? null;
+      const attributed = Boolean(hsid && (landing || ft));
+      rows.push({
+        id: `j-${e.tx_hash}-${e.log_index}`,
+        time: e.block_timestamp,
+        channel: attributed ? appChannel(source) : "External",
+        country: landing?.country ?? ft?.country ?? null,
+        attributed,
+        hsid,
+        landingPage: landing?.page ?? null,
+        hasClick: Boolean(click),
+        clickVault: click?.vaultSlug ?? null,
+        vaultSlug: e.vault_slug,
+        vaultAddress: e.vault_address,
+        chain: e.chain,
+        wallet: e.wallet_address,
+        netWorth: link?.balance ?? null,
+        shares: e.amount_shares,
+        tx: e.tx_hash,
+      });
+    }
+    return rows
+      .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+      .slice(0, DISPLAY_LIMIT);
+  }, [
+    events,
+    walletSession,
+    sessionLanding,
+    sessionClick,
+    sessionFirstTouch,
+    loaded,
+    realEmpty,
+  ]);
+
+  const journeysFiltered = useMemo(
+    () =>
+      journeys.filter(
+        (j) => sourceFilter === "all" || j.channel === sourceFilter,
+      ),
+    [journeys, sourceFilter],
+  );
+
   const loading = !loaded && !err;
 
   function productLabel(slug: string | null, address?: string): string {
@@ -430,30 +603,54 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
               {realEmpty && <span className="aq-sample-badge">sample</span>}
             </h2>
             <span className="uni-hub-section-meta">
-              {filtered.length === items.length
-                ? `${items.length} most recent`
-                : `${filtered.length} of ${items.length}`}
+              {viewMode === "journeys"
+                ? `${journeysFiltered.length} attributed deposit${journeysFiltered.length === 1 ? "" : "s"}`
+                : filtered.length === items.length
+                  ? `${items.length} most recent`
+                  : `${filtered.length} of ${items.length}`}
               {realEmpty
                 ? " · preview data, no live activity yet"
-                : " · source attributed first-touch via the wallet-session join"}
+                : viewMode === "journeys"
+                  ? " · full path stitched by hsid: visit, click, connect, deposit"
+                  : " · source attributed first-touch via the wallet-session join"}
             </span>
           </div>
         </header>
 
         <div className="lf-filterbar">
-          <div className="aq-timeframe" role="group" aria-label="Activity filter">
-            {ACTIVITY_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                className={`aq-timeframe-tab${activity === o.value ? " active" : ""}`}
-                aria-pressed={activity === o.value}
-                onClick={() => setActivity(o.value)}
-              >
-                {o.label}
-              </button>
-            ))}
+          <div className="aq-timeframe" role="group" aria-label="View mode">
+            <button
+              type="button"
+              className={`aq-timeframe-tab${viewMode === "stream" ? " active" : ""}`}
+              aria-pressed={viewMode === "stream"}
+              onClick={() => setViewMode("stream")}
+            >
+              Stream
+            </button>
+            <button
+              type="button"
+              className={`aq-timeframe-tab${viewMode === "journeys" ? " active" : ""}`}
+              aria-pressed={viewMode === "journeys"}
+              onClick={() => setViewMode("journeys")}
+            >
+              Journeys
+            </button>
           </div>
+          {viewMode === "stream" && (
+            <div className="aq-timeframe" role="group" aria-label="Activity filter">
+              {ACTIVITY_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  className={`aq-timeframe-tab${activity === o.value ? " active" : ""}`}
+                  aria-pressed={activity === o.value}
+                  onClick={() => setActivity(o.value)}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
           <label className="lf-source-filter">
             <span className="lf-source-filter-label">Source</span>
             <select
@@ -479,6 +676,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
 
         {loading ? (
           <div className="uni-hub-empty">Loading feed…</div>
+        ) : viewMode === "journeys" ? (
+          <JourneyTable rows={journeysFiltered} productLabel={productLabel} />
         ) : (
           <div className="lf-scroll">
             <div className="uni-hub-table lf-table">
@@ -596,6 +795,176 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
       </section>
     </div>
   );
+}
+
+// ── Journeys table ─────────────────────────────────────────────────
+// One row per attributed deposit, reading left to right as the funnel:
+// source -> country -> landing page -> app click -> deposit vault, plus
+// size / net worth / wallet / tx. Every non-on-chain column is recovered
+// from the hsid that links the session's visit, click and connect rows.
+function JourneyTable({
+  rows,
+  productLabel,
+}: {
+  rows: JourneyRow[];
+  productLabel: (slug: string | null, address?: string) => string;
+}) {
+  return (
+    <div className="lf-scroll">
+      <div className="uni-hub-table lf-table">
+        <div
+          className="uni-hub-thead"
+          style={{ gridTemplateColumns: JOURNEY_COLS }}
+        >
+          <span className="uni-hub-th">Time</span>
+          <span className="uni-hub-th">Source</span>
+          <span className="uni-hub-th">Country</span>
+          <span className="uni-hub-th">Landed on</span>
+          <span className="uni-hub-th">Clicked into app</span>
+          <span className="uni-hub-th">Deposited into</span>
+          <span className="uni-hub-th">Size</span>
+          <span className="uni-hub-th">Net worth</span>
+          <span className="uni-hub-th">Wallet</span>
+          <span className="uni-hub-th">Tx</span>
+        </div>
+        <div className="uni-hub-tbody">
+          {rows.length === 0 && (
+            <div className="uni-hub-empty">
+              No attributed deposits match this filter yet.
+            </div>
+          )}
+          {rows.map((j) => (
+            <div
+              key={j.id}
+              className="uni-hub-row"
+              style={{ gridTemplateColumns: JOURNEY_COLS }}
+            >
+              <span
+                className="uni-hub-cell lf-time"
+                data-label="Time"
+                title={formatTime(j.time)}
+              >
+                {relativeTime(j.time)}
+              </span>
+              <span className="uni-hub-cell" data-label="Source">
+                <span
+                  className={`lf-badge lf-badge-${channelTone(j.channel)}`}
+                  title={j.hsid ? `hsid ${j.hsid}` : undefined}
+                >
+                  {j.channel}
+                </span>
+              </span>
+              <span className="uni-hub-cell" data-label="Country">
+                {j.country ? (
+                  <CountryFlag country={j.country} />
+                ) : (
+                  <span className="lf-dim">-</span>
+                )}
+              </span>
+              <span className="uni-hub-cell lf-product" data-label="Landed on">
+                {j.landingPage ? (
+                  <Link href={j.landingPage} className="lf-product-link">
+                    {j.landingPage}
+                  </Link>
+                ) : (
+                  <span className="lf-dim">-</span>
+                )}
+              </span>
+              <span
+                className="uni-hub-cell lf-product"
+                data-label="Clicked into app"
+              >
+                {j.hasClick ? (
+                  j.clickVault ? (
+                    <Link href={`/${j.clickVault}`} className="lf-product-link">
+                      {productLabel(j.clickVault)}
+                    </Link>
+                  ) : (
+                    <span className="lf-event lf-event-click">
+                      <ClickIcon />
+                      app
+                    </span>
+                  )
+                ) : (
+                  <span className="lf-dim">-</span>
+                )}
+              </span>
+              <span
+                className="uni-hub-cell lf-product"
+                data-label="Deposited into"
+              >
+                {j.vaultSlug ? (
+                  <Link href={`/${j.vaultSlug}`} className="lf-product-link">
+                    {productLabel(j.vaultSlug, j.vaultAddress)}
+                  </Link>
+                ) : (
+                  <span className="lf-product-link">
+                    {productLabel(j.vaultSlug, j.vaultAddress)}
+                  </span>
+                )}
+              </span>
+              {/* TODO(usd): size is raw share units (18-dec assumed), not
+                  USD. A dollar deposit size needs an app-side write of
+                  price * amount at deposit time into vault_events_prod.
+                  See the dev instruction in the PR description. */}
+              <span
+                className="uni-hub-cell"
+                data-label="Size"
+                title={j.shares ?? undefined}
+              >
+                {formatShares(j.shares)}
+              </span>
+              <span className="uni-hub-cell" data-label="Net worth">
+                {j.netWorth != null && j.netWorth > 0 ? (
+                  formatUsd(j.netWorth)
+                ) : (
+                  <span className="lf-dim">-</span>
+                )}
+              </span>
+              <span className="uni-hub-cell" data-label="Wallet">
+                <span className="lf-mono" title={j.wallet}>
+                  {shortenAddress(j.wallet)}
+                </span>
+              </span>
+              <span className="uni-hub-cell" data-label="Tx">
+                <a
+                  href={txLink(j.chain, j.tx)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="lf-tx"
+                >
+                  view
+                </a>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function formatUsd(n: number): string {
+  if (n >= 1_000_000_000) return `$${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}k`;
+  return `$${n.toFixed(0)}`;
+}
+
+// Raw uint256 share units -> human number. Vault tokens are ~all 18-dec;
+// full raw value stays in the cell tooltip. Not a USD figure (see TODO).
+function formatShares(raw: string | null): string {
+  if (!raw) return "-";
+  try {
+    const n = Number(BigInt(raw)) / 1e18;
+    if (!Number.isFinite(n)) return raw;
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(2)}k`;
+    if (n >= 1) return n.toFixed(3);
+    return n.toFixed(5);
+  } catch {
+    return raw;
+  }
 }
 
 function shortenAddress(addr: string): string {
