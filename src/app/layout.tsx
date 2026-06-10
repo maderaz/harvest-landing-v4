@@ -135,6 +135,16 @@ export default async function RootLayout({
       className={`${inter.variable} ${interTight.variable} ${jetbrainsMono.variable}`}
     >
       <head>
+        {/* Google tag (gtag.js) */}
+        <script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-EJMXWBVX4R"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.dataLayer = window.dataLayer || [];function gtag(){dataLayer.push(arguments);}gtag('js', new Date());gtag('config', 'G-EJMXWBVX4R');`,
+          }}
+        />
         {/* Pre-paint theme resolver. Runs synchronously before the body
             paints so users on dark mode never see a flash of the light
             theme. Reads the explicit user choice from localStorage and
