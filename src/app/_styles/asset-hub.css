@@ -997,6 +997,29 @@ body:has(.uni-hub-test) {
   font-variant-numeric: tabular-nums;
   color: var(--uni-ink);
 }
+/* The public ranking table drops its Strategy / Network / trend columns
+   at smaller widths via nth-child display:none rules. Those selectors
+   also match the feed tables (same .uni-hub-row/.uni-hub-cell classes)
+   and were silently deleting the Country / Event / Product cells on
+   phones. Re-assert visibility inside .lf-table at higher specificity;
+   the feeds manage their own responsive layout below. */
+.uni-hub-test .lf-table .uni-hub-thead .uni-hub-th:nth-child(n) {
+  display: inline-flex;
+}
+.uni-hub-test .lf-table .uni-hub-row .uni-hub-cell:nth-child(n) {
+  display: inline-flex;
+  align-items: center;
+}
+/* Inside the now-flex cells the product link must be allowed to
+   shrink, or long product names refuse to ellipsise and push the row. */
+.uni-hub-test .lf-table .lf-product .lf-product-link {
+  min-width: 0;
+  max-width: 100%;
+}
+/* Full/short label pairs (event chips, wallet, tx, session counts):
+   desktop shows the full text, the one-line mobile rows swap to the
+   abbreviated variant. */
+.uni-hub-test .lf-lbl-short { display: none; }
 .uni-hub-test .lf-time,
 .uni-hub-test .lf-mono { white-space: nowrap; }
 .uni-hub-test .lf-product-link {
@@ -1155,10 +1178,29 @@ body:has(.uni-hub-test) {
 .uni-hub-test .lf-filterbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   margin: 0 0 16px;
+}
+/* Iconed filter dropdown: the glyph (globe = sources, pulse = activity
+   types) sits inside the select's left padding so the two filters are
+   distinguishable at a glance. */
+.uni-hub-test .lf-filter {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+.uni-hub-test .lf-filter-icon {
+  position: absolute;
+  left: 11px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--uni-ink-3);
+  pointer-events: none;
+}
+.uni-hub-test .lf-select-iconed {
+  padding-left: 32px;
 }
 .uni-hub-test .lf-source-filter {
   display: inline-flex;
@@ -1510,18 +1552,17 @@ body:has(.uni-hub-test) {
 }
 
 /* ====================================================================
-   Live Feed / SEO Summary on mobile: collapse the wide ranking-style
-   table into tight cards — one record per card, stacked, in the same
-   compact register as the product ranking on the mobile homepage rather
-   than scrolling sideways. Each card is two lines:
+   Live Feed / SEO Summary on mobile: every record collapses to ONE
+   tight line spread across the full row width, homepage-ranking style:
 
-     line 1:  [product / page] .............................. [time]
-     line 2:  [event] [source] [device] [country] [wallet] [tx]
+     [time] [source] [device] [country] [event] [activity] [wallet] [tx]
 
-   No "Label: value" rows — the icons and badges carry the meaning. The
-   break between the two lines is forced by margin-left:auto on the time
-   cell (it eats the rest of line 1, pushing the chips to line 2), and
-   empty cells (a bare "—") are dropped so the chip row stays dense.
+   Labels swap to their abbreviated variants (.lf-lbl-short), the
+   country code drops to flag-only, the wallet tightens to 0x12…ab and
+   the tx link becomes an external-link glyph. The activity slot is the
+   flexible middle: a bare page-count for session rows, an ellipsised
+   page/product label for single rows — it absorbs the leftover width
+   so the line always spans edge to edge. Empty (—) cells are dropped.
    Scoped to .lf-table so the public ranking tables are untouched.
    ==================================================================== */
 @media (max-width: 900px) {
@@ -1531,60 +1572,86 @@ body:has(.uni-hub-test) {
   .uni-hub-test .lf-table .uni-hub-thead {
     display: none;
   }
-  .uni-hub-test .lf-table .uni-hub-row,
-  .uni-hub-test .lf-table .lf-session-row {
-    display: flex !important;
-    flex-wrap: wrap;
+  .uni-hub-test .lf-table .uni-hub-row {
+    display: flex;
+    flex-wrap: nowrap;
     align-items: center;
-    gap: 7px 9px;
-    padding: 12px 14px;
+    gap: 7px;
+    padding: 11px 12px;
+    min-width: 0;
+    overflow: hidden;
   }
-  .uni-hub-test .lf-table .uni-hub-cell {
-    display: inline-flex;
-    align-items: center;
+  .uni-hub-test .lf-table .uni-hub-row .uni-hub-cell {
     padding: 0;
     min-width: 0;
-    width: auto;
+    flex: 0 0 auto;
   }
-  /* Drop the per-cell label and any empty (—) cell so cards stay tight. */
-  .uni-hub-test .lf-table .uni-hub-cell::before { content: none; }
-  .uni-hub-test .lf-table .uni-hub-cell:has(> .lf-dim) { display: none; }
+  /* Empty (—) cells collapse so the line stays dense. */
+  .uni-hub-test .lf-table .uni-hub-row .uni-hub-cell:has(> .lf-dim) {
+    display: none;
+  }
+  /* Swap full labels for the abbreviated set. */
+  .uni-hub-test .lf-table .lf-lbl-full { display: none; }
+  .uni-hub-test .lf-table .lf-lbl-short { display: inline-flex; }
 
-  /* Line 1: product grows and ellipsises; time is pinned right and
-     forces the rest onto line 2. */
-  .uni-hub-test .lf-table .lf-product {
-    order: 1;
-    flex: 1 1 55%;
-    min-width: 0;
+  /* Reading order per the operator spec. */
+  .uni-hub-test .lf-table .lf-time { order: 1; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Source"] { order: 2; }
+  .uni-hub-test .lf-table .lf-device-cell { order: 3; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Country"] { order: 4; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Event"],
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Stage"] { order: 5; }
+  .uni-hub-test .lf-table .lf-product { order: 6; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Wallet"] { order: 7; margin-left: auto; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Tx"] { order: 8; }
+
+  .uni-hub-test .lf-table .lf-time {
+    font-size: 11px;
+    color: var(--uni-ink-3);
+    min-width: 24px;
   }
-  .uni-hub-test .lf-table .lf-product .lf-product-link,
-  .uni-hub-test .lf-table .lf-product .lf-session-count {
-    display: block;
+  /* Source badge: keep it one line and cap its width so long channel
+     names (X / Twitter, Perplexity) can't blow up the row. */
+  .uni-hub-test .lf-table .lf-badge {
+    font-size: 10.5px;
+    padding: 2px 7px;
+    max-width: 84px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    text-align: left;
+    display: inline-block;
   }
-  .uni-hub-test .lf-table .lf-time {
-    order: 2;
-    margin-left: auto;
-    color: var(--uni-ink-3);
-    font-size: 12px;
+  /* Country: flag only, the ISO code text drops. */
+  .uni-hub-test .lf-table .country-cell .country-code { display: none; }
+  /* Event / stage chip tightens. */
+  .uni-hub-test .lf-table .lf-event {
+    font-size: 10.5px;
+    padding: 2px 6px 2px 5px;
     white-space: nowrap;
   }
-  /* Line 2: the chip row, in reading order. */
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Event"],
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Stage"] { order: 3; }
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Source"] { order: 4; }
-  .uni-hub-test .lf-table .lf-device-cell { order: 5; }
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Country"] { order: 6; }
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Wallet"] { order: 7; }
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Tx"] { order: 8; }
+  /* Activity = the flexible middle. Session rows show the bare count;
+     single rows the page/product label, ellipsised. (Row-qualified so
+     it outranks the flex:0 0 auto set on every cell above.) */
+  .uni-hub-test .lf-table .uni-hub-row .lf-product {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .uni-hub-test .lf-table .lf-product .lf-product-link {
+    display: block;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11.5px;
+  }
+  .uni-hub-test .lf-table .lf-session-count { font-size: 11.5px; }
+  .uni-hub-test .lf-table .lf-mono { font-size: 11px; }
+  /* Session chevron stays compact next to the time. */
+  .uni-hub-test .lf-table .lf-time-session { gap: 4px; }
 
-  /* Indented child rows (expanded session pages) read as a quiet
-     sub-line: product + time only, the rest collapses out. */
+  /* Indented child rows (expanded session pages): quiet sub-lines. */
   .uni-hub-test .lf-table .lf-row-child {
-    padding-left: 26px;
+    padding-left: 24px;
     opacity: 0.85;
   }
 }

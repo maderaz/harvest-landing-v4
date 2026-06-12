@@ -23,6 +23,7 @@ import {
 import { CountryFlag } from "@/components/admin/country-flag";
 import { DeviceIcon } from "@/components/admin/device-icon";
 import { RefreshButton } from "@/components/admin/refresh-button";
+import { WalletLabel } from "@/components/admin/wallet-label";
 import { supabaseSelect, supabaseSelectAll } from "@/lib/supabase";
 import { isMutedActor, detectRebalancerActors } from "@/lib/muted-actors";
 import {
@@ -692,10 +693,10 @@ function SeoSessionTable({
             {sessions.map((s) => {
               const isOpen = expanded.has(s.sessionId);
               const stage = s.deposited
-                ? { label: "Deposited", tone: "deposit" }
+                ? { label: "Deposited", short: "Dep.", tone: "deposit" }
                 : s.reached
-                  ? { label: "Reached app", tone: "click" }
-                  : { label: "Acquired", tone: "visit" };
+                  ? { label: "Reached app", short: "App", tone: "click" }
+                  : { label: "Acquired", short: "Acq.", tone: "visit" };
               return (
                 <SessionRows
                   key={s.sessionId}
@@ -721,7 +722,7 @@ function SessionRows({
 }: {
   session: SeoSession;
   isOpen: boolean;
-  stage: { label: string; tone: string };
+  stage: { label: string; short: string; tone: string };
   onToggle: () => void;
 }) {
   return (
@@ -765,13 +766,17 @@ function SessionRows({
         </span>
         <span className="uni-hub-cell" data-label="Stage">
           <span className={`lf-event lf-event-${stage.tone}`}>
-            {stage.label}
+            <span className="lf-lbl-full">{stage.label}</span>
+            <span className="lf-lbl-short">{stage.short}</span>
           </span>
         </span>
         <span className="uni-hub-cell lf-product" data-label="Activity">
           <span className="lf-session-count">
-            {s.pageCount} page{s.pageCount === 1 ? "" : "s"}
-            {s.deposited ? " · deposit" : s.reached ? " · click" : ""}
+            <span className="lf-lbl-full">
+              {s.pageCount} page{s.pageCount === 1 ? "" : "s"}
+              {s.deposited ? " · deposit" : s.reached ? " · click" : ""}
+            </span>
+            <span className="lf-lbl-short">{s.pageCount}</span>
           </span>
         </span>
         <span className="uni-hub-cell lf-device-cell" data-label="Device">
@@ -779,9 +784,7 @@ function SessionRows({
         </span>
         <span className="uni-hub-cell" data-label="Wallet">
           {s.wallet ? (
-            <span className="lf-mono" title={s.wallet}>
-              {shortenAddress(s.wallet)}
-            </span>
+            <WalletLabel address={s.wallet} />
           ) : (
             <span className="lf-dim">—</span>
           )}
@@ -812,11 +815,22 @@ function SessionRows({
             </span>
             <span className="uni-hub-cell" data-label="Stage">
               <span className={`lf-event lf-event-${a.kind}`}>
-                {a.kind === "visit"
-                  ? "Visit"
-                  : a.kind === "click"
-                    ? "App click"
-                    : a.kind}
+                <span className="lf-lbl-full">
+                  {a.kind === "visit"
+                    ? "Visit"
+                    : a.kind === "click"
+                      ? "App click"
+                      : a.kind}
+                </span>
+                <span className="lf-lbl-short">
+                  {a.kind === "visit"
+                    ? "Visit"
+                    : a.kind === "click"
+                      ? "App"
+                      : a.kind === "deposit"
+                        ? "Dep"
+                        : "With"}
+                </span>
               </span>
             </span>
             <span className="uni-hub-cell lf-product" data-label="Activity">
@@ -846,7 +860,8 @@ function SessionRows({
                   rel="noopener noreferrer"
                   className="lf-tx"
                 >
-                  view
+                  <span className="lf-lbl-full">view</span>
+                  <ExternalLinkIcon className="lf-lbl-short" />
                 </a>
               ) : (
                 <span className="lf-dim">—</span>
@@ -877,9 +892,15 @@ function Chevron() {
   );
 }
 
-function shortenAddress(addr: string): string {
-  if (!addr || addr.length < 10) return addr || "—";
-  return `${addr.slice(0, 6)}…${addr.slice(-4)}`;
+// External-link glyph: replaces the "view" tx label on mobile.
+function ExternalLinkIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-label="View transaction">
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
+  );
 }
 
 function txLink(chain: string, tx: string): string {
