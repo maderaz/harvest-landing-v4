@@ -1572,50 +1572,51 @@ body:has(.uni-hub-test) {
   .uni-hub-test .lf-table .uni-hub-thead {
     display: none;
   }
+  /* Shared grid: every row uses the SAME column tracks, so each field
+     lines up vertically across the whole table (the flex version gave
+     each row its own rhythm and read as noise). `auto` tracks size to
+     the widest value in their column; the activity slot takes the
+     leftover width. !important because the desktop track template is
+     an inline style on the row. Empty cells render a muted dash and
+     keep their track, which is what holds the columns straight. */
   .uni-hub-test .lf-table .uni-hub-row {
-    display: flex;
-    flex-wrap: nowrap;
+    display: grid;
+    grid-template-columns: auto auto 16px 20px auto minmax(0, 1fr) auto auto !important;
+    gap: 6px;
     align-items: center;
-    gap: 7px;
-    padding: 11px 12px;
+    padding: 10px 10px;
     min-width: 0;
-    overflow: hidden;
   }
   .uni-hub-test .lf-table .uni-hub-row .uni-hub-cell {
     padding: 0;
     min-width: 0;
-    flex: 0 0 auto;
-  }
-  /* Empty (—) cells collapse so the line stays dense. */
-  .uni-hub-test .lf-table .uni-hub-row .uni-hub-cell:has(> .lf-dim) {
-    display: none;
   }
   /* Swap full labels for the abbreviated set. */
   .uni-hub-test .lf-table .lf-lbl-full { display: none; }
   .uni-hub-test .lf-table .lf-lbl-short { display: inline-flex; }
 
-  /* Reading order per the operator spec. */
+  /* Column order per the operator spec (order-modified auto-placement):
+     time | source | device | country | event | activity | wallet | tx */
   .uni-hub-test .lf-table .lf-time { order: 1; }
   .uni-hub-test .lf-table .uni-hub-cell[data-label="Source"] { order: 2; }
-  .uni-hub-test .lf-table .lf-device-cell { order: 3; }
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Country"] { order: 4; }
+  .uni-hub-test .lf-table .lf-device-cell { order: 3; justify-content: center; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Country"] { order: 4; justify-content: center; }
   .uni-hub-test .lf-table .uni-hub-cell[data-label="Event"],
   .uni-hub-test .lf-table .uni-hub-cell[data-label="Stage"] { order: 5; }
   .uni-hub-test .lf-table .lf-product { order: 6; }
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Wallet"] { order: 7; margin-left: auto; }
-  .uni-hub-test .lf-table .uni-hub-cell[data-label="Tx"] { order: 8; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Wallet"] { order: 7; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Tx"] { order: 8; justify-content: center; }
 
   .uni-hub-test .lf-table .lf-time {
     font-size: 11px;
     color: var(--uni-ink-3);
-    min-width: 24px;
   }
-  /* Source badge: keep it one line and cap its width so long channel
-     names (X / Twitter, Perplexity) can't blow up the row. */
+  /* Source badge: one line, capped so long channel names (X / Twitter,
+     Perplexity) can't stretch the whole column. */
   .uni-hub-test .lf-table .lf-badge {
     font-size: 10.5px;
     padding: 2px 7px;
-    max-width: 84px;
+    max-width: 76px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1629,13 +1630,6 @@ body:has(.uni-hub-test) {
     padding: 2px 6px 2px 5px;
     white-space: nowrap;
   }
-  /* Activity = the flexible middle. Session rows show the bare count;
-     single rows the page/product label, ellipsised. (Row-qualified so
-     it outranks the flex:0 0 auto set on every cell above.) */
-  .uni-hub-test .lf-table .uni-hub-row .lf-product {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
   .uni-hub-test .lf-table .lf-product .lf-product-link {
     display: block;
     min-width: 0;
@@ -1646,14 +1640,25 @@ body:has(.uni-hub-test) {
   }
   .uni-hub-test .lf-table .lf-session-count { font-size: 11.5px; }
   .uni-hub-test .lf-table .lf-mono { font-size: 11px; }
+  /* Placeholder dashes recede so filled cells carry the eye. */
+  .uni-hub-test .lf-table .lf-dim { opacity: 0.45; }
   /* Session chevron stays compact next to the time. */
   .uni-hub-test .lf-table .lf-time-session { gap: 4px; }
 
-  /* Indented child rows (expanded session pages): quiet sub-lines. */
+  /* Child rows (expanded session pages) keep the same tracks so they
+     stay column-aligned with their parent; quieter via opacity. */
   .uni-hub-test .lf-table .lf-row-child {
-    padding-left: 24px;
-    opacity: 0.85;
+    opacity: 0.8;
   }
+}
+/* Very narrow phones: shave the gaps and the source-badge cap so the
+   fixed tracks + activity still fit a 320px viewport. */
+@media (max-width: 380px) {
+  .uni-hub-test .lf-table .uni-hub-row {
+    gap: 4px;
+    padding: 10px 8px;
+  }
+  .uni-hub-test .lf-table .lf-badge { max-width: 60px; }
 }
 
 /* Hide panel: the Save CTA. Brand gold, prominent, with a clear
