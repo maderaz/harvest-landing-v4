@@ -30,6 +30,7 @@ import {
   classifyChannel,
   channelTone,
   channelGroup,
+  shortChannelLabel,
   sourceDomain,
 } from "@/lib/channels";
 import "../../_styles/asset-hub.css";
@@ -754,7 +755,8 @@ function SessionRows({
             className={`lf-badge lf-badge-${channelTone(s.seoName)}`}
             title={s.srcDomain ?? undefined}
           >
-            {s.seoName}
+            <span className="lf-lbl-full">{s.seoName}</span>
+            <span className="lf-lbl-short">{shortChannelLabel(s.seoName)}</span>
           </span>
         </span>
         <span className="uni-hub-cell" data-label="Country">
@@ -766,6 +768,7 @@ function SessionRows({
         </span>
         <span className="uni-hub-cell" data-label="Stage">
           <span className={`lf-event lf-event-${stage.tone}`}>
+            <StageIcon kind={stage.tone} />
             <span className="lf-lbl-full">{stage.label}</span>
             <span className="lf-lbl-short">{stage.short}</span>
           </span>
@@ -815,6 +818,7 @@ function SessionRows({
             </span>
             <span className="uni-hub-cell" data-label="Stage">
               <span className={`lf-event lf-event-${a.kind}`}>
+                <StageIcon kind={a.kind} />
                 <span className="lf-lbl-full">
                   {a.kind === "visit"
                     ? "Visit"
@@ -888,6 +892,47 @@ function Chevron() {
       aria-hidden="true"
     >
       <path d="m9 6 6 6-6 6" />
+    </svg>
+  );
+}
+
+// Stage glyphs matching the Live Feed event icons: eye = visit /
+// acquired, pointer = app click / reached, arrows = deposit (in) and
+// withdraw (out). They keep the chips readable when the mobile rows
+// collapse the chip to icon-only.
+function StageIcon({ kind }: { kind: string }) {
+  if (kind === "deposit" || kind === "withdraw") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {kind === "withdraw" ? (
+          <>
+            <path d="M12 19V5" />
+            <path d="m5 12 7-7 7 7" />
+          </>
+        ) : (
+          <>
+            <path d="M12 5v14" />
+            <path d="m19 12-7 7-7-7" />
+          </>
+        )}
+      </svg>
+    );
+  }
+  if (kind === "click") {
+    return (
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M9 9l5 12 1.8-5.2L21 14 9 9z" />
+        <path d="M7.5 3.5 8.5 6" />
+        <path d="M3.5 7.5 6 8.5" />
+        <path d="M3.5 12.5 6 11.5" />
+        <path d="M7.5 16.5 8.5 14" />
+      </svg>
+    );
+  }
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
