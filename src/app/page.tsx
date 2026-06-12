@@ -10,6 +10,7 @@ import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 import { AssetIcon, ChainIcon } from "@/components/token-icons";
 import { HubTable } from "@/components/hub-table";
 import { HomeHeroPreview } from "@/components/home-hero-preview";
+import { RankingDataNote } from "@/components/ranking-data-note";
 import { TrackedAppLink } from "@/components/tracked-app-link";
 import "./_styles/home.css";
 
@@ -112,15 +113,7 @@ export default async function HomePage() {
             </Link>
           </header>
 
-          {/* Legal disclaimer (per compliance review): the page keeps the
-              "best / top / ranking" framing for its search value, but
-              qualifies it here so the ranking reads as a historical-data
-              sort, not an inducement or a promise of future performance. */}
-          <p className="uni-home-data-note">
-            Data reflected on this page is an aggregation of historical data
-            and sorted by best (e.g. highest historical performance), and is
-            not a promise of continued performance or guaranteed results.
-          </p>
+          <RankingDataNote />
 
           <HubTable
             vaults={vaults}

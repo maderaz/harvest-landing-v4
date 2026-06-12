@@ -11,6 +11,7 @@ import { networkHubH1, networkHubCrumbs } from "@/lib/seo";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { NETWORK_BLURBS, NETWORKS } from "@/lib/networks";
 import { HubTable } from "@/components/hub-table";
+import { RankingDataNote } from "@/components/ranking-data-note";
 import { HomeCrumb } from "@/components/home-crumb";
 
 interface Props {
@@ -176,6 +177,8 @@ export async function NetworkHubBody({
             Top {networkDisplay} yields
           </h2>
         </header>
+
+        <RankingDataNote />
 
         {vaults.length === 0 ? (
           <div className="uni-hub-empty">No {networkDisplay} strategies indexed yet.</div>
