@@ -21,10 +21,16 @@ import {
   type Timeframe,
 } from "@/components/admin/timeframe-selector";
 import { CountryFlag } from "@/components/admin/country-flag";
+import { DeviceIcon } from "@/components/admin/device-icon";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import { supabaseSelect, supabaseSelectAll } from "@/lib/supabase";
 import { isMutedActor, detectRebalancerActors } from "@/lib/muted-actors";
-import { classifyChannel, channelTone, channelGroup } from "@/lib/channels";
+import {
+  classifyChannel,
+  channelTone,
+  channelGroup,
+  sourceDomain,
+} from "@/lib/channels";
 import "../../_styles/asset-hub.css";
 
 interface VisitRow {
@@ -33,6 +39,8 @@ interface VisitRow {
   page_path: string | null;
   source: string | null;
   country: string | null;
+  device_type: string | null;
+  referrer: string | null;
 }
 interface ClickRow {
   created_at: string;
@@ -41,6 +49,7 @@ interface ClickRow {
   source_page: string | null;
   source: string | null;
   country: string | null;
+  device_type: string | null;
 }
 interface ConnRow {
   wallet_address: string;
@@ -67,8 +76,10 @@ const METRIC_OPTIONS: ReadonlyArray<{ value: Metric; label: string }> = [
 ];
 
 const SEO_DISPLAY_LIMIT = 200;
-// Same column rhythm as the Live Feed stream so the two read alike.
-const SEO_FEED_COLS = "132px 132px 92px 104px minmax(170px, 1.7fr) 128px 54px";
+// Same column rhythm as the Live Feed stream so the two read alike
+// (Time, Source, Country, Stage, Activity, Device, Wallet, Tx).
+const SEO_FEED_COLS =
+  "132px 132px 92px 104px minmax(170px, 1.7fr) 64px 128px 54px";
 
 // One action within a session (a visit, click, or on-chain event).
 interface SeoAction {
@@ -87,6 +98,8 @@ interface SeoSession {
   sessionId: string;
   seoName: string; // the search channel that acquired it (e.g. "Google")
   country: string | null;
+  device: string | null;
+  srcDomain: string | null;
   wallet: string | null;
   firstVisitMs: number;
   firstClickMs: number; // Infinity if it never clicked into the app
@@ -123,11 +136,11 @@ export default function SeoSummaryPage() {
     const [v, c, w, e] = await Promise.all([
       supabaseSelect<VisitRow>(
         "frontpage_visits",
-        `select=created_at,session_id,page_path,source,country&order=created_at.desc&limit=${FETCH_LIMIT}`,
+        `select=created_at,session_id,page_path,source,country,device_type,referrer&order=created_at.desc&limit=${FETCH_LIMIT}`,
       ),
       supabaseSelect<ClickRow>(
         "outbound_clicks",
-        `select=created_at,session_id,vault_slug,source_page,source,country&order=created_at.desc&limit=${FETCH_LIMIT}`,
+        `select=created_at,session_id,vault_slug,source_page,source,country,device_type&order=created_at.desc&limit=${FETCH_LIMIT}`,
       ),
       supabaseSelectAll<ConnRow>(
         "wallet_connections_prod",
@@ -190,6 +203,8 @@ export default function SeoSummaryPage() {
       seoName: string | null;
       seoMs: number;
       country: string | null;
+      device: string | null;
+      srcDomain: string | null;
       firstVisitMs: number;
       firstClickMs: number;
       firstDepositMs: number;
@@ -205,6 +220,8 @@ export default function SeoSummaryPage() {
           seoName: null,
           seoMs: Infinity,
           country: null,
+          device: null,
+          srcDomain: null,
           firstVisitMs: Infinity,
           firstClickMs: Infinity,
           firstDepositMs: Infinity,
@@ -226,10 +243,14 @@ export default function SeoSummaryPage() {
       if (t < a.firstVisitMs) a.firstVisitMs = t;
       if (t > a.latestMs) a.latestMs = t;
       if (a.country === null && v.country) a.country = v.country;
+      if (a.device === null && v.device_type) a.device = v.device_type;
       const ch = classifyChannel(v.source);
       if (channelGroup(ch) === "SEO" && t < a.seoMs) {
         a.seoMs = t;
         a.seoName = ch;
+        // Domain of the search visit that acquired the session, for the
+        // Source tooltip (e.g. "google.com").
+        a.srcDomain = sourceDomain(v.referrer);
       }
       a.actions.push({
         id: `v-${v.session_id}-${v.created_at}`,
@@ -251,6 +272,7 @@ export default function SeoSummaryPage() {
       if (t < a.firstClickMs) a.firstClickMs = t;
       if (t > a.latestMs) a.latestMs = t;
       if (a.country === null && c.country) a.country = c.country;
+      if (a.device === null && c.device_type) a.device = c.device_type;
       a.actions.push({
         id: `c-${c.session_id}-${c.created_at}`,
         time: c.created_at,
@@ -329,6 +351,8 @@ export default function SeoSummaryPage() {
         sessionId: id,
         seoName: a.seoName,
         country: a.country,
+        device: a.device,
+        srcDomain: a.srcDomain,
         wallet:
           sessionWallet.get(id) ??
           a.actions.find((x) => x.wallet)?.wallet ??
@@ -655,6 +679,7 @@ function SeoSessionTable({
             <span className="uni-hub-th">Country</span>
             <span className="uni-hub-th">Stage</span>
             <span className="uni-hub-th">Activity</span>
+            <span className="uni-hub-th">Device</span>
             <span className="uni-hub-th">Wallet</span>
             <span className="uni-hub-th">Tx</span>
           </div>
@@ -724,7 +749,10 @@ function SessionRows({
           {relativeTimeMs(s.latestMs)}
         </span>
         <span className="uni-hub-cell" data-label="Source">
-          <span className={`lf-badge lf-badge-${channelTone(s.seoName)}`}>
+          <span
+            className={`lf-badge lf-badge-${channelTone(s.seoName)}`}
+            title={s.srcDomain ?? undefined}
+          >
             {s.seoName}
           </span>
         </span>
@@ -745,6 +773,9 @@ function SessionRows({
             {s.pageCount} page{s.pageCount === 1 ? "" : "s"}
             {s.deposited ? " · deposit" : s.reached ? " · click" : ""}
           </span>
+        </span>
+        <span className="uni-hub-cell lf-device-cell" data-label="Device">
+          <DeviceIcon device={s.device} />
         </span>
         <span className="uni-hub-cell" data-label="Wallet">
           {s.wallet ? (
@@ -800,6 +831,9 @@ function SessionRows({
               ) : (
                 <span className="lf-dim">—</span>
               )}
+            </span>
+            <span className="uni-hub-cell lf-device-cell" data-label="Device">
+              <span className="lf-dim">—</span>
             </span>
             <span className="uni-hub-cell" data-label="Wallet">
               <span className="lf-dim">—</span>

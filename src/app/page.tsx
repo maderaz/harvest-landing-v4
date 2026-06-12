@@ -113,8 +113,6 @@ export default async function HomePage() {
             </Link>
           </header>
 
-          <RankingDataNote />
-
           <HubTable
             vaults={vaults}
             sparklines={sparklines}
@@ -222,6 +220,8 @@ export default async function HomePage() {
             deliberately leave out.
           </p>
         </section>
+
+        <RankingDataNote />
       </main>
     </div>
   );

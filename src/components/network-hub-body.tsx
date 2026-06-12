@@ -178,8 +178,6 @@ export async function NetworkHubBody({
           </h2>
         </header>
 
-        <RankingDataNote />
-
         {vaults.length === 0 ? (
           <div className="uni-hub-empty">No {networkDisplay} strategies indexed yet.</div>
         ) : (
@@ -347,6 +345,8 @@ export async function NetworkHubBody({
           </div>
         </section>
       )}
+
+      <RankingDataNote />
     </div>
   );
 }

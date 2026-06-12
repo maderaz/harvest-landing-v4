@@ -29,9 +29,11 @@ import {
   appChannel,
   channelTone,
   channelGroup,
+  sourceDomain,
   type SourceGroup,
 } from "@/lib/channels";
 import { CountryFlag } from "@/components/admin/country-flag";
+import { DeviceIcon } from "@/components/admin/device-icon";
 import { RefreshButton } from "@/components/admin/refresh-button";
 import "../../_styles/asset-hub.css";
 
@@ -52,6 +54,8 @@ interface VisitRow {
   page_path: string;
   source: string | null;
   country: string | null;
+  device_type: string | null;
+  referrer: string | null;
 }
 interface ClickRow {
   created_at: string;
@@ -61,6 +65,7 @@ interface ClickRow {
   target_url: string;
   source: string | null;
   country: string | null;
+  device_type: string | null;
 }
 interface ConnectionRow {
   wallet_address: string;
@@ -76,6 +81,8 @@ type FeedItem =
       time: string;
       channel: string;
       country: string | null;
+      device: string | null;
+      srcDomain: string | null;
       pagePath: string;
       hsid: string | null;
       wallet: string | null;
@@ -86,6 +93,8 @@ type FeedItem =
       time: string;
       channel: string;
       country: string | null;
+      device: string | null;
+      srcDomain: string | null;
       vaultSlug: string | null;
       sourcePage: string;
       targetUrl: string;
@@ -98,6 +107,8 @@ type FeedItem =
       time: string;
       channel: string;
       country: string | null;
+      device: string | null;
+      srcDomain: string | null;
       attributed: boolean;
       upstream: string | null;
       hsid: string | null;
@@ -120,6 +131,8 @@ interface VisitGroup {
   time: string; // most recent visit in the cluster
   channel: string;
   country: string | null;
+  device: string | null;
+  srcDomain: string | null;
   wallet: string | null;
   pages: VisitItem[]; // newest first
 }
@@ -154,7 +167,7 @@ const SESSION_GAP_MS = 60 * 60 * 1000;
 const DISPLAY_LIMIT = 200; // rows rendered
 const FETCH_LIMIT = 500; // visits/clicks/events pulled for merge + map
 const MAP_LIMIT = 2000; // connections pulled for the attribution map only
-const FEED_COLS = "132px 132px 92px 104px minmax(170px, 1.7fr) 128px 54px";
+const FEED_COLS = "132px 132px 92px 104px minmax(170px, 1.7fr) 64px 128px 54px";
 
 // Source-group toggle for the Stream filter. Collapses the many per-channel
 // names into the buckets an operator reasons about. "Referral" isolates real
@@ -212,11 +225,11 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     const [v, c, e, w] = await Promise.all([
       supabaseSelect<VisitRow>(
         "frontpage_visits",
-        `select=created_at,session_id,page_path,source,country&order=created_at.desc&limit=${FETCH_LIMIT}`,
+        `select=created_at,session_id,page_path,source,country,device_type,referrer&order=created_at.desc&limit=${FETCH_LIMIT}`,
       ),
       supabaseSelect<ClickRow>(
         "outbound_clicks",
-        `select=created_at,session_id,vault_slug,source_page,target_url,source,country&order=created_at.desc&limit=${FETCH_LIMIT}`,
+        `select=created_at,session_id,vault_slug,source_page,target_url,source,country,device_type&order=created_at.desc&limit=${FETCH_LIMIT}`,
       ),
       supabaseSelect<VaultEventRow>(
         "vault_events_prod",
@@ -305,18 +318,46 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     return [...byKey.values()];
   }, [events]);
 
-  // session_id -> earliest-touch { source, country } from visits, then
-  // clicks as a backfill for sessions that never logged a page view.
+  // session_id -> earliest-touch { source, country, device, domain } from
+  // visits, then clicks as a backfill for sessions that never logged a
+  // page view. device + domain ride along so a click/event row can show
+  // the device and referring domain of the session that drove it (only
+  // visits carry a referrer, so domain is null for click-only sessions).
   const sessionFirstTouch = useMemo(() => {
-    const m = new Map<string, { source: string | null; country: string | null; t: number }>();
-    const consider = (sid: string | null, source: string | null, country: string | null, iso: string) => {
+    const m = new Map<
+      string,
+      {
+        source: string | null;
+        country: string | null;
+        device: string | null;
+        domain: string | null;
+        t: number;
+      }
+    >();
+    const consider = (
+      sid: string | null,
+      source: string | null,
+      country: string | null,
+      device: string | null,
+      domain: string | null,
+      iso: string,
+    ) => {
       if (!sid) return;
       const t = new Date(iso).getTime();
       const prev = m.get(sid);
-      if (!prev || t < prev.t) m.set(sid, { source, country, t });
+      if (!prev || t < prev.t) m.set(sid, { source, country, device, domain, t });
     };
-    for (const v of visits ?? []) consider(v.session_id, v.source, v.country, v.created_at);
-    for (const c of clicks ?? []) consider(c.session_id, c.source, c.country, c.created_at);
+    for (const v of visits ?? [])
+      consider(
+        v.session_id,
+        v.source,
+        v.country,
+        v.device_type,
+        sourceDomain(v.referrer),
+        v.created_at,
+      );
+    for (const c of clicks ?? [])
+      consider(c.session_id, c.source, c.country, c.device_type, null, c.created_at);
     return m;
   }, [visits, clicks]);
 
@@ -387,6 +428,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
   function resolveWallet(wallet: string, atMs: number): {
     channel: string;
     country: string | null;
+    device: string | null;
+    srcDomain: string | null;
     attributed: boolean;
     upstream: string | null;
     hsid: string | null;
@@ -399,6 +442,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
       return {
         channel: "Direct",
         country: null,
+        device: null,
+        srcDomain: null,
         attributed: false,
         upstream: null,
         hsid: link?.session ?? null,
@@ -407,6 +452,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     return {
       channel: appChannel(ft.source),
       country: ft.country,
+      device: ft.device,
+      srcDomain: ft.domain,
       attributed: true,
       upstream: classifyChannel(ft.source),
       hsid: link?.session ?? null,
@@ -423,12 +470,15 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     if (realEmpty) {
       // Demo stream so the page isn't blank in a credential-less or
       // brand-new environment. Marked "sample" in the header.
+      const sampleDevices = ["desktop", "mobile", "tablet"];
       const sv: FeedItem[] = SAMPLE_VISIT_SEED.map((v, i) => ({
         kind: "visit",
         id: `sv-${i}`,
         time: new Date(now - v.minsAgo * 60_000).toISOString(),
         channel: classifyChannel(v.source),
         country: v.country,
+        device: sampleDevices[i % sampleDevices.length],
+        srcDomain: sourceDomain(v.source),
         pagePath: v.page,
         hsid: `sample-hsid-v${i}`,
         wallet: null,
@@ -439,6 +489,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         time: new Date(now - c.minsAgo * 60_000).toISOString(),
         channel: appChannel(c.source),
         country: c.country,
+        device: sampleDevices[i % sampleDevices.length],
+        srcDomain: sourceDomain(c.source),
         vaultSlug: c.slug,
         sourcePage: `/${c.slug}`,
         targetUrl: "https://app.harvest.finance/",
@@ -451,6 +503,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         time: new Date(now - s.minsAgo * 60_000).toISOString(),
         channel: s.channel,
         country: s.country,
+        device: sampleDevices[i % sampleDevices.length],
+        srcDomain: null,
         attributed: s.channel !== "Direct",
         upstream: s.channel,
         hsid: s.channel === "Direct" ? null : `sample-hsid-e${i}`,
@@ -473,6 +527,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         time: v.created_at,
         channel: classifyChannel(v.source),
         country: v.country,
+        device: v.device_type,
+        srcDomain: sourceDomain(v.referrer),
         pagePath: v.page_path || "/",
         hsid: v.session_id || null,
         wallet: v.session_id
@@ -485,6 +541,12 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         time: c.created_at,
         channel: appChannel(c.source),
         country: c.country,
+        device: c.device_type,
+        // Clicks carry no referrer; fall back to the session's first
+        // visit domain so a click row still shows where it came from.
+        srcDomain: c.session_id
+          ? sessionFirstTouch.get(c.session_id)?.domain ?? null
+          : null,
         vaultSlug: c.vault_slug,
         sourcePage: c.source_page || "/",
         targetUrl: c.target_url,
@@ -504,6 +566,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
           time: e.block_timestamp,
           channel: r.channel,
           country: r.country,
+          device: r.device,
+          srcDomain: r.srcDomain,
           attributed: r.attributed,
           upstream: r.upstream,
           hsid: r.hsid,
@@ -592,6 +656,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
           time: desc[0].time,
           channel: desc[0].channel,
           country: desc[0].country,
+          device: desc.find((v) => v.device)?.device ?? null,
+          srcDomain: desc.find((v) => v.srcDomain)?.srcDomain ?? null,
           wallet: desc.find((v) => v.wallet)?.wallet ?? null,
           pages: desc,
         },
@@ -713,6 +779,7 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
                 <span className="uni-hub-th">Country</span>
                 <span className="uni-hub-th">Event</span>
                 <span className="uni-hub-th">Product / Page</span>
+                <span className="uni-hub-th">Device</span>
                 <span className="uni-hub-th">Wallet</span>
                 <span className="uni-hub-th">Tx</span>
               </div>
@@ -773,8 +840,8 @@ function FeedRow({
           className={`lf-badge lf-badge-${channelTone(item.channel)}`}
           title={
             item.kind === "event" && item.attributed && item.upstream && item.upstream !== item.channel
-              ? `first touch: ${item.upstream}`
-              : undefined
+              ? `first touch: ${item.upstream}${item.srcDomain ? ` · ${item.srcDomain}` : ""}`
+              : item.srcDomain ?? undefined
           }
         >
           {item.channel}
@@ -834,6 +901,9 @@ function FeedRow({
             {productLabel(item.vaultSlug, item.vaultAddress)}
           </span>
         )}
+      </span>
+      <span className="uni-hub-cell lf-device-cell" data-label="Device">
+        <DeviceIcon device={item.device} />
       </span>
       <span className="uni-hub-cell" data-label="Wallet">
         {item.wallet ? (
@@ -906,7 +976,10 @@ function SessionGroupRow({
           {relativeTime(group.time)}
         </span>
         <span className="uni-hub-cell" data-label="Source">
-          <span className={`lf-badge lf-badge-${channelTone(group.channel)}`}>
+          <span
+            className={`lf-badge lf-badge-${channelTone(group.channel)}`}
+            title={group.srcDomain ?? undefined}
+          >
             {group.channel}
           </span>
         </span>
@@ -930,6 +1003,9 @@ function SessionGroupRow({
           <span className="lf-session-count">
             {group.pages.length} pages
           </span>
+        </span>
+        <span className="uni-hub-cell lf-device-cell" data-label="Device">
+          <DeviceIcon device={group.device} />
         </span>
         <span className="uni-hub-cell" data-label="Wallet">
           {group.wallet ? (
@@ -974,6 +1050,9 @@ function SessionGroupRow({
               <Link href={p.pagePath} className="lf-product-link">
                 {p.pagePath}
               </Link>
+            </span>
+            <span className="uni-hub-cell lf-device-cell" data-label="Device">
+              <DeviceIcon device={p.device} />
             </span>
             <span className="uni-hub-cell" data-label="Wallet">
               <span className="lf-dim">—</span>
