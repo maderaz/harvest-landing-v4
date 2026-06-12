@@ -35,6 +35,7 @@ import {
 import { CountryFlag } from "@/components/admin/country-flag";
 import { DeviceIcon } from "@/components/admin/device-icon";
 import { RefreshButton } from "@/components/admin/refresh-button";
+import { WalletLabel } from "@/components/admin/wallet-label";
 import "../../_styles/asset-hub.css";
 
 interface VaultEventRow {
@@ -730,36 +731,45 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
                 : " · source attributed first-touch via the wallet-session join"}
             </span>
           </div>
-          <RefreshButton onClick={handleRefresh} refreshing={refreshing} />
         </header>
 
+        {/* One compact control row: Refresh + the two filters as iconed
+            dropdowns (globe = acquisition source, pulse = activity
+            type) instead of two full-width pill bars. */}
         <div className="lf-filterbar">
-          <div className="aq-timeframe" role="group" aria-label="Source filter">
-            {SOURCE_GROUPS.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                className={`aq-timeframe-tab${sourceFilter === o.value ? " active" : ""}`}
-                aria-pressed={sourceFilter === o.value}
-                onClick={() => setSourceFilter(o.value)}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
-          <div className="aq-timeframe" role="group" aria-label="Activity filter">
-            {ACTIVITY_OPTIONS.map((o) => (
-              <button
-                key={o.value}
-                type="button"
-                className={`aq-timeframe-tab${activity === o.value ? " active" : ""}`}
-                aria-pressed={activity === o.value}
-                onClick={() => setActivity(o.value)}
-              >
-                {o.label}
-              </button>
-            ))}
-          </div>
+          <RefreshButton onClick={handleRefresh} refreshing={refreshing} />
+          <label className="lf-filter" aria-label="Source filter">
+            <span className="lf-filter-icon" aria-hidden="true">
+              <SourceFilterIcon />
+            </span>
+            <select
+              className="lf-select lf-select-iconed"
+              value={sourceFilter}
+              onChange={(e) => setSourceFilter(e.target.value as SourceGroup)}
+            >
+              {SOURCE_GROUPS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.value === "all" ? "All sources" : o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="lf-filter" aria-label="Activity filter">
+            <span className="lf-filter-icon" aria-hidden="true">
+              <ActivityFilterIcon />
+            </span>
+            <select
+              className="lf-select lf-select-iconed"
+              value={activity}
+              onChange={(e) => setActivity(e.target.value as ActivityFilter)}
+            >
+              {ACTIVITY_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.value === "all" ? "All activity" : o.label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
 
         {err && (
@@ -865,7 +875,8 @@ function FeedRow({
             title={item.hsid ? `hsid ${item.hsid}` : undefined}
           >
             <ClickIcon />
-            App click
+            <span className="lf-lbl-full">App click</span>
+            <span className="lf-lbl-short">App</span>
           </span>
         ) : (
           <span
@@ -873,7 +884,10 @@ function FeedRow({
             title={item.hsid ? `hsid ${item.hsid}` : undefined}
           >
             <EventIcon type={item.eventType} />
-            {item.eventType}
+            <span className="lf-lbl-full">{item.eventType}</span>
+            <span className="lf-lbl-short">
+              {item.eventType === "deposit" ? "Dep" : "With"}
+            </span>
           </span>
         )}
       </span>
@@ -907,16 +921,14 @@ function FeedRow({
       </span>
       <span className="uni-hub-cell" data-label="Wallet">
         {item.wallet ? (
-          <span
-            className="lf-mono"
+          <WalletLabel
+            address={item.wallet}
             title={
               item.kind === "event"
                 ? item.wallet
                 : `${item.wallet} - linked to this session after the wallet connected in the app, not known at page-view time`
             }
-          >
-            {shortenAddress(item.wallet)}
-          </span>
+          />
         ) : (
           <span className="lf-dim">—</span>
         )}
@@ -929,7 +941,8 @@ function FeedRow({
             rel="noopener noreferrer"
             className="lf-tx"
           >
-            view
+            <span className="lf-lbl-full">view</span>
+            <ExternalLinkIcon className="lf-lbl-short" />
           </a>
         ) : (
           <span className="lf-dim">—</span>
@@ -996,12 +1009,14 @@ function SessionGroupRow({
             title={`hsid ${group.sessionId}`}
           >
             <VisitIcon />
-            Session
+            <span className="lf-lbl-full">Session</span>
+            <span className="lf-lbl-short">Sess</span>
           </span>
         </span>
         <span className="uni-hub-cell lf-product" data-label="Product / Page">
           <span className="lf-session-count">
-            {group.pages.length} pages
+            <span className="lf-lbl-full">{group.pages.length} pages</span>
+            <span className="lf-lbl-short">{group.pages.length}</span>
           </span>
         </span>
         <span className="uni-hub-cell lf-device-cell" data-label="Device">
@@ -1009,9 +1024,7 @@ function SessionGroupRow({
         </span>
         <span className="uni-hub-cell" data-label="Wallet">
           {group.wallet ? (
-            <span className="lf-mono" title={group.wallet}>
-              {shortenAddress(group.wallet)}
-            </span>
+            <WalletLabel address={group.wallet} />
           ) : (
             <span className="lf-dim">—</span>
           )}
@@ -1162,6 +1175,37 @@ function EventIcon({ type }: { type: "deposit" | "withdraw" }) {
           <path d="m19 12-7 7-7-7" />
         </>
       )}
+    </svg>
+  );
+}
+
+// External-link glyph: replaces the "view" tx label on mobile.
+function ExternalLinkIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-label="View transaction">
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    </svg>
+  );
+}
+
+// Globe glyph for the source filter dropdown.
+function SourceFilterIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20" />
+      <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
+// Pulse glyph for the activity-type filter dropdown.
+function ActivityFilterIcon() {
+  return (
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
     </svg>
   );
 }
