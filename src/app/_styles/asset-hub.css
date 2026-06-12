@@ -1185,7 +1185,10 @@ body:has(.uni-hub-test) {
 }
 /* Iconed filter dropdown: the glyph (globe = sources, pulse = activity
    types) sits inside the select's left padding so the two filters are
-   distinguishable at a glance. */
+   distinguishable at a glance. The select typography matches the
+   Refresh chip (mono 11.5) so the control row reads as one family.
+   Selectors are .lf-filter-qualified to outrank the .lf-select base
+   rule that sits later in this file. */
 .uni-hub-test .lf-filter {
   position: relative;
   display: inline-flex;
@@ -1194,13 +1197,31 @@ body:has(.uni-hub-test) {
 .uni-hub-test .lf-filter-icon {
   position: absolute;
   left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
   color: var(--uni-ink-3);
   pointer-events: none;
 }
-.uni-hub-test .lf-select-iconed {
-  padding-left: 32px;
+.uni-hub-test .lf-filter .lf-select-iconed {
+  padding: 8px 30px 8px 32px;
+  width: 100%;
+  min-width: 148px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--uni-ink-2);
+}
+/* Mobile: Refresh keeps its size, the two filters split the leftover
+   row width equally so their text starts at the same x. */
+@media (max-width: 900px) {
+  .uni-hub-test .lf-filterbar .lf-filter {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+  .uni-hub-test .lf-filter .lf-select-iconed { min-width: 0; }
 }
 .uni-hub-test .lf-source-filter {
   display: inline-flex;
@@ -1566,8 +1587,13 @@ body:has(.uni-hub-test) {
    Scoped to .lf-table so the public ranking tables are untouched.
    ==================================================================== */
 @media (max-width: 900px) {
+  /* Full-bleed: pull the table out of the shell's side padding (18px
+     at this width, 16px under 540px below) - that's ~10% extra row
+     width for free on a phone. */
   .uni-hub-test .lf-scroll {
     overflow-x: visible;
+    margin-left: -18px;
+    margin-right: -18px;
   }
   .uni-hub-test .lf-table .uni-hub-thead {
     display: none;
@@ -1581,10 +1607,10 @@ body:has(.uni-hub-test) {
      keep their track, which is what holds the columns straight. */
   .uni-hub-test .lf-table .uni-hub-row {
     display: grid;
-    grid-template-columns: auto auto 16px 20px auto minmax(0, 1fr) auto auto !important;
+    grid-template-columns: auto auto 16px 14px auto minmax(0, 1fr) auto auto !important;
     gap: 6px;
     align-items: center;
-    padding: 10px 10px;
+    padding: 10px 12px;
     min-width: 0;
   }
   .uni-hub-test .lf-table .uni-hub-row .uni-hub-cell {
@@ -1622,13 +1648,31 @@ body:has(.uni-hub-test) {
     text-overflow: ellipsis;
     display: inline-block;
   }
-  /* Country: flag only, the ISO code text drops. */
+  /* Country: flag only (ISO code drops), shrunk ~40%. */
   .uni-hub-test .lf-table .country-cell .country-code { display: none; }
-  /* Event / stage chip tightens. */
+  .uni-hub-test .lf-table .country-flag {
+    width: 12px;
+    height: 9px;
+  }
+  /* Event / stage chip collapses to icon-only - the colour + glyph
+     carry the meaning (eye = visit, pointer = app click, green down
+     arrow = deposit, red up arrow = withdraw). */
   .uni-hub-test .lf-table .lf-event {
+    padding: 4px;
+    gap: 0;
+  }
+  .uni-hub-test .lf-table .lf-event > :not(svg) { display: none; }
+  /* The interactions pill: bare count on the session row; the visited
+     URLs only show once the row is expanded. */
+  .uni-hub-test .lf-table .lf-session-count .lf-lbl-short {
+    padding: 1px 8px;
+    border: 1px solid var(--uni-line);
+    border-radius: 999px;
+    font-family: var(--mono);
     font-size: 10.5px;
-    padding: 2px 6px 2px 5px;
-    white-space: nowrap;
+    font-weight: 600;
+    color: var(--uni-ink-2);
+    background: var(--uni-bg);
   }
   .uni-hub-test .lf-table .lf-product .lf-product-link {
     display: block;
@@ -1649,6 +1693,14 @@ body:has(.uni-hub-test) {
      stay column-aligned with their parent; quieter via opacity. */
   .uni-hub-test .lf-table .lf-row-child {
     opacity: 0.8;
+  }
+}
+/* Under 540px the shell padding drops to 16px - keep the full-bleed
+   pull in sync. */
+@media (max-width: 540px) {
+  .uni-hub-test .lf-scroll {
+    margin-left: -16px;
+    margin-right: -16px;
   }
 }
 /* Very narrow phones: shave the gaps and the source-badge cap so the

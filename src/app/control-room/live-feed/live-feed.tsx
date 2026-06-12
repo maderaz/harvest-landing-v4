@@ -29,6 +29,7 @@ import {
   appChannel,
   channelTone,
   channelGroup,
+  shortChannelLabel,
   sourceDomain,
   type SourceGroup,
 } from "@/lib/channels";
@@ -188,10 +189,14 @@ const SOURCE_GROUPS: ReadonlyArray<{ value: SourceGroup; label: string }> = [
 // @/lib/channels so both feeds bucket sources identically.
 
 // ── Sample fallback (only when every real source is empty) ──────────
-const SAMPLE_VISIT_SEED: ReadonlyArray<{ page: string; source: string; country: string; minsAgo: number }> = [
+// The three `sid: "sample-hsid-tour"` visits share one session id, so
+// the demo stream shows a collapsed "Session · 3 pages" row that
+// expands into its visited URLs - the same grouping live data gets.
+const SAMPLE_VISIT_SEED: ReadonlyArray<{ page: string; source: string; country: string; minsAgo: number; sid?: string }> = [
   { page: "/", source: "https://www.google.com/", country: "US", minsAgo: 1 },
-  { page: "/usdc", source: "chatgpt.com", country: "GB", minsAgo: 5 },
-  { page: "/eth", source: "(direct)", country: "DE", minsAgo: 14 },
+  { page: "/weth-autopilot-base", source: "chatgpt.com", country: "GB", minsAgo: 5, sid: "sample-hsid-tour" },
+  { page: "/usdc", source: "chatgpt.com", country: "GB", minsAgo: 7, sid: "sample-hsid-tour" },
+  { page: "/eth", source: "chatgpt.com", country: "GB", minsAgo: 9, sid: "sample-hsid-tour" },
   { page: "/arbitrum", source: "https://t.co/", country: "BR", minsAgo: 33 },
   { page: "/btc", source: "https://www.reddit.com/", country: "IN", minsAgo: 70 },
   { page: "/methodology", source: "perplexity.ai", country: "CA", minsAgo: 150 },
@@ -478,10 +483,12 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         time: new Date(now - v.minsAgo * 60_000).toISOString(),
         channel: classifyChannel(v.source),
         country: v.country,
-        device: sampleDevices[i % sampleDevices.length],
+        // Visits sharing a sid keep one device so the grouped session
+        // row reads coherently.
+        device: v.sid ? "mobile" : sampleDevices[i % sampleDevices.length],
         srcDomain: sourceDomain(v.source),
         pagePath: v.page,
-        hsid: `sample-hsid-v${i}`,
+        hsid: v.sid ?? `sample-hsid-v${i}`,
         wallet: null,
       }));
       const sc: FeedItem[] = SAMPLE_CLICK_SEED.map((c, i) => ({
@@ -854,7 +861,8 @@ function FeedRow({
               : item.srcDomain ?? undefined
           }
         >
-          {item.channel}
+          <span className="lf-lbl-full">{item.channel}</span>
+          <span className="lf-lbl-short">{shortChannelLabel(item.channel)}</span>
         </span>
       </span>
       <span className="uni-hub-cell" data-label="Country">
@@ -867,7 +875,7 @@ function FeedRow({
             title={item.hsid ? `hsid ${item.hsid}` : undefined}
           >
             <VisitIcon />
-            Visit
+            <span className="lf-lbl-full">Visit</span>
           </span>
         ) : item.kind === "click" ? (
           <span
@@ -993,7 +1001,8 @@ function SessionGroupRow({
             className={`lf-badge lf-badge-${channelTone(group.channel)}`}
             title={group.srcDomain ?? undefined}
           >
-            {group.channel}
+            <span className="lf-lbl-full">{group.channel}</span>
+            <span className="lf-lbl-short">{shortChannelLabel(group.channel)}</span>
           </span>
         </span>
         <span className="uni-hub-cell" data-label="Country">
@@ -1056,7 +1065,7 @@ function SessionGroupRow({
             <span className="uni-hub-cell" data-label="Event">
               <span className="lf-event lf-event-visit">
                 <VisitIcon />
-                Visit
+                <span className="lf-lbl-full">Visit</span>
               </span>
             </span>
             <span className="uni-hub-cell lf-product" data-label="Product / Page">

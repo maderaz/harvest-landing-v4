@@ -92,6 +92,22 @@ export function channelGroup(channel: string): Exclude<SourceGroup, "all"> {
   return "Direct";
 }
 
+// Compact channel names for the one-line mobile feed rows, where the
+// full label ("X / Twitter", "Homepage") eats column width for no extra
+// information. Channels without an entry keep their full name.
+const SHORT_CHANNEL: Record<string, string> = {
+  Homepage: "Home",
+  "X / Twitter": "X",
+  DuckDuckGo: "DDG",
+  Perplexity: "Pplx",
+  ChatGPT: "GPT",
+  Telegram: "TG",
+};
+
+export function shortChannelLabel(channel: string): string {
+  return SHORT_CHANNEL[channel] ?? channel;
+}
+
 // Best-effort full domain for the Source-column tooltip, derived from a
 // referrer URL or a bare host. "https://www.coingecko.com/x" and
 // "coingecko.com" both return "coingecko.com". Returns null when there's
