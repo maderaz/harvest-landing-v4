@@ -15,6 +15,7 @@ import {
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { getSubAsset } from "@/lib/sub-asset";
 import { HubTable } from "@/components/hub-table";
+import { RankingDataNote } from "@/components/ranking-data-note";
 import { HomeCrumb } from "@/components/home-crumb";
 
 interface AssetCopy {
@@ -390,6 +391,8 @@ export async function AssetHubBody({ asset }: Props) {
             Top {copy.longName} yields
           </h2>
         </header>
+
+        <RankingDataNote />
 
         {vaults.length === 0 ? (
           <div className="uni-hub-empty">No {copy.longName} strategies indexed yet.</div>

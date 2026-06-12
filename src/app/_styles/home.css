@@ -417,8 +417,14 @@ body:has(.uni-home-test) {
   }
 }
 @media (max-width: 540px) {
+  /* Phones: shrink the headline so each half of the line (split by the
+     hard <br>) fits on one row. At the old size "...ETH," and "more."
+     spilled onto rows of their own, stacking the two-line headline into
+     four. The gentler clamp keeps "Best USDC, USDT, ETH," and "Bitcoin
+     yields, and more." each on a single line down to ~330px, so the
+     headline reads as two rows (three at the very narrowest). */
   .uni-home-test .uni-home-h1 {
-    font-size: clamp(22px, 7.5vw, 30px);
+    font-size: clamp(20px, 5.8vw, 26px);
   }
   .uni-home-test .uni-home-sub {
     font-size: 14px;
@@ -563,6 +569,19 @@ body:has(.uni-home-test) {
   margin: 0;
   font-size: 14.5px;
   color: var(--uni-ink-2);
+}
+/* Compliance disclaimer above the ranking table: qualifies the
+   "best / ranking" framing as a historical-data sort rather than a
+   promise. Muted aside (left rule + ink-3) so it reads as a note, not
+   body copy; tokens keep it correct in light + dark. */
+.uni-home-test .uni-data-note {
+  margin: 0 0 20px;
+  padding-left: 12px;
+  border-left: 2px solid var(--uni-line);
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--uni-ink-3);
+  max-width: 84ch;
 }
 .uni-home-test .uni-home-section-link {
   display: inline-flex;
