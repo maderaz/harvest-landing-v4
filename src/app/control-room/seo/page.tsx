@@ -779,7 +779,7 @@ function SessionRows({
               {s.pageCount} page{s.pageCount === 1 ? "" : "s"}
               {s.deposited ? " · deposit" : s.reached ? " · click" : ""}
             </span>
-            <span className="lf-lbl-short">{s.pageCount}</span>
+            <span className="lf-lbl-short lf-count-pill">{s.pageCount}</span>
           </span>
         </span>
         <span className="uni-hub-cell lf-device-cell" data-label="Device">
