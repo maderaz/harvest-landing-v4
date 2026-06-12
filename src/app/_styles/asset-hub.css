@@ -195,18 +195,16 @@ body:has(.uni-hub-test) {
   color: var(--uni-ink-2);
   letter-spacing: 0.04em;
 }
-/* Compliance disclaimer above the ranking table (see
-   components/ranking-data-note.tsx). Same treatment as the homepage
-   note: muted aside with a left rule so it reads as a qualifier, not
-   body copy. */
+/* Compliance disclaimer (see components/ranking-data-note.tsx),
+   anchored at the bottom of the hub page so the top stays clean. Same
+   muted footnote treatment as the homepage note. */
 .uni-hub-test .uni-data-note {
-  margin: 0 0 20px;
-  padding-left: 12px;
-  border-left: 2px solid var(--uni-line);
-  font-size: 12.5px;
-  line-height: 1.55;
+  margin: 32px 0 0;
+  padding-top: 18px;
+  border-top: 1px solid var(--uni-line);
+  font-size: 12px;
+  line-height: 1.5;
   color: var(--uni-ink-3);
-  max-width: 84ch;
 }
 
 /* === Ranking table ==================================================
@@ -1062,6 +1060,13 @@ body:has(.uni-hub-test) {
 /* Placeholder dash for columns that don't apply to a visit/click row. */
 .uni-hub-test .lf-dim { color: var(--uni-ink-3); }
 
+/* Device column: muted outline glyph, centered in its cell. */
+.uni-hub-test .lf-device {
+  display: inline-flex;
+  align-items: center;
+  color: var(--uni-ink-2);
+}
+
 /* Collapsed session master row: many page views from one visitor fold
    into a single clickable row so the feed isn't drowned by one person's
    tour. The row toggles its child page rows open. */
@@ -1505,11 +1510,19 @@ body:has(.uni-hub-test) {
 }
 
 /* ====================================================================
-   Live Feed: reflow the ranking-style table to stacked, labelled cards
-   on mobile so the feed never scrolls sideways. Hide the header row,
-   turn each .uni-hub-row into a card, and surface the column name from
-   data-label so every value stays readable in one column. Scoped to
-   .lf-table so the public ranking tables are untouched.
+   Live Feed / SEO Summary on mobile: collapse the wide ranking-style
+   table into tight cards — one record per card, stacked, in the same
+   compact register as the product ranking on the mobile homepage rather
+   than scrolling sideways. Each card is two lines:
+
+     line 1:  [product / page] .............................. [time]
+     line 2:  [event] [source] [device] [country] [wallet] [tx]
+
+   No "Label: value" rows — the icons and badges carry the meaning. The
+   break between the two lines is forced by margin-left:auto on the time
+   cell (it eats the rest of line 1, pushing the chips to line 2), and
+   empty cells (a bare "—") are dropped so the chip row stays dense.
+   Scoped to .lf-table so the public ranking tables are untouched.
    ==================================================================== */
 @media (max-width: 900px) {
   .uni-hub-test .lf-scroll {
@@ -1518,42 +1531,62 @@ body:has(.uni-hub-test) {
   .uni-hub-test .lf-table .uni-hub-thead {
     display: none;
   }
-  .uni-hub-test .lf-table .uni-hub-row {
-    display: block !important;
-    padding: 14px 16px;
+  .uni-hub-test .lf-table .uni-hub-row,
+  .uni-hub-test .lf-table .lf-session-row {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 7px 9px;
+    padding: 12px 14px;
   }
   .uni-hub-test .lf-table .uni-hub-cell {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 16px;
-    padding: 4px 0;
+    display: inline-flex;
+    align-items: center;
+    padding: 0;
+    min-width: 0;
+    width: auto;
+  }
+  /* Drop the per-cell label and any empty (—) cell so cards stay tight. */
+  .uni-hub-test .lf-table .uni-hub-cell::before { content: none; }
+  .uni-hub-test .lf-table .uni-hub-cell:has(> .lf-dim) { display: none; }
+
+  /* Line 1: product grows and ellipsises; time is pinned right and
+     forces the rest onto line 2. */
+  .uni-hub-test .lf-table .lf-product {
+    order: 1;
+    flex: 1 1 55%;
     min-width: 0;
   }
-  .uni-hub-test .lf-table .uni-hub-cell::before {
-    content: attr(data-label);
-    flex: 0 0 auto;
+  .uni-hub-test .lf-table .lf-product .lf-product-link,
+  .uni-hub-test .lf-table .lf-product .lf-session-count {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: left;
+  }
+  .uni-hub-test .lf-table .lf-time {
+    order: 2;
+    margin-left: auto;
     color: var(--uni-ink-3);
-    font-family: var(--mono);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.04em;
-    text-transform: uppercase;
+    font-size: 12px;
+    white-space: nowrap;
   }
-  /* Value side hugs the right and may wrap (long product slugs). */
-  .uni-hub-test .lf-table .uni-hub-cell > * {
-    text-align: right;
-    min-width: 0;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+  /* Line 2: the chip row, in reading order. */
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Event"],
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Stage"] { order: 3; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Source"] { order: 4; }
+  .uni-hub-test .lf-table .lf-device-cell { order: 5; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Country"] { order: 6; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Wallet"] { order: 7; }
+  .uni-hub-test .lf-table .uni-hub-cell[data-label="Tx"] { order: 8; }
+
+  /* Indented child rows (expanded session pages) read as a quiet
+     sub-line: product + time only, the rest collapses out. */
+  .uni-hub-test .lf-table .lf-row-child {
+    padding-left: 26px;
+    opacity: 0.85;
   }
-  .uni-hub-test .lf-table .lf-product-link {
-    white-space: normal;
-    overflow: visible;
-    text-overflow: clip;
-  }
-  /* Country cell keeps the flag + code together on the right. */
-  .uni-hub-test .lf-table .country-cell { justify-content: flex-end; }
 }
 
 /* Hide panel: the Save CTA. Brand gold, prominent, with a clear

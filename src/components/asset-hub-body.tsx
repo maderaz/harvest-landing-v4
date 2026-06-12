@@ -392,8 +392,6 @@ export async function AssetHubBody({ asset }: Props) {
           </h2>
         </header>
 
-        <RankingDataNote />
-
         {vaults.length === 0 ? (
           <div className="uni-hub-empty">No {copy.longName} strategies indexed yet.</div>
         ) : (
@@ -449,6 +447,8 @@ export async function AssetHubBody({ asset }: Props) {
           ))}
         </div>
       </section>
+
+      <RankingDataNote />
     </div>
   );
 }
