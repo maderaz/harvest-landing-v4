@@ -1016,6 +1016,17 @@ body:has(.uni-hub-test) {
   min-width: 0;
   max-width: 100%;
 }
+/* Wrapper that carries the inline product on desktop (hidden on mobile
+   via the lf-lbl toggle); block + min-width:0 keeps the ellipsis chain
+   intact through the extra span. */
+.uni-hub-test .lf-table .lf-product-full {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+}
+/* Single-row mobile detail line: never rendered visibly on desktop,
+   where the product is already inline in the row. */
+.uni-hub-test .lf-table .uni-hub-row.lf-detail-row { display: none; }
 /* Full/short label pairs (event chips, wallet, tx, session counts):
    desktop shows the full text, the one-line mobile rows swap to the
    abbreviated variant. */
@@ -1598,24 +1609,30 @@ body:has(.uni-hub-test) {
   .uni-hub-test .lf-table .uni-hub-thead {
     display: none;
   }
-  /* Shared grid: every row uses the SAME column tracks, so each field
-     lines up vertically across the whole table (the flex version gave
-     each row its own rhythm and read as noise). `auto` tracks size to
-     the widest value in their column; the activity slot takes the
-     leftover width. !important because the desktop track template is
-     an inline style on the row. Empty cells render a muted dash and
-     keep their track, which is what holds the columns straight. */
+  /* Military grid: FIXED column tracks, identical in every row (each
+     row is its own grid container, so `auto` tracks sized per row and
+     the columns drifted between rows - the previous mess). Fixed px
+     tracks + justify-content:space-between spreading the leftover
+     evenly = every value sits dead under the one above it, regardless
+     of neighbours' widths. !important because the desktop template is
+     an inline style on the row. Products / pages are NOT inline here -
+     the activity column is a bare count pill and the details appear
+     only when the row is expanded. */
   .uni-hub-test .lf-table .uni-hub-row {
     display: grid;
-    grid-template-columns: auto auto 16px 14px auto minmax(0, 1fr) auto auto !important;
-    gap: 6px;
+    grid-template-columns: 38px 64px 16px 14px 24px 32px 56px 16px !important;
+    justify-content: space-between;
+    gap: 0;
     align-items: center;
     padding: 10px 12px;
     min-width: 0;
+    cursor: pointer;
   }
   .uni-hub-test .lf-table .uni-hub-row .uni-hub-cell {
     padding: 0;
     min-width: 0;
+    justify-self: center;
+    justify-content: center;
   }
   /* Swap full labels for the abbreviated set. */
   .uni-hub-test .lf-table .lf-lbl-full { display: none; }
@@ -1637,12 +1654,12 @@ body:has(.uni-hub-test) {
     font-size: 11px;
     color: var(--uni-ink-3);
   }
-  /* Source badge: one line, capped so long channel names (X / Twitter,
-     Perplexity) can't stretch the whole column. */
+  /* Source badge: one line, capped at its column track so long
+     referral domains can't push the grid. */
   .uni-hub-test .lf-table .lf-badge {
     font-size: 10.5px;
     padding: 2px 7px;
-    max-width: 76px;
+    max-width: 64px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1662,9 +1679,9 @@ body:has(.uni-hub-test) {
     gap: 0;
   }
   .uni-hub-test .lf-table .lf-event > :not(svg) { display: none; }
-  /* The interactions pill: bare count on the session row; the visited
-     URLs only show once the row is expanded. */
-  .uni-hub-test .lf-table .lf-session-count .lf-lbl-short {
+  /* The interactions pill: bare count, every row. The page / product
+     details only show once the row is expanded. */
+  .uni-hub-test .lf-table .lf-count-pill {
     padding: 1px 8px;
     border: 1px solid var(--uni-line);
     border-radius: 999px;
@@ -1674,26 +1691,44 @@ body:has(.uni-hub-test) {
     color: var(--uni-ink-2);
     background: var(--uni-bg);
   }
-  .uni-hub-test .lf-table .lf-product .lf-product-link {
-    display: block;
-    min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 11.5px;
-  }
-  .uni-hub-test .lf-table .lf-session-count { font-size: 11.5px; }
   .uni-hub-test .lf-table .lf-mono { font-size: 11px; }
   /* Placeholder dashes recede so filled cells carry the eye. */
   .uni-hub-test .lf-table .lf-dim { opacity: 0.45; }
   /* Session chevron stays compact next to the time. */
   .uni-hub-test .lf-table .lf-time-session { gap: 4px; }
 
-  /* Child rows (expanded session pages) keep the same tracks so they
-     stay column-aligned with their parent; quieter via opacity. */
-  .uni-hub-test .lf-table .lf-row-child {
-    opacity: 0.8;
+  /* Expanded detail lines (session pages + single-row details): a
+     simple indented flex line - time, icon chip, then the page /
+     product link. Empty dash cells drop out entirely here; the
+     military grid only governs the collapsed stream rows. */
+  .uni-hub-test .lf-table .uni-hub-row.lf-row-child {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px 8px 24px;
+    opacity: 0.85;
+    cursor: default;
   }
+  .uni-hub-test .lf-table .lf-row-child .uni-hub-cell { justify-content: flex-start; }
+  .uni-hub-test .lf-table .uni-hub-row.lf-row-child .uni-hub-cell:has(> .lf-dim) {
+    display: none;
+  }
+  .uni-hub-test .lf-table .lf-row-child .lf-product {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .uni-hub-test .lf-table .lf-row-child .lf-product .lf-product-link {
+    display: block;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 11.5px;
+    text-align: left;
+  }
+  /* Single-row detail line renders only on mobile (desktop already
+     shows the product inline). */
+  .uni-hub-test .lf-table .uni-hub-row.lf-detail-row { display: flex; }
 }
 /* Under 540px the shell padding drops to 16px - keep the full-bleed
    pull in sync. */

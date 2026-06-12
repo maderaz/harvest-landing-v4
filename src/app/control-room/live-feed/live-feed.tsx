@@ -836,6 +836,12 @@ type ProductLabel = (slug: string | null, address?: string) => string;
 // A single activity row (visit, click, deposit or withdraw). Extracted so
 // the same markup renders both top-level items and the expanded page rows
 // inside a collapsed session.
+//
+// On mobile the product / page is NOT shown inline - the activity cell
+// renders a count pill ("1") and tapping the row expands a detail line
+// with the page / product link, mirroring how session rows expand into
+// their visited URLs. On desktop the product stays inline and the
+// detail line never renders visibly.
 function FeedRow({
   item,
   productLabel,
@@ -843,8 +849,42 @@ function FeedRow({
   item: FeedItem;
   productLabel: ProductLabel;
 }) {
+  const [open, setOpen] = useState(false);
+  const productNode =
+    item.kind === "visit" ? (
+      <Link href={item.pagePath} className="lf-product-link">
+        {item.pagePath}
+      </Link>
+    ) : item.kind === "click" ? (
+      item.vaultSlug ? (
+        <Link href={`/${item.vaultSlug}`} className="lf-product-link">
+          {productLabel(item.vaultSlug)}
+        </Link>
+      ) : (
+        <Link href={item.sourcePage} className="lf-product-link">
+          {item.sourcePage}
+        </Link>
+      )
+    ) : item.vaultSlug ? (
+      <Link href={`/${item.vaultSlug}`} className="lf-product-link">
+        {productLabel(item.vaultSlug, item.vaultAddress)}
+      </Link>
+    ) : (
+      <span className="lf-product-link">
+        {productLabel(item.vaultSlug, item.vaultAddress)}
+      </span>
+    );
   return (
-    <div className="uni-hub-row" style={{ gridTemplateColumns: FEED_COLS }}>
+    <>
+    <div
+      className="uni-hub-row lf-item-row"
+      style={{ gridTemplateColumns: FEED_COLS }}
+      onClick={(e) => {
+        // Links inside the row (product, tx) keep their own behaviour.
+        if ((e.target as HTMLElement).closest("a")) return;
+        setOpen((o) => !o);
+      }}
+    >
       <span
         className="uni-hub-cell lf-time"
         data-label="Time"
@@ -900,29 +940,8 @@ function FeedRow({
         )}
       </span>
       <span className="uni-hub-cell lf-product" data-label="Product / Page">
-        {item.kind === "visit" ? (
-          <Link href={item.pagePath} className="lf-product-link">
-            {item.pagePath}
-          </Link>
-        ) : item.kind === "click" ? (
-          item.vaultSlug ? (
-            <Link href={`/${item.vaultSlug}`} className="lf-product-link">
-              {productLabel(item.vaultSlug)}
-            </Link>
-          ) : (
-            <Link href={item.sourcePage} className="lf-product-link">
-              {item.sourcePage}
-            </Link>
-          )
-        ) : item.vaultSlug ? (
-          <Link href={`/${item.vaultSlug}`} className="lf-product-link">
-            {productLabel(item.vaultSlug, item.vaultAddress)}
-          </Link>
-        ) : (
-          <span className="lf-product-link">
-            {productLabel(item.vaultSlug, item.vaultAddress)}
-          </span>
-        )}
+        <span className="lf-lbl-full lf-product-full">{productNode}</span>
+        <span className="lf-lbl-short lf-count-pill">1</span>
       </span>
       <span className="uni-hub-cell lf-device-cell" data-label="Device">
         <DeviceIcon device={item.device} />
@@ -957,6 +976,14 @@ function FeedRow({
         )}
       </span>
     </div>
+    {open && (
+      <div className="uni-hub-row lf-row-child lf-detail-row">
+        <span className="uni-hub-cell lf-product" data-label="Product / Page">
+          {productNode}
+        </span>
+      </div>
+    )}
+    </>
   );
 }
 
@@ -1025,7 +1052,7 @@ function SessionGroupRow({
         <span className="uni-hub-cell lf-product" data-label="Product / Page">
           <span className="lf-session-count">
             <span className="lf-lbl-full">{group.pages.length} pages</span>
-            <span className="lf-lbl-short">{group.pages.length}</span>
+            <span className="lf-lbl-short lf-count-pill">{group.pages.length}</span>
           </span>
         </span>
         <span className="uni-hub-cell lf-device-cell" data-label="Device">
