@@ -5,7 +5,7 @@
 import Link from "next/link";
 import { getLiveVaults, getAllSparklines } from "@/lib/data";
 import { ChainIcon } from "@/components/token-icons";
-import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
+import { formatAPY, formatAPYProse, formatTVL, stripChainSuffix } from "@/lib/format";
 import { SITE_URL } from "@/lib/constants";
 import { networkHubH1, networkHubCrumbs } from "@/lib/seo";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
@@ -209,9 +209,10 @@ export async function NetworkHubBody({
                 Right now we track {vaults.length} {networkDisplay}
                 {" "}{vaults.length !== 1 ? "strategies" : "strategy"},
                 holding {formatTVL(totalTvl)} in deposits. 24-hour
-                APYs run from {formatAPY(minApy)} to {formatAPY(bestApy)}.
-                Median {formatAPY(medianApy)}, mean{" "}
-                {formatAPY(avgApy)}. Numbers are scoped to our index,
+                APYs run from {formatAPYProse(minApy)} to{" "}
+                {formatAPYProse(bestApy)}. Median{" "}
+                {formatAPYProse(medianApy)}, mean{" "}
+                {formatAPYProse(avgApy)}. Numbers are scoped to our index,
                 not the wider {networkDisplay} market.
               </p>
             </article>

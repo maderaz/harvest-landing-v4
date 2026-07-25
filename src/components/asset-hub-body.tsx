@@ -6,7 +6,7 @@
 import Link from "next/link";
 import { getLiveVaults, getAllSparklines } from "@/lib/data";
 import { AssetIcon, ChainIcon } from "@/components/token-icons";
-import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
+import { formatAPY, formatAPYProse, formatTVL, stripChainSuffix } from "@/lib/format";
 import { SITE_URL } from "@/lib/constants";
 import {
   assetHubH1,
@@ -269,10 +269,10 @@ export async function AssetHubBody({ asset }: Props) {
           : subAssets.slice(0, -1).join(", ") + ", and " + subAssets[subAssets.length - 1],
       )
       .replace(/\{TOTAL_TVL\}/g, formatTVL(totalTvl))
-      .replace(/\{MIN_APY\}/g, formatAPY(minApy))
-      .replace(/\{MAX_APY\}/g, formatAPY(bestApy))
-      .replace(/\{MEDIAN_APY\}/g, formatAPY(medianApy))
-      .replace(/\{MEAN_APY\}/g, formatAPY(avgApy))
+      .replace(/\{MIN_APY\}/g, formatAPYProse(minApy))
+      .replace(/\{MAX_APY\}/g, formatAPYProse(bestApy))
+      .replace(/\{MEDIAN_APY\}/g, formatAPYProse(medianApy))
+      .replace(/\{MEAN_APY\}/g, formatAPYProse(avgApy))
       .replace(/\{WRAPPER_BLOCK\}/g, wrapperBlockText)
       .replace(/\{NETWORK_BLOCK\}/g, networkBlockText)
       .replace(/\{PROTO_BLOCK\}/g, protoBlockText);
