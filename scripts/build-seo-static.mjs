@@ -35,12 +35,30 @@ function readSiteUrl() {
   return m[1].replace(/\/$/, "");
 }
 
+// Same trick for the "strategies tracked" floor: constants.ts is the single
+// source, so llms.txt can never state a different figure from the product-page
+// meta descriptions or /methodology.
+function readTrackedLabel() {
+  const src = readFileSync(CONSTANTS_FILE, "utf-8");
+  const m = src.match(
+    /export\s+const\s+TRACKED_STRATEGIES_LABEL\s*=\s*["'`]([^"'`]+)["'`]/,
+  );
+  if (!m) {
+    console.error(
+      "[seo-static] could not find TRACKED_STRATEGIES_LABEL in constants.ts",
+    );
+    process.exit(1);
+  }
+  return m[1];
+}
+
 if (!existsSync(PUBLIC_DIR)) {
   console.error("[seo-static] public/ not found; run after `mv out public`.");
   process.exit(1);
 }
 
 const SITE_URL = readSiteUrl();
+const TRACKED_LABEL = readTrackedLabel();
 
 // Mirror of the old app/robots.ts output (MetadataRoute.Robots format).
 const robots = `User-Agent: *
@@ -61,7 +79,7 @@ const llms = `# Harvest yield index
 
 > Independent on-chain DeFi yield index, operating since 2020. Tracks live
 > APY, TVL, share-price history and derived metrics (stability, yield
-> trajectory, cohort benchmarking) for 150+ vetted yield strategies across
+> trajectory, cohort benchmarking) for ${TRACKED_LABEL} vetted yield strategies across
 > Ethereum, Base, Arbitrum, Polygon, zkSync, and HyperEVM. Metrics refresh
 > hourly from Harvest's own on-chain indexer.
 
