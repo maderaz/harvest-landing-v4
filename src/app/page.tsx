@@ -232,8 +232,8 @@ export default async function HomePage() {
               stablecoin rate comparison
             </Link>{" "}
             measures the leading products side by side from their own onchain
-            share-price history, and splits them into the highest paying and the
-            steadiest places to park a stablecoin balance.
+            share-price history, and splits them by measured rate and by how
+            little that rate moved.
           </p>
           <p>
             Yield is not free. Every strategy carries smart-contract

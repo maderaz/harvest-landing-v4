@@ -51,12 +51,23 @@ export function ReportChart({
     const h = history ?? [];
     if (h.length < 2) return null;
     const vals = h.map((r) => r.apy);
-    let lo = Math.min(...vals);
+    const lo = Math.min(...vals);
     let hi = Math.max(...vals);
+    // A series that never moves has no range to scale against: the padded-min
+    // rule below would put base at the rate itself and collapse every bar to
+    // zero height, drawing a contractually fixed 8.5% as a flat line on the
+    // floor. Anchor those at zero instead, so the bars stand at the rate.
+    const flat = hi === lo;
     // Bars read from a sensible floor: 0 for small positive series, else a
     // padded min so movement stays visible.
-    const base = lo >= 0 && lo < hi * 0.4 ? 0 : lo - (hi - lo) * 0.15;
-    hi += (hi - lo) * 0.12 || 0.2;
+    const base = flat
+      ? lo >= 0
+        ? 0
+        : lo * 1.25
+      : lo >= 0 && lo < hi * 0.4
+        ? 0
+        : lo - (hi - lo) * 0.15;
+    hi = flat ? (lo >= 0 ? lo * 1.18 : lo * 0.8) : hi + ((hi - lo) * 0.12 || 0.2);
     const innerW = W;
     const innerH = H - PAD_T - PAD_B;
     const n = h.length;

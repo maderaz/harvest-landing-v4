@@ -29,6 +29,7 @@ import {
   steadiestSentence,
   concentrationSentence,
   pendleSentence,
+  pendleMarketUrl,
   heroVaultFrom,
   heroSentence,
   liveRateBullets,
@@ -45,11 +46,17 @@ import "../../_styles/stablecoin-report.css";
 
 // /report/stablecoin-yield-ranking.
 //
-// Two rankings, not one: the products people chase for rate, and the products
-// people use to park liquidity. The split is not an editorial assertion, it is
+// Two rankings, not one: products ranked by measured rate, and products ranked
+// by how little that rate moved. The split is not an editorial assertion, it is
 // measured. Every rate here comes from share-price growth (see
 // scripts/fetch-stablecoin-products.mjs), and each row carries the volatility,
-// holder concentration and flow figures that justify which table it sits in.
+// holder concentration and flow figures that decide which table it sits in.
+//
+// FRAMING. Nothing on this page tells a reader where to put money. Headings
+// describe what was measured ("whose rate moved least"), never what is
+// advisable ("most reliable place to park"), and no figure here is presented as
+// forward-looking. A measured past rate is a fact; a recommendation is not ours
+// to make.
 //
 // Scope boundary: this page targets stablecoin comparison terms and never the
 // single-asset terms the /usdc and /usdt hubs own. It links DOWN to them.
@@ -312,7 +319,7 @@ export default async function StablecoinReportPage() {
     },
     {
       q: "Which stablecoin product pays the most right now?",
-      a: `${best?.name ?? "The leader"} at ${best?.platform ?? "n/a"} on ${best?.network ?? "n/a"}, at ${pct(best?.apy ?? null)} measured over its stated window. That figure sits at the top of a leveraged, higher-variance table, which is a different question from where to park liquidity safely.`,
+      a: `${best?.name ?? "The leader"} at ${best?.platform ?? "n/a"} on ${best?.network ?? "n/a"}, at ${pct(best?.apy ?? null)} measured over its stated window. That figure sits at the top of a leveraged, higher-variance table, which is a different measurement from the rate-stability table below it.`,
     },
     {
       q: "Which stablecoin yield is the most stable?",
@@ -361,7 +368,7 @@ export default async function StablecoinReportPage() {
   const tocItems = [
     { id: "high-yield-ranking", label: "Highest paying" },
     { id: "high-yield-notes", label: "What drives them", level: 1 },
-    { id: "stable-ranking", label: "Steadiest places to park" },
+    { id: "stable-ranking", label: "Steadiest measured rates" },
     { id: "stable-notes", label: "Holders and stability", level: 1 },
     ...(charted.length ? [{ id: "rate-history", label: "Rate history" }] : []),
     ...(pendle?.markets?.length ? [{ id: "fixed-rate", label: "Fixed-rate trading" }] : []),
@@ -431,7 +438,7 @@ export default async function StablecoinReportPage() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             ...reportItemListSchema(stableItems, `${PAGE_URL}#stable-ranking`),
-            name: "Most stable stablecoin products for parking liquidity",
+            name: "Stablecoin products ranked by measured rate stability",
           }),
         }}
       />
@@ -524,15 +531,17 @@ export default async function StablecoinReportPage() {
             </section>
 
             <section className="uni-home-content" aria-labelledby="stable-ranking">
-              <p className="rp-eyebrow">Park liquidity</p>
-              <h2 id="stable-ranking">Most stable and reliable places to park stablecoins</h2>
+              <p className="rp-eyebrow">Rate stability</p>
+              <h2 id="stable-ranking">Stablecoin products whose rate moved least</h2>
               <p className="rp-lead">
                 {steadiestSentence(report) ??
-                  "These are the products people hold when the priority is getting the money back, not maximizing the rate."}{" "}
-                The holder column is the other half of that story: these are the products the market has actually
-                chosen, at {stats.totalHolders.toLocaleString("en-US")} wallets across everything tracked here.
+                  "This table ranks by how little the measured rate moved over the window, not by rate."}{" "}
+                A low standard deviation describes what a rate did over the window measured. It is not a forecast, and
+                it says nothing about the smart-contract, counterparty or depeg risk each product carries. The holder
+                column sits alongside it as a second observation: {stats.totalHolders.toLocaleString("en-US")} wallets
+                across everything tracked here.
               </p>
-              <RankTable rows={stable} showHolders label="Steadiest stablecoin products" />
+              <RankTable rows={stable} showHolders label="Stablecoin products by measured rate stability" />
             </section>
 
             <section className="uni-home-content" aria-labelledby="stable-notes">
@@ -581,9 +590,10 @@ export default async function StablecoinReportPage() {
                       <span className="hub-th hub-th-num">Spread</span>
                       <span className="hub-th hub-th-num">Matures</span>
                       <span className="hub-th hub-th-num">Liquidity</span>
+                      <span className="hub-th hub-th-right" />
                     </div>
                     <div className="hub-tbody" role="rowgroup">
-                      {pendleShown.map((m) => (
+                      {pendleShown.map((m, i) => (
                         <div className="hub-row" role="row" key={m.marketAddress}>
                           <span className="hub-cell rp-cell-text">
                             {m.name}
@@ -596,6 +606,17 @@ export default async function StablecoinReportPage() {
                           </span>
                           <span className="hub-cell hub-num">{m.daysToMaturity}d</span>
                           <span className="hub-cell hub-num">{formatTVL(m.liquidityUsd)}</span>
+                          <span className="hub-cell rp-cell-action">
+                            <DiscoverButton
+                              href={pendleMarketUrl(m)}
+                              platform="Pendle"
+                              label="PT"
+                              source={`stablecoin-pendle:${m.marketAddress}`}
+                              product={`${m.name} principal token`}
+                              chain="Ethereum"
+                              rank={i + 1}
+                            />
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -605,6 +626,8 @@ export default async function StablecoinReportPage() {
                   A fixed rate above the floating one means the market expects rates to fall before maturity, and is
                   willing to pay for certainty. Below it, the opposite. Locking removes the upside as well as the
                   downside, and the principal token has to be held to maturity or sold at whatever the market pays.
+                  The PT link on each row opens the principal-token side of that market on Pendle: the address it
+                  routes on is the market&apos;s own LP contract, which is the identifier Pendle keys its trade pages to.
                 </p>
               </section>
             ) : null}
@@ -765,6 +788,13 @@ export default async function StablecoinReportPage() {
                   window, because a ratio from a standing start describes nothing. Holder counts and concentration
                   come from Portals. EUR-denominated stablecoins are excluded: this compares USD stablecoins against
                   USD savings rates.
+                </p>
+                <p>
+                  What this page is not: every figure here describes what a product did over a window that has already
+                  happened. Nothing on it is a forecast, an endorsement, or advice about what anyone should do with
+                  money, including the products Harvest runs. A rate that held steady for 90 days can change in the
+                  next block, and a product at the top of either table can lose principal outright. See the{" "}
+                  <Link href="/disclosures">disclosures</Link>.
                 </p>
               </div>
             </section>

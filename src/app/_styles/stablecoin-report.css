@@ -118,7 +118,7 @@
 }
 .sc-pendle .hub-thead,
 .sc-pendle .hub-row {
-  grid-template-columns: minmax(180px, 2fr) 5.5rem 6rem 5.5rem 5rem 6.5rem;
+  grid-template-columns: minmax(180px, 2fr) 5.5rem 6rem 5.5rem 5rem 6.5rem 5rem;
 }
 
 /* Findings list. The marker is a square in the logo's gold rather than a disc,
@@ -238,10 +238,13 @@
 a.rp-discover { text-decoration: none; }
 
 @media (max-width: 760px) {
+  /* The action column survives the narrow cut: the whole point of the row on a
+     phone is to be able to open the market. Everything between it and the
+     first three columns drops. */
   .sc-pendle .hub-thead,
   .sc-pendle .hub-row {
-    grid-template-columns: minmax(120px, 2fr) 4.5rem 5rem;
+    grid-template-columns: minmax(110px, 2fr) 4.5rem 5rem 3.5rem;
   }
-  .sc-pendle .hub-thead > :nth-child(n + 4),
-  .sc-pendle .hub-row > :nth-child(n + 4) { display: none; }
+  .sc-pendle .hub-thead > :nth-child(n + 4):not(:last-child),
+  .sc-pendle .hub-row > :nth-child(n + 4):not(:last-child) { display: none; }
 }

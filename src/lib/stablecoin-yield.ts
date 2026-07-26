@@ -118,6 +118,13 @@ export interface PendleMarket {
   tracked: boolean;
 }
 
+// Pendle's trade route is keyed on the LP market address, which is what the
+// fetcher already stores: /trade/markets/<market>/swap?view=pt lands directly
+// on the principal-token side of that market rather than a search page.
+export function pendleMarketUrl(m: Pick<PendleMarket, "marketAddress">): string {
+  return `https://app.pendle.finance/trade/markets/${m.marketAddress}/swap?view=pt`;
+}
+
 export interface PendleReport {
   generatedAt: string;
   stats: {
@@ -179,7 +186,7 @@ export function stabilitySentence(r: StablecoinRow): string | null {
     return `Over the last ${m.days} days this rate moved inside a ${band} band, a standard deviation of ${m.apyStdev.toFixed(3)} percentage points. That is about as close to a flat rate as anything onchain gets.`;
   }
   if (m.apyStdev < 0.75) {
-    return `Over the last ${m.days} days the rate held a ${band} band, with a standard deviation of ${m.apyStdev.toFixed(2)} percentage points. Steady enough that the figure quoted today is a fair guide to next week.`;
+    return `Over the last ${m.days} days the rate held a ${band} band, with a standard deviation of ${m.apyStdev.toFixed(2)} percentage points. The figure quoted today has stayed close to the one quoted a week ago, though nothing here fixes it there.`;
   }
   if (m.apyStdev < 3) {
     return `Over the last ${m.days} days the rate ranged from ${band}, a standard deviation of ${m.apyStdev.toFixed(2)} percentage points. Worth checking the current figure rather than relying on a number seen a week ago.`;
@@ -249,19 +256,6 @@ export function headlineNote(r: StablecoinRow): string | null {
 // ---------------------------------------------------------------------------
 // Cross-product observations, for the section leads
 // ---------------------------------------------------------------------------
-
-export function tierContrast(r: StablecoinReport): string | null {
-  const hi = r.stats.highYield;
-  const st = r.stats.stable;
-  if (hi.median == null || st.median == null) return null;
-  const gap = hi.median - st.median;
-  return (
-    `The two tables answer different questions. Across the ${hi.count} higher-paying products the median rate is ` +
-    `${pct(hi.median)}; across the ${st.count} products people mostly use to park liquidity it is ${pct(st.median)}. ` +
-    `The ${gap.toFixed(2)} percentage point gap is not free money: it is what the market charges for leverage, ` +
-    `counterparty exposure and strategies that can lose as well as pay.`
-  );
-}
 
 export function steadiestSentence(r: StablecoinReport): string | null {
   const s = r.stats.steadiest;
@@ -406,11 +400,11 @@ export function structureSentence(r: StablecoinRow): string {
 export function deploymentSentence(r: StablecoinRow): string | null {
   const ratio = r.deployedRatio;
   if (ratio == null || ratio < 1.5) return null;
+  const basis = r.tvlBasis ?? "shares outstanding times what one share redeems for";
   return (
-    `Value here is ${usdShort(r.tvlUsd)}, measured as shares outstanding times what one share redeems for. ` +
-    `The contract's own totalAssets() reads ${usdShort(r.idleAssets ?? null)}, ${ratio.toFixed(0)} times smaller, ` +
-    `because the strategy is deployed elsewhere rather than sitting idle. The share-price measure is the one a ` +
-    `holder can actually redeem against.`
+    `Value here is ${usdShort(r.tvlUsd)}, measured as ${basis}. The contract's own totalAssets() reads ` +
+    `${usdShort(r.idleAssets ?? null)}, ${ratio.toFixed(0)} times smaller, because the rest is put to work rather ` +
+    `than sitting in the contract. The larger figure is the one holders hold a claim on, and it is the one used here.`
   );
 }
 
