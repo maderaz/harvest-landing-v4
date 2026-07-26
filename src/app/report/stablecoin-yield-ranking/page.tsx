@@ -16,6 +16,7 @@ import { DiscoverButton } from "@/components/report/discover-button";
 import { ReportHubLink } from "@/components/report/report-hub-link";
 import { ReportToc } from "@/components/report/report-toc";
 import { ReportChart } from "@/components/report/report-chart";
+import { HomeHeroPreview } from "@/components/home-hero-preview";
 import {
   getStablecoinReport,
   getPendleReport,
@@ -25,10 +26,15 @@ import {
   holderSentence,
   flowSentence,
   basisCaveat,
-  tierContrast,
   steadiestSentence,
   concentrationSentence,
   pendleSentence,
+  heroVaultFrom,
+  heroSentence,
+  liveRateBullets,
+  structureSentence,
+  deploymentSentence,
+  harvestSentence,
   type StablecoinRow,
 } from "@/lib/stablecoin-yield";
 import { readFileSync } from "fs";
@@ -95,6 +101,11 @@ function Crumbs() {
   );
 }
 
+// The ranking rows carry rank, product, rate and size, and nothing else.
+// Curator, contract address, mechanism and measurement caveats used to sit in
+// three stacked lines under every name, which made a scanning table unscannable.
+// They now live in the per-product section beneath each table, the way the XRP
+// report handles the same problem.
 function RankTable({ rows, showHolders, label }: { rows: StablecoinRow[]; showHolders?: boolean; label: string }) {
   if (!rows.length) return <div className="hub-empty">No products in this table right now.</div>;
   return (
@@ -121,14 +132,7 @@ function RankTable({ rows, showHolders, label }: { rows: StablecoinRow[]; showHo
                     {r.name}{" "}
                     {r.operator === "harvest" ? <span className="sc-badge-harvest">Harvest</span> : null}
                   </span>
-                  <span className="rp-rank-detail">
-                    {r.platform}
-                    {r.curatedBy ? ` · curated by ${r.curatedBy}` : ""}
-                    {r.extras ? ` · ${r.extras}` : ""}
-                  </span>
-                  <span className="rp-rank-sub sc-contract" title={r.contract}>
-                    {shortAddr(r.contract)}
-                  </span>
+                  <span className="rp-rank-detail">{r.platform}</span>
                 </span>
               </span>
               <span className="hub-cell hub-num hub-apy" title={r.rateBasis}>
@@ -156,16 +160,33 @@ function RankTable({ rows, showHolders, label }: { rows: StablecoinRow[]; showHo
               )}
               <span className="hub-cell hub-num">{r.tvlUsd ? formatTVL(r.tvlUsd) : "n/a"}</span>
               <span className="hub-cell rp-cell-action">
-                <DiscoverButton
-                  href={r.productUrl}
-                  platform={r.platform}
-                  label="Open"
-                  source={`stablecoin:${r.slug}`}
-                  product={r.name}
-                  chain={r.network}
-                  rank={i + 1}
-                  icon={<AssetIcon asset={r.payoutAsset} size={20} />}
-                />
+                {r.harvestSlug ? (
+                  <Link className="rp-discover" href={`/${r.harvestSlug}`}>
+                    <span className="rp-discover-label">Details</span>
+                    <span className="rp-discover-arrow" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </Link>
+                ) : (
+                  <DiscoverButton
+                    href={r.productUrl}
+                    platform={r.platform}
+                    label="Open"
+                    source={`stablecoin:${r.slug}`}
+                    product={r.name}
+                    chain={r.network}
+                    rank={i + 1}
+                    icon={<AssetIcon asset={r.payoutAsset} size={20} />}
+                  />
+                )}
               </span>
             </div>
           ))}
@@ -175,26 +196,62 @@ function RankTable({ rows, showHolders, label }: { rows: StablecoinRow[]; showHo
   );
 }
 
+// One card per product, in the same order as the table above it. This is where
+// the depth lives: what the thing is, how the rate behaved, where the value
+// figure came from, who holds it, and what the measurement cannot tell you.
 function ProductNotes({ rows }: { rows: StablecoinRow[] }) {
-  const notes = rows
-    .map((r) => ({ r, stability: stabilitySentence(r), flow: flowSentence(r), holders: holderSentence(r), caveat: basisCaveat(r) }))
-    .filter((n) => n.stability || n.flow || n.holders || n.caveat);
-  if (!notes.length) return null;
+  if (!rows.length) return null;
   return (
     <div className="sc-notes">
-      {notes.map(({ r, stability, flow, holders, caveat }) => (
-        <article className="sc-note" key={r.slug}>
-          <h4 className="sc-note-title">
-            <AssetIcon asset={r.payoutAsset} size={18} />
-            {r.name}
-            <span className="sc-note-plat">{r.platform}</span>
-          </h4>
-          {stability ? <p>{stability}</p> : null}
-          {flow ? <p>{flow}</p> : null}
-          {holders ? <p>{holders}</p> : null}
-          {caveat ? <p className="sc-note-caveat">{caveat}</p> : null}
-        </article>
-      ))}
+      {rows.map((r, i) => {
+        const stability = stabilitySentence(r);
+        const flow = flowSentence(r);
+        const holders = holderSentence(r);
+        const caveat = basisCaveat(r);
+        const deployment = deploymentSentence(r);
+        const harvest = harvestSentence(r);
+        return (
+          <article className="sc-note" key={r.slug} id={`note-${r.slug}`}>
+            <h4 className="sc-note-title">
+              <span className="sc-note-rank">{i + 1}</span>
+              <AssetIcon asset={r.payoutAsset} size={18} />
+              {r.name}
+              {r.operator === "harvest" ? <span className="sc-badge-harvest">Harvest</span> : null}
+              <span className="sc-note-plat">{r.network}</span>
+            </h4>
+            <p className="sc-note-struct">{structureSentence(r)}</p>
+            <p className="sc-note-figures">
+              <span>
+                <strong>{r.apy == null ? "n/a" : pct(r.apy)}</strong> {r.rateWindow ?? "current"}
+              </span>
+              <span>
+                <strong>{r.tvlUsd ? formatTVL(r.tvlUsd) : "n/a"}</strong> value
+              </span>
+              {r.holders?.count != null ? (
+                <span>
+                  <strong>{r.holders.count.toLocaleString("en-US")}</strong> holders
+                </span>
+              ) : null}
+            </p>
+            {harvest ? <p>{harvest}</p> : null}
+            {stability ? <p>{stability}</p> : null}
+            {deployment ? <p>{deployment}</p> : null}
+            {flow ? <p>{flow}</p> : null}
+            {holders ? <p>{holders}</p> : null}
+            {caveat ? <p className="sc-note-caveat">{caveat}</p> : null}
+            <p className="sc-note-foot">
+              <span className="sc-contract" title={r.contract}>
+                {shortAddr(r.contract)}
+              </span>
+              {r.harvestSlug ? (
+                <Link href={`/${r.harvestSlug}`} className="sc-note-link">
+                  Full history and risk profile
+                </Link>
+              ) : null}
+            </p>
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -221,6 +278,7 @@ export default async function StablecoinReportPage() {
   const { stats } = report;
   const high = tierRows(report, "high-yield");
   const stable = tierRows(report, "stable");
+  const harvestRows = report.rows.filter((r) => r.operator === "harvest");
   const updated = fmtDate(report.dataModifiedIso);
   const charted = report.rows
     .filter((r) => r.history.filter((h) => h.apy != null).length >= 14)
@@ -231,16 +289,18 @@ export default async function StablecoinReportPage() {
   const bestRow = report.rows.find((r) => r.slug === best?.slug) ?? null;
   // The measurement window travels inside the lead sentence, not in a footnote:
   // the top of the table is sometimes a short-window figure, and an engine
-  // excerpting this paragraph must carry that caveat with it.
-  const bestWindow = bestRow?.rateWindow && /^\d+d$/.test(bestRow.rateWindow)
-    ? ` measured over ${bestRow.rateWindow.replace("d", " days")}`
-    : "";
-  const lead =
-    `As of ${updated}, the highest measured stablecoin rate among the ${stats.products} products tracked here is ` +
-    `${pct(best?.apy ?? null)} on ${best?.name ?? "n/a"} at ${best?.platform ?? "n/a"} (${best?.network ?? "n/a"})${bestWindow}, ` +
-    `against a ${pct(stats.stable.median)} median across the products people actually use to park liquidity. ` +
-    `Every rate on this page is measured from onchain share-price growth over a stated window, not taken from a ` +
-    `platform's advertised figure, so the two tables below can be read against each other.`;
+  // excerpting this sentence must carry that caveat with it. heroSentence names
+  // the leader the way a reader would say it: what it pays in, what it is, who
+  // runs it, where. The supporting numbers moved into the bullets below, so the
+  // hero stays one claim long instead of a paragraph.
+  const lead = bestRow
+    ? heroSentence(bestRow)
+    : `Every rate on this page is measured from onchain share-price growth over a stated window, not taken from a platform's advertised figure.`;
+  const heroVault = bestRow ? heroVaultFrom(bestRow) : null;
+  const heroWindowLabel =
+    bestRow?.rateWindow && /^\d+d$/.test(bestRow.rateWindow)
+      ? `${bestRow.rateWindow.replace("d", "-day")} measured rate`
+      : "Measured rate";
 
   // Questions are matched to the strings that actually appear in the live
   // People Also Ask block for this category, rather than paraphrases of them.
@@ -416,6 +476,14 @@ export default async function StablecoinReportPage() {
       <Crumbs />
 
       <section className="uni-home-hero rp-hero">
+        {heroVault && (
+          <HomeHeroPreview
+            vault={heroVault}
+            headlineValueOverride={pct(bestRow?.apy ?? null)}
+            headlineLabelOverride={heroWindowLabel}
+            apyTabLabel="Rate"
+          />
+        )}
         <div className="uni-home-hero-inner">
           <h1 className="uni-home-h1">{H1}</h1>
           <p className="uni-home-sub sc-lead">{lead}</p>
@@ -433,15 +501,19 @@ export default async function StablecoinReportPage() {
             <section className="uni-home-content" aria-labelledby="high-yield-ranking">
               <p className="rp-eyebrow">Live rates</p>
               <h2 id="high-yield-ranking">Highest paying stablecoin opportunities right now</h2>
-              <p className="rp-lead">
-                {tierContrast(report) ??
-                  `The ${high.length} products below pay the most of anything tracked here.`}
-              </p>
+              {/* Findings first, one claim per line. Each bullet is a complete,
+                  self-contained statement so an answer engine can lift any one
+                  of them without needing the sentence before it. */}
+              <ul className="sc-bullets">
+                {liveRateBullets(report, pendle?.stats.bestFixed ?? null).map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
               <RankTable rows={high} label="Highest paying stablecoin products" />
               <p className="rp-lead rp-trade-sublead">
                 A rate at the top of this table is compensation for something: leverage that amplifies losses as
                 readily as gains, a named counterparty rather than collateral, or a strategy that takes the other
-                side of trader profit. The notes below say which, per product.
+                side of trader profit. The section below says which, per product.
               </p>
             </section>
 
@@ -702,9 +774,12 @@ export default async function StablecoinReportPage() {
               <h2 id="harvest-block">Doing this through Harvest</h2>
               <div className="rp-article">
                 <p>
-                  Harvest operates two of the products above, measured on the same basis as everything else and badged
-                  as ours. If one ranks below a competitor today, that is the table working correctly. The full
-                  lineups live on the{" "}
+                  {harvestRows.length === 1
+                    ? "Harvest operates one of the products above"
+                    : `Harvest operates ${harvestRows.length} of the products above`}
+                  , measured on the same basis as everything else and badged as ours. Each row links through to its
+                  own page here, where our hourly readings and the full daily history live. If one ranks below a
+                  competitor today, that is the table working correctly. The full lineups live on the{" "}
                   <ReportHubLink href="/usdc" hub="usdc">
                     USDC page
                   </ReportHubLink>{" "}

@@ -121,6 +121,34 @@
   grid-template-columns: minmax(180px, 2fr) 5.5rem 6rem 5.5rem 5rem 6.5rem;
 }
 
+/* Findings list. The marker is a square in the logo's gold rather than a disc,
+   so a section lead reads as a set of claims instead of prose. Drawn with a
+   pseudo-element (not list-style) so the size and colour are controllable and
+   the text hangs on a single indent. */
+.sc-bullets {
+  list-style: none;
+  margin: 0.9rem 0 1.4rem;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.sc-bullets li {
+  position: relative;
+  padding-left: 1.4rem;
+  font-size: 0.95rem;
+  line-height: 1.62;
+}
+.sc-bullets li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.55em;
+  width: 0.6rem;
+  height: 0.6rem;
+  background: var(--hub-gold);
+  border-radius: 1px;
+}
+
 /* Per-product commentary cards. */
 .sc-notes {
   display: grid;
@@ -159,6 +187,55 @@
   color: var(--neutral);
   font-style: italic;
 }
+
+/* The detail that used to be stacked under every table row. Rank ties the card
+   back to its position in the table above; the figure strip repeats rate, value
+   and holders so a card can be read (or quoted) on its own. */
+.sc-note-rank {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--neutral);
+  min-width: 1rem;
+}
+.sc-note-struct {
+  color: var(--neutral);
+}
+.sc-note-figures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 1.1rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--neutral);
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--hub-line);
+}
+.sc-note-figures strong {
+  font-size: 0.95rem;
+  letter-spacing: 0;
+  color: var(--ink, inherit);
+}
+.sc-note-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-top: 0.9rem !important;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--hub-line);
+}
+.sc-note-link {
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Harvest rows link inward to their own product page instead of opening the
+   leave-site modal, so the action cell is an anchor here rather than a button. */
+a.rp-discover { text-decoration: none; }
 
 @media (max-width: 760px) {
   .sc-pendle .hub-thead,

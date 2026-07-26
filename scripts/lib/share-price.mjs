@@ -83,15 +83,46 @@ export async function sharePriceAt(chain, vault, shape, block = "latest") {
   return pps;
 }
 
-// Total assets in underlying units. Falls back to totalSupply x sharePrice for
-// vaults whose totalAssets() reverts (Harvest's Arcadia vault does this).
+// Net asset value in underlying units.
+//
+// The primary measure is totalSupply x sharePrice, NOT totalAssets(). For a
+// well-formed ERC-4626 the two agree by definition, but they diverge badly on
+// vaults that deploy their assets elsewhere: Accountable's aHYPER looping vault
+// on Monad reports totalAssets() of $3,765 (its idle USDC balance) while its
+// 7,293,678 shares redeem at 1.0351, a real NAV of $7.55M. That is a 2005x
+// understatement, and totalAssets() is the number that looks authoritative.
+//
+// Share price is what a holder actually redeems against, and it is already the
+// basis for every rate on this page, so using it for value too keeps the two
+// columns consistent. totalAssets() is still read as a cross-check and the
+// divergence is reported, because a large gap is itself informative: it means
+// the strategy is deployed rather than sitting idle.
+export async function navAt(chain, vault, shape, block = "latest") {
+  const [supplyRaw, taRaw, pps] = await Promise.all([
+    tryCall(chain, vault, SEL.totalSupply, block),
+    tryCall(chain, vault, SEL.totalAssets, block),
+    sharePriceAt(chain, vault, shape, block),
+  ]);
+
+  const totalAssets = taRaw ? Number(toBig(word(taRaw, 0))) / 10 ** shape.underlyingDecimals : null;
+  const supply = supplyRaw ? Number(toBig(word(supplyRaw, 0))) / 10 ** shape.shareDecimals : null;
+  const navFromShares = supply != null && pps != null ? supply * pps : null;
+
+  const nav = navFromShares ?? totalAssets;
+  if (nav == null) return null;
+
+  const divergence =
+    navFromShares != null && totalAssets != null && totalAssets > 0
+      ? navFromShares / totalAssets
+      : null;
+
+  return { nav, navFromShares, totalAssets, supply, divergence };
+}
+
+// Backwards-compatible scalar accessor for callers that only want the number.
 export async function totalAssetsAt(chain, vault, shape, block = "latest") {
-  const raw = await tryCall(chain, vault, SEL.totalAssets, block);
-  if (raw) return Number(toBig(word(raw, 0))) / 10 ** shape.underlyingDecimals;
-  const supplyRaw = await tryCall(chain, vault, SEL.totalSupply, block);
-  const pps = await sharePriceAt(chain, vault, shape, block);
-  if (!supplyRaw || pps == null) return null;
-  return (Number(toBig(word(supplyRaw, 0))) / 10 ** shape.shareDecimals) * pps;
+  const r = await navAt(chain, vault, shape, block);
+  return r?.nav ?? null;
 }
 
 // Compound-annualize a share-price ratio over ACTUAL elapsed seconds. Never

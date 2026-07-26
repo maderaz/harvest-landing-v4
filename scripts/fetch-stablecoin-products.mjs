@@ -38,6 +38,7 @@ import { canReadHistory } from "./lib/onchain.mjs";
 import {
   sharePriceAt,
   totalAssetsAt,
+  navAt,
   realizedApy,
   realizedOverBestWindow,
   backfillDailySeries,
@@ -269,7 +270,8 @@ async function hydrate(p, cfg, now) {
   // Current share price is always read onchain, even when Portals supplies the
   // series, so the published figure is verifiable against chain state.
   const ppsOnchain = await sharePriceAt(p.chain, p.contract, shape).catch(() => null);
-  const assets = await totalAssetsAt(p.chain, p.contract, shape).catch(() => null);
+  const navInfo = await navAt(p.chain, p.contract, shape).catch(() => null);
+  const assets = navInfo?.nav ?? null;
 
   // Monad is not indexed by Portals: build the series onchain instead.
   if (!series.length && canReadHistory(p.chain, 1)) {
@@ -302,6 +304,11 @@ async function hydrate(p, cfg, now) {
       ? `Realized over the trailing ${realized.window}, from share-price growth. Current share price verified onchain.`
       : "Realized rate not available yet: not enough share-price history for this product.",
     tvlUsd: assets != null ? Math.round(assets) : series.length ? series[series.length - 1].tvlUsd : null,
+    // Kept so the page can say a strategy is deployed rather than idle, and so
+    // a future reviewer can see which number was chosen and why.
+    tvlBasis: navInfo?.navFromShares != null ? "shares x share price" : "totalAssets()",
+    idleAssets: navInfo?.totalAssets != null ? Math.round(navInfo.totalAssets) : null,
+    deployedRatio: navInfo?.divergence != null ? round(navInfo.divergence, 1) : null,
     sharePrice: round(ppsOnchain, 6),
     sharePriceApi: round(apiPps, 6),
     sharePriceGapPct: ppsGapPct,
@@ -309,6 +316,31 @@ async function hydrate(p, cfg, now) {
     metrics: deriveMetrics(series),
     history: series,
   };
+}
+
+// First-party figures for the products Harvest operates. Measuring our own
+// vaults only through a third-party API when our own indexer already tracks
+// them would be a strange thing to publish, so the Harvest rows carry both:
+// the same measured share-price rate as everyone else (which is what makes the
+// table comparable) plus our own 24h/30d readings and the product-page slug.
+function harvestOverlay(contract) {
+  try {
+    const vaults = JSON.parse(readFileSync(join(ROOT, "data", "vaults.json"), "utf-8"));
+    const v = vaults.find(
+      (x) => (x.contractAddress ?? "").toLowerCase() === contract.toLowerCase(),
+    );
+    if (!v) return null;
+    return {
+      harvestSlug: v.slug,
+      harvestApy24h: round(v.apy24h),
+      harvestApy30d: round(v.apy30d),
+      harvestTvlUsd: v.tvl != null ? Math.round(v.tvl) : null,
+      harvestVaultType: v.vaultType ?? null,
+      harvestCategory: v.category ?? null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 const main = async () => {
@@ -358,6 +390,7 @@ const main = async () => {
       pendleName: p.pendleName ?? null,
       rateNa: false,
       ...h,
+      ...(p.operator === "harvest" ? harvestOverlay(p.contract) ?? {} : {}),
     });
     console.error(
       `[stablecoin] ${p.slug.padEnd(30)} apy=${h.apy ?? "n/a"} window=${h.rateWindow ?? "-"} hist=${h.history?.length ?? 0} holders=${h.holders?.count ?? "-"}`,
