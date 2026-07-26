@@ -1,5 +1,5 @@
 {
-  "note": "Canonical third-party venue list for /polygon (the mixed ranking) and /polygon/[venue]. This is the ALLOWLIST: only entries in `venues` render, nothing scanned automatically. scripts/fetch-polygon-yield.mjs hydrates each row's live rate/TVL from its `source`: kind=onchain (direct Aave v3 Pool read via scripts/lib/polygon-onchain-adapters.mjs, the primary/spine method) or kind=portals (api.portals.fi current APY, used only for venues with no simple public rate-reading contract). All rows are `operator: external` -- third-party protocols Harvest does not run. Harvest's own Polygon vaults are a separate, clearly-labelled section on the same page, sourced from data/vaults.json as usual. Inclusion threshold: any non-zero rate qualifies (the only hard floor is not literally 0% APY); a near-zero rate can itself be the finding worth stating (see WBTC, EURS, wstETH, MaticX). Entries also in data/external-products.json (Fluid, Compound, Compound Blue, and the duplicate Aave rows added for that CSV) are intentionally NOT listed here -- /polygon stays scoped to this file's own curation, /product/[slug] is the separate surface for that batch.",
+  "note": "Canonical third-party venue list for /polygon (the mixed ranking) and /polygon/[venue]. This is the ALLOWLIST: only entries in `venues` render, nothing scanned automatically. scripts/fetch-polygon-yield.mjs hydrates each row's live rate/TVL/utilization from its `source`: kind=onchain (direct Aave v3 Pool read via scripts/lib/polygon-onchain-adapters.mjs). All rows are `operator: external` -- third-party protocols Harvest does not run. Harvest's own Polygon vaults are a separate, clearly-labelled section on the same page, sourced from data/vaults.json as usual. INCLUSION THRESHOLD: a venue's rate must render as non-zero, i.e. >= 0.005% so formatAPY does not print '0.00%'. The test is what a visitor sees, not the raw float: a row displaying 0.00% reads as a dead product no matter how precise the underlying number is. Entries in `hidden` fail that test or were held back editorially; both the pipeline and the page reader only ever read `venues`, never `hidden`.",
   "aaveV3Pool": "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
   "venues": [
     {
@@ -108,28 +108,6 @@
       }
     },
     {
-      "slug": "aave-v3-wsteth-polygon",
-      "asset": "wstETH",
-      "assetGroup": "ETH",
-      "detail": "Aave v3",
-      "symbol": "wstETH",
-      "platform": "Aave v3",
-      "entity": "Permissionless",
-      "operator": "external",
-      "chain": "Polygon",
-      "productType": "Lending market",
-      "exposure": "single",
-      "url": "https://app.aave.com/reserve-overview/?underlyingAsset=0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd&marketName=proto_polygon_v3",
-      "source": {
-        "kind": "onchain",
-        "protocol": "aave-v3",
-        "asset": "0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd",
-        "underlyingDec": 18,
-        "priceRef": "wsteth"
-      },
-      "editorialNote": "Sub-0.01% supply rate; included because it is non-zero, and because wstETH lending pays essentially nothing on Polygon is itself worth stating."
-    },
-    {
       "slug": "aave-v3-wbtc-polygon",
       "asset": "WBTC",
       "assetGroup": "BTC",
@@ -170,49 +148,6 @@
         "asset": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
         "underlyingDec": 18,
         "priceRef": "matic"
-      }
-    },
-    {
-      "slug": "aave-v3-maticx-polygon",
-      "asset": "MaticX",
-      "assetGroup": "POL",
-      "detail": "Aave v3 · Stader liquid-staking collateral",
-      "symbol": "MaticX",
-      "platform": "Aave v3",
-      "entity": "Permissionless",
-      "operator": "external",
-      "chain": "Polygon",
-      "productType": "Lending market",
-      "exposure": "single",
-      "url": "https://app.aave.com/reserve-overview/?underlyingAsset=0xfa68fb4628dff1028cfec22b4162fccd0d45efb6&marketName=proto_polygon_v3",
-      "source": {
-        "kind": "onchain",
-        "protocol": "aave-v3",
-        "asset": "0xfa68fb4628dff1028cfec22b4162fccd0d45efb6",
-        "underlyingDec": 18,
-        "priceRef": "maticx"
-      },
-      "editorialNote": "Sub-0.01% supply rate; included because it is non-zero."
-    },
-    {
-      "slug": "aave-v3-eurs-polygon",
-      "asset": "EURS",
-      "assetGroup": "EURS",
-      "detail": "Aave v3",
-      "symbol": "EURS",
-      "platform": "Aave v3",
-      "entity": "Permissionless",
-      "operator": "external",
-      "chain": "Polygon",
-      "productType": "Lending market",
-      "exposure": "single",
-      "url": "https://app.aave.com/reserve-overview/?underlyingAsset=0xe111178a87a3bff0c8d18decba5798827539ae99&marketName=proto_polygon_v3",
-      "source": {
-        "kind": "onchain",
-        "protocol": "aave-v3",
-        "asset": "0xe111178a87a3bff0c8d18decba5798827539ae99",
-        "underlyingDec": 2,
-        "priceRef": "eur"
       }
     }
   ],
@@ -303,6 +238,72 @@
         "staticTvl": 903421
       },
       "hiddenReason": "Editorial decision: hold Portals-sourced (non-onchain) listings off /polygon for now. Kept here, not deleted, for easy re-inclusion."
+    },
+    {
+      "slug": "aave-v3-wsteth-polygon",
+      "asset": "wstETH",
+      "assetGroup": "ETH",
+      "detail": "Aave v3",
+      "symbol": "wstETH",
+      "platform": "Aave v3",
+      "entity": "Permissionless",
+      "operator": "external",
+      "chain": "Polygon",
+      "productType": "Lending market",
+      "exposure": "single",
+      "url": "https://app.aave.com/reserve-overview/?underlyingAsset=0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd&marketName=proto_polygon_v3",
+      "source": {
+        "kind": "onchain",
+        "protocol": "aave-v3",
+        "asset": "0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd",
+        "underlyingDec": 18,
+        "priceRef": "wsteth"
+      },
+      "hiddenReason": "Excluded by the display-threshold rule: its rate (0.0006%) rounds to 0.00% in formatAPY, so the row would read as a 0% product to a visitor even though the underlying value is non-zero. Kept here, not deleted, for easy re-inclusion if the rate rises."
+    },
+    {
+      "slug": "aave-v3-maticx-polygon",
+      "asset": "MaticX",
+      "assetGroup": "POL",
+      "detail": "Aave v3 · Stader liquid-staking collateral",
+      "symbol": "MaticX",
+      "platform": "Aave v3",
+      "entity": "Permissionless",
+      "operator": "external",
+      "chain": "Polygon",
+      "productType": "Lending market",
+      "exposure": "single",
+      "url": "https://app.aave.com/reserve-overview/?underlyingAsset=0xfa68fb4628dff1028cfec22b4162fccd0d45efb6&marketName=proto_polygon_v3",
+      "source": {
+        "kind": "onchain",
+        "protocol": "aave-v3",
+        "asset": "0xfa68fb4628dff1028cfec22b4162fccd0d45efb6",
+        "underlyingDec": 18,
+        "priceRef": "maticx"
+      },
+      "hiddenReason": "Excluded by the display-threshold rule: its rate (0.0019%) rounds to 0.00% in formatAPY, so the row would read as a 0% product to a visitor even though the underlying value is non-zero. Kept here, not deleted, for easy re-inclusion if the rate rises."
+    },
+    {
+      "slug": "aave-v3-eurs-polygon",
+      "asset": "EURS",
+      "assetGroup": "EURS",
+      "detail": "Aave v3",
+      "symbol": "EURS",
+      "platform": "Aave v3",
+      "entity": "Permissionless",
+      "operator": "external",
+      "chain": "Polygon",
+      "productType": "Lending market",
+      "exposure": "single",
+      "url": "https://app.aave.com/reserve-overview/?underlyingAsset=0xe111178a87a3bff0c8d18decba5798827539ae99&marketName=proto_polygon_v3",
+      "source": {
+        "kind": "onchain",
+        "protocol": "aave-v3",
+        "asset": "0xe111178a87a3bff0c8d18decba5798827539ae99",
+        "underlyingDec": 2,
+        "priceRef": "eur"
+      },
+      "hiddenReason": "Excluded by the display-threshold rule: its rate (0.0048%) rounds to 0.00% in formatAPY, so the row would read as a 0% product to a visitor even though the underlying value is non-zero. Kept here, not deleted, for easy re-inclusion if the rate rises."
     }
   ]
 }

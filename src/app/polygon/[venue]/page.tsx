@@ -7,7 +7,13 @@ import { breadcrumbSchema, reportWebPageSchema, reportDatasetSchema } from "@/li
 import { AssetIcon } from "@/components/token-icons";
 import { HomeCrumb } from "@/components/home-crumb";
 import { DiscoverButton } from "@/components/report/discover-button";
-import { getPolygonVenues, type PolygonVenue } from "@/lib/polygon-yield";
+import {
+  getPolygonVenues,
+  conditionsCommentary,
+  utilizationLabel,
+  trailingRateNote,
+  type PolygonVenue,
+} from "@/lib/polygon-yield";
 import "../../_styles/asset-hub.css";
 import "../../_styles/report.css";
 import "../../_styles/polygon-hub.css";
@@ -54,6 +60,7 @@ export default async function PolygonVenuePage({
   const { venue: slug } = await params;
   const v = findVenue(slug);
   if (!v) notFound();
+  const commentary = conditionsCommentary(v);
 
   const url = `${SITE_URL}/polygon/${v.venueSlug}`;
   const crumbs = [
@@ -138,13 +145,69 @@ export default async function PolygonVenuePage({
             <div className="uni-hub-stat-value">{v.rateNa ? "n/a" : formatAPY(v.apy ?? 0)}</div>
           </div>
           <div className="uni-hub-stat">
-            <div className="uni-hub-stat-label" data-tooltip="Deposits tracked in this venue as of the last refresh.">
+            <div className="uni-hub-stat-label" data-tooltip={trailingRateNote(v)}>
+              30-day realized
+            </div>
+            <div className="uni-hub-stat-value">
+              {v.apyMean30d != null ? formatAPY(v.apyMean30d) : "-"}
+            </div>
+          </div>
+          <div className="uni-hub-stat">
+            <div
+              className="uni-hub-stat-label"
+              data-tooltip="Share of the supplied amount currently borrowed. This is what sets the supply rate on Aave."
+            >
+              Utilization
+            </div>
+            <div className="uni-hub-stat-value">
+              {v.utilization != null ? `${v.utilization.toFixed(1)}%` : "n/a"}
+            </div>
+          </div>
+          <div className="uni-hub-stat">
+            <div
+              className="uni-hub-stat-label"
+              data-tooltip="Total value supplied to this market as of the last refresh."
+            >
               Tracked TVL
             </div>
             <div className="uni-hub-stat-value">{v.tvlUsd > 0 ? formatTVL(v.tvlUsd) : "n/a"}</div>
           </div>
         </div>
       </header>
+
+      {commentary && (
+        <section className="uni-hub-section" aria-labelledby="venue-conditions">
+          <header className="uni-hub-section-head">
+            <h2 id="venue-conditions" className="uni-hub-section-title">
+              Why the rate is {v.rateNa ? "unavailable" : formatAPY(v.apy ?? 0)} right now
+            </h2>
+          </header>
+          <p className="poly-commentary">{commentary}</p>
+          <dl className="poly-conditions-grid">
+            <div>
+              <dt>Supplied</dt>
+              <dd>{v.tvlUsd > 0 ? formatTVL(v.tvlUsd) : "n/a"}</dd>
+            </div>
+            <div>
+              <dt>Borrowed</dt>
+              <dd>{v.borrowedUsd != null ? formatTVL(v.borrowedUsd) : "n/a"}</dd>
+            </div>
+            <div>
+              <dt>Utilization</dt>
+              <dd>
+                {v.utilization != null ? `${v.utilization.toFixed(1)}%` : "n/a"}
+                {utilizationLabel(v.utilization)
+                  ? ` (${utilizationLabel(v.utilization)?.toLowerCase()})`
+                  : ""}
+              </dd>
+            </div>
+            <div>
+              <dt>Borrow rate</dt>
+              <dd>{v.borrowApy != null ? formatAPY(v.borrowApy) : "n/a"}</dd>
+            </div>
+          </dl>
+        </section>
+      )}
 
       <section className="uni-hub-section" aria-labelledby="venue-open">
         <header className="uni-hub-section-head">
@@ -177,6 +240,10 @@ export default async function PolygonVenuePage({
           <article>
             <h3>Where this number comes from</h3>
             <p>{sourceLabel}</p>
+          </article>
+          <article>
+            <h3>About the 30-day figure</h3>
+            <p>{trailingRateNote(v)}</p>
           </article>
           <article>
             <h3>Why it&apos;s here</h3>

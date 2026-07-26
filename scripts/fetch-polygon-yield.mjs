@@ -102,9 +102,46 @@ function baseRow(v) {
     tvlUsd: 0,
     apy: null,
     apyBase: null,
+    apyMean30d: null,
+    borrowApy: null,
+    utilization: null,
+    borrowedUsd: null,
     rateNa: false,
     rateBasis: "current",
   };
+}
+
+// Minimum rate that still renders as non-zero through formatAPY (which does
+// toFixed(2)). Anything below this prints "0.00%" and reads to a visitor as a
+// dead product, so it does not belong in the ranking regardless of how precise
+// the underlying float is. Mirrors the threshold documented in
+// data/polygon-venues.json.
+const MIN_DISPLAYED_APY = 0.005;
+
+// Realized yield between two stored liquidityIndex readings. Aave's index
+// accrues continuously, so index_now / index_then - 1 IS the yield actually
+// earned over that span -- exact arithmetic, not an average of spot samples,
+// and not a forward projection. Returns null until the stored series spans at
+// least MIN_DAYS, because a shorter window annualized is noise, not a 30-day
+// figure. Free Polygon RPCs do not serve archive state, so this cannot be
+// backfilled; it matures as the hourly cron accumulates points.
+function computeRealized30d(history, idxNow, today) {
+  if (!Number.isFinite(idxNow) || !Array.isArray(history)) return null;
+  const MIN_DAYS = 25;
+  const MAX_DAYS = 35;
+  const todayMs = Date.parse(`${today}T00:00:00Z`);
+  let best = null;
+  for (const h of history) {
+    if (!Number.isFinite(h?.idx) || h.idx <= 0) continue;
+    const days = (todayMs - Date.parse(`${h.d}T00:00:00Z`)) / 86_400_000;
+    if (days < MIN_DAYS || days > MAX_DAYS) continue;
+    // Prefer the point closest to a true 30 days back.
+    if (!best || Math.abs(days - 30) < Math.abs(best.days - 30)) best = { idx: h.idx, days };
+  }
+  if (!best) return null;
+  const growth = idxNow / best.idx - 1;
+  if (!Number.isFinite(growth) || growth < 0) return null;
+  return (Math.pow(1 + growth, 365 / best.days) - 1) * 100;
 }
 
 async function getPolygonPrices() {
@@ -154,9 +191,22 @@ const main = async () => {
           underlyingDec: src.underlyingDec,
           priceUsd,
         });
+        if (r.apy < MIN_DISPLAYED_APY) {
+          // Would render as "0.00%". Skip rather than publish a dead-looking
+          // row; data/polygon-venues.json documents the same rule, this is the
+          // runtime backstop for when a listed venue's rate decays into it.
+          console.error(
+            `[polygon-yield] ${p.slug}: rate ${r.apy.toFixed(5)}% renders as 0.00%, dropping from the ranking`,
+          );
+          continue;
+        }
         row.apy = r.apy;
         row.apyBase = r.apyBase;
         row.tvlUsd = r.tvlUsd;
+        row.borrowApy = r.borrowApy;
+        row.utilization = r.utilization;
+        row.borrowedUsd = r.borrowedUsd;
+        row.liquidityIndex = r.liquidityIndex;
         row.source = "onchain";
       } else if (src.kind === "portals") {
         const doc = await portalsCurrent(src.portalsKey);
@@ -199,8 +249,12 @@ const main = async () => {
       const prior = prevRow.get(v.slug);
       const priorHist = prior?.source === "onchain" ? prior.history ?? [] : [];
       const merged = priorHist.filter((h) => h.d !== today);
-      merged.push({ d: today, apy: row.apy, tvl: row.tvlUsd });
+      // `idx` is the accrual index; it is what makes the 30-day figure exact
+      // rather than an average of daily spot readings.
+      merged.push({ d: today, apy: row.apy, tvl: row.tvlUsd, idx: row.liquidityIndex ?? null });
       row.history = merged.slice(-90);
+      row.apyMean30d = computeRealized30d(row.history, row.liquidityIndex, today);
+      if (row.apyMean30d != null) row.apyMean30d = Math.round(row.apyMean30d * 1000) / 1000;
     }
 
     rows.push(row);
