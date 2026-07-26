@@ -44,6 +44,8 @@ const PRICE_TOKEN = {
   btc: "0x1bfd67037b42cf73acf2047067bd4f2c47d9bfd6", // WBTC
   matic: "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270", // WMATIC
   eur: "0xe111178a87a3bff0c8d18decba5798827539ae99", // EURS (priced directly; its own price IS the EUR/USD rate)
+  wsteth: "0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd", // wstETH -- priced directly rather than approximated off WETH
+  maticx: "0xfa68fb4628dff1028cfec22b4162fccd0d45efb6", // MaticX -- priced directly rather than approximated off WMATIC
 };
 
 function readCache(dir, name) {

@@ -1,5 +1,5 @@
 {
-  "note": "Canonical third-party venue list for /polygon (the mixed ranking) and /polygon/[venue]. This is the ALLOWLIST: only these venues render, nothing scanned automatically. scripts/fetch-polygon-yield.mjs hydrates each row's live rate/TVL from its `source`: kind=onchain (direct Aave v3 Pool read via scripts/lib/polygon-onchain-adapters.mjs, the primary/spine method) or kind=portals (api.portals.fi current APY, used only for venues with no simple public rate-reading contract -- RWA fund tokens and the Morpho market below -- same disclosed-fallback role Portals already plays for 3 of the 15 XRP venues, never the primary source). All rows are `operator: external` -- third-party protocols Harvest does not run. Harvest's own Polygon vaults are a separate, clearly-labelled section on the same page, sourced from data/vaults.json as usual. Rows below 0.005% APY (rounds to the site's '-' placeholder, see formatAPY) are excluded per editorial decision, except where a near-zero rate is itself the finding worth stating (see WBTC).",
+  "note": "Canonical third-party venue list for /polygon (the mixed ranking) and /polygon/[venue]. This is the ALLOWLIST: only entries in `venues` render, nothing scanned automatically. scripts/fetch-polygon-yield.mjs hydrates each row's live rate/TVL from its `source`: kind=onchain (direct Aave v3 Pool read via scripts/lib/polygon-onchain-adapters.mjs, the primary/spine method) or kind=portals (api.portals.fi current APY, used only for venues with no simple public rate-reading contract). All rows are `operator: external` -- third-party protocols Harvest does not run. Harvest's own Polygon vaults are a separate, clearly-labelled section on the same page, sourced from data/vaults.json as usual. Inclusion threshold: any non-zero rate qualifies (the only hard floor is not literally 0% APY); a near-zero rate can itself be the finding worth stating (see WBTC, EURS, wstETH, MaticX). Entries also in data/external-products.json (Fluid, Compound, Compound Blue, and the duplicate Aave rows added for that CSV) are intentionally NOT listed here -- /polygon stays scoped to this file's own curation, /product/[slug] is the separate surface for that batch.",
   "aaveV3Pool": "0x794a61358D6845594F94dc1DB02A252b5b4814aD",
   "venues": [
     {
@@ -42,26 +42,6 @@
         "asset": "0x2791bca1f2de4661ed88a30c99a7a9449aa84174",
         "underlyingDec": 6,
         "priceRef": "usd"
-      }
-    },
-    {
-      "slug": "morpho-usdc-polygon",
-      "asset": "USDC",
-      "assetGroup": "USDC",
-      "detail": "Morpho Blue · WBTC-collateralized market",
-      "symbol": "USDC",
-      "platform": "Morpho",
-      "entity": "Permissionless",
-      "operator": "external",
-      "chain": "Polygon",
-      "productType": "Lending market",
-      "exposure": "single",
-      "url": "https://polygonscan.com/address/0x1cfe584af3db05c7f39d60e458a87a8b2f6b5d8c6125631984ec489f1d13553b",
-      "source": {
-        "kind": "portals",
-        "portalsKey": "polygon:0x1cfe584af3db05c7f39d60e458a87a8b2f6b5d8c6125631984ec489f1d13553b",
-        "staticApy": 2.21,
-        "staticTvl": 907885
       }
     },
     {
@@ -128,6 +108,28 @@
       }
     },
     {
+      "slug": "aave-v3-wsteth-polygon",
+      "asset": "wstETH",
+      "assetGroup": "ETH",
+      "detail": "Aave v3",
+      "symbol": "wstETH",
+      "platform": "Aave v3",
+      "entity": "Permissionless",
+      "operator": "external",
+      "chain": "Polygon",
+      "productType": "Lending market",
+      "exposure": "single",
+      "url": "https://app.aave.com/reserve-overview/?underlyingAsset=0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd&marketName=proto_polygon_v3",
+      "source": {
+        "kind": "onchain",
+        "protocol": "aave-v3",
+        "asset": "0x03b54a6e9a984069379fae1a4fc4dbae93b3bccd",
+        "underlyingDec": 18,
+        "priceRef": "wsteth"
+      },
+      "editorialNote": "Sub-0.01% supply rate; included because it is non-zero, and because wstETH lending pays essentially nothing on Polygon is itself worth stating."
+    },
+    {
       "slug": "aave-v3-wbtc-polygon",
       "asset": "WBTC",
       "assetGroup": "BTC",
@@ -171,6 +173,28 @@
       }
     },
     {
+      "slug": "aave-v3-maticx-polygon",
+      "asset": "MaticX",
+      "assetGroup": "POL",
+      "detail": "Aave v3 · Stader liquid-staking collateral",
+      "symbol": "MaticX",
+      "platform": "Aave v3",
+      "entity": "Permissionless",
+      "operator": "external",
+      "chain": "Polygon",
+      "productType": "Lending market",
+      "exposure": "single",
+      "url": "https://app.aave.com/reserve-overview/?underlyingAsset=0xfa68fb4628dff1028cfec22b4162fccd0d45efb6&marketName=proto_polygon_v3",
+      "source": {
+        "kind": "onchain",
+        "protocol": "aave-v3",
+        "asset": "0xfa68fb4628dff1028cfec22b4162fccd0d45efb6",
+        "underlyingDec": 18,
+        "priceRef": "maticx"
+      },
+      "editorialNote": "Sub-0.01% supply rate; included because it is non-zero."
+    },
+    {
       "slug": "aave-v3-eurs-polygon",
       "asset": "EURS",
       "assetGroup": "EURS",
@@ -190,6 +214,29 @@
         "underlyingDec": 2,
         "priceRef": "eur"
       }
+    }
+  ],
+  "hidden": [
+    {
+      "slug": "morpho-usdc-polygon",
+      "asset": "USDC",
+      "assetGroup": "USDC",
+      "detail": "Morpho Blue · WBTC-collateralized market",
+      "symbol": "USDC",
+      "platform": "Morpho",
+      "entity": "Permissionless",
+      "operator": "external",
+      "chain": "Polygon",
+      "productType": "Lending market",
+      "exposure": "single",
+      "url": "https://polygonscan.com/address/0x1cfe584af3db05c7f39d60e458a87a8b2f6b5d8c6125631984ec489f1d13553b",
+      "source": {
+        "kind": "portals",
+        "portalsKey": "polygon:0x1cfe584af3db05c7f39d60e458a87a8b2f6b5d8c6125631984ec489f1d13553b",
+        "staticApy": 2.21,
+        "staticTvl": 907885
+      },
+      "hiddenReason": "Editorial decision: hold Portals-sourced (non-onchain) listings off /polygon for now, alongside the RWA funds below. Kept here, not deleted, for easy re-inclusion."
     },
     {
       "slug": "blackrock-buidl-polygon",
@@ -210,7 +257,8 @@
         "portalsKey": "polygon:0x2893ef551b6dd69f661ac00f11d93e5dc5dc0e99",
         "staticApy": 3.54,
         "staticTvl": 13447967
-      }
+      },
+      "hiddenReason": "Editorial decision: hold Portals-sourced (non-onchain) listings off /polygon for now. Kept here, not deleted, for easy re-inclusion."
     },
     {
       "slug": "hamilton-lane-scope-polygon",
@@ -231,7 +279,8 @@
         "portalsKey": "polygon:0x4c5ca366e26409845624e29b62c388a06961a792",
         "staticApy": 11.07,
         "staticTvl": 4082566
-      }
+      },
+      "hiddenReason": "Editorial decision: hold Portals-sourced (non-onchain) listings off /polygon for now. Kept here, not deleted, for easy re-inclusion."
     },
     {
       "slug": "apollo-acred-polygon",
@@ -252,7 +301,8 @@
         "portalsKey": "polygon:0xfce60bbc52a5705cec5b445501fbaf3274dc43d0",
         "staticApy": 2.66,
         "staticTvl": 903421
-      }
+      },
+      "hiddenReason": "Editorial decision: hold Portals-sourced (non-onchain) listings off /polygon for now. Kept here, not deleted, for easy re-inclusion."
     }
   ]
 }

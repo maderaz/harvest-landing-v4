@@ -260,10 +260,9 @@ export async function PolygonHubBody() {
           <h2 id="about-polygon">About this page</h2>
           <p className="uni-hub-content-lede">
             Polygon (PoS) is an EVM-compatible network bridged to Ethereum. This page
-            combines the largest permissionless lending venues on Polygon, a small set
-            of Securitize-tokenized real-world-asset funds, and Harvest&apos;s own
-            Polygon vaults, so a Polygon-USDC (or ETH, or BTC) rate comparison does not
-            require checking six different sites.
+            combines the largest permissionless lending venues on Polygon with
+            Harvest&apos;s own Polygon vaults, so a Polygon-USDC (or ETH, or BTC) rate
+            comparison does not require checking multiple sites.
           </p>
         </header>
         <div className="uni-hub-content-grid">
@@ -280,14 +279,14 @@ export async function PolygonHubBody() {
             </p>
           </article>
           <article>
-            <h3>Where the RWA rate comes from</h3>
+            <h3>Where these rates come from</h3>
             <p>
-              BlackRock BUIDL, Hamilton Lane SCOPE and Apollo Diversified Credit are
-              Securitize-tokenized funds with no public on-chain rate feed, so their
-              rate is sourced from Portals rather than a contract read, disclosed on
-              each row and on the venue&apos;s own page. All three are
-              accreditation-gated: available only to eligible or qualified purchasers
-              through Securitize, not to the general public.
+              Every row above is read directly from the Aave v3 Pool contract on
+              Polygon (<code>Pool.getReserveData</code>), the same class of on-chain
+              read Harvest&apos;s own strategies use. No third-party rate API is the
+              source for any listed rate; see the{" "}
+              <Link href="/methodology#inclusion">inclusion criteria</Link> for what a
+              venue has to clear to be listed here at all.
             </p>
           </article>
           <article>

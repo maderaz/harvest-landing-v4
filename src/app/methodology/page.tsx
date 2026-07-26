@@ -517,10 +517,11 @@ export default async function MethodologyPage() {
                 </li>
               </ul>
               <p>
-                First applied to Polygon ({polygonVenueCount} venues at publication:
-                Aave v3, Morpho, and the Securitize-tokenized BlackRock BUIDL, Hamilton
-                Lane SCOPE and Apollo Diversified Credit funds). Extending these
-                criteria to additional networks will itself be logged as a methodology
+                First applied to Polygon ({polygonVenueCount} Aave v3 lending markets at
+                publication, each rate read directly from the Pool contract). Other
+                venues that meet these criteria may be added under the same rate-first
+                ranking as they clear review. Extending these criteria to additional
+                networks will itself be logged as a methodology
                 version, per <a href="#versioning">Methodology versioning</a>.
               </p>
             </section>
