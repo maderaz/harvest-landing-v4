@@ -6,10 +6,19 @@ import { NETWORKS } from "@/lib/networks";
 import { LIVE_PLATFORM_SLUGS } from "@/lib/platforms";
 import { getPolygonVenues } from "@/lib/polygon-yield";
 import { getExternalProductSlugsFromRegistry, POLYGON_VENUE_OVERLAP } from "@/lib/external-products";
+import { getStablecoinReport } from "@/lib/stablecoin-yield";
 
 export const dynamic = "force-static";
 
 const ASSET_HUBS = ["usdc", "usdt", "btc", "eth"];
+
+// lastmod for a data-backed report: the timestamp on the data if it parses,
+// otherwise build time. Never throws the sitemap over a malformed stamp.
+function reportModified(iso: string | undefined): Date {
+  if (!iso) return new Date();
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? new Date() : d;
+}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const vaults = await getVaults();
@@ -139,7 +148,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     },
     {
       url: `${SITE_URL}/report/stablecoin-yield-ranking`,
-      lastModified: new Date(),
+      // Data time, not build time. `new Date()` here evaluates when the sitemap
+      // module runs, which under force-static is the build, so every URL in the
+      // file would claim to have changed on every deploy. That turns lastmod
+      // into a heartbeat rather than a change signal, and a crawler that learns
+      // our lastmod is meaningless stops using it. This one reports when a
+      // figure actually moved.
+      lastModified: reportModified(getStablecoinReport()?.dataModifiedIso),
       changeFrequency: "daily" as const,
       priority: 0.9,
     },

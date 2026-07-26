@@ -273,9 +273,15 @@ export function HomeHeroPreview({
             <AssetIcon asset={vault?.asset ?? "USDC"} size={36} />
           </span>
           <div className="prevcard-id">
-            <h3 className="prevcard-name">
+            {/* Not a heading. This card renders above the H1 on the homepage
+                and on both reports, so an <h3> here put a third-level heading
+                ahead of the page's first-level one in the document outline.
+                It is a label on a decorative preview, not a section of the
+                document. Styling keys on .prevcard-name, so this is visually
+                identical. */}
+            <p className="prevcard-name">
               {vault?.productName ?? "USDC Alpha V2"}
-            </h3>
+            </p>
             <p className="prevcard-byline">
               <span className="prevcard-byline-chain">
                 <ChainIcon chain={vault?.chain ?? "Base"} size={11} />
