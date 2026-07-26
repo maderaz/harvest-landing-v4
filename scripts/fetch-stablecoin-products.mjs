@@ -37,7 +37,7 @@ import { sameIgnoringStamps } from "./lib/snapshot-stamp.mjs";
 import { canReadHistory } from "./lib/onchain.mjs";
 import {
   sharePriceAt,
-  totalAssetsAt,
+  navAt,
   realizedApy,
   realizedOverBestWindow,
   backfillDailySeries,
@@ -230,17 +230,41 @@ async function hydrate(p, cfg, now) {
   }
 
   // --- Wildcat: a disclosed fixed APR, no share price to measure -----------
+  //
+  // Two traps here, both of which produce a confident wrong number.
+  //
+  // SIZE. wmtUSDC is a rebasing 1:1 claim: balanceOf returns a lender's USDC
+  // principal plus accrued interest, so totalSupply IS the market size in
+  // underlying units. totalAssets() is only the idle reserve left in the market
+  // for withdrawals. Verified onchain: totalAssets() reads 3,873,025.634904 and
+  // USDC.balanceOf(market) reads exactly the same, while totalSupply reads
+  // 77,778,354, because Wintermute has drawn the rest. Reading totalAssets()
+  // reported a 77.8M credit market as 3.9M.
+  //
+  // HISTORY. Portals indexes this token but has nothing usable for it: every
+  // daily apy comes back 0 and its value column reads in the billions, three
+  // orders of magnitude off what the contract says. Since the rate is
+  // contractually fixed anyway, the series is the disclosed APR held flat
+  // across the observed dates, with the bogus value column dropped rather than
+  // charted.
   if (src.kind === "wildcat") {
-    const assets = await totalAssetsAt(p.chain, p.contract, shape).catch(() => null);
+    const nav = await navAt(p.chain, p.contract, shape).catch(() => null);
+    const size = nav?.supply ?? nav?.totalAssets ?? null;
+    const idle = nav?.totalAssets ?? null;
+    const apr = round(src.disclosedLenderApr);
+    const flat = series.map((s) => ({ d: s.d, sharePrice: null, apy: apr, tvlUsd: null }));
     return {
-      apy: round(src.disclosedLenderApr),
+      apy: apr,
       rateWindow: "fixed",
       rateBasis: src.aprNote ?? "Fixed lender APR published by the market itself.",
-      tvlUsd: assets != null ? Math.round(assets) : null,
+      tvlUsd: size != null ? Math.round(size) : null,
+      tvlBasis: "lender claims outstanding (rebasing 1:1 market token supply)",
+      idleAssets: idle != null ? Math.round(idle) : null,
+      deployedRatio: idle != null && idle > 0 && size != null ? round(size / idle, 1) : null,
       sharePrice: null,
       holders,
-      metrics: deriveMetrics(series),
-      history: series,
+      metrics: deriveMetrics(flat),
+      history: flat,
     };
   }
 
@@ -269,7 +293,8 @@ async function hydrate(p, cfg, now) {
   // Current share price is always read onchain, even when Portals supplies the
   // series, so the published figure is verifiable against chain state.
   const ppsOnchain = await sharePriceAt(p.chain, p.contract, shape).catch(() => null);
-  const assets = await totalAssetsAt(p.chain, p.contract, shape).catch(() => null);
+  const navInfo = await navAt(p.chain, p.contract, shape).catch(() => null);
+  const assets = navInfo?.nav ?? null;
 
   // Monad is not indexed by Portals: build the series onchain instead.
   if (!series.length && canReadHistory(p.chain, 1)) {
@@ -302,6 +327,12 @@ async function hydrate(p, cfg, now) {
       ? `Realized over the trailing ${realized.window}, from share-price growth. Current share price verified onchain.`
       : "Realized rate not available yet: not enough share-price history for this product.",
     tvlUsd: assets != null ? Math.round(assets) : series.length ? series[series.length - 1].tvlUsd : null,
+    // Kept so the page can say a strategy is deployed rather than idle, and so
+    // a future reviewer can see which number was chosen and why.
+    tvlBasis:
+      navInfo?.navFromShares != null ? "shares outstanding times what one share redeems for" : "totalAssets()",
+    idleAssets: navInfo?.totalAssets != null ? Math.round(navInfo.totalAssets) : null,
+    deployedRatio: navInfo?.divergence != null ? round(navInfo.divergence, 1) : null,
     sharePrice: round(ppsOnchain, 6),
     sharePriceApi: round(apiPps, 6),
     sharePriceGapPct: ppsGapPct,
@@ -309,6 +340,31 @@ async function hydrate(p, cfg, now) {
     metrics: deriveMetrics(series),
     history: series,
   };
+}
+
+// First-party figures for the products Harvest operates. Measuring our own
+// vaults only through a third-party API when our own indexer already tracks
+// them would be a strange thing to publish, so the Harvest rows carry both:
+// the same measured share-price rate as everyone else (which is what makes the
+// table comparable) plus our own 24h/30d readings and the product-page slug.
+function harvestOverlay(contract) {
+  try {
+    const vaults = JSON.parse(readFileSync(join(ROOT, "data", "vaults.json"), "utf-8"));
+    const v = vaults.find(
+      (x) => (x.contractAddress ?? "").toLowerCase() === contract.toLowerCase(),
+    );
+    if (!v) return null;
+    return {
+      harvestSlug: v.slug,
+      harvestApy24h: round(v.apy24h),
+      harvestApy30d: round(v.apy30d),
+      harvestTvlUsd: v.tvl != null ? Math.round(v.tvl) : null,
+      harvestVaultType: v.vaultType ?? null,
+      harvestCategory: v.category ?? null,
+    };
+  } catch {
+    return null;
+  }
 }
 
 const main = async () => {
@@ -358,6 +414,7 @@ const main = async () => {
       pendleName: p.pendleName ?? null,
       rateNa: false,
       ...h,
+      ...(p.operator === "harvest" ? harvestOverlay(p.contract) ?? {} : {}),
     });
     console.error(
       `[stablecoin] ${p.slug.padEnd(30)} apy=${h.apy ?? "n/a"} window=${h.rateWindow ?? "-"} hist=${h.history?.length ?? 0} holders=${h.holders?.count ?? "-"}`,

@@ -16,6 +16,7 @@ import { DiscoverButton } from "@/components/report/discover-button";
 import { ReportHubLink } from "@/components/report/report-hub-link";
 import { ReportToc } from "@/components/report/report-toc";
 import { ReportChart } from "@/components/report/report-chart";
+import { HomeHeroPreview } from "@/components/home-hero-preview";
 import {
   getStablecoinReport,
   getPendleReport,
@@ -25,10 +26,16 @@ import {
   holderSentence,
   flowSentence,
   basisCaveat,
-  tierContrast,
   steadiestSentence,
   concentrationSentence,
   pendleSentence,
+  pendleMarketUrl,
+  heroVaultFrom,
+  heroSentence,
+  liveRateBullets,
+  structureSentence,
+  deploymentSentence,
+  harvestSentence,
   type StablecoinRow,
 } from "@/lib/stablecoin-yield";
 import { readFileSync } from "fs";
@@ -39,11 +46,17 @@ import "../../_styles/stablecoin-report.css";
 
 // /report/stablecoin-yield-ranking.
 //
-// Two rankings, not one: the products people chase for rate, and the products
-// people use to park liquidity. The split is not an editorial assertion, it is
+// Two rankings, not one: products ranked by measured rate, and products ranked
+// by how little that rate moved. The split is not an editorial assertion, it is
 // measured. Every rate here comes from share-price growth (see
 // scripts/fetch-stablecoin-products.mjs), and each row carries the volatility,
-// holder concentration and flow figures that justify which table it sits in.
+// holder concentration and flow figures that decide which table it sits in.
+//
+// FRAMING. Nothing on this page tells a reader where to put money. Headings
+// describe what was measured ("whose rate moved least"), never what is
+// advisable ("most reliable place to park"), and no figure here is presented as
+// forward-looking. A measured past rate is a fact; a recommendation is not ours
+// to make.
 //
 // Scope boundary: this page targets stablecoin comparison terms and never the
 // single-asset terms the /usdc and /usdt hubs own. It links DOWN to them.
@@ -73,7 +86,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const r = getStablecoinReport();
   const n = r?.stats.products ?? 0;
   const networks = r?.stats.networks.length ?? 3;
-  const description = `${n} stablecoin products compared side by side across ${networks} networks, split into the highest paying and the steadiest. Every rate measured from onchain share-price growth, with holder counts, rate volatility and a downloadable CC-BY dataset.`;
+  // "interest" earns its place here rather than being a synonym sprinkle: the
+  // interest phrasing carries its own search demand (earn interest on
+  // stablecoins sits at KD 1) and the page previously used only yield and rate.
+  const description = `Earn interest on stablecoins: ${n} products compared across ${networks} networks, split into the highest paying and the steadiest. Every rate measured from onchain share-price growth, with holder counts, rate volatility and a downloadable CC-BY dataset.`;
   return {
     title: { absolute: `${TITLE} | ${SITE_NAME}` },
     description,
@@ -92,6 +108,11 @@ function Crumbs() {
   );
 }
 
+// The ranking rows carry rank, product, rate and size, and nothing else.
+// Curator, contract address, mechanism and measurement caveats used to sit in
+// three stacked lines under every name, which made a scanning table unscannable.
+// They now live in the per-product section beneath each table, the way the XRP
+// report handles the same problem.
 function RankTable({ rows, showHolders, label }: { rows: StablecoinRow[]; showHolders?: boolean; label: string }) {
   if (!rows.length) return <div className="hub-empty">No products in this table right now.</div>;
   return (
@@ -118,14 +139,7 @@ function RankTable({ rows, showHolders, label }: { rows: StablecoinRow[]; showHo
                     {r.name}{" "}
                     {r.operator === "harvest" ? <span className="sc-badge-harvest">Harvest</span> : null}
                   </span>
-                  <span className="rp-rank-detail">
-                    {r.platform}
-                    {r.curatedBy ? ` · curated by ${r.curatedBy}` : ""}
-                    {r.extras ? ` · ${r.extras}` : ""}
-                  </span>
-                  <span className="rp-rank-sub sc-contract" title={r.contract}>
-                    {shortAddr(r.contract)}
-                  </span>
+                  <span className="rp-rank-detail">{r.platform}</span>
                 </span>
               </span>
               <span className="hub-cell hub-num hub-apy" title={r.rateBasis}>
@@ -153,16 +167,33 @@ function RankTable({ rows, showHolders, label }: { rows: StablecoinRow[]; showHo
               )}
               <span className="hub-cell hub-num">{r.tvlUsd ? formatTVL(r.tvlUsd) : "n/a"}</span>
               <span className="hub-cell rp-cell-action">
-                <DiscoverButton
-                  href={r.productUrl}
-                  platform={r.platform}
-                  label="Open"
-                  source={`stablecoin:${r.slug}`}
-                  product={r.name}
-                  chain={r.network}
-                  rank={i + 1}
-                  icon={<AssetIcon asset={r.payoutAsset} size={20} />}
-                />
+                {r.harvestSlug ? (
+                  <Link className="rp-discover" href={`/${r.harvestSlug}`}>
+                    <span className="rp-discover-label">Details</span>
+                    <span className="rp-discover-arrow" aria-hidden="true">
+                      <svg viewBox="0 0 16 16" fill="none">
+                        <path
+                          d="M3 8h9M8.5 4.5 12 8l-3.5 3.5"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </span>
+                  </Link>
+                ) : (
+                  <DiscoverButton
+                    href={r.productUrl}
+                    platform={r.platform}
+                    label="Open"
+                    source={`stablecoin:${r.slug}`}
+                    product={r.name}
+                    chain={r.network}
+                    rank={i + 1}
+                    icon={<AssetIcon asset={r.payoutAsset} size={20} />}
+                  />
+                )}
               </span>
             </div>
           ))}
@@ -172,26 +203,62 @@ function RankTable({ rows, showHolders, label }: { rows: StablecoinRow[]; showHo
   );
 }
 
+// One card per product, in the same order as the table above it. This is where
+// the depth lives: what the thing is, how the rate behaved, where the value
+// figure came from, who holds it, and what the measurement cannot tell you.
 function ProductNotes({ rows }: { rows: StablecoinRow[] }) {
-  const notes = rows
-    .map((r) => ({ r, stability: stabilitySentence(r), flow: flowSentence(r), holders: holderSentence(r), caveat: basisCaveat(r) }))
-    .filter((n) => n.stability || n.flow || n.holders || n.caveat);
-  if (!notes.length) return null;
+  if (!rows.length) return null;
   return (
     <div className="sc-notes">
-      {notes.map(({ r, stability, flow, holders, caveat }) => (
-        <article className="sc-note" key={r.slug}>
-          <h4 className="sc-note-title">
-            <AssetIcon asset={r.payoutAsset} size={18} />
-            {r.name}
-            <span className="sc-note-plat">{r.platform}</span>
-          </h4>
-          {stability ? <p>{stability}</p> : null}
-          {flow ? <p>{flow}</p> : null}
-          {holders ? <p>{holders}</p> : null}
-          {caveat ? <p className="sc-note-caveat">{caveat}</p> : null}
-        </article>
-      ))}
+      {rows.map((r, i) => {
+        const stability = stabilitySentence(r);
+        const flow = flowSentence(r);
+        const holders = holderSentence(r);
+        const caveat = basisCaveat(r);
+        const deployment = deploymentSentence(r);
+        const harvest = harvestSentence(r);
+        return (
+          <article className="sc-note" key={r.slug} id={`note-${r.slug}`}>
+            <h4 className="sc-note-title">
+              <span className="sc-note-rank">{i + 1}</span>
+              <AssetIcon asset={r.payoutAsset} size={18} />
+              {r.name}
+              {r.operator === "harvest" ? <span className="sc-badge-harvest">Harvest</span> : null}
+              <span className="sc-note-plat">{r.network}</span>
+            </h4>
+            <p className="sc-note-struct">{structureSentence(r)}</p>
+            <p className="sc-note-figures">
+              <span>
+                <strong>{r.apy == null ? "n/a" : pct(r.apy)}</strong> {r.rateWindow ?? "current"}
+              </span>
+              <span>
+                <strong>{r.tvlUsd ? formatTVL(r.tvlUsd) : "n/a"}</strong> value
+              </span>
+              {r.holders?.count != null ? (
+                <span>
+                  <strong>{r.holders.count.toLocaleString("en-US")}</strong> holders
+                </span>
+              ) : null}
+            </p>
+            {harvest ? <p>{harvest}</p> : null}
+            {stability ? <p>{stability}</p> : null}
+            {deployment ? <p>{deployment}</p> : null}
+            {flow ? <p>{flow}</p> : null}
+            {holders ? <p>{holders}</p> : null}
+            {caveat ? <p className="sc-note-caveat">{caveat}</p> : null}
+            <p className="sc-note-foot">
+              <span className="sc-contract" title={r.contract}>
+                {shortAddr(r.contract)}
+              </span>
+              {r.harvestSlug ? (
+                <Link href={`/${r.harvestSlug}`} className="sc-note-link">
+                  Full history and risk profile
+                </Link>
+              ) : null}
+            </p>
+          </article>
+        );
+      })}
     </div>
   );
 }
@@ -218,6 +285,7 @@ export default async function StablecoinReportPage() {
   const { stats } = report;
   const high = tierRows(report, "high-yield");
   const stable = tierRows(report, "stable");
+  const harvestRows = report.rows.filter((r) => r.operator === "harvest");
   const updated = fmtDate(report.dataModifiedIso);
   const charted = report.rows
     .filter((r) => r.history.filter((h) => h.apy != null).length >= 14)
@@ -228,29 +296,42 @@ export default async function StablecoinReportPage() {
   const bestRow = report.rows.find((r) => r.slug === best?.slug) ?? null;
   // The measurement window travels inside the lead sentence, not in a footnote:
   // the top of the table is sometimes a short-window figure, and an engine
-  // excerpting this paragraph must carry that caveat with it.
-  const bestWindow = bestRow?.rateWindow && /^\d+d$/.test(bestRow.rateWindow)
-    ? ` measured over ${bestRow.rateWindow.replace("d", " days")}`
-    : "";
-  const lead =
-    `As of ${updated}, the highest measured stablecoin rate among the ${stats.products} products tracked here is ` +
-    `${pct(best?.apy ?? null)} on ${best?.name ?? "n/a"} at ${best?.platform ?? "n/a"} (${best?.network ?? "n/a"})${bestWindow}, ` +
-    `against a ${pct(stats.stable.median)} median across the products people actually use to park liquidity. ` +
-    `Every rate on this page is measured from onchain share-price growth over a stated window, not taken from a ` +
-    `platform's advertised figure, so the two tables below can be read against each other.`;
+  // excerpting this sentence must carry that caveat with it. heroSentence names
+  // the leader the way a reader would say it: what it pays in, what it is, who
+  // runs it, where. The supporting numbers moved into the bullets below, so the
+  // hero stays one claim long instead of a paragraph.
+  const lead = bestRow
+    ? heroSentence(bestRow)
+    : `Every rate on this page is measured from onchain share-price growth over a stated window, not taken from a platform's advertised figure.`;
+  const heroVault = bestRow ? heroVaultFrom(bestRow) : null;
+  const heroWindowLabel =
+    bestRow?.rateWindow && /^\d+d$/.test(bestRow.rateWindow)
+      ? `${bestRow.rateWindow.replace("d", "-day")} measured rate`
+      : "Measured rate";
 
+  // Questions are matched to the strings that actually appear in the live
+  // People Also Ask block for this category, rather than paraphrases of them.
+  // Every rate-dependent answer is computed, so they stay true between builds.
   const faqs = [
     {
+      q: "Which stablecoin pays interest?",
+      a: `Most of the major ones do, but never by simply holding them in a wallet: the issuer keeps the reserve interest. Interest reaches a holder either by supplying the coin to a lending market, or by holding a yield-bearing wrapper that appreciates in value. Of the ${stats.products} products measured here, the steadiest payers are the wrapped forms in the second table, currently around a ${pct(stats.stable.median)} median.`,
+    },
+    {
       q: "Which stablecoin product pays the most right now?",
-      a: `${best?.name ?? "The leader"} at ${best?.platform ?? "n/a"} on ${best?.network ?? "n/a"}, at ${pct(best?.apy ?? null)} measured over its stated window. That figure sits at the top of a leveraged, higher-variance table, which is a different question from where to park liquidity safely.`,
+      a: `${best?.name ?? "The leader"} at ${best?.platform ?? "n/a"} on ${best?.network ?? "n/a"}, at ${pct(best?.apy ?? null)} measured over its stated window. That figure sits at the top of a leveraged, higher-variance table, which is a different measurement from the rate-stability table below it.`,
     },
     {
       q: "Which stablecoin yield is the most stable?",
       a: steadiestSentence(report) ?? "Stability is measured here as the standard deviation of the rate over the tracked window.",
     },
     {
-      q: "Do you earn yield on USDC?",
-      a: "Yes, by supplying it somewhere that lends it out or routes it into a strategy. USDC sitting in a wallet earns nothing; the issuer keeps the reserve interest. Both tables on this page are ways of putting it to work, at very different risk levels.",
+      q: "Do you earn yield on stablecoin?",
+      a: "Not by holding one. A stablecoin in a wallet pays nothing, because the issuer keeps the interest earned on the reserves backing it. Yield starts when the coin is supplied somewhere that lends it out or routes it into a strategy, which is what every product on this page does, at very different risk levels.",
+    },
+    {
+      q: "How to earn passive income with stablecoins?",
+      a: `Three routes, in rising order of complexity. Supply to a lending market and take the floating rate. Hold a yield-bearing wrapper such as the ones in the steady table, which appreciate against the underlying without any action. Or lock a fixed rate to a maturity through a yield-trading market${pendle ? `, currently up to ${pct(pendle.stats.bestFixed)}` : ""}. None of it is passive in the sense of being risk-free: the rates here are compensation for smart-contract, counterparty and depeg risk.`,
     },
     {
       q: "Is a stablecoin yield the same as a high yield savings account?",
@@ -287,19 +368,28 @@ export default async function StablecoinReportPage() {
   const tocItems = [
     { id: "high-yield-ranking", label: "Highest paying" },
     { id: "high-yield-notes", label: "What drives them", level: 1 },
-    { id: "stable-ranking", label: "Steadiest places to park" },
+    { id: "stable-ranking", label: "Steadiest measured rates" },
     { id: "stable-notes", label: "Holders and stability", level: 1 },
     ...(charted.length ? [{ id: "rate-history", label: "Rate history" }] : []),
     ...(pendle?.markets?.length ? [{ id: "fixed-rate", label: "Fixed-rate trading" }] : []),
     { id: "savings-comparison", label: "Versus savings" },
     { id: "yield-sources", label: "Where yield comes from" },
+    { id: "earn-interest", label: "How to earn interest" },
     { id: "risk-section", label: "Risks" },
     { id: "how-we-measure", label: "How we measure" },
     { id: "faq", label: "FAQ" },
     { id: "dataset", label: "Dataset" },
   ];
 
-  const itemListItems = report.rows.map((r) => ({ name: `${r.name} (${r.platform})`, url: r.productUrl }));
+  // Two named lists rather than one flat one: the tier is the most useful thing
+  // an answer engine can carry alongside a product, and a single merged list
+  // throws it away. Both point outward at the venue, per the report convention.
+  const highItems = high.map((r) => ({ name: `${r.name} (${r.platform})`, url: r.productUrl }));
+  const stableItems = stable.map((r) => ({ name: `${r.name} (${r.platform})`, url: r.productUrl }));
+
+  // ISO 8601 interval across the measured series, for Dataset.temporalCoverage.
+  const allDays = report.rows.flatMap((r) => r.history.map((h) => h.d)).filter(Boolean).sort();
+  const temporalCoverage = allDays.length ? `${allDays[0]}/${allDays[allDays.length - 1]}` : undefined;
 
   // Markets that also appear in the tables above lead this list regardless of
   // where they rank on fixed rate. They are the reason the section exists: a
@@ -334,7 +424,24 @@ export default async function StablecoinReportPage() {
           }),
         }}
       />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reportItemListSchema(itemListItems, PAGE_URL)) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            ...reportItemListSchema(highItems, `${PAGE_URL}#high-yield-ranking`),
+            name: "Highest paying stablecoin products",
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            ...reportItemListSchema(stableItems, `${PAGE_URL}#stable-ranking`),
+            name: "Stablecoin products ranked by measured rate stability",
+          }),
+        }}
+      />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageSchema(faqs)) }} />
       <script
         type="application/ld+json"
@@ -361,7 +468,8 @@ export default async function StablecoinReportPage() {
               url: PAGE_URL,
               dateModified: report.dataModifiedIso,
               numberOfItems: stats.products,
-              keywords: ["stablecoin", "USDC", "USDT", "DAI", "USDS", "yield", "APY", "share price", "DeFi"],
+              temporalCoverage,
+              keywords: ["stablecoin", "USDC", "USDT", "DAI", "USDS", "yield", "interest", "APY", "share price", "DeFi"],
               sources: ["https://portals.fi", "https://api-v2.pendle.finance", "https://ethereum.org", "https://base.org", "https://monad.xyz"],
               distribution: [
                 { format: "application/json", url: `${SITE_URL}/data/stablecoin-yield/index.json` },
@@ -375,6 +483,14 @@ export default async function StablecoinReportPage() {
       <Crumbs />
 
       <section className="uni-home-hero rp-hero">
+        {heroVault && (
+          <HomeHeroPreview
+            vault={heroVault}
+            headlineValueOverride={pct(bestRow?.apy ?? null)}
+            headlineLabelOverride={heroWindowLabel}
+            apyTabLabel="Rate"
+          />
+        )}
         <div className="uni-home-hero-inner">
           <h1 className="uni-home-h1">{H1}</h1>
           <p className="uni-home-sub sc-lead">{lead}</p>
@@ -392,15 +508,19 @@ export default async function StablecoinReportPage() {
             <section className="uni-home-content" aria-labelledby="high-yield-ranking">
               <p className="rp-eyebrow">Live rates</p>
               <h2 id="high-yield-ranking">Highest paying stablecoin opportunities right now</h2>
-              <p className="rp-lead">
-                {tierContrast(report) ??
-                  `The ${high.length} products below pay the most of anything tracked here.`}
-              </p>
+              {/* Findings first, one claim per line. Each bullet is a complete,
+                  self-contained statement so an answer engine can lift any one
+                  of them without needing the sentence before it. */}
+              <ul className="sc-bullets">
+                {liveRateBullets(report, pendle?.stats.bestFixed ?? null).map((b, i) => (
+                  <li key={i}>{b}</li>
+                ))}
+              </ul>
               <RankTable rows={high} label="Highest paying stablecoin products" />
               <p className="rp-lead rp-trade-sublead">
                 A rate at the top of this table is compensation for something: leverage that amplifies losses as
                 readily as gains, a named counterparty rather than collateral, or a strategy that takes the other
-                side of trader profit. The notes below say which, per product.
+                side of trader profit. The section below says which, per product.
               </p>
             </section>
 
@@ -411,15 +531,17 @@ export default async function StablecoinReportPage() {
             </section>
 
             <section className="uni-home-content" aria-labelledby="stable-ranking">
-              <p className="rp-eyebrow">Park liquidity</p>
-              <h2 id="stable-ranking">Most stable and reliable places to park stablecoins</h2>
+              <p className="rp-eyebrow">Rate stability</p>
+              <h2 id="stable-ranking">Stablecoin products whose rate moved least</h2>
               <p className="rp-lead">
                 {steadiestSentence(report) ??
-                  "These are the products people hold when the priority is getting the money back, not maximizing the rate."}{" "}
-                The holder column is the other half of that story: these are the products the market has actually
-                chosen, at {stats.totalHolders.toLocaleString("en-US")} wallets across everything tracked here.
+                  "This table ranks by how little the measured rate moved over the window, not by rate."}{" "}
+                A low standard deviation describes what a rate did over the window measured. It is not a forecast, and
+                it says nothing about the smart-contract, counterparty or depeg risk each product carries. The holder
+                column sits alongside it as a second observation: {stats.totalHolders.toLocaleString("en-US")} wallets
+                across everything tracked here.
               </p>
-              <RankTable rows={stable} showHolders label="Steadiest stablecoin products" />
+              <RankTable rows={stable} showHolders label="Stablecoin products by measured rate stability" />
             </section>
 
             <section className="uni-home-content" aria-labelledby="stable-notes">
@@ -468,9 +590,10 @@ export default async function StablecoinReportPage() {
                       <span className="hub-th hub-th-num">Spread</span>
                       <span className="hub-th hub-th-num">Matures</span>
                       <span className="hub-th hub-th-num">Liquidity</span>
+                      <span className="hub-th hub-th-right" />
                     </div>
                     <div className="hub-tbody" role="rowgroup">
-                      {pendleShown.map((m) => (
+                      {pendleShown.map((m, i) => (
                         <div className="hub-row" role="row" key={m.marketAddress}>
                           <span className="hub-cell rp-cell-text">
                             {m.name}
@@ -483,6 +606,17 @@ export default async function StablecoinReportPage() {
                           </span>
                           <span className="hub-cell hub-num">{m.daysToMaturity}d</span>
                           <span className="hub-cell hub-num">{formatTVL(m.liquidityUsd)}</span>
+                          <span className="hub-cell rp-cell-action">
+                            <DiscoverButton
+                              href={pendleMarketUrl(m)}
+                              platform="Pendle"
+                              label="PT"
+                              source={`stablecoin-pendle:${m.marketAddress}`}
+                              product={`${m.name} principal token`}
+                              chain="Ethereum"
+                              rank={i + 1}
+                            />
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -492,6 +626,8 @@ export default async function StablecoinReportPage() {
                   A fixed rate above the floating one means the market expects rates to fall before maturity, and is
                   willing to pay for certainty. Below it, the opposite. Locking removes the upside as well as the
                   downside, and the principal token has to be held to maturity or sold at whatever the market pays.
+                  The PT link on each row opens the principal-token side of that market on Pendle: the address it
+                  routes on is the market&apos;s own LP contract, which is the identifier Pendle keys its trade pages to.
                 </p>
               </section>
             ) : null}
@@ -571,6 +707,47 @@ export default async function StablecoinReportPage() {
               </div>
             </section>
 
+            <section className="uni-home-content" aria-labelledby="earn-interest">
+              <p className="rp-eyebrow">Getting started</p>
+              <h2 id="earn-interest">How to earn interest on stablecoins</h2>
+              <div className="rp-article">
+                <p>
+                  A stablecoin sitting in a wallet pays nothing. The issuer holds the reserves
+                  behind it and keeps the interest those reserves earn, which is most of how
+                  the large issuers make money. Interest reaches a holder only once the coin is
+                  put somewhere that puts it to work, and there are three ways to do that.
+                </p>
+                <p>
+                  <strong>Supply it to a lending market.</strong> The simplest route: the coin
+                  is lent to borrowers who post collateral, and the interest they pay flows
+                  back. The rate floats with how much of the pool is borrowed. Both tables
+                  above contain lending markets, and they are the most transparent products
+                  here because the mechanism is visible onchain.
+                </p>
+                <p>
+                  <strong>Hold a yield-bearing wrapper.</strong> Products such as the ones in
+                  the steady table convert the coin into a token that appreciates against it,
+                  so interest accrues without any further action and without a claim to
+                  manage. This is the closest thing to a savings-account experience onchain,
+                  and it is where the steadiest rates in this report sit, currently a{" "}
+                  {pct(stats.stable.median)} median.
+                </p>
+                <p>
+                  <strong>Lock a fixed rate.</strong> Yield-trading markets let a holder fix a
+                  rate to a maturity date instead of floating with the market
+                  {pendle ? `, currently up to ${pct(pendle.stats.bestFixed)} across ${pendle.stats.markets} stablecoin maturities` : ""}.
+                  That removes the upside as well as the downside, and the position has to be
+                  held to maturity or sold at whatever the market pays for it.
+                </p>
+                <p>
+                  None of the three is passive in the sense of being free of risk. Each rate on
+                  this page is compensation for smart-contract risk, for counterparty or
+                  curator risk, and for the possibility that the stablecoin itself slips from
+                  a dollar. The section below sets out what that means in practice.
+                </p>
+              </div>
+            </section>
+
             <section className="uni-home-content" aria-labelledby="risk-section">
               <p className="rp-eyebrow">Risk</p>
               <h2 id="risk-section">Risks of earning yield on stablecoins</h2>
@@ -612,6 +789,13 @@ export default async function StablecoinReportPage() {
                   come from Portals. EUR-denominated stablecoins are excluded: this compares USD stablecoins against
                   USD savings rates.
                 </p>
+                <p>
+                  What this page is not: every figure here describes what a product did over a window that has already
+                  happened. Nothing on it is a forecast, an endorsement, or advice about what anyone should do with
+                  money, including the products Harvest runs. A rate that held steady for 90 days can change in the
+                  next block, and a product at the top of either table can lose principal outright. See the{" "}
+                  <Link href="/disclosures">disclosures</Link>.
+                </p>
               </div>
             </section>
 
@@ -620,9 +804,12 @@ export default async function StablecoinReportPage() {
               <h2 id="harvest-block">Doing this through Harvest</h2>
               <div className="rp-article">
                 <p>
-                  Harvest operates two of the products above, measured on the same basis as everything else and badged
-                  as ours. If one ranks below a competitor today, that is the table working correctly. The full
-                  lineups live on the{" "}
+                  {harvestRows.length === 1
+                    ? "Harvest operates one of the products above"
+                    : `Harvest operates ${harvestRows.length} of the products above`}
+                  , measured on the same basis as everything else and badged as ours. Each row links through to its
+                  own page here, where our hourly readings and the full daily history live. If one ranks below a
+                  competitor today, that is the table working correctly. The full lineups live on the{" "}
                   <ReportHubLink href="/usdc" hub="usdc">
                     USDC page
                   </ReportHubLink>{" "}

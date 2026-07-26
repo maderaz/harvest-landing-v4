@@ -226,6 +226,16 @@ export default async function HomePage() {
             at a glance; the product page draws the full series.
           </p>
           <p>
+            The table above ranks what we operate. To see how those rates sit
+            against the wider market, including venues we do not run, the{" "}
+            <Link href="/report/stablecoin-yield-ranking">
+              stablecoin rate comparison
+            </Link>{" "}
+            measures the leading products side by side from their own onchain
+            share-price history, and splits them by measured rate and by how
+            little that rate moved.
+          </p>
+          <p>
             Yield is not free. Every strategy carries smart-contract
             risk on the vault and the protocol underneath. Add oracle,
             bridge, liquidity, depeg, and governance, depending on the

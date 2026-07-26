@@ -185,6 +185,11 @@ export function reportDatasetSchema(o: {
   numberOfItems?: number;
   keywords?: string[];
   sources?: string[];
+  // ISO 8601 interval ("2026-04-27/2026-07-26"). Google's Dataset crawler reads
+  // this to understand what period the data covers; the per-vault datasetSchema
+  // below has always emitted it and reports should too once they carry a real
+  // time series rather than a single snapshot.
+  temporalCoverage?: string;
   // Downloadable machine-readable distributions (JSON index + CSV), emitted at
   // build time by scripts/build-xrp-history.mjs, so Google's Dataset crawler
   // and agents get a real, parseable file rather than only the HTML table.
@@ -207,6 +212,7 @@ export function reportDatasetSchema(o: {
       url: SITE_URL,
     },
     dateModified: o.dateModified,
+    ...(o.temporalCoverage ? { temporalCoverage: o.temporalCoverage } : {}),
     isBasedOn: (o.sources ?? []).map((s) => s),
     ...(o.numberOfItems ? { size: `${o.numberOfItems} venues` } : {}),
     keywords: o.keywords ?? ["XRP", "DeFi", "yield", "APY", "TVL"],

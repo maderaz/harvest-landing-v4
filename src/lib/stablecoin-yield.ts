@@ -73,6 +73,19 @@ export interface StablecoinRow {
   holders: Holders | null;
   metrics: ProductMetrics | null;
   history: HistoryPoint[];
+  // Which measure produced tvlUsd, and how far the strategy is deployed rather
+  // than sitting idle. A looping vault reports a tiny totalAssets() while its
+  // shares redeem against the full position, so the ratio is worth surfacing.
+  tvlBasis?: string;
+  idleAssets?: number | null;
+  deployedRatio?: number | null;
+  // Present only on products Harvest operates: our own indexer's readings and
+  // the internal product-page slug.
+  harvestSlug?: string;
+  harvestApy24h?: number | null;
+  harvestApy30d?: number | null;
+  harvestTvlUsd?: number | null;
+  harvestVaultType?: string | null;
 }
 
 export interface StablecoinReport {
@@ -103,6 +116,13 @@ export interface PendleMarket {
   spreadPp: number | null;
   liquidityUsd: number;
   tracked: boolean;
+}
+
+// Pendle's trade route is keyed on the LP market address, which is what the
+// fetcher already stores: /trade/markets/<market>/swap?view=pt lands directly
+// on the principal-token side of that market rather than a search page.
+export function pendleMarketUrl(m: Pick<PendleMarket, "marketAddress">): string {
+  return `https://app.pendle.finance/trade/markets/${m.marketAddress}/swap?view=pt`;
 }
 
 export interface PendleReport {
@@ -166,12 +186,12 @@ export function stabilitySentence(r: StablecoinRow): string | null {
     return `Over the last ${m.days} days this rate moved inside a ${band} band, a standard deviation of ${m.apyStdev.toFixed(3)} percentage points. That is about as close to a flat rate as anything onchain gets.`;
   }
   if (m.apyStdev < 0.75) {
-    return `Over the last ${m.days} days the rate held a ${band} band, with a standard deviation of ${m.apyStdev.toFixed(2)} percentage points. Steady enough that the figure quoted today is a fair guide to next week.`;
+    return `Over the last ${m.days} days the rate held a ${band} band, with a standard deviation of ${m.apyStdev.toFixed(2)} percentage points. The figure quoted today has stayed close to the one quoted a week ago, though nothing here fixes it there.`;
   }
   if (m.apyStdev < 3) {
     return `Over the last ${m.days} days the rate ranged from ${band}, a standard deviation of ${m.apyStdev.toFixed(2)} percentage points. Worth checking the current figure rather than relying on a number seen a week ago.`;
   }
-  return `Over the last ${m.days} days the rate swung between ${band}, a standard deviation of ${m.apyStdev.toFixed(2)} percentage points. A single headline figure means very little on this product: the range is the honest description.`;
+  return `Over the last ${m.days} days the rate swung from ${band}, a standard deviation of ${m.apyStdev.toFixed(2)} percentage points. A single headline figure means very little on this product: the range is the honest description.`;
 }
 
 // Holder count and concentration. Sized against the whole tracked set rather
@@ -237,19 +257,6 @@ export function headlineNote(r: StablecoinRow): string | null {
 // Cross-product observations, for the section leads
 // ---------------------------------------------------------------------------
 
-export function tierContrast(r: StablecoinReport): string | null {
-  const hi = r.stats.highYield;
-  const st = r.stats.stable;
-  if (hi.median == null || st.median == null) return null;
-  const gap = hi.median - st.median;
-  return (
-    `The two tables answer different questions. Across the ${hi.count} higher-paying products the median rate is ` +
-    `${pct(hi.median)}; across the ${st.count} products people mostly use to park liquidity it is ${pct(st.median)}. ` +
-    `The ${gap.toFixed(2)} percentage point gap is not free money: it is what the market charges for leverage, ` +
-    `counterparty exposure and strategies that can lose as well as pay.`
-  );
-}
-
 export function steadiestSentence(r: StablecoinReport): string | null {
   const s = r.stats.steadiest;
   if (!s) return null;
@@ -293,4 +300,126 @@ export function pendleSentence(report: StablecoinReport, pendle: PendleReport | 
     return `${m.name} locks ${pct(m.fixedApy)} to ${new Date(m.expiry).toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })} while ${spotTxt}${dir}`;
   });
   return `Two products in the tables above also trade as fixed-rate principal tokens: ${parts.join("; ")}.`;
+}
+
+// ---------------------------------------------------------------------------
+// Hero + section leads
+// ---------------------------------------------------------------------------
+
+// The top product, shaped for HomeHeroPreview (the same card the XRP report
+// uses). Bars are drawn from the real measured series where one exists rather
+// than a decorative shape, so the card is showing the product's actual rate.
+export function heroVaultFrom(r: StablecoinRow) {
+  const apySeries = r.history.map((h) => h.apy).filter((v): v is number => v != null);
+  const tvlSeries = r.history.map((h) => h.tvlUsd).filter((v): v is number => v != null);
+  const ppsSeries = r.history.map((h) => h.sharePrice).filter((v): v is number => v != null);
+  const flat = (v: number) => [v * 0.92, v * 0.96, v];
+  return {
+    productName: r.name,
+    asset: r.payoutAsset,
+    chain: r.network,
+    protocol: r.platform,
+    vaultType: r.productType,
+    apy24h: r.apy ?? 0,
+    apy30d: r.apy ?? 0,
+    tvl: r.tvlUsd ?? 0,
+    apySpark: apySeries.length >= 2 ? apySeries.slice(-30) : flat(r.apy ?? 0),
+    tvlSpark: tvlSeries.length >= 2 ? tvlSeries.slice(-30) : flat(r.tvlUsd ?? 0),
+    sharePriceSpark: ppsSeries.length >= 2 ? ppsSeries.slice(-30) : undefined,
+  };
+}
+
+// One sentence naming the leader the way a reader would say it out loud:
+// what it pays in, what it is, who runs it, where. Deliberately short enough
+// to sit under a hero headline without becoming a paragraph.
+export function heroSentence(r: StablecoinRow): string {
+  const win = r.rateWindow && /^\d+d$/.test(r.rateWindow) ? ` over ${r.rateWindow.replace("d", " days")}` : "";
+  return (
+    `The highest measured rate belongs to a ${r.payoutAsset}-paying opportunity: the ${r.name} ` +
+    `at ${r.platform} on ${r.network}, at ${r.apy != null ? r.apy.toFixed(2) : "n/a"}%${win}.`
+  );
+}
+
+// Facts, not throat-clearing: the section lead as discrete claims an answer
+// engine can lift one at a time.
+export function liveRateBullets(report: StablecoinReport, pendleBest?: number | null): string[] {
+  const s = report.stats;
+  const out: string[] = [];
+  if (s.bestOverall) {
+    out.push(
+      `Highest measured rate: ${s.bestOverall.apy.toFixed(2)}% on ${s.bestOverall.name} at ${s.bestOverall.platform} (${s.bestOverall.network}).`,
+    );
+  }
+  if (s.highYield.median != null && s.stable.median != null) {
+    out.push(
+      `Median rate is ${s.highYield.median.toFixed(2)}% across the ${s.highYield.count} higher-paying products and ${s.stable.median.toFixed(2)}% across the ${s.stable.count} steady ones.`,
+    );
+  }
+  if (s.steadiest) {
+    out.push(
+      `Steadiest floating rate: ${s.steadiest.name}, which moved only between ${s.steadiest.min.toFixed(2)}% and ${s.steadiest.max.toFixed(2)}% over the tracked window.`,
+    );
+  }
+  const levered = report.rows.filter((r) => (r.extras ?? "").toLowerCase().includes("looping"));
+  if (levered.length) {
+    out.push(
+      `${levered.length} of the ${s.products} products borrow against their own position and redeploy it, which is where the top rates come from and where a loss arrives at the same multiple.`,
+    );
+  }
+  if (pendleBest != null) {
+    out.push(`A fixed rate can be locked instead of floating, currently up to ${pendleBest.toFixed(2)}% to maturity.`);
+  }
+  out.push(
+    `Every rate is measured from onchain share-price growth over a stated window, not taken from a platform's advertised figure.`,
+  );
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// Detail moved out of the ranking rows
+// ---------------------------------------------------------------------------
+
+// What the product is, in one line: mechanism, who runs it, what it sits on.
+// This is the detail the table used to carry in a third line under every name.
+export function structureSentence(r: StablecoinRow): string {
+  const curator = r.curatedBy ? `, curated by ${r.curatedBy}` : "";
+  // extras carries the yield mechanism, productType the legal/technical shape.
+  // On several rows they are the same thing said twice, so the shape clause is
+  // dropped rather than printing "lending market, structured as a lending market".
+  const mech = r.extras ?? r.productType;
+  const shape =
+    r.extras && r.extras.toLowerCase() !== r.productType.toLowerCase()
+      ? `, structured as a ${r.productType.toLowerCase()}`
+      : "";
+  return `${mech} on ${r.network}, run by ${r.platform}${curator}${shape}.`;
+}
+
+// Why the value column reads the way it does. Only speaks where the two
+// measures disagree, which is exactly where a reader would otherwise be
+// misled: a looping vault's totalAssets() is its idle balance, not its size.
+export function deploymentSentence(r: StablecoinRow): string | null {
+  const ratio = r.deployedRatio;
+  if (ratio == null || ratio < 1.5) return null;
+  const basis = r.tvlBasis ?? "shares outstanding times what one share redeems for";
+  return (
+    `Value here is ${usdShort(r.tvlUsd)}, measured as ${basis}. The contract's own totalAssets() reads ` +
+    `${usdShort(r.idleAssets ?? null)}, ${ratio.toFixed(0)} times smaller, because the rest is put to work rather ` +
+    `than sitting in the contract. The larger figure is the one holders hold a claim on, and it is the one used here.`
+  );
+}
+
+// Harvest-operated rows get our own indexer's readings alongside the measured
+// figure. Two independent sources for the same product is worth stating, and a
+// gap between them is worth seeing rather than smoothing over.
+export function harvestSentence(r: StablecoinRow): string | null {
+  if (r.operator !== "harvest") return null;
+  const parts: string[] = [];
+  if (r.harvestApy24h != null) parts.push(`${pct(r.harvestApy24h)} over 24 hours`);
+  if (r.harvestApy30d != null) parts.push(`${pct(r.harvestApy30d)} over 30 days`);
+  if (!parts.length) return `Harvest operates this product. It is measured here on exactly the same basis as everything else.`;
+  return (
+    `Harvest operates this product, so our own indexer reads it hourly as well: ${parts.join(" and ")}. ` +
+    `The figure in the table above is the share-price measurement applied to every row here, computed the same ` +
+    `way for ours as for a competitor's.`
+  );
 }
