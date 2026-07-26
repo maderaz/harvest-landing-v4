@@ -43,10 +43,32 @@ if (!existsSync(PUBLIC_DIR)) {
 const SITE_URL = readSiteUrl();
 
 // Mirror of the old app/robots.ts output (MetadataRoute.Robots format).
+//
+// The three asset namespaces below are crawl-trap containment, not privacy.
+// Ahrefs has crawled ~671,000 URLs against roughly 480 real pages, almost all
+// of them malformed asset paths that recursively re-encode themselves
+// (`%25` is the encoding of `%`, so each pass through an encoder inserts
+// another `25`; live examples have been through several hundred passes).
+// They resolve to pre-rebuild footer furniture: audit badges and exchange
+// logos that this build no longer references at all.
+//
+// Nothing in this repository generates them. The apex already answers 404 on
+// every one of these shapes, which is the terminating signal a crawler needs,
+// so blocking them here suppresses further discovery without hiding a removal
+// signal that was never reachable. See check-url-hygiene.mjs, which fails the
+// build if any of these prefixes ever starts matching a real page.
+//
+//   /i/      Thumbor-style image transforms. Never served by this build.
+//   /static/ Legacy bundle root. Next puts its assets under /_next/static/.
+//   /public/ The public/ directory is served AT the root, so a literal
+//            /public/... request is always a 404 by construction.
 const robots = `User-Agent: *
 Allow: /
 Disallow: /control-room
 Disallow: /control-room/
+Disallow: /i/
+Disallow: /static/
+Disallow: /public/
 
 Sitemap: ${SITE_URL}/sitemap.xml
 `;
