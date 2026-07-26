@@ -230,12 +230,18 @@ export function articleSchema({
   url,
   dateModified,
   datePublished,
+  author,
 }: {
   title: string;
   description: string;
   url: string;
   dateModified: string;
   datePublished: string;
+  // Named author entity (see src/lib/author.ts). When passed, it becomes the
+  // Article author and the site Organization stays as publisher, which is the
+  // E-E-A-T shape answer engines look for on YMYL editorial pages. Existing
+  // callers that omit it keep the Organization-as-author behavior.
+  author?: { name: string; url: string };
 }): object {
   return {
     "@context": "https://schema.org",
@@ -245,11 +251,18 @@ export function articleSchema({
     url,
     datePublished,
     dateModified,
-    author: {
-      "@type": "Organization",
-      name: SITE_NAME,
-      url: SITE_URL,
-    },
+    author: author
+      ? {
+          "@type": "Organization",
+          name: author.name,
+          url: author.url,
+          parentOrganization: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
+        }
+      : {
+          "@type": "Organization",
+          name: SITE_NAME,
+          url: SITE_URL,
+        },
     publisher: {
       "@type": "Organization",
       name: SITE_NAME,

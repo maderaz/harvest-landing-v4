@@ -1,0 +1,67 @@
+{
+  "note": "Config for /report/stablecoin-yield-ranking (see the build spec). Unlike the polygon/xrp venue files this is NOT a per-pool allowlist: the report's external rows are discovered live from the Portals API as the top N stablecoin venues per network, constrained by everything below. The curation lives in the platform set, the symbol filters and the floors, so a junk pool cannot enter no matter what APY it advertises. scripts/fetch-stablecoin-yield.mjs consumes this and writes data/stablecoin-yield.json.",
+  "networks": ["ethereum", "base", "arbitrum", "polygon"],
+  "platforms": [
+    "aavev3",
+    "compound-v3",
+    "morpho",
+    "fluid",
+    "spark",
+    "spark-savings",
+    "sky-money-savings",
+    "euler"
+  ],
+  "platformDisplay": {
+    "aavev3": "Aave v3",
+    "compound-v3": "Compound v3",
+    "morpho": "Morpho",
+    "fluid": "Fluid",
+    "spark": "Spark",
+    "spark-savings": "Spark Savings",
+    "sky-money-savings": "Sky Savings Rate",
+    "euler": "Euler"
+  },
+  "platformUrl": {
+    "aavev3": "https://app.aave.com",
+    "compound-v3": "https://app.compound.finance",
+    "morpho": "https://app.morpho.org",
+    "fluid": "https://fluid.io",
+    "spark": "https://spark.fi",
+    "spark-savings": "https://spark.fi",
+    "sky-money-savings": "https://sky.money",
+    "euler": "https://app.euler.finance"
+  },
+  "venueType": {
+    "aavev3": "Core lending market",
+    "compound-v3": "Core lending market",
+    "morpho": "Curated vault",
+    "fluid": "Core lending market",
+    "spark": "Core lending market",
+    "spark-savings": "Savings rate",
+    "sky-money-savings": "Savings rate",
+    "euler": "Curated vault"
+  },
+  "stableMatch": "USDC|USDT|DAI|USDS|GHO|PYUSD|USDE|CRVUSD|RLUSD|AUSD|FRAX|LUSD|SUSD|USDA|USD0",
+  "nonUsdExclude": "EUR|BRL|JPY|GBP|CHF|TRY|MXN|XSGD|IDR|ZAR|XAU|PAXG",
+  "minTvlUsd": 500000,
+  "minDisplayedApy": 0.005,
+  "maxSaneApy": 30,
+  "topPerNetwork": 5,
+  "networkDisplay": {
+    "ethereum": "Ethereum",
+    "base": "Base",
+    "arbitrum": "Arbitrum",
+    "polygon": "Polygon"
+  },
+  "usdtTickerPerNetwork": {
+    "polygon": "USDT0"
+  },
+  "tradfi": {
+    "note": "Hand-maintained editorial reference figures for the savings-account comparison section. VERIFY BEFORE EVERY MERGE that touches them; the page renders these with explicit as-of language. Not sourced from any API.",
+    "hysaLowPct": 3.4,
+    "hysaHighPct": 4.4,
+    "mmfLowPct": 3.9,
+    "mmfHighPct": 4.3,
+    "asOf": "2026-07"
+  }
+}

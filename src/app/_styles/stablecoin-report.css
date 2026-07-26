@@ -1,0 +1,94 @@
+/* Additions specific to /report/stablecoin-yield-ranking. Base report look
+   comes from report.css (which requires home.css); this file only covers the
+   wider ranking grid, the operator badge and the savings-comparison block.
+   Class prefix sc-*. Section ids on the page deliberately never end in
+   "-title" (report.css:820-835 keys a dead ordering block on that suffix). */
+
+.sc-rank .hub-thead,
+.sc-rank .hub-row {
+  grid-template-columns: 2rem minmax(220px, 2.2fr) 5.5rem 5rem 6.5rem 8rem 6rem 6.5rem;
+  align-items: center;
+}
+
+.sc-badge-harvest {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--accent-ink, #1a1917);
+  background: var(--hub-gold);
+  border-radius: 4px;
+  padding: 0.1rem 0.35rem;
+  vertical-align: middle;
+}
+
+.sc-badge-external {
+  color: var(--hub-gold);
+  font-weight: 600;
+}
+
+.sc-contract {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  color: var(--neutral);
+}
+
+.sc-compare {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin: 1rem 0;
+}
+.sc-compare > div {
+  border: 1px solid var(--hub-line);
+  border-radius: 10px;
+  padding: 0.9rem 1rem;
+  background: var(--hub-card);
+}
+.sc-compare dt {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--neutral);
+  margin: 0 0 0.3rem;
+}
+.sc-compare dd {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 650;
+}
+.sc-compare .sc-compare-sub {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--neutral);
+  margin-top: 0.25rem;
+}
+
+.sc-bycoin {
+  margin: 1.25rem 0;
+}
+.sc-bycoin h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 760px) {
+  .sc-rank .hub-thead,
+  .sc-rank .hub-row {
+    grid-template-columns: 1.5rem minmax(150px, 2fr) 4.5rem 5.5rem;
+  }
+  .sc-rank .hub-thead > :nth-child(4),
+  .sc-rank .hub-row > :nth-child(4),
+  .sc-rank .hub-thead > :nth-child(5),
+  .sc-rank .hub-row > :nth-child(5),
+  .sc-rank .hub-thead > :nth-child(6),
+  .sc-rank .hub-row > :nth-child(6),
+  .sc-rank .hub-thead > :nth-child(7),
+  .sc-rank .hub-row > :nth-child(7) {
+    display: none;
+  }
+}

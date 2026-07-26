@@ -7,6 +7,7 @@ import { stripChainSuffix } from "@/lib/format";
 import { breadcrumbSchema, articleSchema } from "@/lib/jsonld";
 import { METHODOLOGY_VERSION, METHODOLOGY_CHANGELOG, METHODOLOGY_URL } from "@/lib/methodology";
 import { getPolygonVenueCount } from "@/lib/polygon-yield";
+import { SITE_AUTHOR } from "@/lib/author";
 
 const TITLE = "Methodology: How Harvest Tracks DeFi Yields | Harvest";
 const DESCRIPTION =
@@ -121,6 +122,7 @@ export default async function MethodologyPage() {
     url: METHODOLOGY_URL,
     datePublished: METHODOLOGY_VERSION.date,
     dateModified: METHODOLOGY_VERSION.date,
+    author: SITE_AUTHOR,
   });
 
   const versionDate = new Date(METHODOLOGY_VERSION.date).toLocaleDateString("en-US", {
