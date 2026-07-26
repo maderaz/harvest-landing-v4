@@ -29,10 +29,16 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Hydrate stablecoin venues (Portals discovery)
-        run: node scripts/fetch-stablecoin-yield.mjs
+      - name: Hydrate curated stablecoin products (share price, holders, history)
+        run: node scripts/fetch-stablecoin-products.mjs
         env:
           PORTALS_API_KEY: ${{ secrets.PORTALS_API_KEY }}
+          NODE_USE_ENV_PROXY: "1"
+        continue-on-error: true
+
+      - name: Refresh fixed-rate (Pendle) markets
+        run: node scripts/fetch-stablecoin-pendle.mjs
+        env:
           NODE_USE_ENV_PROXY: "1"
         continue-on-error: true
 
@@ -40,7 +46,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/stablecoin-yield.json
+          git add data/stablecoin-yield.json data/stablecoin-pendle.json
           if git diff --cached --quiet; then
             echo "No stablecoin data changes detected."
             exit 0
