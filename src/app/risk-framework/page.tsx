@@ -3,6 +3,7 @@ import Link from "next/link";
 import { HomeCrumb } from "@/components/home-crumb";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { breadcrumbSchema, articleSchema } from "@/lib/jsonld";
+import { SITE_AUTHOR } from "@/lib/author";
 import { RISK_FRAMEWORK_VERSION, RISK_FRAMEWORK_CHANGELOG, RISK_FRAMEWORK_URL } from "@/lib/risk-framework";
 
 const TITLE = "DeFi Yield Risk Framework: Categories Explained | Harvest";
@@ -53,14 +54,13 @@ export default function RiskFrameworkPage() {
   ];
 
   const breadcrumb = breadcrumbSchema(crumbs);
-  // TODO: replace Organization author with a named Person + bio URL once
-  // a team member is identified as the page author.
   const article = articleSchema({
     title: TITLE,
     description: DESCRIPTION,
     url: RISK_FRAMEWORK_URL,
     datePublished: RISK_FRAMEWORK_VERSION.date,
     dateModified: RISK_FRAMEWORK_VERSION.date,
+    author: SITE_AUTHOR,
   });
 
   const versionDate = new Date(RISK_FRAMEWORK_VERSION.date).toLocaleDateString("en-US", {

@@ -14,7 +14,12 @@ import { breadcrumbSchema, reportWebPageSchema, reportItemListSchema, reportData
 import { HubTable } from "@/components/hub-table";
 import { HomeCrumb } from "@/components/home-crumb";
 import { DiscoverButton } from "@/components/report/discover-button";
-import { getPolygonVenues, groupPolygonVenuesByAsset, type PolygonVenue } from "@/lib/polygon-yield";
+import {
+  getPolygonVenues,
+  groupPolygonVenuesByAsset,
+  conditionsSummary,
+  type PolygonVenue,
+} from "@/lib/polygon-yield";
 
 const HUB_URL = `${SITE_URL}/polygon`;
 
@@ -28,23 +33,35 @@ function VenueRow({ v, rank }: { v: PolygonVenue; rank: number }) {
     <div className="hub-row" role="row">
       <span className="hub-cell hub-rank">{rank}</span>
       <span className="hub-cell hub-vault">
-        <AssetIcon asset={v.symbol} size={24} />
-        <span className="rp-rank-nameblock">
-          <span className="hub-vault-name">{v.asset}</span>
-          {v.detail ? <span className="rp-rank-detail">{v.detail}</span> : null}
-          <span className="rp-rank-sub">
-            {v.platform} · <span className="poly-badge-external">Third-party</span>
+        <Link href={`/polygon/${v.venueSlug}`} className="rp-rank-nameblock-link">
+          <AssetIcon asset={v.symbol} size={24} />
+          <span className="rp-rank-nameblock">
+            <span className="hub-vault-name">{v.asset}</span>
+            {v.detail ? <span className="rp-rank-detail">{v.detail}</span> : null}
+            <span className="rp-rank-sub">
+              {v.platform} · <span className="poly-badge-external">Third-party</span>
+            </span>
           </span>
-        </span>
+        </Link>
       </span>
       <span
         className="hub-cell hub-num hub-apy"
-        title={v.rateNa ? "No public rate feed" : v.rateBasis === "current" ? "Current on-chain rate" : v.rateBasis}
+        title={v.rateNa ? "No public rate feed" : "Current rate, read from the Aave v3 Pool contract"}
       >
         {v.rateNa ? "n/a" : pct(v.apy)}
       </span>
+      <span
+        className="hub-cell hub-num"
+        title={
+          v.apyMean30d != null
+            ? "Realized over the trailing 30 days, from Aave's accrual index"
+            : "Still accumulating: our own daily readings do not span 30 days yet"
+        }
+      >
+        {v.apyMean30d != null ? pct(v.apyMean30d) : "-"}
+      </span>
       <span className="hub-cell rp-cell-text">
-        <span className="rp-type">{v.productType ?? "Venue"}</span>
+        <span className="poly-conditions">{conditionsSummary(v) ?? (v.productType ?? "Venue")}</span>
       </span>
       <span className="hub-cell hub-num">{v.tvlUsd > 0 ? formatTVL(v.tvlUsd) : "n/a"}</span>
       <span className="hub-cell rp-cell-action">
@@ -211,7 +228,8 @@ export async function PolygonHubBody() {
                     <span className="hub-th hub-th-rank">#</span>
                     <span className="hub-th">Venue</span>
                     <span className="hub-th hub-th-num">Rate</span>
-                    <span className="hub-th">Type</span>
+                    <span className="hub-th hub-th-num">30d</span>
+                    <span className="hub-th">Conditions</span>
                     <span className="hub-th hub-th-num">TVL</span>
                     <span className="hub-th hub-th-right" />
                   </div>

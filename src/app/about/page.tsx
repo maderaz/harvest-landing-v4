@@ -65,7 +65,7 @@ function organizationSchema() {
     logo: `${SITE_URL}/icon`,
     foundingDate: FOUNDING_DATE_ISO,
     description:
-      "Independent onchain yield index tracking DeFi yield strategies since 2020.",
+      "Onchain yield index tracking DeFi yield strategies since 2020.",
     ...(sameAs.length > 0 ? { sameAs } : {}),
   };
 }
@@ -108,7 +108,7 @@ export default function AboutPage() {
         </nav>
         <h1 className="meth-title">About Harvest</h1>
         <p className="meth-subtitle">
-          Independent onchain yield index. Operating since 2020.
+          Onchain yield index. Operating since 2020.
         </p>
       </div>
 

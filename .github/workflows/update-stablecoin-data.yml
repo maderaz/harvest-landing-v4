@@ -1,0 +1,59 @@
+name: Update Stablecoin Report Data
+
+# Refreshes data/stablecoin-yield.json (the /report/stablecoin-yield-ranking
+# ranking) hourly. The fetch script skips the write when nothing but the run
+# stamp changed, so the commit guard below genuinely fires on idle hours and
+# the report's dateModified only advances when a figure moved (the build
+# spec's freshness requirement).
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  update-stablecoin-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Hydrate stablecoin venues (Portals discovery)
+        run: node scripts/fetch-stablecoin-yield.mjs
+        env:
+          PORTALS_API_KEY: ${{ secrets.PORTALS_API_KEY }}
+          NODE_USE_ENV_PROXY: "1"
+        continue-on-error: true
+
+      - name: Commit and push if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/stablecoin-yield.json
+          if git diff --cached --quiet; then
+            echo "No stablecoin data changes detected."
+            exit 0
+          fi
+          git commit -m "chore: update stablecoin report data $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected on attempt $attempt, rebasing on origin/main."
+            git fetch origin main
+            git rebase origin/main
+          done
+          echo "Failed to push after retries."
+          exit 1
