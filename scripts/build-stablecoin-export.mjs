@@ -44,14 +44,19 @@ const esc = (v) => {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 const header = [
-  "stablecoin", "venue", "product", "network", "venue_type", "apy_pct", "apy_7d_pct",
-  "tvl_usd", "contract_address", "observed_at", "rate_basis",
+  "tier", "product", "platform", "curated_by", "payout_asset", "network", "product_type",
+  "apy_pct", "rate_window", "share_price", "tvl_usd", "apy_stdev_pp", "apy_min_pct",
+  "apy_max_pct", "tvl_change_pct", "holders", "top5_pct", "contract_address", "rate_basis",
 ];
 const lines = [header.join(",")];
 for (const r of doc.rows) {
+  const m = r.metrics ?? {};
+  const h = r.holders ?? {};
   lines.push(
-    [r.stablecoin, r.platform, r.product, r.network, r.venueType, r.apy, r.apy7d ?? "",
-     r.tvlUsd, r.contractAddress, r.observedAt ?? "", r.rateBasis].map(esc).join(","),
+    [r.tier, r.name, r.platform, r.curatedBy ?? "", r.payoutAsset, r.network, r.productType,
+     r.apy ?? "", r.rateWindow ?? "", r.sharePrice ?? "", r.tvlUsd ?? "", m.apyStdev ?? "",
+     m.apyMin ?? "", m.apyMax ?? "", m.tvlChangePct ?? "", h.count ?? "", h.top5Pct ?? "",
+     r.contract, r.rateBasis].map(esc).join(","),
   );
 }
 writeFileSync(join(OUT_DIR, "rates.csv"), lines.join("\n") + "\n", "utf-8");

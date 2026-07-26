@@ -20,6 +20,9 @@ const CHAINS = {
     id: 8453,
     rpcs: ["https://mainnet.base.org", "https://base.blockscout.com/api/eth-rpc"],
     blockSec: 2,
+    // Verified to serve eth_call at a 90-day-old block, so share-price series
+    // here can be backfilled rather than accumulated.
+    archive: true,
   },
   flare: {
     id: 14,
@@ -28,6 +31,7 @@ const CHAINS = {
       "https://flare-explorer.flare.network/api/eth-rpc",
     ],
     blockSec: 1.155,
+    archive: true,
   },
   polygon: {
     id: 137,
@@ -40,8 +44,47 @@ const CHAINS = {
       "https://polygon.blockscout.com/api/eth-rpc",
     ],
     blockSec: 2.1,
+    archive: false,
+  },
+  ethereum: {
+    id: 1,
+    rpcs: ["https://ethereum-rpc.publicnode.com"],
+    blockSec: 12,
+    // publicnode serves current state but paywalls historical blocks
+    // ("Archive requests require a personal token"), so share-price series on
+    // this chain accumulate forward from the daily cron rather than being
+    // backfilled. See scripts/lib/share-price.mjs.
+    archive: false,
+  },
+  monad: {
+    id: 143,
+    rpcs: ["https://rpc.monad.xyz"],
+    blockSec: 0.5,
+    // Binary-searched against the live node: the oldest block that still
+    // answers eth_call sits ~9.4 days back, and deeper reads return "Block
+    // requested not found". Clamped to 9 to stay inside that with margin.
+    //
+    // Event-log reconstruction was evaluated as a way to go deeper without
+    // archive state (ERC-4626 Deposit/Withdraw carry assets and shares, whose
+    // ratio is the share price at that block) but this endpoint limits
+    // eth_getLogs to a 100-block range, which is 50 seconds of chain: covering
+    // 90 days would take ~155k requests. No other Monad RPC or explorer API is
+    // reachable. So Monad rows carry a short window, labelled as such, rather
+    // than a fabricated 30-day figure.
+    archive: true,
+    archiveMaxDays: 9,
   },
 };
+
+// True when a chain can answer eth_call at a block `days` back. Callers use
+// this to decide between backfilling a series and accumulating one forward,
+// instead of discovering the limit through a wall of failed reads.
+export function canReadHistory(chain, days) {
+  const c = CHAINS[chain];
+  if (!c) return false;
+  if (!c.archive) return false;
+  return c.archiveMaxDays == null || days <= c.archiveMaxDays;
+}
 
 // ---- low-level RPC -------------------------------------------------------
 

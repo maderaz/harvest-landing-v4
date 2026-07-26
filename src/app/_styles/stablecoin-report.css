@@ -92,3 +92,79 @@
     display: none;
   }
 }
+
+/* Two-tier tables. The holders variant swaps the Type column for Holders on
+   the steady table, where distribution is the more meaningful column. */
+.sc-rank .hub-thead,
+.sc-rank .hub-row {
+  grid-template-columns: 2rem minmax(230px, 2.4fr) 5.5rem 5rem 6.5rem 8rem 6rem 6.5rem;
+}
+.sc-window {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--neutral);
+}
+.sc-badge-tracked {
+  display: inline-block;
+  margin-left: 0.45rem;
+  font-family: var(--mono);
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--hub-gold);
+  border: 1px solid var(--hub-gold);
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+}
+.sc-pendle .hub-thead,
+.sc-pendle .hub-row {
+  grid-template-columns: minmax(180px, 2fr) 5.5rem 6rem 5.5rem 5rem 6.5rem;
+}
+
+/* Per-product commentary cards. */
+.sc-notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+.sc-note {
+  border: 1px solid var(--hub-line);
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  background: var(--hub-card);
+}
+.sc-note-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0 0 0.6rem;
+  font-size: 0.95rem;
+}
+.sc-note-plat {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--neutral);
+}
+.sc-note p {
+  margin: 0 0 0.6rem;
+  font-size: 0.86rem;
+  line-height: 1.62;
+}
+.sc-note p:last-child { margin-bottom: 0; }
+.sc-note-caveat {
+  color: var(--neutral);
+  font-style: italic;
+}
+
+@media (max-width: 760px) {
+  .sc-pendle .hub-thead,
+  .sc-pendle .hub-row {
+    grid-template-columns: minmax(120px, 2fr) 4.5rem 5rem;
+  }
+  .sc-pendle .hub-thead > :nth-child(n + 4),
+  .sc-pendle .hub-row > :nth-child(n + 4) { display: none; }
+}
