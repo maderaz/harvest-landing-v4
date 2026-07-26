@@ -73,7 +73,10 @@ export async function generateMetadata(): Promise<Metadata> {
   const r = getStablecoinReport();
   const n = r?.stats.products ?? 0;
   const networks = r?.stats.networks.length ?? 3;
-  const description = `${n} stablecoin products compared side by side across ${networks} networks, split into the highest paying and the steadiest. Every rate measured from onchain share-price growth, with holder counts, rate volatility and a downloadable CC-BY dataset.`;
+  // "interest" earns its place here rather than being a synonym sprinkle: the
+  // interest phrasing carries its own search demand (earn interest on
+  // stablecoins sits at KD 1) and the page previously used only yield and rate.
+  const description = `Earn interest on stablecoins: ${n} products compared across ${networks} networks, split into the highest paying and the steadiest. Every rate measured from onchain share-price growth, with holder counts, rate volatility and a downloadable CC-BY dataset.`;
   return {
     title: { absolute: `${TITLE} | ${SITE_NAME}` },
     description,
@@ -239,7 +242,14 @@ export default async function StablecoinReportPage() {
     `Every rate on this page is measured from onchain share-price growth over a stated window, not taken from a ` +
     `platform's advertised figure, so the two tables below can be read against each other.`;
 
+  // Questions are matched to the strings that actually appear in the live
+  // People Also Ask block for this category, rather than paraphrases of them.
+  // Every rate-dependent answer is computed, so they stay true between builds.
   const faqs = [
+    {
+      q: "Which stablecoin pays interest?",
+      a: `Most of the major ones do, but never by simply holding them in a wallet: the issuer keeps the reserve interest. Interest reaches a holder either by supplying the coin to a lending market, or by holding a yield-bearing wrapper that appreciates in value. Of the ${stats.products} products measured here, the steadiest payers are the wrapped forms in the second table, currently around a ${pct(stats.stable.median)} median.`,
+    },
     {
       q: "Which stablecoin product pays the most right now?",
       a: `${best?.name ?? "The leader"} at ${best?.platform ?? "n/a"} on ${best?.network ?? "n/a"}, at ${pct(best?.apy ?? null)} measured over its stated window. That figure sits at the top of a leveraged, higher-variance table, which is a different question from where to park liquidity safely.`,
@@ -249,8 +259,12 @@ export default async function StablecoinReportPage() {
       a: steadiestSentence(report) ?? "Stability is measured here as the standard deviation of the rate over the tracked window.",
     },
     {
-      q: "Do you earn yield on USDC?",
-      a: "Yes, by supplying it somewhere that lends it out or routes it into a strategy. USDC sitting in a wallet earns nothing; the issuer keeps the reserve interest. Both tables on this page are ways of putting it to work, at very different risk levels.",
+      q: "Do you earn yield on stablecoin?",
+      a: "Not by holding one. A stablecoin in a wallet pays nothing, because the issuer keeps the interest earned on the reserves backing it. Yield starts when the coin is supplied somewhere that lends it out or routes it into a strategy, which is what every product on this page does, at very different risk levels.",
+    },
+    {
+      q: "How to earn passive income with stablecoins?",
+      a: `Three routes, in rising order of complexity. Supply to a lending market and take the floating rate. Hold a yield-bearing wrapper such as the ones in the steady table, which appreciate against the underlying without any action. Or lock a fixed rate to a maturity through a yield-trading market${pendle ? `, currently up to ${pct(pendle.stats.bestFixed)}` : ""}. None of it is passive in the sense of being risk-free: the rates here are compensation for smart-contract, counterparty and depeg risk.`,
     },
     {
       q: "Is a stablecoin yield the same as a high yield savings account?",
@@ -293,13 +307,22 @@ export default async function StablecoinReportPage() {
     ...(pendle?.markets?.length ? [{ id: "fixed-rate", label: "Fixed-rate trading" }] : []),
     { id: "savings-comparison", label: "Versus savings" },
     { id: "yield-sources", label: "Where yield comes from" },
+    { id: "earn-interest", label: "How to earn interest" },
     { id: "risk-section", label: "Risks" },
     { id: "how-we-measure", label: "How we measure" },
     { id: "faq", label: "FAQ" },
     { id: "dataset", label: "Dataset" },
   ];
 
-  const itemListItems = report.rows.map((r) => ({ name: `${r.name} (${r.platform})`, url: r.productUrl }));
+  // Two named lists rather than one flat one: the tier is the most useful thing
+  // an answer engine can carry alongside a product, and a single merged list
+  // throws it away. Both point outward at the venue, per the report convention.
+  const highItems = high.map((r) => ({ name: `${r.name} (${r.platform})`, url: r.productUrl }));
+  const stableItems = stable.map((r) => ({ name: `${r.name} (${r.platform})`, url: r.productUrl }));
+
+  // ISO 8601 interval across the measured series, for Dataset.temporalCoverage.
+  const allDays = report.rows.flatMap((r) => r.history.map((h) => h.d)).filter(Boolean).sort();
+  const temporalCoverage = allDays.length ? `${allDays[0]}/${allDays[allDays.length - 1]}` : undefined;
 
   // Markets that also appear in the tables above lead this list regardless of
   // where they rank on fixed rate. They are the reason the section exists: a
@@ -334,7 +357,24 @@ export default async function StablecoinReportPage() {
           }),
         }}
       />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(reportItemListSchema(itemListItems, PAGE_URL)) }} />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            ...reportItemListSchema(highItems, `${PAGE_URL}#high-yield-ranking`),
+            name: "Highest paying stablecoin products",
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            ...reportItemListSchema(stableItems, `${PAGE_URL}#stable-ranking`),
+            name: "Most stable stablecoin products for parking liquidity",
+          }),
+        }}
+      />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageSchema(faqs)) }} />
       <script
         type="application/ld+json"
@@ -361,7 +401,8 @@ export default async function StablecoinReportPage() {
               url: PAGE_URL,
               dateModified: report.dataModifiedIso,
               numberOfItems: stats.products,
-              keywords: ["stablecoin", "USDC", "USDT", "DAI", "USDS", "yield", "APY", "share price", "DeFi"],
+              temporalCoverage,
+              keywords: ["stablecoin", "USDC", "USDT", "DAI", "USDS", "yield", "interest", "APY", "share price", "DeFi"],
               sources: ["https://portals.fi", "https://api-v2.pendle.finance", "https://ethereum.org", "https://base.org", "https://monad.xyz"],
               distribution: [
                 { format: "application/json", url: `${SITE_URL}/data/stablecoin-yield/index.json` },
@@ -567,6 +608,47 @@ export default async function StablecoinReportPage() {
                 <p>
                   <strong>Taking the other side.</strong> A counterparty vault earns trading fees by standing opposite
                   every trade on a venue, which pays well until traders win.
+                </p>
+              </div>
+            </section>
+
+            <section className="uni-home-content" aria-labelledby="earn-interest">
+              <p className="rp-eyebrow">Getting started</p>
+              <h2 id="earn-interest">How to earn interest on stablecoins</h2>
+              <div className="rp-article">
+                <p>
+                  A stablecoin sitting in a wallet pays nothing. The issuer holds the reserves
+                  behind it and keeps the interest those reserves earn, which is most of how
+                  the large issuers make money. Interest reaches a holder only once the coin is
+                  put somewhere that puts it to work, and there are three ways to do that.
+                </p>
+                <p>
+                  <strong>Supply it to a lending market.</strong> The simplest route: the coin
+                  is lent to borrowers who post collateral, and the interest they pay flows
+                  back. The rate floats with how much of the pool is borrowed. Both tables
+                  above contain lending markets, and they are the most transparent products
+                  here because the mechanism is visible onchain.
+                </p>
+                <p>
+                  <strong>Hold a yield-bearing wrapper.</strong> Products such as the ones in
+                  the steady table convert the coin into a token that appreciates against it,
+                  so interest accrues without any further action and without a claim to
+                  manage. This is the closest thing to a savings-account experience onchain,
+                  and it is where the steadiest rates in this report sit, currently a{" "}
+                  {pct(stats.stable.median)} median.
+                </p>
+                <p>
+                  <strong>Lock a fixed rate.</strong> Yield-trading markets let a holder fix a
+                  rate to a maturity date instead of floating with the market
+                  {pendle ? `, currently up to ${pct(pendle.stats.bestFixed)} across ${pendle.stats.markets} stablecoin maturities` : ""}.
+                  That removes the upside as well as the downside, and the position has to be
+                  held to maturity or sold at whatever the market pays for it.
+                </p>
+                <p>
+                  None of the three is passive in the sense of being free of risk. Each rate on
+                  this page is compensation for smart-contract risk, for counterparty or
+                  curator risk, and for the possibility that the stablecoin itself slips from
+                  a dollar. The section below sets out what that means in practice.
                 </p>
               </div>
             </section>

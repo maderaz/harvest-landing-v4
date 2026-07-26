@@ -434,6 +434,20 @@ export async function AssetHubBody({ asset }: Props) {
 
       {/* Bottom rail: bridge to per-network filtered views */}
       <section className="uni-hub-cta-row">
+        {/* Stablecoin hubs get a secondary, deliberately non-CTA pointer to the
+            market-wide comparison. This hub converts and the report does not, so
+            the report must never become the primary action here; it sits below
+            the network pills as a research link and a crawl path. */}
+        {(asset === "USDC" || asset === "USDT") && (
+          <p className="uni-hub-cta-meta">
+            Comparing against venues we do not operate? The{" "}
+            <Link href="/report/stablecoin-yield-ranking">
+              stablecoin rate comparison
+            </Link>{" "}
+            measures the leading products across the market from their own
+            onchain share-price history.
+          </p>
+        )}
         <p className="uni-hub-cta-meta">
           Looking for a specific chain? Network ranking pages cut the same
           data by network.
