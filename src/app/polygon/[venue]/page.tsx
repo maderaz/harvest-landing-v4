@@ -134,6 +134,9 @@ export default async function PolygonVenuePage({
             <p className="uni-hub-sub">
               {v.productType ?? "Venue"} on Polygon ·{" "}
               <span className="poly-badge-external">Third-party, not a Harvest product</span>
+              {utilizationLabel(v.utilization) ? (
+                <> · {utilizationLabel(v.utilization)}</>
+              ) : null}
             </p>
           </div>
         </div>
