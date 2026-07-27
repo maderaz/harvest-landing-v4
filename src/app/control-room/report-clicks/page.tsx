@@ -19,6 +19,8 @@ import {
   type Timeframe,
 } from "@/components/admin/timeframe-selector";
 import { CountryFlag } from "@/components/admin/country-flag";
+import { MultiSelect, type MultiOption } from "@/components/admin/multi-select";
+import { FilterHint } from "@/components/admin/filter-hint";
 import "../../_styles/asset-hub.css";
 
 interface ReportClick {
@@ -42,6 +44,77 @@ interface ReportClick {
 const ROWS_FETCH_LIMIT = 1000;
 const ROWS_DISPLAY_LIMIT = 200;
 
+// Event view. "all" keeps both halves of the funnel visible; the other two
+// isolate one side, so "confirm" alone answers "who actually left for a
+// venue" without the opened-but-bailed rows diluting it.
+type EventFilter = "all" | "confirm" | "open";
+
+const EVENT_OPTIONS: { value: EventFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "confirm", label: "Qualified" },
+  { value: "open", label: "Opened" },
+];
+
+// ISO 3166-1 alpha-2 -> display name. The column stores codes ("PL"), which
+// are unsearchable for an operator thinking "Poland", so the filter list is
+// labelled with real names. Intl.DisplayNames is built into the browser and
+// Node, so this costs no dependency; the try/catch covers the rare
+// non-ISO values ("EU", "XK") the geo lookup can emit.
+let _regionNames: Intl.DisplayNames | null = null;
+function countryName(code: string): string {
+  const iso = code.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(iso)) return iso || "Unknown";
+  try {
+    if (!_regionNames) {
+      _regionNames = new Intl.DisplayNames(["en"], { type: "region" });
+    }
+    return _regionNames.of(iso) ?? iso;
+  } catch {
+    return iso;
+  }
+}
+
+// Everything one row can be matched against by the free-text search, joined
+// into a single lower-cased haystack. Includes the *resolved* product label
+// (not just the raw columns) so searching "Spectra" catches rows whose
+// product string predates the detailed format and only carries the slug
+// "spectra-pt-nov-2026", and so "MetaVault" matches the humanized label.
+// Also includes the country's display name, so "Poland" works in the search
+// box as well as in the country filter.
+function searchHaystack(c: ReportClick): string {
+  const { label } = productIdentity(c);
+  return [
+    label,
+    c.platform,
+    c.product,
+    c.venue_ref,
+    c.chain,
+    c.source,
+    c.source_page,
+    c.city,
+    c.device_type,
+    c.target_url,
+    c.session_id,
+    c.country,
+    c.country ? countryName(c.country) : null,
+    c.event === "confirm" ? "qualified lead" : c.event === "open" ? "opened" : c.event,
+    c.rank != null ? `#${c.rank}` : null,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+// Space-separated terms are ANDed, so "spectra pt" narrows rather than
+// widens. Quoting is deliberately not supported - this is a filter box, not
+// a query language.
+function matchesQuery(c: ReportClick, query: string): boolean {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if (terms.length === 0) return true;
+  const hay = searchHaystack(c);
+  return terms.every((t) => hay.includes(t));
+}
+
 // Time | Venue | Event | Pos | Chain | Source | Country | Device | Session
 const TABLE_COLS =
   "140px minmax(170px, 1.5fr) 110px 60px 110px 110px 100px 100px 110px";
@@ -50,6 +123,9 @@ export default function ReportClicksPage() {
   const [clicks, setClicks] = useState<ReportClick[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
+  const [eventFilter, setEventFilter] = useState<EventFilter>("all");
+  const [countries, setCountries] = useState<string[]>([]);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -72,17 +148,69 @@ export default function ReportClicksPage() {
     };
   }, []);
 
-  const stats = useMemo(() => {
+  // Country options are faceted on the event + search filters but NOT on the
+  // country selection itself, so picking Poland doesn't collapse the list you
+  // picked it from. Counts are the reachable row count under the other two
+  // filters, which is what makes the list worth reading before clicking.
+  const countryOptions = useMemo<MultiOption[]>(() => {
+    if (!clicks) return [];
+    const counts = new Map<string, number>();
+    for (const c of clicks) {
+      if (eventFilter !== "all" && c.event !== eventFilter) continue;
+      if (!matchesQuery(c, query)) continue;
+      const code = (c.country ?? "").trim().toUpperCase();
+      if (!code) continue;
+      counts.set(code, (counts.get(code) ?? 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([value, count]) => ({ value, label: countryName(value), count }))
+      .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+  }, [clicks, eventFilter, query]);
+
+  // Two scopes, deliberately.
+  //
+  // `scoped` applies country + search but NOT the event filter, and feeds the
+  // stat tiles. Those tiles *are* the funnel breakdown, so folding the event
+  // filter into them would be self-defeating: isolating qualified leads would
+  // print "Opened 0 / rate -" and destroy the one number worth reading, the
+  // qualification rate for the slice. This way "Poland + Spectra" still
+  // reports 40 opened / 12 qualified / 30%.
+  //
+  // `filtered` adds the event filter and drives the chart, both breakdowns and
+  // the table - the surfaces where isolating one side of the funnel is the
+  // whole point.
+  const scoped = useMemo(() => {
     if (!clicks) return null;
-    const opens = clicks.filter((c) => c.event === "open").length;
-    const confirms = clicks.filter((c) => c.event === "confirm").length;
+    const wanted = new Set(countries);
+    return clicks.filter((c) => {
+      if (wanted.size > 0) {
+        const code = (c.country ?? "").trim().toUpperCase();
+        if (!wanted.has(code)) return false;
+      }
+      return matchesQuery(c, query);
+    });
+  }, [clicks, countries, query]);
+
+  const filtered = useMemo(() => {
+    if (!scoped) return null;
+    if (eventFilter === "all") return scoped;
+    return scoped.filter((c) => c.event === eventFilter);
+  }, [scoped, eventFilter]);
+
+  const filtersActive =
+    eventFilter !== "all" || countries.length > 0 || query.trim() !== "";
+
+  const stats = useMemo(() => {
+    if (!scoped) return null;
+    const opens = scoped.filter((c) => c.event === "open").length;
+    const confirms = scoped.filter((c) => c.event === "confirm").length;
     return {
       opens,
       confirms,
       confirmRate: opens > 0 ? Math.round((confirms / opens) * 100) : null,
-      uniqueSessions: new Set(clicks.map((c) => c.session_id)).size,
+      uniqueSessions: new Set(scoped.map((c) => c.session_id)).size,
     };
-  }, [clicks]);
+  }, [scoped]);
 
   return (
     <div className="uni-hub-test">
@@ -102,6 +230,26 @@ export default function ReportClicksPage() {
           </div>
         </div>
       </header>
+
+      {clicks && (
+        <FilterBar
+          eventFilter={eventFilter}
+          onEventFilter={setEventFilter}
+          countries={countries}
+          onCountries={setCountries}
+          countryOptions={countryOptions}
+          query={query}
+          onQuery={setQuery}
+          shown={filtered?.length ?? 0}
+          total={clicks.length}
+          filtersActive={filtersActive}
+          onClear={() => {
+            setEventFilter("all");
+            setCountries([]);
+            setQuery("");
+          }}
+        />
+      )}
 
       <div
         className="uni-hub-stats"
@@ -132,17 +280,122 @@ export default function ReportClicksPage() {
         <div className="uni-hub-empty">Loading report clicks…</div>
       )}
 
-      {clicks && (
+      {filtered && (
         <>
           <ChartSection
-            clicks={clicks}
+            clicks={filtered}
+            eventFilter={eventFilter}
             timeframe={timeframe}
             onTimeframeChange={setTimeframe}
           />
-          <ProductBreakdownSection clicks={clicks} />
-          <RankBreakdownSection clicks={clicks} />
-          <TableSection clicks={clicks.slice(0, ROWS_DISPLAY_LIMIT)} />
+          <ProductBreakdownSection clicks={filtered} />
+          <RankBreakdownSection clicks={filtered} />
+          {/* Slice AFTER filtering, so a search surfaces the newest 200
+              matching rows rather than only matches that happen to fall
+              inside the newest 200 overall. */}
+          <TableSection
+            clicks={filtered.slice(0, ROWS_DISPLAY_LIMIT)}
+            totalMatching={filtered.length}
+            filtersActive={filtersActive}
+          />
         </>
+      )}
+    </div>
+  );
+}
+
+// One control row, matching the Live Feed filter bar: segmented event view,
+// searchable country multi-select, free-text search, then a live match count.
+function FilterBar({
+  eventFilter,
+  onEventFilter,
+  countries,
+  onCountries,
+  countryOptions,
+  query,
+  onQuery,
+  shown,
+  total,
+  filtersActive,
+  onClear,
+}: {
+  eventFilter: EventFilter;
+  onEventFilter: (v: EventFilter) => void;
+  countries: string[];
+  onCountries: (v: string[]) => void;
+  countryOptions: MultiOption[];
+  query: string;
+  onQuery: (v: string) => void;
+  shown: number;
+  total: number;
+  filtersActive: boolean;
+  onClear: () => void;
+}) {
+  return (
+    <div className="lf-filterbar" style={{ marginBottom: 20 }}>
+      <span className="lf-filter-grp">
+        <div className="aq-timeframe" role="tablist" aria-label="Event filter">
+          {EVENT_OPTIONS.map((o) => (
+            <button
+              key={o.value}
+              type="button"
+              role="tab"
+              aria-selected={eventFilter === o.value}
+              className={`aq-timeframe-tab${eventFilter === o.value ? " active" : ""}`}
+              onClick={() => onEventFilter(o.value)}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        <FilterHint label="About the event filter">
+          <strong>Opened</strong> is an Open-button click that opened the
+          leave-site prompt. <strong>Qualified</strong> is an &ldquo;I
+          understand&rdquo; confirmation, meaning the visitor actually went
+          through to the venue. Only qualified count as leads. The four tiles
+          above always show both halves for the current country and search, so
+          the qualification rate stays readable while you isolate one side here.
+        </FilterHint>
+      </span>
+
+      <span className="lf-filter-grp">
+        <MultiSelect
+          values={countries}
+          onChange={onCountries}
+          options={countryOptions}
+          allLabel="All countries"
+          searchPlaceholder="Search countries…"
+          ariaLabel="Country filter"
+          unit="countries"
+        />
+        <FilterHint label="About the country filter">
+          Pick one or several countries. The list holds only countries present
+          in the loaded rows, most-seen first, and each count reflects the
+          current event and search filters.
+        </FilterHint>
+      </span>
+
+      <input
+        type="search"
+        className="lf-select"
+        placeholder="Search venue, product, city, session…"
+        value={query}
+        onChange={(e) => onQuery(e.target.value)}
+        // .lf-select paints a dropdown chevron via background-image, which is
+        // a false affordance on a text input.
+        style={{ minWidth: 260, backgroundImage: "none", cursor: "text" }}
+        aria-label="Search report clicks"
+      />
+
+      <span className="uni-hub-section-meta">
+        {shown.toLocaleString("en-US")}
+        {filtersActive ? ` of ${total.toLocaleString("en-US")}` : ""} rows
+      </span>
+
+      {filtersActive && (
+        <button type="button" className="aq-timeframe-tab" onClick={onClear}>
+          Clear filters
+        </button>
       )}
     </div>
   );
@@ -169,10 +422,12 @@ function Stat({
 
 function ChartSection({
   clicks,
+  eventFilter,
   timeframe,
   onTimeframeChange,
 }: {
   clicks: ReportClick[];
+  eventFilter: EventFilter;
   timeframe: Timeframe;
   onTimeframeChange: (tf: Timeframe) => void;
 }) {
@@ -180,11 +435,17 @@ function ChartSection({
     null,
   );
 
-  // Chart the "confirm" events - the clicks that actually left the site.
+  // Default to charting the "confirm" events - the clicks that actually left
+  // the site. When the operator has isolated Opened, chart that instead, so
+  // the bars always match the view they selected rather than silently showing
+  // a series the filter excluded. Under "Qualified" the rows are already all
+  // confirms, so the filter below is a no-op.
+  const chartingOpens = eventFilter === "open";
   const confirms = useMemo(
-    () => clicks.filter((c) => c.event === "confirm"),
-    [clicks],
+    () => (chartingOpens ? clicks : clicks.filter((c) => c.event === "confirm")),
+    [clicks, chartingOpens],
   );
+  const noun = chartingOpens ? "opens" : "venue click-throughs";
 
   const oldestMs = useMemo(() => {
     if (confirms.length === 0) return null;
@@ -226,15 +487,15 @@ function ChartSection({
 
   const displayValue = hovered ? hovered.v : total;
   const displayLabel = hovered
-    ? `venue click-throughs ${labelForDaysAgo(hovered.daysAgo)}`
-    : `venue click-throughs across the trailing ${days} days`;
+    ? `${noun} ${labelForDaysAgo(hovered.daysAgo)}`
+    : `${noun} across the trailing ${days} days`;
 
   return (
     <section className="uni-hub-section" style={{ marginTop: 0 }}>
       <header className="uni-hub-section-head">
         <div className="aq-section-head-left">
           <h2 className="uni-hub-section-title">
-            Click-throughs, last {days} days
+            {chartingOpens ? "Opens" : "Click-throughs"}, last {days} days
           </h2>
           <span className="uni-hub-section-meta">
             today {latest.toLocaleString("en-US")} · peak{" "}
@@ -429,22 +690,45 @@ function RankBreakdownSection({ clicks }: { clicks: ReportClick[] }) {
   );
 }
 
-function TableSection({ clicks }: { clicks: ReportClick[] }) {
+function TableSection({
+  clicks,
+  totalMatching,
+  filtersActive,
+}: {
+  clicks: ReportClick[];
+  totalMatching: number;
+  filtersActive: boolean;
+}) {
+  const truncated = totalMatching > clicks.length;
   return (
     <section className="uni-hub-section">
       <header className="uni-hub-section-head">
-        <h2 className="uni-hub-section-title">Recent clicks</h2>
+        <h2 className="uni-hub-section-title">
+          {filtersActive ? "Matching clicks" : "Recent clicks"}
+        </h2>
         <span className="uni-hub-section-meta">
-          showing latest {clicks.length.toLocaleString("en-US")}
+          {truncated
+            ? `showing latest ${clicks.length.toLocaleString("en-US")} of ${totalMatching.toLocaleString("en-US")}`
+            : `showing latest ${clicks.length.toLocaleString("en-US")}`}
         </span>
       </header>
 
       {clicks.length === 0 ? (
         <div className="uni-hub-empty">
-          No report clicks captured yet. Once a visitor accepts the cookie
-          banner and clicks Discover / Visit (or &ldquo;I understand&rdquo;) on
-          a /report page, rows will land here. If this stays empty after real
-          clicks, confirm the report_outbound_clicks table exists in Supabase.
+          {filtersActive ? (
+            <>
+              No clicks match these filters. Widen the event view, clear a
+              country, or shorten the search.
+            </>
+          ) : (
+            <>
+              No report clicks captured yet. Once a visitor accepts the cookie
+              banner and clicks Discover / Visit (or &ldquo;I understand&rdquo;)
+              on a /report page, rows will land here. If this stays empty after
+              real clicks, confirm the report_outbound_clicks table exists in
+              Supabase.
+            </>
+          )}
         </div>
       ) : (
         <div className="hub-table-wrap aq-recent-wrap">

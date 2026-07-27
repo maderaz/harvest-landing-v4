@@ -1843,6 +1843,56 @@ body:has(.admin-shell) .foot {
   color: var(--ink-3);
 }
 
+/* Multi-select rows (components/admin/multi-select.tsx). Three columns:
+   a fixed-width check gutter so labels align whether or not they're
+   selected, the label, and an optional right-aligned occurrence count.
+   The base .adm-combo-option sets nowrap/ellipsis, which a flex row
+   overrides, so the label carries the truncation itself. */
+.adm-combo-option.adm-combo-multi {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.adm-combo-check {
+  flex: 0 0 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 12px;
+  color: var(--accent, #c8a02a);
+}
+.adm-combo-multi-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.adm-combo-count {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.adm-combo-clear {
+  appearance: none;
+  width: 100%;
+  margin-top: 6px;
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 11.5px;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: var(--ink-2);
+  background: transparent;
+  border: 1px solid var(--line-1);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.adm-combo-clear:hover { background: rgba(127, 127, 127, 0.1); }
+
 /* === Deep-landing loyalty (components/admin/recurring-from-deep-landing.tsx) ===
    SEO Summary extension: a loyalty funnel + per-landing bars, built on the same
    uni-hub tokens so it reads as one system with the funnel table above it. */
