@@ -1106,7 +1106,7 @@ export default function XrpYieldRankingPage() {
               answer so the two can never drift. */}
           <div className="rp-snapshot">
             <p>
-              Of the {pools.length} XRP products Harvest tracks, the highest
+              Of the {pools.length} XRP products in this ranking, the highest
               variable rate, excluding fixed-rate Principal Tokens, was{" "}
               <strong>{pct(histRate(topSingle))}</strong> on{" "}
               {assetHead(topSingle)} at {topSingle.platform} as of {updated}
@@ -1195,8 +1195,8 @@ export default function XrpYieldRankingPage() {
             </p>
             <p>
               None of the {stats.venues}{" "}
-              products in Harvest&rsquo;s XRP Yield Ranking were Harvest
-              products as of {updated}. Every rate is read from a third-party
+              products in this ranking are operated by Harvest, as of{" "}
+              {updated}. Every rate is read from a third-party
               protocol&rsquo;s own contracts.
             </p>
           </div>
@@ -1477,9 +1477,10 @@ export default function XrpYieldRankingPage() {
                     <div className="rp-methodology">
                       <span className="rp-methodology-label">Methodology</span>
                       <p>
-                        Each line is one maturity&rsquo;s daily max fixed rate
-                        from Spectra, from June 2026, capped and trimmed near
-                        maturity where the annualized rate degenerates. The
+                        Every line on the chart above plots one
+                        maturity&rsquo;s daily max fixed rate from Spectra, from
+                        June 2026, capped and trimmed near maturity where the
+                        annualized rate degenerates. The
                         figure beside each maturity is its{" "}
                         <strong>latest</strong> reading, so it can differ
                         slightly from the ranking table above, which sorts on the
@@ -1722,8 +1723,9 @@ export default function XrpYieldRankingPage() {
 
             <h3 id="source-lending">Lending</h3>
             <p>
-              Wrapped XRP supplied to a money market such as Kinetic on Flare or
-              Moonwell on Base earns the interest borrowers pay on their loans.
+              XRP lending yield is the interest borrowers pay when wrapped XRP
+              is supplied to a money market. This ranking tracks XRP lending
+              markets on Kinetic (Flare) and Moonwell (Base).
             </p>
             <p>
               A lending position is single-sided, so there is no second asset
@@ -1734,27 +1736,30 @@ export default function XrpYieldRankingPage() {
 
             <h3 id="source-vaults">Vaults and liquid staking</h3>
             <p>
-              Vaults and liquid-staking tokens do the work automatically. A
-              curated vault such as Spectra, Upshift, Mystic or Superform, or a
-              staking token like Firelight&rsquo;s stXRP, takes the wrapped XRP
-              and runs a strategy with it.
+              XRP vault yield is the return a curator&rsquo;s strategy
+              generates on wrapped XRP, compounded into a single share token.
+              Curated vaults in this ranking run on Spectra, Upshift, Mystic
+              Finance and Superform, alongside Firelight&rsquo;s stXRP liquid
+              staking token.
             </p>
             <p>
-              The results compound into a single token managed by a curator, and
-              the rate blends whatever the strategy earns with any reward
-              incentives on top.
+              An XRP vault compounds its strategy returns into a single
+              curator-managed token, and its published rate blends strategy
+              yield with any reward incentives layered on top.
             </p>
 
             <h3 id="source-liquidity">Liquidity provision</h3>
             <p>
-              Pairing an XRP token with another asset in a pool on SparkDEX or
-              Aerodrome earns a share of the swap fees, usually with extra reward
-              tokens layered on.
+              XRP liquidity pool yield is a share of swap fees earned by
+              pairing an XRP token with a second asset, usually with reward
+              token emissions layered on top. This ranking tracks XRP pools on
+              SparkDEX and Aerodrome as of {updated}.
             </p>
             <p>
-              The headline rates are the highest on the page, with one trade-off:
-              if the two tokens drift apart in price the position can suffer
-              impermanent loss, so these pools reward active management.
+              Dual-exposure XRP pools carry the highest headline rates on this
+              page and one specific trade-off: if the two paired tokens drift
+              apart in price, the position can suffer impermanent loss, so these
+              pools reward active management.
             </p>
 
             <h3 id="source-fixed-rate-pts">Fixed-rate Principal Tokens</h3>
@@ -1790,8 +1795,8 @@ export default function XrpYieldRankingPage() {
               principal.
             </p>
             <p>
-              Spectra carried all the XRP fixed-yield trading volume Harvest
-              tracks as of {updated}, and most YT activity sits on the stXRP
+              Spectra carried all the XRP fixed-yield trading volume in this
+              ranking as of {updated}, and most YT activity sits on the stXRP
               pools, where traders buy YT
               to bet on a potential Firelight airdrop by accumulating its
               Firelight points.
@@ -1829,7 +1834,7 @@ export default function XrpYieldRankingPage() {
                     <span className="rp-gloss-tok">{nice(t.token)}</span>
                     <span className="rp-gloss-chain">{t.chain}</span>
                   </div>
-                  <p className="rp-gloss-desc">{t.desc}</p>
+                  <p className="rp-gloss-desc">{t.desc.replaceAll("{ASOF}", updated)}</p>
                   {t.address ? (
                     <div className="rp-gloss-addr">
                       <code className="rp-gloss-addr-val" title={t.address}>
@@ -1978,7 +1983,7 @@ export default function XrpYieldRankingPage() {
                 {g.intro && <p className="rp-chain-intro">{g.intro}</p>}
                 <div className="rp-venues">
                   {g.venues.map((v) => (
-                    <VenueCard key={v.slug} v={v} />
+                    <VenueCard key={v.slug} v={v} asOf={updated} />
                   ))}
                 </div>
               </div>
@@ -2125,13 +2130,13 @@ export default function XrpYieldRankingPage() {
           <dl className="rp-method">
             <dt>Inclusion</dt>
             <dd>
-              A defined set of {stats.venues}{" "}XRP-denominated products, whether
+              As of {updated}, a defined set of {stats.venues}{" "}XRP-denominated products, whether
               XRP itself or a wrapped variant such as FXRP, stXRP or cbXRP, across
               lending, vaults, liquid staking, fixed-rate Principal Tokens and
               liquidity pools. RLUSD, Ripple&rsquo;s dollar stablecoin, is out of
               scope because it is not XRP-denominated.
               <span className="rp-method-break">
-                Every rate and TVL is <strong>measured onchain</strong>: read
+                As of {updated}, every rate and TVL is <strong>measured onchain</strong>: read
                 directly from each venue&rsquo;s own contracts on Base and Flare
                 (lending supply rates, vault share prices, pool reserves and
                 gauge emissions), priced with onchain oracles (Flare&rsquo;s
@@ -2398,7 +2403,7 @@ function RankTable({ rows }: { rows: XrpPool[] }) {
   );
 }
 
-function VenueCard({ v }: { v: VenueNote }) {
+function VenueCard({ v, asOf }: { v: VenueNote; asOf: string }) {
   // Type + Network lead the facts as plain key/value pairs (clearer to read
   // and to parse than the old header badges), then the researched facts.
   const facts = [
@@ -2429,7 +2434,7 @@ function VenueCard({ v }: { v: VenueNote }) {
       <div className="rp-venue-body">
         <div className="rp-venue-prose">
           {v.blurb.map((p, i) => (
-            <p key={i}>{p}</p>
+            <p key={i}>{p.replaceAll("{ASOF}", asOf)}</p>
           ))}
         </div>
         <div className="rp-facts">
