@@ -47,7 +47,7 @@ export const WRAPPED_TOKENS: WrappedToken[] = [
     token: "FXRP",
     icon: "FXRP",
     chain: "Flare",
-    desc: "XRP bridged onto Flare through the FAssets system. It is a 1:1, over-collateralized ERC-20 minted by independent agents who post collateral (roughly 1.3x) while the real XRP stays on the XRP Ledger, verified on-chain rather than held by one custodian. FXRP went live on Flare mainnet on 24 September 2025 and is the base asset behind nearly all Flare XRP yield.",
+    desc: "XRP bridged onto Flare through the FAssets system. It is a 1:1, over-collateralized ERC-20 minted by independent agents who post collateral (roughly 1.3x) while the real XRP stays on the XRP Ledger, verified onchain rather than held by one custodian. FXRP went live on Flare mainnet on 24 September 2025 and is the base asset behind nearly all Flare XRP yield.",
     address: "0xad552a648c74d49e10027ab8a618a3ad4901c5be",
     explorer: "https://flarescan.com/token/0xad552a648c74d49e10027ab8a618a3ad4901c5be",
     explorerName: "Flarescan",
@@ -65,7 +65,7 @@ export const WRAPPED_TOKENS: WrappedToken[] = [
     token: "cbXRP",
     icon: "cbXRP",
     chain: "Base",
-    desc: "Coinbase Wrapped XRP, an ERC-20 on Base backed 1:1 by XRP held in Coinbase custody, with published proof of reserves. It launched in June 2025 and is the XRP form used across Base venues like Aerodrome and Moonwell. Backing is custodial, so it rests on Coinbase rather than an on-chain collateral system.",
+    desc: "Coinbase Wrapped XRP, an ERC-20 on Base backed 1:1 by XRP held in Coinbase custody, with published proof of reserves. It launched in June 2025 and is the XRP form used across Base venues like Aerodrome and Moonwell. Backing is custodial, so it rests on Coinbase rather than an onchain collateral system.",
     address: "0xcb585250f852c6c6bf90434ab21a00f02833a4af",
     explorer: "https://basescan.org/token/0xcb585250f852c6c6bf90434ab21a00f02833a4af",
     explorerName: "Basescan",
@@ -227,7 +227,7 @@ export const VENUE_GROUPS: VenueGroup[] = [
         assets: ["cbXRP", "cbBTC"],
         url: "https://aerodrome.finance/connect?to=%2Fdeposit%3Ftoken0%3D0xcb585250f852C6c6bf90434AB21A00f02833a4af%26token1%3D0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf%26type%3D100%26chain0%3D8453%26chain1%3D8453%26factory%3D0xf8f2eB4940CFE7d13603DDDD87f123820Fc061Ef",
         blurb: [
-          "Aerodrome is the main ve(3,3) DEX on Base, built by the Velodrome team. Its Slipstream pools are Uniswap v3 style concentrated liquidity, and XRP comes in as Coinbase Wrapped XRP.",
+          "Aerodrome is a ve(3,3) decentralized exchange on Base, built by the Velodrome team. Its Slipstream pools are Uniswap v3 style concentrated liquidity, and XRP comes in as Coinbase Wrapped XRP.",
           "The cbXRP / cbBTC and cbXRP / WETH pools pay swap fees plus AERO emissions that veAERO voters steer to each pool every week. Rates move with vote weight and campaigns, and concentrated liquidity carries impermanent loss if the two sides drift apart.",
         ],
         facts: [
