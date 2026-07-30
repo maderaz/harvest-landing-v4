@@ -1254,8 +1254,14 @@
 }
 
 /* ---- Pill buttons (Figma): thin outline, white bg, icon + label. Applied to
-   the report's utility buttons (Discover/Open, data downloads). ---- */
+   the report's utility buttons (Discover/Open, data downloads).
+   Discover/Open is an <a> (it carries a real outbound href so crawlers and
+   no-JS visitors get a link), which means ".uni-home-content a" applies to it
+   too: that rule paints a transparent gradient background and a theme-driven
+   colour that goes light in dark mode. Re-assert at anchor specificity, the
+   same guard .rp-data-btn and .rp-modal-confirm already carry. ---- */
 .rp-page .rp-discover,
+.rp-page .uni-home-content a.rp-discover,
 .rp-page .uni-home-content a.rp-data-btn,
 .rp-page .rp-data-btn {
   display: inline-flex;
@@ -1277,6 +1283,7 @@
   transition: background 0.12s ease, border-color 0.12s ease;
 }
 .rp-page .rp-discover:hover,
+.rp-page .uni-home-content a.rp-discover:hover,
 .rp-page .uni-home-content a.rp-data-btn:hover,
 .rp-page .rp-data-btn:hover {
   background: rgba(10, 10, 17, 0.03);

@@ -585,6 +585,28 @@ export default function XrpYieldRankingPage() {
 
   // Right-rail "In this report" tree. Conditional sections are included only
   // when they render, so scroll-spy never points at a missing anchor.
+  // Compact labels for the inline pill row under the overview. The row shows
+  // only top-level sections; the sidebar rail shows the full tree.
+  const TOC_SHORT: Record<string, string> = {
+    "yield-now": "Right now",
+    ranking: "The ranking",
+    overview: "Overview",
+    "yield-landscape": "Landscape",
+    "most-popular": "Most popular",
+    "rate-history": "30-day rate history",
+    "yield-trading": "Yield trading",
+    "where-yield-comes-from": "Where yield comes from",
+    "wrapped-xrp": "Wrapped forms of XRP",
+    "can-you-stake-xrp": "Can you stake XRP?",
+    "cefi-vs-defi": "CeFi vs DeFi",
+    "key-risks": "Risks",
+    "venues-in-depth": "Venues in depth",
+    faq: "FAQ",
+    "machine-readable-data": "Data",
+    "onchain-references": "Onchain references",
+    "method-and-scope": "Method",
+  };
+
   const tocItems: TocItem[] = [
     { id: "yield-now", label: "XRP yield right now" },
     { id: "ranking", label: "The ranking" },
@@ -873,7 +895,24 @@ export default function XrpYieldRankingPage() {
                 "TVL",
                 "Principal Token",
               ],
-              sources: ["https://defillama.com", "https://spectra.finance"],
+              // Provenance must match what the page body states: rates and TVL
+              // are read from each venue's own contracts on Base and Flare,
+              // priced with onchain oracles, with the Spectra API for Spectra's
+              // own markets and Portals for the few products the others do not
+              // reach. This previously credited DeFiLlama, which the pipeline no
+              // longer reads and whose terms restrict commercial republishing,
+              // and crediting it contradicted the Method section's "no
+              // third-party yield aggregator is used" on the exact surface
+              // answer engines read. Portals is listed because 3 of the tracked
+              // products are hydrated through it, so omitting it would be the
+              // same class of error in the other direction.
+              sources: [
+                "https://spectra.finance",
+                "https://aerodrome.finance",
+                "https://moonwell.fi",
+                "https://flare.network",
+                "https://portals.fi",
+              ],
               distribution: [
                 {
                   format: "application/json",
@@ -1002,17 +1041,13 @@ export default function XrpYieldRankingPage() {
           </div>
           <nav className="rp-toc" aria-label="On this page">
             <span className="rp-toc-label">On this page</span>
-            <a href="#yield-landscape">Landscape</a>
-            <a href="#ranking">The ranking</a>
-            <a href="#rate-history">30-day rate history</a>
-            <a href="#where-yield-comes-from">Where yield comes from</a>
-            <a href="#wrapped-xrp">Wrapped forms of XRP</a>
-            <a href="#can-you-stake-xrp">Can you stake XRP?</a>
-            <a href="#cefi-vs-defi">CeFi vs DeFi</a>
-            <a href="#key-risks">Risks</a>
-            <a href="#venues-in-depth">Venues in depth</a>
-            <a href="#faq">FAQ</a>
-            <a href="#method-and-scope">Method</a>
+            {tocItems
+              .filter((t) => !t.level && t.id !== "overview")
+              .map((t) => (
+                <a key={t.id} href={`#${t.id}`}>
+                  {TOC_SHORT[t.id] ?? t.label}
+                </a>
+              ))}
           </nav>
         </section>
 
@@ -1830,7 +1865,7 @@ export default function XrpYieldRankingPage() {
               {WRAPPED_TOKENS.map((t) => (
                 <article className="rp-gloss-card" key={t.token}>
                   <div className="rp-gloss-head">
-                    <AssetIcon asset={t.icon} size={26} />
+                    <AssetIcon asset={t.icon} size={26} decorative />
                     <span className="rp-gloss-tok">{nice(t.token)}</span>
                     <span className="rp-gloss-chain">{t.chain}</span>
                   </div>
@@ -2316,7 +2351,7 @@ function TokenIcons({ symbol }: { symbol: string }) {
           className="rp-tok"
           style={{ marginLeft: i ? -9 : 0, zIndex: toks.length - i }}
         >
-          <AssetIcon asset={t} size={24} />
+          <AssetIcon asset={t} size={24} decorative />
         </span>
       ))}
     </span>

@@ -26,7 +26,7 @@ export function Header() {
         <nav className="navlinks">
           {navItems.map((item) => (
             <Link key={item.label} href={item.href} className="nav-asset-link">
-              <AssetIcon asset={item.asset} size={16} />
+              <AssetIcon asset={item.asset} size={16} decorative />
               <span>{item.label}</span>
             </Link>
           ))}

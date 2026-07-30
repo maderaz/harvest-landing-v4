@@ -82,11 +82,31 @@ export function DiscoverButton({
 
   return (
     <>
-      <button
-        type="button"
+      {/* A real anchor, not a button.
+          The visible control used to be a <button> so the click could be
+          intercepted by the leave-site prompt. That worked for a visitor with
+          JavaScript and for nobody else: the destination lived only in the
+          component's props, so the built HTML carried 22 outbound
+          destinations and zero links. Googlebot saw no link, Ahrefs' link
+          graph saw no link, an LLM reading the HTML saw no link, and a
+          visitor without JavaScript got a dead control. The page declared it
+          pointed outward in its JSON-LD while the document did not.
+          Now it is an <a href> that the click handler intercepts, so the
+          prompt still appears for anyone with JavaScript and the link is real
+          for everyone and everything else. Modified clicks are deliberately
+          left alone so cmd-click and middle-click behave like a normal link.
+          rel keeps nofollow per the site's outbound policy. */}
+      <a
         className="rp-discover"
+        href={outHref}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
         aria-label={label}
-        onClick={() => {
+        onClick={(e) => {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+            return;
+          }
+          e.preventDefault();
           track("open");
           setOpen(true);
         }}
@@ -103,7 +123,7 @@ export function DiscoverButton({
             />
           </svg>
         </span>
-      </button>
+      </a>
       {open && (
         <div
           className="rp-modal-backdrop"
