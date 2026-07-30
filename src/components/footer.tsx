@@ -178,7 +178,13 @@ export async function Footer() {
               data is collected and calculated.
             </p>
             <div className="foot-stats">
-              <span>{formatTVL(totalTvl)} tracked TVL</span>
+              {/* "tracked TVL" was ambiguous and, on the report pages,
+                  contradictory: the footer counts TVL in Harvest vaults while a
+                  report counts TVL across the third-party venues it covers. The
+                  two figures differ by an order of magnitude and both used the
+                  word "tracked", so a parser reading one page saw the site
+                  state two different totals. Name the measured set instead. */}
+              <span>{formatTVL(totalTvl)} in Harvest vaults</span>
               <span className="foot-stats-sep">·</span>
               <span>{vaults.length} active strategies</span>
               <span className="foot-stats-sep">·</span>
