@@ -8,6 +8,9 @@
    on [aria-labelledby="*-title"]. No section on this page is named *-title. */
 
 .uni-home-test.rl-page {
+  /* The input and the button under it are one stacked pair, so they share a
+     height rather than each sizing itself off its own padding and type. */
+  --rl-control-h: 62px;
   /* Body copy on this page ran grey enough to read as disabled text. The house
      tokens are set for a hero on gold, where ink at 62% still has contrast to
      spare; on the white sections that make up most of this page the same value
@@ -197,32 +200,28 @@
 }
 
 /* The outline badge. Same shape as the reference's Badge variant="outline":
-   pill, hairline border, small semibold type. */
+   pill, hairline border, small semibold type. The asset mark sits inside it,
+   sized to the badge's own line box, so the pill keeps its height and the
+   left padding tightens to sit flush around a round icon. */
 .uni-home-test .rl-eyebrow-badge {
   display: inline-flex;
+  align-self: flex-start;
   align-items: center;
+  gap: 6px;
   border: 1px solid var(--uni-line, #dddee0);
   border-radius: var(--uni-radius-pill, 999px);
-  padding: 3px 11px;
+  padding: 3px 12px 3px 4px;
   font-size: 12.5px;
   font-weight: 600;
   line-height: 18px;
   color: var(--uni-ink);
 }
-
-/* The asset mark above the heading, matching .rp-hero-tokens on the XRP
-   report: small, ringed in white, on its own line. align-self keeps it at its
-   own width; the flex column it sits in would otherwise stretch the ring
-   across the whole card. */
-.uni-home-test .rl-mark {
-  display: inline-flex;
-  align-self: flex-start;
+.uni-home-test .rl-eyebrow-badge img,
+.uni-home-test .rl-eyebrow-badge svg {
+  flex: none;
   border-radius: 50%;
-  box-shadow: 0 0 0 1.5px #fff;
-  margin: 0 0 2px;
+  display: block;
 }
-.uni-home-test .rl-mark img,
-.uni-home-test .rl-mark svg { border-radius: 50%; display: block; }
 
 .uni-home-test .rl-calc-title {
   margin: 0;
@@ -368,6 +367,7 @@
 .uni-home-test .rl-calc-field {
   display: flex;
   align-items: center;
+  min-height: var(--rl-control-h);
   gap: 8px;
   background: var(--uni-card, #f1f5f4);
   border: 1.5px solid var(--rl-hair);
@@ -384,7 +384,10 @@
   border: 0;
   outline: none;
   background: transparent;
-  padding: 14px 0;
+  /* No vertical padding: the field's height comes from --rl-control-h alone,
+     so it and the button underneath cannot drift apart. */
+  padding: 0;
+  line-height: 1.3;
   font: inherit;
   font-size: 22px;
   font-weight: 700;
@@ -405,7 +408,7 @@
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  margin: 10px 0 0;
+  margin: 12px 0 0;
   font-size: 12.5px;
   line-height: 18px;
   color: var(--uni-ink-2);
@@ -486,17 +489,22 @@
 
 /* Primary action. The result is gated behind it deliberately: a rank that
    appears while the user is still typing reads as a guess. */
+/* Sized and shaped to the input above it: same height, same corner radius,
+   same full width. The two read as one control the eye moves straight down. */
 .uni-home-test .rl-calc-go {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
-  margin-top: 16px;
+  min-height: var(--rl-control-h);
+  margin-top: 10px;
   border: 0;
-  border-radius: var(--uni-radius-pill, 999px);
+  border-radius: var(--uni-radius-sm, 14px);
   background: var(--uni-ink);
   color: var(--uni-bg, #fff);
-  padding: 13px 20px;
+  padding: 0 20px;
   font: inherit;
-  font-size: 15.5px;
+  font-size: 16.5px;
   font-weight: 700;
   cursor: pointer;
   transition: opacity 0.15s ease;

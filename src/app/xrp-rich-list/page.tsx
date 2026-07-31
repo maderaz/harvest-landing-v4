@@ -350,15 +350,14 @@ export default function XrpRichListPage() {
       <section className="rl-section rl-feature" aria-labelledby="calculator-title">
         <div className="rl-feature-card">
           <div className="rl-feature-copy">
-            <div>
-              <span className="rl-eyebrow-badge">Calculator</span>
-            </div>
+            {/* The badge sits inside the heading block rather than above it,
+                so the flex gap between the two is the block's own 10px rather
+                than the column's 26px. The mark lives in the badge, sized to
+                its line box. */}
             <div className="rl-feature-head">
-              {/* The mark sits on its own line above the heading, the way
-                  .rp-hero-tokens does on the XRP report (report.css:811),
-                  rather than inline beside the first word. */}
-              <span className="rl-mark" aria-hidden="true">
-                <AssetIcon asset="XRP" size={26} decorative />
+              <span className="rl-eyebrow-badge">
+                <AssetIcon asset="XRP" size={16} decorative />
+                Calculator
               </span>
               <h2 id="calculator-title" className="rl-calc-title">
                 The XRP

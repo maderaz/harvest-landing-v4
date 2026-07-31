@@ -187,6 +187,20 @@ export function PercentileCalculator({
           XRP
         </span>
       </div>
+      <button
+        type="button"
+        className="rl-calc-go"
+        onClick={startCheck}
+        // Only while a check is running, which is the one moment pressing it
+        // genuinely does nothing. It is NOT set for an empty field: assistive
+        // tech and automation both treat aria-disabled as non-interactive, and
+        // with no balance typed the press has a job to do, so marking it
+        // disabled then would be a lie that also blocks the behaviour.
+        aria-disabled={phase === "checking"}
+      >
+        {phase === "checking" ? "Checking" : phase === "done" ? "Check again" : "Start check"}
+      </button>
+
       <p className="rl-calc-privacy" id="rl-calc-privacy">
         <svg
           className="rl-lock"
@@ -211,20 +225,6 @@ export function PercentileCalculator({
           and nothing you type is sent anywhere.
         </span>
       </p>
-
-      <button
-        type="button"
-        className="rl-calc-go"
-        onClick={startCheck}
-        // Only while a check is running, which is the one moment pressing it
-        // genuinely does nothing. It is NOT set for an empty field: assistive
-        // tech and automation both treat aria-disabled as non-interactive, and
-        // with no balance typed the press has a job to do, so marking it
-        // disabled then would be a lie that also blocks the behaviour.
-        aria-disabled={phase === "checking"}
-      >
-        {phase === "checking" ? "Checking" : phase === "done" ? "Check again" : "Start check"}
-      </button>
 
       <div className="rl-calc-out" role="status" aria-live="polite">
         {phase === "checking" ? (
