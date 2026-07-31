@@ -82,6 +82,9 @@ interface XrpPool {
   source?: string;
   // Set when the shown rate excludes an offchain reward we can't read onchain.
   offchainRewardNote?: string | null;
+  // Caveat on the rate itself, e.g. a share-price vault that lost value over
+  // the measured window and so prints a negative realized rate.
+  rateNote?: string | null;
   // Daily series for the charts. `apy` feeds the rate charts; `tvl` and `pps`
   // (added by the TVL backfill) feed the landscape aggregate and are optional so
   // older snapshots still type-check.
@@ -419,6 +422,44 @@ export default function XrpYieldRankingPage() {
   const sHi = singleRates.length ? Math.max(...singleRates) : 0;
   const sSorted = [...singleRates].sort((a, b) => a - b);
   const sMedian = sSorted.length ? sSorted[Math.floor(sSorted.length / 2)] : stats.medianApy;
+  // Dataset provenance for the JSON-LD: the venues whose own contracts and API
+  // the pipeline reads, plus Flare for the FTSOv2 oracle that prices XRP. The
+  // `app.` subdomain is stripped so the credit points at the venue rather than
+  // a deep link into its dapp.
+  const venueSources = [
+    ...new Set(
+      pools
+        .map((p) => {
+          try {
+            return new URL(p.llamaUrl).origin.replace("://app.", "://");
+          } catch {
+            return null;
+          }
+        })
+        .filter((v): v is string => v != null),
+    ),
+  ]
+    .sort()
+    .concat("https://flare.network");
+
+  // Rows the methodology has to caveat as not-a-live-read: either no public
+  // feed at all, or a committed snapshot standing in for one. Zero of these as
+  // of the move to direct contract reads, so the clause only prints if a venue
+  // regresses to a snapshot later.
+  const nonLiveRows = pools.filter(
+    (p) => p.rateNa || (p.source !== "onchain" && !/^Spectra/.test(p.platform)),
+  ).length;
+
+  // A share-price vault can hold a negative realized rate when its price per
+  // share fell inside the measured window. The headline range then opens below
+  // zero, which reads as a broken feed unless the page names the product and
+  // says what happened, so the worst such row gets its own key finding.
+  const negRow =
+    pools
+      .filter((p) => !p.rateNa && p.rateNote && (histRate(p) ?? 0) < 0)
+      .slice()
+      .sort((a, b) => (histRate(a) ?? 0) - (histRate(b) ?? 0))[0] ?? null;
+
   const topDualPool =
     duals
       .filter((p) => !p.rateNa)
@@ -905,12 +946,9 @@ export default function XrpYieldRankingPage() {
               // republishing - the reason the onchain path was built. Crediting
               // it here contradicted the Method section ("No third-party yield
               // aggregator is used") on the exact surface answer engines read.
-              sources: [
-                "https://spectra.finance",
-                "https://aerodrome.finance",
-                "https://moonwell.fi",
-                "https://flare.network",
-              ],
+              // Derived from the ranked rows so a venue added or dropped moves
+              // the credit with it, rather than the list drifting out of date.
+              sources: venueSources,
               distribution: [
                 {
                   format: "application/json",
@@ -1005,6 +1043,16 @@ export default function XrpYieldRankingPage() {
                 <strong>{pct(sLo)}</strong> to <strong>{pct(sHi)}</strong> with
                 a median of <strong>{pct(sMedian)}</strong> as of {updated}.
               </li>
+              {negRow ? (
+                <li>
+                  The {negRow.detail?.split(" · ")[0] ?? assetHead(negRow)}{" "}
+                  vault on {negRow.platform} carried a 30-day rate of{" "}
+                  <strong>{pct(histRate(negRow))}</strong> as of {updated},
+                  because its price per share on that date sat below where it
+                  stood 30 days earlier, leaving a holder across the window with
+                  less {nice(negRow.symbol)} than they put in.
+                </li>
+              ) : null}
               {topPt ? (
                 <li>
                   Fixed-rate Principal Tokens on {topPt.platform} offered a
@@ -2174,9 +2222,15 @@ export default function XrpYieldRankingPage() {
                 (lending supply rates, vault share prices, pool reserves and
                 gauge emissions), priced with onchain oracles (Flare&rsquo;s
                 FTSOv2 for XRP, Chainlink on Base). Spectra&rsquo;s own markets
-                come from the Spectra API. A small number of vaults publish no
-                machine-readable rate feed; those carry their last verified
-                figures rather than a live read. No third-party yield aggregator is used.
+                come from the Spectra API.{" "}
+                {nonLiveRows > 0 ? (
+                  <>
+                    {nonLiveRows} of the {stats.venues} products publish no
+                    machine-readable rate feed as of {updated}; those carry
+                    their last verified figures rather than a live read.{" "}
+                  </>
+                ) : null}
+                No third-party yield aggregator is used.
               </span>
             </dd>
             <dt>Ranking</dt>
@@ -2398,7 +2452,9 @@ function RankTable({ rows }: { rows: XrpPool[] }) {
                 title={
                   p.rateNa
                     ? "No public rate feed yet"
-                    : p.offchainRewardNote
+                    : p.rateNote
+                      ? p.rateNote
+                      : p.offchainRewardNote
                       ? p.offchainRewardNote
                       : p.variance === "high"
                         ? "Reward-driven rate on a small pool; varies week to week"
