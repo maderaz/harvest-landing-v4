@@ -41,25 +41,46 @@
 }
 .uni-home-test .rl-page-section { padding: 52px 0 44px; }
 
-/* The lead-in under an H2 and above an artifact. Matches .rp-article p, which
-   is what the report uses for the same job. */
-.uni-home-test .rl-section-intro {
-  font-size: 15.5px;
-  line-height: 1.72;
-  color: var(--uni-ink-2);
-  margin: 10px 0 0;
-  max-width: 78ch;
+/* ---- one paragraph style -----------------------------------------------
+   Every paragraph of prose on this page is set the same way: the FAQ answer's
+   treatment, applied everywhere. Before this the page carried five sizes for
+   the same job (a 19px lead, a 15.5px section lead-in, a 15px note, a 16px
+   pull quote, a 17.5px calculator lead), which read as five kinds of text
+   rather than one voice.
+
+   Enumerated rather than written as `.uni-home-content p`, because that would
+   also catch the chart card's description, the filter readout and the
+   checklist items, which are interface labels rather than prose. */
+.uni-home-test.rp-page.rl-page .rp-lead,
+.uni-home-test.rp-page.rl-page .rl-section-intro,
+.uni-home-test.rp-page.rl-page .rl-note,
+.uni-home-test.rp-page.rl-page .rl-highlight,
+.uni-home-test.rp-page.rl-page .rl-calc-pitch-sub,
+.uni-home-test.rp-page.rl-page .rl-faq-desc,
+.uni-home-test.rp-page.rl-page .rl-faq-a,
+.uni-home-test.rp-page.rl-page .rp-article p,
+.uni-home-test.rp-page.rl-page .rp-source-note,
+.uni-home-test.rp-page.rl-page .rl-bridge p,
+.uni-home-test.rp-page.rl-page .rl-method dd {
+  font-size: 16.5px;
+  line-height: 1.7;
+  color: var(--uni-ink-3);
+  max-width: 72ch;
+}
+/* Bold inside a paragraph stays at full ink. The FAQ answers carry no bold,
+   so the reference does not settle this; muted bold on muted body would make
+   the emphasis invisible, which is the one thing bold exists to do. */
+.uni-home-test.rp-page.rl-page .rp-lead strong,
+.uni-home-test.rp-page.rl-page .rl-section-intro strong,
+.uni-home-test.rp-page.rl-page .rl-note strong,
+.uni-home-test.rp-page.rl-page .rl-highlight strong,
+.uni-home-test.rp-page.rl-page .rp-article p strong,
+.uni-home-test.rp-page.rl-page .rl-bridge p strong {
+  color: var(--uni-ink);
 }
 
-/* The note under an artifact. Same treatment as .rp-source-note so the two
-   pages annotate a table the same way. */
-.uni-home-test .rl-note {
-  margin: 22px 0 0;
-  font-size: 15px;
-  line-height: 1.55;
-  color: var(--uni-ink-3);
-  max-width: 80ch;
-}
+.uni-home-test .rl-section-intro { margin: 12px 0 0; }
+.uni-home-test .rl-note { margin: 22px 0 0; }
 
 /* home.css caps .uni-home-hero-inner at 60% because the homepage hero floats a
    preview card in the space to its right. Neither hero band here does, so the
@@ -239,14 +260,7 @@
   letter-spacing: -0.022em;
   color: var(--uni-ink);
 }
-.uni-home-test .rl-calc-pitch-sub {
-  margin: 0;
-  font-size: 17.5px;
-  line-height: 1.62;
-  letter-spacing: -0.005em;
-  color: var(--uni-ink-2);
-  max-width: 54ch;
-}
+.uni-home-test .rl-calc-pitch-sub { margin: 0; }
 
 /* The checklist. One column, because the calculator already owns the other
    half of the card; the reference goes three-across only when its right
@@ -671,13 +685,11 @@
 }
 @media (min-width: 768px) {
   .uni-home-test .rl-faq-head { text-align: center; }
+  /* The shared 72ch cap would pin the description to the left of the centred
+     header block, so it centres itself inside it. */
+  .uni-home-test.rp-page.rl-page .rl-faq-desc { margin-left: auto; margin-right: auto; }
 }
-.uni-home-test .rl-faq-desc {
-  margin: 12px 0 0;
-  font-size: 17px;
-  line-height: 1.6;
-  color: var(--uni-ink-3);
-}
+.uni-home-test .rl-faq-desc { margin: 12px 0 0; }
 
 .uni-home-test .rl-faq {
   width: 100%;
@@ -712,14 +724,7 @@
 }
 .uni-home-test .rl-faq-item[open] .rl-faq-chev { transform: rotate(180deg); }
 
-.uni-home-test .rl-faq-a {
-  margin: 0;
-  padding: 0 0 22px;
-  font-size: 16.5px;
-  line-height: 1.7;
-  color: var(--uni-ink-3);
-  max-width: 72ch;
-}
+.uni-home-test .rl-faq-a { margin: 0; padding: 0 0 22px; }
 
 @media (prefers-reduced-motion: reduce) {
   .uni-home-test .rl-faq-chev,
@@ -728,9 +733,8 @@
 @media (max-width: 640px) {
   .uni-home-test .rl-faq-section { padding: 44px 0 40px; }
   .uni-home-test .rl-faq-head { margin-bottom: 30px; }
-  .uni-home-test .rl-faq-desc { font-size: 15px; }
   .uni-home-test .rl-faq-q { font-size: 16px; line-height: 23px; padding: 17px 0; }
-  .uni-home-test .rl-faq-a { font-size: 15px; padding-bottom: 18px; }
+  .uni-home-test .rl-faq-a { padding-bottom: 18px; }
 }
 
 /* ---- chart card --------------------------------------------------------
@@ -945,10 +949,6 @@
   border-left: 3px solid var(--uni-gold, #ffb936);
   background: var(--uni-gold-bg, #fff5d9);
   border-radius: 0 var(--uni-radius-sm, 14px) var(--uni-radius-sm, 14px) 0;
-  font-size: 16px;
-  line-height: 1.6;
-  color: var(--uni-ink);
-  max-width: 82ch;
 }
 
 /* ---- who-holds-what breakdown ------------------------------------------
@@ -1201,6 +1201,25 @@
   }
   .uni-home-test .rl-breakdown-head > span:nth-child(3),
   .uni-home-test .rl-breakdown-row > span:nth-child(3) { display: none; }
+}
+
+/* The phone step, applied to the same list, so paragraphs and FAQ answers
+   stay identical at every width rather than only on desktop. */
+@media (max-width: 640px) {
+  .uni-home-test.rp-page.rl-page .rp-lead,
+  .uni-home-test.rp-page.rl-page .rl-section-intro,
+  .uni-home-test.rp-page.rl-page .rl-note,
+  .uni-home-test.rp-page.rl-page .rl-highlight,
+  .uni-home-test.rp-page.rl-page .rl-calc-pitch-sub,
+  .uni-home-test.rp-page.rl-page .rl-faq-desc,
+  .uni-home-test.rp-page.rl-page .rl-faq-a,
+  .uni-home-test.rp-page.rl-page .rp-article p,
+  .uni-home-test.rp-page.rl-page .rp-source-note,
+  .uni-home-test.rp-page.rl-page .rl-bridge p,
+  .uni-home-test.rp-page.rl-page .rl-method dd {
+    font-size: 15px;
+    line-height: 1.65;
+  }
 }
 
 /* ---- mobile ------------------------------------------------------------
