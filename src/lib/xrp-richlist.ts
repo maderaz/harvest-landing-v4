@@ -48,6 +48,7 @@ export interface TopAccount {
   // failed, in which case the label is dropped rather than shown stale.
   label?: {
     name: string;
+    type?: string;
     evidence: "account-domain" | "xrpl-toml" | "published" | "third-party";
     evidenceUrl: string | null;
     attribution: string | null;
@@ -108,6 +109,29 @@ export interface RichList {
   top: TopAccount[];
   topLabelled: number;
   topWithEscrow?: number;
+  // XRP/USD from Flare's FTSOv2, the same oracle the XRP yield report prices
+  // with, so the two pages cannot disagree about what an XRP was worth.
+  xrpUsd?: number | null;
+  xrpUsdSource?: string | null;
+  // Concentration read with and without exchange wallets, plus the largest
+  // holding attributed to a person. Absent on snapshots written before it.
+  concentration?: {
+    top100Xrp: number;
+    top100PctOfXrp: number;
+    exchangeAccounts: number;
+    exchangeXrp: number;
+    exExchangeXrp: number;
+    exExchangePctOfXrp: number;
+    largestIndividual: {
+      rank: number;
+      address: string;
+      name: string;
+      xrp: number;
+      attribution: string | null;
+    } | null;
+    labelledAccounts: number;
+    basis: string;
+  } | null;
   yieldComparison: {
     receiptTokenHolders: number;
     products: number;

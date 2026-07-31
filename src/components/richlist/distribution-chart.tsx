@@ -23,12 +23,16 @@ export interface Band {
   pctOfXrp: number;
 }
 
+// Sized so the type inside the SVG lands at the page's own body size once the
+// chart is scaled to its container. The viewBox is 720 wide against roughly
+// 930px of column on desktop, a factor of about 1.29, so a 12.5-unit tick
+// renders at the 16px the report uses for body copy.
 const W = 720;
-const H = 300;
+const H = 340;
 const PAD_L = 8;
 const PAD_R = 8;
-const PAD_T = 18;
-const PAD_B = 46;
+const PAD_T = 22;
+const PAD_B = 86;
 
 const xrpShort = (n: number): string => {
   if (n >= 1_000_000_000) return `${n / 1_000_000_000}bn`;
@@ -75,6 +79,8 @@ export function DistributionChart({
   // small bands visible without overstating them.
   const barH = (n: number) => Math.max(2, Math.sqrt(n / maxAccounts) * plotH);
 
+  const axisY = PAD_T + plotH;
+
   const caption =
     `Funded XRP Ledger accounts by balance band as of ${snapshotDate}. ` +
     rows
@@ -118,7 +124,7 @@ export function DistributionChart({
               </text>
               <text
                 x={x + barW / 2}
-                y={PAD_T + plotH + 17}
+                y={axisY + 20}
                 textAnchor="middle"
                 className="rl-chart-tick"
               >
@@ -126,7 +132,7 @@ export function DistributionChart({
               </text>
               <text
                 x={x + barW / 2}
-                y={PAD_T + plotH + 32}
+                y={axisY + 36}
                 textAnchor="middle"
                 className="rl-chart-tick rl-chart-tick-dim"
               >
@@ -137,16 +143,27 @@ export function DistributionChart({
         })}
         <line
           x1={PAD_L}
-          y1={PAD_T + plotH + 0.5}
+          y1={axisY + 0.5}
           x2={W - PAD_R}
-          y2={PAD_T + plotH + 0.5}
+          y2={axisY + 0.5}
           className="rl-chart-axis"
         />
+        {/* Axis titles. Without them the two rows of numbers under each bar are
+            unlabelled, and a reader has to guess whether "1-10" is a count, a
+            rank or a balance. */}
+        <text x={W / 2} y={axisY + 64} textAnchor="middle" className="rl-chart-axis-title">
+          XRP held in wallet
+        </text>
+        <text x={W / 2} y={axisY + 79} textAnchor="middle" className="rl-chart-axis-sub">
+          smaller line: that band&rsquo;s share of all funded accounts
+        </text>
       </svg>
       <figcaption className="rl-chart-cap">
-        Every one of the {totalAccounts.toLocaleString("en-US")} funded XRP
-        Ledger accounts sits in exactly one band, measured as of {snapshotDate}.
-        Bar heights use a square-root scale so the smallest bands stay visible.
+        Each bar is one balance band, and the number above it is how many funded
+        XRP Ledger accounts held an amount inside that band as of {snapshotDate}.
+        Every one of the {totalAccounts.toLocaleString("en-US")} funded accounts
+        sits in exactly one band. Bar heights use a square-root scale so the
+        smallest bands stay visible next to the largest.
       </figcaption>
     </figure>
   );

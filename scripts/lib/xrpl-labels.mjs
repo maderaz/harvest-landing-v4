@@ -32,6 +32,14 @@ import { createHash } from "node:crypto";
 
 export const EVIDENCE_TIERS = ["account-domain", "xrpl-toml", "published", "third-party"];
 
+// What kind of holder the named entity is. This is a statement about the
+// entity, not about who controls the address, so it carries none of the risk
+// the name itself does. The page needs it for two things a plain name cannot
+// answer: filtering exchange wallets out of the ranking, and reporting the
+// largest holding attributed to a person rather than to a venue holding
+// customer balances.
+export const HOLDER_TYPES = ["exchange", "company", "protocol", "individual", "unknown"];
+
 // A tier that needs a human to have looked at something, and therefore a date
 // on which they did. The two machine-checkable tiers re-verify themselves.
 const NEEDS_URL = new Set(["published", "third-party"]);
@@ -137,6 +145,12 @@ export function validateLabels(doc) {
           problem: `evidence "${l.evidence}" requires a verifiedOn date (YYYY-MM-DD)`,
         });
       }
+    }
+    if (l.type != null && !HOLDER_TYPES.includes(l.type)) {
+      findings.push({
+        address: where,
+        problem: `type "${l.type}" is not one of ${HOLDER_TYPES.join(", ")}`,
+      });
     }
     if (l.evidence === "third-party" && !l.attribution) {
       findings.push({

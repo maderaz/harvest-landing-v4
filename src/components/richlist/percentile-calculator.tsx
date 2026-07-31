@@ -18,7 +18,7 @@
 // 10%". Most XRPL accounts hold very little, so most people place higher than
 // they expect, and that surprise is what gets shared.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 export interface LadderPoint {
   xrp: number;
@@ -64,6 +64,19 @@ function topPctLabel(topPct: number): string {
   return `top ${Math.round(topPct)}%`;
 }
 
+// The lookup itself is a binary search over a few hundred points and returns
+// in well under a millisecond. The check is paced anyway, because a rank that
+// appears the instant a digit is typed reads as a guess, and because the page
+// is competing on being a tool rather than a table. The stages below name what
+// the ladder actually represents at each step, so the wait describes real work
+// rather than inventing some.
+const CHECK_MS = 3000;
+const STAGES = [
+  "Reading the ledger snapshot",
+  "Placing your balance in the distribution",
+  "Counting accounts above and below",
+];
+
 export function PercentileCalculator({
   ladder,
   accounts,
@@ -75,6 +88,21 @@ export function PercentileCalculator({
 }) {
   const [raw, setRaw] = useState("");
   const [copied, setCopied] = useState(false);
+  const [phase, setPhase] = useState<"idle" | "checking" | "done">("idle");
+  const [stage, setStage] = useState(0);
+  // Held so an unmount or a restart cannot leave a timer writing into a
+  // component that is no longer on the page.
+  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => () => timers.current.forEach(clearTimeout), []);
+
+  const reset = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setPhase("idle");
+    setStage(0);
+    setCopied(false);
+  };
 
   const parsed = useMemo(() => {
     // Accept "12,500", "12 500" and "12500.5". Rejecting a thousands separator
@@ -92,6 +120,19 @@ export function PercentileCalculator({
     const topPct = (above / accounts) * 100;
     return { above, below, topPct };
   }, [parsed, ladder, accounts]);
+
+  const startCheck = () => {
+    if (parsed == null) return;
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+    setPhase("checking");
+    setStage(0);
+    const step = CHECK_MS / STAGES.length;
+    for (let i = 1; i < STAGES.length; i++) {
+      timers.current.push(setTimeout(() => setStage(i), step * i));
+    }
+    timers.current.push(setTimeout(() => setPhase("done"), CHECK_MS));
+  };
 
   const shareText = result
     ? `${fmt(parsed ?? 0)} XRP puts you in the ${topPctLabel(result.topPct)} of XRP Ledger accounts, ` +
@@ -120,7 +161,10 @@ export function PercentileCalculator({
           value={raw}
           onChange={(e) => {
             setRaw(e.target.value);
-            setCopied(false);
+            reset();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && parsed != null && phase !== "checking") startCheck();
           }}
           aria-describedby="rl-calc-privacy"
         />
@@ -133,8 +177,30 @@ export function PercentileCalculator({
         your browser and nothing you type is sent anywhere.
       </p>
 
+      <button
+        type="button"
+        className="rl-calc-go"
+        onClick={startCheck}
+        disabled={parsed == null || phase === "checking"}
+      >
+        {phase === "checking" ? "Checking" : phase === "done" ? "Check again" : "Start check"}
+      </button>
+
       <div className="rl-calc-out" role="status" aria-live="polite">
-        {result ? (
+        {phase === "checking" ? (
+          <div className="rl-check">
+            <div className="rl-check-bar" aria-hidden="true">
+              <span style={{ animationDuration: `${CHECK_MS}ms` }} />
+            </div>
+            <ol className="rl-check-stages">
+              {STAGES.map((label, i) => (
+                <li key={label} className={i <= stage ? "is-on" : undefined}>
+                  {label}
+                </li>
+              ))}
+            </ol>
+          </div>
+        ) : phase === "done" && result ? (
           <>
             <p className="rl-calc-rank">
               You are in the <strong>{topPctLabel(result.topPct)}</strong>.
@@ -166,8 +232,10 @@ export function PercentileCalculator({
         ) : (
           <p className="rl-calc-idle">
             {raw.trim() === ""
-              ? "Your rank appears here."
-              : "Enter a balance greater than zero."}
+              ? "Enter a balance, then start the check."
+              : parsed == null
+                ? "Enter a balance greater than zero."
+                : "Ready. Start the check to see where this balance ranks."}
           </p>
         )}
       </div>

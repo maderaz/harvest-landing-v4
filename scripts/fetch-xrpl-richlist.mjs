@@ -33,6 +33,7 @@ import {
 } from "./lib/xrpl.mjs";
 import { Distribution, BUCKETS_PER_DECADE } from "./lib/richlist-distribution.mjs";
 import { loadLabels, verifyAgainstAccount } from "./lib/xrpl-labels.mjs";
+import { xrpUsd } from "./lib/xrp-onchain-adapters.mjs";
 import { freezeStampIfUnchanged } from "./lib/snapshot-stamp.mjs";
 
 const ROOT = process.cwd();
@@ -85,6 +86,53 @@ function loadCheckpoint(dist) {
   return c;
 }
 
+// Concentration read three ways. The first is the number every rich list
+// quotes. The second is the one that means something: an exchange wallet is
+// thousands of customers in one row, so counting it as concentration overstates
+// how few hands hold XRP. The third is the largest holding attributed to a
+// person rather than to a venue or a treasury.
+function concentrationOf(rows, totalXrp) {
+  const sum = (r) => r.reduce((a, t) => a + t.xrp, 0);
+  const share = (r) => (totalXrp ? Math.round((sum(r) / totalXrp) * 1e4) / 1e2 : 0);
+  const isExchange = (t) => t.label?.type === "exchange";
+  const nonExchange = rows.filter((t) => !isExchange(t));
+  const individuals = rows.filter((t) => t.label?.type === "individual");
+  return {
+    top100Xrp: Math.round(sum(rows)),
+    top100PctOfXrp: share(rows),
+    exchangeAccounts: rows.length - nonExchange.length,
+    exchangeXrp: Math.round(sum(rows.filter(isExchange))),
+    exExchangeXrp: Math.round(sum(nonExchange)),
+    exExchangePctOfXrp: share(nonExchange),
+    largestIndividual: individuals.length
+      ? {
+          rank: individuals[0].rank,
+          address: individuals[0].address,
+          name: individuals[0].label.name,
+          xrp: individuals[0].xrp,
+          attribution: individuals[0].label.attribution ?? null,
+        }
+      : null,
+    labelledAccounts: rows.filter((t) => t.label).length,
+    basis:
+      "Shares are of all XRP in funded accounts, spendable and escrowed together. An exchange wallet holds balances for many customers, so excluding those is the closer read on how concentrated ownership is.",
+  };
+}
+
+// XRP/USD from Flare's FTSOv2, the same oracle the XRP yield report prices
+// every venue with. Read here rather than from a price API so the dollar
+// column on this page and the TVL figures on that one cannot disagree about
+// what an XRP was worth. A failure leaves the column out rather than guessing.
+async function readXrpUsd() {
+  try {
+    const p = await xrpUsd();
+    return Number.isFinite(p) && p > 0.05 && p < 100 ? Math.round(p * 1e6) / 1e6 : null;
+  } catch (e) {
+    console.error("[richlist] XRP/USD unavailable:", e?.message ?? e);
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------- walk
 
 if (ENRICH_ONLY) {
@@ -93,6 +141,10 @@ if (ENRICH_ONLY) {
   cur.top = enriched;
   cur.topLabelled = enriched.filter((t) => t.label).length;
   cur.topWithEscrow = enriched.filter((t) => t.escrows > 0).length;
+  cur.concentration = concentrationOf(enriched, cur.xrpHeld);
+  const p = await readXrpUsd();
+  cur.xrpUsd = p;
+  cur.xrpUsdSource = p == null ? null : "Flare FTSOv2 XRP/USD oracle";
   writeFileSync(OUT_FILE, JSON.stringify(cur, null, 2) + "\n");
   console.error(
     `[richlist] enriched ${enriched.length} top accounts: ${cur.topLabelled} labelled, ` +
@@ -243,6 +295,7 @@ async function enrichTop(ledgerIdx, list) {
         label && check.ok
           ? {
               name: label.name,
+              type: label.type ?? "unknown",
               evidence: label.evidence,
               evidenceUrl: label.evidenceUrl ?? null,
               attribution: label.attribution ?? null,
@@ -314,6 +367,9 @@ const top = await enrichTop(
 const labelled = top.filter((t) => t.label).length;
 const withEscrow = top.filter((t) => t.escrows > 0).length;
 
+const concentration = concentrationOf(top, dist.sumXrp);
+const priceUsd = await readXrpUsd();
+
 const payload = {
   generatedAt: new Date().toISOString(),
   source: "xrpl-ledger-walk",
@@ -360,6 +416,9 @@ const payload = {
   top,
   topLabelled: labelled,
   topWithEscrow: withEscrow,
+  concentration,
+  xrpUsd: priceUsd,
+  xrpUsdSource: priceUsd == null ? null : "Flare FTSOv2 XRP/USD oracle",
   yieldComparison: yieldHolders(),
 };
 

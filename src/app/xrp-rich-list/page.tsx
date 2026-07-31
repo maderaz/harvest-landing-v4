@@ -2,8 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { SITE_AUTHOR } from "@/lib/author";
+import { AssetIcon } from "@/components/token-icons";
 import { breadcrumbSchema, faqPageSchema, reportDatasetSchema } from "@/lib/jsonld";
 import { PercentileCalculator } from "@/components/richlist/percentile-calculator";
+import { TopAccountsTable } from "@/components/richlist/top-accounts-table";
 import {
   DistributionChart,
   DistributionTable,
@@ -17,7 +19,6 @@ import {
   pctLabel,
   utcDate,
   utcStamp,
-  evidenceLabel,
 } from "@/lib/xrp-richlist";
 import "../_styles/home.css";
 import "../_styles/report.css";
@@ -115,7 +116,6 @@ export default function XrpRichListPage() {
   // across the whole top 100.
   const labelled = data.top.filter((t) => t.label);
   const selfDeclared = data.top.filter((t) => t.domain);
-  const withEscrow = data.top.filter((t) => (t.escrows ?? 0) > 0);
 
   // Needs two distinct observation days before a movement sentence means
   // anything. One walk compared against itself reports no change and reads as
@@ -288,17 +288,51 @@ export default function XrpRichListPage() {
           </ul>
         </div>
 
-        <div className="rl-hero-aside">
+        <div className="rl-hero-mark" aria-hidden="true">
+          <AssetIcon asset="XRP" size={220} decorative priority />
+        </div>
+        </div>
+      </section>
+
+      {/* The calculator gets its own band rather than a corner of the hero.
+          It is the reason a large part of this page's traffic arrives, and a
+          form squeezed beside five bullet points reads as a sidebar widget
+          rather than as the tool the page is. */}
+      <section className="uni-home-hero rl-calc-band" aria-labelledby="calculator-title">
+        <div className="uni-home-hero-inner rl-calc-grid">
+          <div className="rl-calc-pitch">
+            <h2 id="calculator-title" className="uni-home-h1 rl-calc-title">
+              The XRP Rich List Calculator
+            </h2>
+            <p className="rl-calc-pitch-sub">
+              Type a balance and see the position it holds among every funded
+              account on the XRP Ledger as of {snapDate}. Most people place
+              higher than they expect, because as of {snapDate}{" "}
+              {pctLabel(
+                data.bands
+                  .filter((b) => b.max != null && b.max <= 1_000)
+                  .reduce((a, b) => a + b.pctOfAccounts, 0),
+              )}{" "}
+              of funded accounts held under 1,000 XRP on that date.
+            </p>
+            <ul className="rl-calc-points">
+              <li>No wallet connection and no address, ever.</li>
+              <li>Runs in your browser, so nothing you type leaves it.</li>
+              <li>
+                Measured against all {count(data.accounts)} funded accounts as of{" "}
+                {snapDate}.
+              </li>
+            </ul>
+          </div>
           <PercentileCalculator
             ladder={data.ladder}
             accounts={data.accounts}
             snapshotDate={snapDate}
           />
         </div>
-        </div>
       </section>
 
-      <section className="uni-home-content" aria-labelledby="jump">
+      <section className="uni-home-content rl-jump" aria-labelledby="jump">
         <h2 id="jump" className="rl-sr">On this page</h2>
         <nav className="rp-toc" aria-label="On this page">
           <span className="rp-toc-label">On this page</span>
@@ -312,17 +346,25 @@ export default function XrpRichListPage() {
         </nav>
       </section>
 
+      {/* Three artifacts, three sections. A table, then a chart, then a
+          second table stacked under one heading gave the reader no way to tell
+          which caption belonged to which, and nowhere to breathe. Each now
+          carries its own lead in and its own note underneath. */}
+
       {/* -------------------------------------------------- thresholds */}
-      <section className="uni-home-content" aria-labelledby="thresholds">
+      <section className="uni-home-content rl-section" aria-labelledby="thresholds">
         <p className="rp-eyebrow">Distribution</p>
         <h2 id="thresholds">XRP rich list {year}: current thresholds</h2>
         <p className="rp-lead">
           {t1 && t10 && t50
-            ? `The minimum balance for the top 1% of funded XRP Ledger accounts was ${xrpAmount(t1.minXrp)} XRP as of ${snapDate}, against ${xrpAmount(t10.minXrp)} XRP for the top 10% and ${xrpAmount(t50.minXrp)} XRP for the top 50%.`
-            : ""}{" "}
-          Each threshold below is the smallest amount of XRP that placed an account in
-          that percentage of all {count(data.accounts)} funded accounts as of{" "}
-          {snapDate}.
+            ? `The minimum to sit in the top 1% of funded XRP Ledger accounts was ${xrpAmount(t1.minXrp)} XRP as of ${snapDate}, against ${xrpAmount(t10.minXrp)} XRP for the top 10% and ${xrpAmount(t50.minXrp)} XRP for the top 50%.`
+            : ""}
+        </p>
+        <p className="rl-section-intro">
+          A tier threshold is the smallest amount of XRP that placed an account
+          in that percentage of all {count(data.accounts)} funded accounts as of{" "}
+          {snapDate}. An account is measured on what it controls, which is its
+          spendable balance plus anything it holds in onchain escrow.
         </p>
 
         <div className="rl-dtable-wrap" data-nosnippet="">
@@ -351,6 +393,34 @@ export default function XrpRichListPage() {
           </table>
         </div>
 
+        <p className="rl-note">
+          Thresholds are read from a histogram of every account balance, which
+          bounds each figure at {data.method.thresholdRelativeErrorPct}% as of{" "}
+          {snapDate}. Shares of XRP are measured against all XRP in funded
+          accounts, escrowed and spendable together.
+        </p>
+      </section>
+
+      {/* ------------------------------------------------------- chart */}
+      <section className="uni-home-content rl-section" aria-labelledby="chart">
+        <p className="rp-eyebrow">Shape of the ledger</p>
+        <h2 id="chart">How XRP is spread across wallets</h2>
+        <p className="rp-lead">
+          Most funded XRP Ledger accounts hold very little.{" "}
+          {pctLabel(
+            data.bands
+              .filter((b) => b.max != null && b.max <= 1_000)
+              .reduce((a, b) => a + b.pctOfAccounts, 0),
+          )}{" "}
+          of them held under 1,000 XRP as of {snapDate}.
+        </p>
+        <p className="rl-section-intro">
+          Every bar below is one balance band, and its height and the number
+          above it are how many accounts held an amount inside that band as of{" "}
+          {snapDate}. The smaller figure under each band is that band&rsquo;s
+          share of all funded accounts on the same date.
+        </p>
+
         <div className="rl-chart-scroll">
           <DistributionChart
             bands={data.bands}
@@ -358,11 +428,42 @@ export default function XrpRichListPage() {
             totalAccounts={data.accounts}
           />
         </div>
+
+        <p className="rl-note">
+          Bar heights use a square-root scale as of {snapDate}, so a band holding
+          a few hundred accounts stays visible beside one holding three million.
+          Reading heights against each other therefore understates the gap
+          between them; the printed counts are the exact figures.
+        </p>
+      </section>
+
+      {/* -------------------------------------------------- band table */}
+      <section className="uni-home-content rl-section" aria-labelledby="bands">
+        <p className="rp-eyebrow">Band by band</p>
+        <h2 id="bands">Wallets and XRP held, by balance band</h2>
+        <p className="rp-lead">
+          The largest band by account count and the largest by XRP held are not
+          the same band, and the table below is where that separation is visible
+          as of {snapDate}.
+        </p>
+        <p className="rl-section-intro">
+          Every one of the {count(data.accounts)} funded accounts sits in exactly
+          one band as of {snapDate}. The last two columns are the XRP those
+          accounts controlled and what share of all XRP that came to, on the
+          same date.
+        </p>
+
         <DistributionTable bands={data.bands} snapshotDate={snapDate} />
+
+        <p className="rl-note">
+          Bands are decade-wide and read as at least the lower bound and below
+          the upper one. Amounts count escrowed XRP alongside spendable
+          balances, measured as of {snapDate}.
+        </p>
       </section>
 
       {/* ------------------------------------------------ what it shows */}
-      <section className="uni-home-content" aria-labelledby="what-it-shows">
+      <section className="uni-home-content rl-section" aria-labelledby="what-it-shows">
         <p className="rp-eyebrow">Reading the numbers</p>
         <h2 id="what-it-shows">What the XRP balance distribution shows</h2>
         <div className="rp-article">
@@ -427,7 +528,7 @@ export default function XrpRichListPage() {
 
       {/* --------------------------------------------- working vs idle */}
       {yc && yieldRatioPct != null ? (
-        <section className="uni-home-content" aria-labelledby="working-vs-idle">
+        <section className="uni-home-content rl-section" aria-labelledby="working-vs-idle">
           <p className="rp-eyebrow">Comparison</p>
           <h2 id="working-vs-idle">How much XRP is working rather than sitting idle</h2>
           <div className="rp-article">
@@ -461,106 +562,127 @@ export default function XrpRichListPage() {
         </section>
       ) : null}
 
+      {/* ----------------------------------------------- concentration */}
+      {data.concentration ? (
+        <section className="uni-home-content rl-section" aria-labelledby="concentration">
+          <p className="rp-eyebrow">Concentration</p>
+          <h2 id="concentration">What the largest 100 accounts hold</h2>
+          <p className="rp-lead">
+            The 100 largest XRP Ledger accounts controlled{" "}
+            {pctLabel(data.concentration.top100PctOfXrp)} of all XRP as of{" "}
+            {snapDate}, and{" "}
+            {pctLabel(data.concentration.exExchangePctOfXrp)} once known exchange
+            wallets are set aside.
+          </p>
+          <p className="rl-section-intro">
+            An exchange wallet is thousands of customer balances pooled into one
+            account, so counting it as concentration reads the ledger wrong. The
+            second figure is the closer answer to how few hands hold XRP, and it
+            is still only as complete as the {data.concentration.labelledAccounts}{" "}
+            accounts named in this list as of {snapDate}.
+          </p>
+
+          <div className="rl-stats">
+            <div className="rl-stat">
+              <span className="rl-stat-num">{pctLabel(data.concentration.top100PctOfXrp)}</span>
+              <span className="rl-stat-lab">
+                of all XRP held by the top 100 accounts, {snapDate}
+              </span>
+            </div>
+            <div className="rl-stat">
+              <span className="rl-stat-num">
+                {pctLabel(data.concentration.exExchangePctOfXrp)}
+              </span>
+              <span className="rl-stat-lab">
+                held once the {data.concentration.exchangeAccounts} known exchange
+                wallets are excluded, {snapDate}
+              </span>
+            </div>
+            <div className="rl-stat">
+              <span className="rl-stat-num">
+                {xrpAmount(data.concentration.exchangeXrp)}
+              </span>
+              <span className="rl-stat-lab">
+                XRP sitting in those exchange wallets, {snapDate}
+              </span>
+            </div>
+          </div>
+
+          {data.concentration.largestIndividual ? (
+            <p className="rl-highlight">
+              The largest holding attributed to a person rather than to a company
+              or a trading venue was{" "}
+              <strong>
+                {count(data.concentration.largestIndividual.xrp)} XRP
+              </strong>
+              {data.xrpUsd ? (
+                <>
+                  , worth about{" "}
+                  <strong>
+                    ${count(data.concentration.largestIndividual.xrp * data.xrpUsd)}
+                  </strong>{" "}
+                  at {data.xrpUsd.toFixed(4)} US dollars per XRP
+                </>
+              ) : null}{" "}
+              as of {snapDate}, at rank{" "}
+              {data.concentration.largestIndividual.rank} in the list below.
+              That account is attributed to{" "}
+              {data.concentration.largestIndividual.name} by{" "}
+              {data.concentration.largestIndividual.attribution ?? "a third party"}{" "}
+              rather than by this page.
+            </p>
+          ) : null}
+
+          <p className="rl-note">{data.concentration.basis}</p>
+        </section>
+      ) : null}
+
       {/* ------------------------------------------------ top accounts */}
-      <section className="uni-home-content" aria-labelledby="top-accounts">
+      <section className="uni-home-content rl-section" aria-labelledby="top-accounts">
         <p className="rp-eyebrow">Largest accounts</p>
         <h2 id="top-accounts">Top 100 XRP wallets</h2>
         <p className="rp-lead">
           The 100 largest funded XRP Ledger accounts as of {snapDate}, read from
-          ledger {count(data.ledgerIndex)}.{" "}
+          ledger {count(data.ledgerIndex)} and ranked on the XRP each one
+          controls.
+        </p>
+        <p className="rl-section-intro">
           {labelled.length > 0
-            ? `${labelled.length} of the 100 are named as of ${snapDate}, each against evidence shown beside the name.`
+            ? `${labelled.length} of the 100 are named as of ${snapDate}, each against the evidence shown beside the name.`
             : `None of the 100 is named as of ${snapDate}.`}{" "}
           {selfDeclared.length === 0
             ? "Not one of them publishes a domain onchain, which is the only identity an account can declare about itself, so no name here rests on that."
             : `${selfDeclared.length} publish a domain onchain, which is the strongest evidence available.`}{" "}
-          Large accounts are usually exchange or custodian wallets. Naming one
-          from how it transacts would be a guess, so this page names an account
-          only against a source it can show.
+          Naming an account from how it transacts would be a guess, so this page
+          names an account only against a source it can show. An account is
+          ranked on its spendable balance plus anything it holds in onchain
+          escrow, which is why an account with a few hundred XRP spendable can
+          sit near the top.
         </p>
-        <p className="rp-lead">
-          Accounts are ranked on the XRP they control, which is their spendable
-          balance plus anything they have locked in onchain escrow.{" "}
-          {withEscrow.length ? (
+
+        <TopAccountsTable
+          rows={data.top}
+          snapshotDate={snapDate}
+          xrpUsd={data.xrpUsd ?? null}
+        />
+
+        <p className="rl-note">
+          {data.xrpUsd ? (
             <>
-              {withEscrow.length} of the 100 largest held escrowed XRP as of{" "}
-              {snapDate}, locking{" "}
-              {xrpAmount(withEscrow.reduce((a, t) => a + (t.escrowedXrp ?? 0), 0))}{" "}
-              XRP between them.
+              Dollar values use {data.xrpUsd.toFixed(4)} US dollars per XRP as of{" "}
+              {snapDate}, read from {data.xrpUsdSource}. They move with the price
+              and the XRP amounts beside them do not.{" "}
             </>
-          ) : null}{" "}
-          A ranking on spendable balance alone would place the largest positions
-          on the ledger outside this table entirely, because an escrow account
-          can hold a few hundred XRP spendable while controlling billions.
+          ) : null}
+          Share of supply is measured against all XRP in funded accounts as of{" "}
+          {snapDate}. Names attributed by a third party are that provider&rsquo;s
+          claim, shown with the provider named and linked rather than presented
+          as a finding of this page.
         </p>
-        <div className="rl-dtable-wrap rl-scroll" data-nosnippet="">
-          <table className="rl-dtable rl-top">
-            <caption className="rl-dtable-cap">
-              Largest 100 XRP Ledger accounts by XRP controlled, as of {snapDate}
-            </caption>
-            <thead>
-              <tr>
-                <th scope="col">Rank</th>
-                <th scope="col">Account</th>
-                <th scope="col">Onchain notes</th>
-                <th scope="col">Total XRP</th>
-                <th scope="col">Spendable</th>
-                <th scope="col">In escrow</th>
-                <th scope="col">Share of XRP</th>
-              </tr>
-            </thead>
-            <tbody>
-              {data.top.map((t) => (
-                <tr key={t.address}>
-                  <th scope="row">{t.rank}</th>
-                  <td className="rl-addr" data-label="Account">{t.address}</td>
-                  <td data-label="Onchain notes">
-                    {t.label ? (
-                      <span className="rl-label">
-                        <strong>{t.label.name}</strong>
-                        <span className="rl-evidence">
-                          {t.label.evidenceUrl ? (
-                            <a
-                              href={t.label.evidenceUrl}
-                              target="_blank"
-                              rel="noopener noreferrer nofollow"
-                            >
-                              {evidenceLabel(t.label)}
-                            </a>
-                          ) : (
-                            evidenceLabel(t.label)
-                          )}
-                        </span>
-                      </span>
-                    ) : t.domain ? (
-                      <span className="rl-label">
-                        <strong>{t.domain}</strong>
-                        <span className="rl-evidence">published by the account onchain</span>
-                      </span>
-                    ) : t.escrows ? (
-                      <span className="rl-note">
-                        {t.escrows} escrow{t.escrows === 1 ? "" : "s"} locking{" "}
-                        {xrpAmount(t.escrowedXrp ?? 0)} XRP
-                      </span>
-                    ) : (
-                      <span className="rl-dim">nothing published</span>
-                    )}
-                  </td>
-                  <td className="rl-num" data-label="Total XRP">{count(t.xrp)}</td>
-                  <td className="rl-num" data-label="Spendable">{count(t.spendableXrp ?? t.xrp)}</td>
-                  <td className="rl-num" data-label="In escrow">
-                    {t.escrowedXrp ? count(t.escrowedXrp) : <span className="rl-dim">0</span>}
-                  </td>
-                  <td className="rl-num" data-label="Share of XRP">{pctLabel(t.pctOfSupply)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </section>
 
       {/* -------------------------------------------------------- FAQ */}
-      <section className="uni-home-content" aria-labelledby="faq">
+      <section className="uni-home-content rl-section" aria-labelledby="faq">
         <p className="rp-eyebrow">Questions</p>
         <h2 id="faq">XRP rich list questions</h2>
         <div className="rp-faq">
@@ -577,7 +699,7 @@ export default function XrpRichListPage() {
       </section>
 
       {/* ----------------------------------------------------- bridge */}
-      <section className="uni-home-content" aria-labelledby="bridge">
+      <section className="uni-home-content rl-section" aria-labelledby="bridge">
         <div className="rl-bridge">
           <h2 id="bridge">Where an XRP balance can go to work</h2>
           <p>
@@ -596,7 +718,7 @@ export default function XrpRichListPage() {
       </section>
 
       {/* ------------------------------------------------- methodology */}
-      <section className="uni-home-content" aria-labelledby="methodology">
+      <section className="uni-home-content rl-section" aria-labelledby="methodology">
         <p className="rp-eyebrow">Method</p>
         <h2 id="methodology">How this XRP rich list is built</h2>
         <dl className="rp-methodology-dl rl-method">
