@@ -39,6 +39,10 @@ import {
 const ROOT = process.cwd();
 const OUT_FILE = join(ROOT, "data", "xrp-yield.json");
 
+// Protocols whose headline rate comes from price-per-share growth across a
+// 30-day archive-block window rather than from a spot lending rate.
+const VAULT_PROTOCOLS = new Set(["mystic-vault", "erc4626", "upshift-vault"]);
+
 const LLAMA_CACHE = process.env.XRP_LLAMA_CACHE || null;
 const PORTALS_CACHE = process.env.PORTALS_CACHE || null;
 const PORTALS_KEY = process.env.PORTALS_API_KEY || null;
@@ -135,12 +139,16 @@ function baseRow(v) {
     venueSlug: v.slug,
     displayName: v.asset,
     // "30d" when the rate is a 30-day average / fixed rate; "current" when it is
-    // a live spot APY (Portals, Spectra pool/metavault); "na" when unavailable.
+    // a live spot APY (Spectra pool/metavault, lending markets); "na" when
+    // unavailable.
     rateBasis: "30d",
     rateNa: false,
     // When the displayed rate deliberately excludes an off-chain reward we
     // can't read on-chain (e.g. SparkDEX's rFLR), the row carries this note.
     offchainRewardNote: v.offchainRewardNote ?? null,
+    // Free-text caveat on the rate itself, set by the hydrator (e.g. a vault
+    // whose share price fell over the window). Rendered as the cell tooltip.
+    rateNote: null,
   };
 }
 
@@ -400,9 +408,19 @@ const main = async () => {
           row.apyReward = r.apyReward ?? null;
           row.apyMean30d = r.apyMean30d ?? r.apy;
           row.tvlUsd = r.tvlUsd;
-          // Lending/pool spot rates read as "current"; the vault's realized
-          // figure is a trailing average.
-          row.rateBasis = src.protocol === "mystic-vault" ? "30d" : "current";
+          // Lending/pool spot rates read as "current". Share-price vaults
+          // report realized growth measured between two archive blocks 30 days
+          // apart, which is what the ranking column renders, so they are
+          // labelled "30d".
+          row.rateBasis = VAULT_PROTOCOLS.has(src.protocol) ? "30d" : "current";
+          // A share-price vault can print a negative realized rate when the
+          // price per share fell inside the window. That is a real outcome for
+          // anyone who held across it, so the figure stands, but it describes a
+          // drawdown rather than a yield and the row says so.
+          if (row.rateBasis === "30d" && row.apyMean30d < 0) {
+            row.rateNote =
+              "Price per share fell over the 30-day window, so the realized rate is negative.";
+          }
           if (r.apyReward != null && r.apy > 0) {
             row.rewardShare = Math.round((r.apyReward / r.apy) * 100) / 100;
             row.incentivized = r.apyReward / r.apy > 0.5;

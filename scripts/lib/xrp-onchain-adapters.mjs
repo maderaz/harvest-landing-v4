@@ -213,7 +213,7 @@ export async function moonwellCbxrp({
   };
 }
 
-// ---- Mystic FXRP vault (Morpho VaultV2, ERC4626) -------------------------
+// ---- ERC4626 vaults on Flare (Mystic / Morpho VaultV2, Superform) --------
 
 const PPS_UNIT = 10n ** 24n; // convertToAssets(1e24) -> ~12 sig-figs of price-per-share
 
@@ -227,7 +227,12 @@ const annualize = (pNow, pPast, dtSec) =>
 // Realized, net-of-fee holder yield from price-per-share growth. The vault's
 // forward/gross number (what aggregators show) is higher; this is what holders
 // actually earn. `now` is epoch seconds.
-export async function mysticVault({ chain = "flare", vault, underlyingDec = 6, xrp, now }) {
+//
+// Serves any standard ERC4626 vault, not just Mystic: Superform's bizFXRP
+// exposes the same totalAssets/convertToAssets pair, so it reads through here
+// rather than through a paid aggregator. Kept under the old export name too so
+// existing venue config does not have to move.
+export async function erc4626Vault({ chain = "flare", vault, underlyingDec = 6, xrp, now }) {
   const totalAssets = await callUint(chain, vault, SEL.totalAssets);
   const tvlUsd = (Number(totalAssets) / 10 ** underlyingDec) * xrp;
   const nowB = await blockNumber(chain);
@@ -241,6 +246,44 @@ export async function mysticVault({ chain = "flare", vault, underlyingDec = 6, x
   const apy = annualize(pNow, p7, 7 * 86400);
   const apyMean30d = annualize(pNow, p30, 30 * 86400);
   return { apy, apyBase: apy, apyReward: 0, apyMean30d, tvlUsd: Math.round(tvlUsd), pps: pNow };
+}
+
+export const mysticVault = erc4626Vault;
+
+// ---- Upshift TokenizedVault (Flare) --------------------------------------
+
+// Upshift is not ERC4626. The address in the venue URL is a TokenizedVault
+// that answers getTotalAssets() and getSharePrice(); the address an aggregator
+// keys on is the BridgeableReceiptToken share proxy, which answers only
+// totalSupply. Reading the vault gives the same figure the venue's own app
+// shows, with no aggregator in the path.
+//
+// getSharePrice() is scaled to the underlying's decimals, so it is normalised
+// here rather than against a fixed 1e24 like the ERC4626 path.
+export async function upshiftVault({ chain = "flare", vault, underlyingDec = 6, xrp, now }) {
+  const unit = 10 ** underlyingDec;
+  const priceAt = async (block) =>
+    Number(await callUint(chain, vault, SEL.getSharePrice, block)) / unit;
+
+  const totalAssets = await callUint(chain, vault, SEL.getTotalAssets);
+  const tvlUsd = (Number(totalAssets) / unit) * xrp;
+
+  const nowB = await blockNumber(chain);
+  const [pNow, p7, p30] = await Promise.all([
+    priceAt(nowB),
+    blockAtTimestamp(chain, now - 7 * 86400).then(priceAt).catch(() => 0),
+    blockAtTimestamp(chain, now - 30 * 86400).then(priceAt).catch(() => 0),
+  ]);
+  const apy = annualize(pNow, p7, 7 * 86400);
+  const apyMean30d = annualize(pNow, p30, 30 * 86400);
+  return {
+    apy,
+    apyBase: apy,
+    apyReward: 0,
+    apyMean30d: apyMean30d || apy,
+    tvlUsd: Math.round(tvlUsd),
+    pps: pNow,
+  };
 }
 
 // ---- SparkDEX stXRP/FXRP (Algebra Integral CL pool) ----------------------
@@ -423,7 +466,10 @@ export async function readOnchain(src, { now, prices }) {
         wellUsd: p.well,
       });
     case "mystic-vault":
-      return mysticVault({ vault: src.vault, underlyingDec: src.underlyingDec ?? 6, xrp: p.xrp, now });
+    case "erc4626":
+      return erc4626Vault({ vault: src.vault, underlyingDec: src.underlyingDec ?? 6, xrp: p.xrp, now });
+    case "upshift-vault":
+      return upshiftVault({ vault: src.vault, underlyingDec: src.underlyingDec ?? 6, xrp: p.xrp, now });
     case "sparkdex-pool":
       return sparkdexPool({ pool: src.pool, dec0: src.dec0 ?? 6, dec1: src.dec1 ?? 6, xrp: p.xrp, now });
     case "aerodrome":
