@@ -124,6 +124,22 @@ function selfTest() {
       1,
     ],
     [
+      "unknown holder type",
+      {
+        labels: [
+          {
+            address: "rPyCQm8E5j78PDbrfKF24fRC7qUAk1kDMZ",
+            name: "Example Exchange",
+            type: "definitely-a-whale",
+            evidence: "published",
+            evidenceUrl: "https://example.com/proof",
+            verifiedOn: "2026-07-31",
+          },
+        ],
+      },
+      1,
+    ],
+    [
       "duplicate addresses",
       {
         labels: [
