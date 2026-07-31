@@ -265,6 +265,13 @@ export const SEL = {
   asset: "0x38d52e0f",
   // Aave v3 Pool
   getReserveData: "0x35ea6a75", // (address asset) -> ReserveData tuple
+  // Upshift TokenizedVault. Not ERC4626: the share token (a
+  // BridgeableReceiptToken behind a proxy) answers totalSupply but reverts on
+  // totalAssets, and the accounting lives on a separate TokenizedVault
+  // contract, which is the address in the venue's own app URL. Both selectors
+  // derived from the verified implementation ABI on the Flare explorer.
+  getTotalAssets: "0x6e07302b",
+  getSharePrice: "0x5b1dac60",
   // Flare FTSO
   getContractAddressByName: "0x82760fca", // registry (string)
   getFeedById: "0x93e9f806", // FtsoV2 (bytes21)

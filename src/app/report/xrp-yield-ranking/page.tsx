@@ -82,6 +82,9 @@ interface XrpPool {
   source?: string;
   // Set when the shown rate excludes an offchain reward we can't read onchain.
   offchainRewardNote?: string | null;
+  // Caveat on the rate itself, e.g. a share-price vault that lost value over
+  // the measured window and so prints a negative realized rate.
+  rateNote?: string | null;
   // Daily series for the charts. `apy` feeds the rate charts; `tvl` and `pps`
   // (added by the TVL backfill) feed the landscape aggregate and are optional so
   // older snapshots still type-check.
@@ -419,6 +422,44 @@ export default function XrpYieldRankingPage() {
   const sHi = singleRates.length ? Math.max(...singleRates) : 0;
   const sSorted = [...singleRates].sort((a, b) => a - b);
   const sMedian = sSorted.length ? sSorted[Math.floor(sSorted.length / 2)] : stats.medianApy;
+  // Dataset provenance for the JSON-LD: the venues whose own contracts and API
+  // the pipeline reads, plus Flare for the FTSOv2 oracle that prices XRP. The
+  // `app.` subdomain is stripped so the credit points at the venue rather than
+  // a deep link into its dapp.
+  const venueSources = [
+    ...new Set(
+      pools
+        .map((p) => {
+          try {
+            return new URL(p.llamaUrl).origin.replace("://app.", "://");
+          } catch {
+            return null;
+          }
+        })
+        .filter((v): v is string => v != null),
+    ),
+  ]
+    .sort()
+    .concat("https://flare.network");
+
+  // Rows the methodology has to caveat as not-a-live-read: either no public
+  // feed at all, or a committed snapshot standing in for one. Zero of these as
+  // of the move to direct contract reads, so the clause only prints if a venue
+  // regresses to a snapshot later.
+  const nonLiveRows = pools.filter(
+    (p) => p.rateNa || (p.source !== "onchain" && !/^Spectra/.test(p.platform)),
+  ).length;
+
+  // A share-price vault can hold a negative realized rate when its price per
+  // share fell inside the measured window. The headline range then opens below
+  // zero, which reads as a broken feed unless the page names the product and
+  // says what happened, so the worst such row gets its own key finding.
+  const negRow =
+    pools
+      .filter((p) => !p.rateNa && p.rateNote && (histRate(p) ?? 0) < 0)
+      .slice()
+      .sort((a, b) => (histRate(a) ?? 0) - (histRate(b) ?? 0))[0] ?? null;
+
   const topDualPool =
     duals
       .filter((p) => !p.rateNa)
@@ -476,12 +517,13 @@ export default function XrpYieldRankingPage() {
   // Two things make this honest rather than a heartbeat:
   //
   // 1. The pipeline scripts only rewrite data/xrp-yield.json when something
-  //    other than their own run stamp changed (see fetch-xrp-yield.mjs). So each
-  //    stamp below advances only when that pass produced different data, and the
-  //    max of them means "when the report's data last changed".
+  //    other than their own run stamp changed (see fetch-xrp-yield.mjs and
+  //    scripts/lib/snapshot-stamp.mjs). So each stamp below advances only when
+  //    that pass produced different data, and the max of them means "when the
+  //    report's data last changed" rather than "when a job last ran".
   // 2. The result is then capped by the newest observation actually present in
-  //    the data. If the daily series have gone stale — a degraded run where
-  //    venues fall back to their previous values while the job still completes —
+  //    the data. If the daily series have gone stale - a degraded run where
+  //    venues fall back to their previous values while the job still completes -
   //    the cap stops the page advertising freshness it does not have. The cap is
   //    end-of-day so a same-day observation never drags the timestamp backwards
   //    within the day, which means it costs nothing in the healthy case.
@@ -574,10 +616,11 @@ export default function XrpYieldRankingPage() {
     name: `${assetHead(p)} on ${p.platform}`,
     url: p.platformUrl ?? p.llamaUrl,
   }));
-  // Two levels only: "Report" was an intermediate crumb with no page of its
-  // own (there is no /report index), so Google flagged its ListItem for a
-  // missing `item` URL. Drop it — Home › XRP Yield Ranking is valid and matches
-  // the visible breadcrumb.
+  // Two levels only. "Report" was an intermediate crumb with no page of its
+  // own (there is no /report index), so breadcrumbSchema emitted a middle
+  // ListItem with a name and no `item` URL, which Google Search Console flags
+  // as an error. Home > XRP Yield Ranking is valid, and the visible breadcrumb
+  // below drops the same segment so the two stay in lockstep.
   const crumbs = [
     { name: SITE_NAME, url: SITE_URL },
     { name: "XRP Yield Ranking", url: PAGE_URL },
@@ -585,6 +628,28 @@ export default function XrpYieldRankingPage() {
 
   // Right-rail "In this report" tree. Conditional sections are included only
   // when they render, so scroll-spy never points at a missing anchor.
+  // Compact labels for the inline pill row under the overview. The row shows
+  // only top-level sections; the sidebar rail shows the full tree.
+  const TOC_SHORT: Record<string, string> = {
+    "yield-now": "Right now",
+    ranking: "The ranking",
+    overview: "Overview",
+    "yield-landscape": "Landscape",
+    "most-popular": "Most popular",
+    "rate-history": "30-day rate history",
+    "yield-trading": "Yield trading",
+    "where-yield-comes-from": "Where yield comes from",
+    "wrapped-xrp": "Wrapped forms of XRP",
+    "can-you-stake-xrp": "Can you stake XRP?",
+    "cefi-vs-defi": "CeFi vs DeFi",
+    "key-risks": "Risks",
+    "venues-in-depth": "Venues in depth",
+    faq: "FAQ",
+    "machine-readable-data": "Data",
+    "onchain-references": "Onchain references",
+    "method-and-scope": "Method",
+  };
+
   const tocItems: TocItem[] = [
     { id: "yield-now", label: "XRP yield right now" },
     { id: "ranking", label: "The ranking" },
@@ -873,7 +938,17 @@ export default function XrpYieldRankingPage() {
                 "TVL",
                 "Principal Token",
               ],
-              sources: ["https://defillama.com", "https://spectra.finance"],
+              // Provenance must match what the page body states: rates and TVL
+              // are read directly from each venue's own contracts on Base and
+              // Flare, priced with onchain oracles, with the Spectra API for
+              // Spectra's own markets. This previously credited DeFiLlama, which
+              // the pipeline no longer reads and whose terms restrict commercial
+              // republishing - the reason the onchain path was built. Crediting
+              // it here contradicted the Method section ("No third-party yield
+              // aggregator is used") on the exact surface answer engines read.
+              // Derived from the ranked rows so a venue added or dropped moves
+              // the credit with it, rather than the list drifting out of date.
+              sources: venueSources,
               distribution: [
                 {
                   format: "application/json",
@@ -968,6 +1043,16 @@ export default function XrpYieldRankingPage() {
                 <strong>{pct(sLo)}</strong> to <strong>{pct(sHi)}</strong> with
                 a median of <strong>{pct(sMedian)}</strong> as of {updated}.
               </li>
+              {negRow ? (
+                <li>
+                  The {negRow.detail?.split(" · ")[0] ?? assetHead(negRow)}{" "}
+                  vault on {negRow.platform} carried a 30-day rate of{" "}
+                  <strong>{pct(histRate(negRow))}</strong> as of {updated},
+                  because its price per share on that date sat below where it
+                  stood 30 days earlier, leaving a holder across the window with
+                  less {nice(negRow.symbol)} than they put in.
+                </li>
+              ) : null}
               {topPt ? (
                 <li>
                   Fixed-rate Principal Tokens on {topPt.platform} offered a
@@ -1002,17 +1087,13 @@ export default function XrpYieldRankingPage() {
           </div>
           <nav className="rp-toc" aria-label="On this page">
             <span className="rp-toc-label">On this page</span>
-            <a href="#yield-landscape">Landscape</a>
-            <a href="#ranking">The ranking</a>
-            <a href="#rate-history">30-day rate history</a>
-            <a href="#where-yield-comes-from">Where yield comes from</a>
-            <a href="#wrapped-xrp">Wrapped forms of XRP</a>
-            <a href="#can-you-stake-xrp">Can you stake XRP?</a>
-            <a href="#cefi-vs-defi">CeFi vs DeFi</a>
-            <a href="#key-risks">Risks</a>
-            <a href="#venues-in-depth">Venues in depth</a>
-            <a href="#faq">FAQ</a>
-            <a href="#method-and-scope">Method</a>
+            {tocItems
+              .filter((t) => !t.level && t.id !== "overview")
+              .map((t) => (
+                <a key={t.id} href={`#${t.id}`}>
+                  {TOC_SHORT[t.id] ?? t.label}
+                </a>
+              ))}
           </nav>
         </section>
 
@@ -1310,7 +1391,7 @@ export default function XrpYieldRankingPage() {
             <p>
               {land
                 ? land.note
-                : "Total XRP-denominated DeFi TVL across tracked venues. Sources: onchain reads (Base and Flare), Spectra and Portals."}{" "}
+                : "Total XRP-denominated DeFi TVL across tracked venues. Sources: onchain reads (Base and Flare) and the Spectra API."}{" "}
               TVL split by network and type is computed from the {stats.venues}{" "}
               tracked products as of {updated}.
             </p>
@@ -1830,7 +1911,7 @@ export default function XrpYieldRankingPage() {
               {WRAPPED_TOKENS.map((t) => (
                 <article className="rp-gloss-card" key={t.token}>
                   <div className="rp-gloss-head">
-                    <AssetIcon asset={t.icon} size={26} />
+                    <AssetIcon asset={t.icon} size={26} decorative />
                     <span className="rp-gloss-tok">{nice(t.token)}</span>
                     <span className="rp-gloss-chain">{t.chain}</span>
                   </div>
@@ -2141,8 +2222,15 @@ export default function XrpYieldRankingPage() {
                 (lending supply rates, vault share prices, pool reserves and
                 gauge emissions), priced with onchain oracles (Flare&rsquo;s
                 FTSOv2 for XRP, Chainlink on Base). Spectra&rsquo;s own markets
-                come from the Spectra API, and Portals covers the few products
-                the others do not. No third-party yield aggregator is used.
+                come from the Spectra API.{" "}
+                {nonLiveRows > 0 ? (
+                  <>
+                    {nonLiveRows} of the {stats.venues} products publish no
+                    machine-readable rate feed as of {updated}; those carry
+                    their last verified figures rather than a live read.{" "}
+                  </>
+                ) : null}
+                No third-party yield aggregator is used.
               </span>
             </dd>
             <dt>Ranking</dt>
@@ -2316,7 +2404,7 @@ function TokenIcons({ symbol }: { symbol: string }) {
           className="rp-tok"
           style={{ marginLeft: i ? -9 : 0, zIndex: toks.length - i }}
         >
-          <AssetIcon asset={t} size={24} />
+          <AssetIcon asset={t} size={24} decorative />
         </span>
       ))}
     </span>
@@ -2364,7 +2452,9 @@ function RankTable({ rows }: { rows: XrpPool[] }) {
                 title={
                   p.rateNa
                     ? "No public rate feed yet"
-                    : p.offchainRewardNote
+                    : p.rateNote
+                      ? p.rateNote
+                      : p.offchainRewardNote
                       ? p.offchainRewardNote
                       : p.variance === "high"
                         ? "Reward-driven rate on a small pool; varies week to week"
@@ -2389,7 +2479,7 @@ function RankTable({ rows }: { rows: XrpPool[] }) {
                   platform={p.platform}
                   label="Open"
                   source={`ranking:${p.venueSlug ?? p.project}`}
-                  product={`${assetHead(p)}${p.detail ? ` · ${p.detail}` : ""}`}
+                  product={assetHead(p)}
                   chain={p.chain}
                   rank={i + 1}
                   icon={<TokenIcons symbol={p.symbol} />}

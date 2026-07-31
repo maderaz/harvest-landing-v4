@@ -1,10 +1,10 @@
 {
-  "note": "Canonical XRP-yield product list for /report/xrp-yield-ranking. This is the ALLOWLIST: the report shows exactly these products, nothing else. scripts/fetch-xrp-yield.mjs hydrates each row's live rate/TVL from its `source`: kind=defillama (poolId -> yields.llama.fi, adds 30-day history for charts), kind=spectra-pt (Spectra API fixed rate + history, matched by address), kind=portals (api.portals.fi current APY for products DeFiLlama doesn't track; needs PORTALS_API_KEY, falls back to staticApy/staticTvl), kind=none (no public rate feed yet -> rate shown as n/a, optional staticTvl). Display fields: `asset` is the clean headline for the ranking's Product column, `detail` the smaller sub-line under it, `entity` the curator/operator, `exposure` drives the single/dual split. All venues are third-party protocols, not Harvest products.",
+  "note": "Canonical XRP-yield product list for /report/xrp-yield-ranking. This is the ALLOWLIST: the report shows exactly these products, nothing else. scripts/fetch-xrp-yield.mjs hydrates each row's live rate/TVL from its `source`: kind=defillama (poolId -> yields.llama.fi, adds 30-day history for charts), kind=spectra-pt (Spectra API fixed rate + history, matched by address), kind=none (no public rate feed yet -> rate shown as n/a, optional staticTvl). Display fields: `asset` is the clean headline for the ranking's Product column, `detail` the smaller sub-line under it, `entity` the curator/operator, `exposure` drives the single/dual split. All venues are third-party protocols, not Harvest products.",
   "venues": [
     {
       "slug": "spectra-pt-aug-2026",
       "asset": "stXRP",
-      "detail": "PT · Aug 2026",
+      "detail": "PT \u00b7 Aug 2026",
       "symbol": "stXRP",
       "assets": [
         "stXRP"
@@ -23,7 +23,7 @@
     {
       "slug": "spectra-pt-nov-2026",
       "asset": "stXRP",
-      "detail": "PT · Nov 2026",
+      "detail": "PT \u00b7 Nov 2026",
       "symbol": "stXRP",
       "assets": [
         "stXRP"
@@ -42,7 +42,7 @@
     {
       "slug": "spectra-metavault-fxrp",
       "asset": "FXRP",
-      "detail": "MetaVault · Gami Labs",
+      "detail": "MetaVault \u00b7 Gami Labs",
       "symbol": "FXRP",
       "assets": [
         "FXRP"
@@ -61,7 +61,7 @@
     {
       "slug": "spectra-pool-aug-2026",
       "asset": "stXRP",
-      "detail": "Pool · Aug 2026",
+      "detail": "Pool \u00b7 Aug 2026",
       "symbol": "stXRP",
       "assets": [
         "stXRP"
@@ -80,7 +80,7 @@
     {
       "slug": "spectra-pool-nov-2026",
       "asset": "stXRP",
-      "detail": "Pool · Nov 2026",
+      "detail": "Pool \u00b7 Nov 2026",
       "symbol": "stXRP",
       "assets": [
         "stXRP"
@@ -99,7 +99,7 @@
     {
       "slug": "mystic-vault",
       "asset": "FXRP",
-      "detail": "Vault · Clearstar",
+      "detail": "Vault \u00b7 Clearstar",
       "symbol": "csXRP",
       "assets": [
         "csXRP"
@@ -122,7 +122,7 @@
     {
       "slug": "upshift-earnxrp",
       "asset": "FXRP",
-      "detail": "earnXRP · Clearstar",
+      "detail": "earnXRP \u00b7 Clearstar",
       "symbol": "FXRP",
       "assets": [
         "FXRP"
@@ -134,16 +134,16 @@
       "exposure": "single",
       "url": "https://app.upshift.finance/pools/14/0x373D7d201C8134D4a2f7b5c63560da217e3dEA28",
       "source": {
-        "kind": "portals",
-        "portalsKey": "flare:0xe533e447fd7720b2f8654da2b1953efa06b60bfa",
-        "staticApy": 1.61,
-        "staticTvl": 36529889
+        "kind": "onchain",
+        "protocol": "upshift-vault",
+        "vault": "0x373D7d201C8134D4a2f7b5c63560da217e3dEA28",
+        "underlyingDec": 6
       }
     },
     {
       "slug": "upshift-mxrpy",
       "asset": "FXRP",
-      "detail": "MXRPY · Monarq",
+      "detail": "MXRPY \u00b7 Monarq",
       "symbol": "FXRP",
       "assets": [
         "FXRP"
@@ -155,10 +155,10 @@
       "exposure": "single",
       "url": "https://app.upshift.finance/pools/14/0x2439D4bb753A0f3777d4C9011AFacc475ba6B951",
       "source": {
-        "kind": "portals",
-        "portalsKey": "flare:0x36f236af59cb279bab884e464ef1bc23c7b1a115",
-        "staticApy": 0.43,
-        "staticTvl": 8607963
+        "kind": "onchain",
+        "protocol": "upshift-vault",
+        "vault": "0x2439D4bb753A0f3777d4C9011AFacc475ba6B951",
+        "underlyingDec": 6
       }
     },
     {
@@ -186,7 +186,7 @@
     {
       "slug": "superform-bizfxrp",
       "asset": "FXRP",
-      "detail": "bizFXRP · Bizantine Labs",
+      "detail": "bizFXRP \u00b7 Bizantine Labs",
       "symbol": "FXRP",
       "assets": [
         "FXRP"
@@ -198,10 +198,10 @@
       "exposure": "single",
       "url": "https://app.superform.xyz/vault/14_0x34f90dfa0f1b2f691ee3a3a87954f8d282193c16",
       "source": {
-        "kind": "portals",
-        "portalsKey": "flare:0x34f90dfa0f1b2f691ee3a3a87954f8d282193c16",
-        "staticApy": 2.71,
-        "staticTvl": 295217
+        "kind": "onchain",
+        "protocol": "erc4626",
+        "vault": "0x34f90dfa0f1b2f691ee3a3a87954f8d282193c16",
+        "underlyingDec": 6
       }
     },
     {
