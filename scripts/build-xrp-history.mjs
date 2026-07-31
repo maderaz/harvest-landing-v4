@@ -57,7 +57,7 @@ const GENERATED_AT = new Date().toISOString();
 const REPORT_URL = `${SITE_URL}/report/xrp-yield-ranking`;
 const LICENSE = "https://creativecommons.org/licenses/by/4.0/";
 const DISCLAIMER =
-  "Externally sourced (DeFiLlama, Spectra, Portals) XRP DeFi yield data indexed by Harvest for research, not financial advice. Every venue is a third-party protocol, not a Harvest product.";
+  "XRP DeFi yield data measured onchain (Base and Flare) and via the Spectra API, indexed by Harvest for research, not financial advice. Every venue is a third-party protocol, not a Harvest product.";
 
 const data = JSON.parse(readFileSync(DATA_FILE, "utf-8"));
 const pools = Array.isArray(data.pools) ? data.pools : [];
