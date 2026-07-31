@@ -5,10 +5,9 @@ name: Update XRP Report Data
 # current. Separate from update-data.yml (the hourly vault-data job) so a
 # failure in one never blocks the other.
 #
-# PORTALS_API_KEY should be set as a repository secret for live Upshift/Superform
-# data; without it those products fall back to their static values but every
-# other step (DeFiLlama, Spectra, Blockscout) still runs and the dates still
-# advance.
+# No API keys are needed. Every rate and TVL comes from the venues' own
+# contracts on Base and Flare over public RPC, with the Spectra API for
+# Spectra's own markets and the chain explorers for holder counts.
 
 on:
   schedule:
@@ -33,26 +32,25 @@ jobs:
         with:
           node-version: "20"
 
-      # Live rates/TVL for the allowlisted venues. Portals products need the key;
-      # without it they use their static fallback, so this is not fatal.
-      - name: Hydrate XRP venues (DeFiLlama, Spectra, Portals)
+      # Live rates/TVL for the allowlisted venues, read from their own contracts.
+      - name: Hydrate XRP venues (onchain + Spectra)
         run: node scripts/fetch-xrp-yield.mjs
-        env:
-          PORTALS_API_KEY: ${{ secrets.PORTALS_API_KEY }}
         continue-on-error: true
 
       - name: Apply curated overrides
         run: node scripts/apply-xrp-overrides.mjs
         continue-on-error: true
 
-      # TVL/APY/share-price history to inception (DeFiLlama /chart + Portals).
-      - name: Backfill TVL history
-        run: node scripts/backfill-xrp-tvl-history.mjs
-        env:
-          PORTALS_API_KEY: ${{ secrets.PORTALS_API_KEY }}
+      # Daily TVL points, read from contract state at that day's archive block.
+      # A 14-day window appends today's point and closes any gap left by a
+      # failed run, without re-reading the whole series every night. Existing
+      # points are kept; pass --overwrite --days=N by hand to rebuild deeper.
+      - name: Backfill TVL history (onchain)
+        run: node scripts/backfill-xrp-tvl-onchain.mjs --days=14
         continue-on-error: true
 
-      # Landscape TVL aggregate (per-pool + Upshift protocol-level).
+      # Landscape TVL aggregate. Reads only what the previous step wrote, so it
+      # makes no network calls of its own.
       - name: Build landscape series
         run: node scripts/build-xrp-landscape.mjs
         continue-on-error: true
