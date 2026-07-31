@@ -101,6 +101,7 @@ interface YieldPick {
   chain: string;
   apy: number;
   tvlUsd: number;
+  holders?: { count: number } | null;
 }
 
 function loadYieldPicks(): { picks: YieldPick[]; asOf: string } | null {
@@ -119,6 +120,10 @@ function loadYieldPicks(): { picks: YieldPick[]; asOf: string } | null {
         .sort((a, b) => b.tvlUsd - a.tvlUsd)[0];
       if (top) picks.push(top);
     }
+    // Highest rate first. Sorting by deposits put the biggest venue on top
+    // and the best rate last, which is the wrong answer to "where do people
+    // earn on XRP".
+    picks.sort((a, b) => b.apy - a.apy);
     return picks.length === 4 ? { picks, asOf: d.generatedAt } : null;
   } catch {
     return null;
@@ -974,13 +979,10 @@ export default function XrpRichListPage() {
             These are the four places that rate comes from.
           </p>
 
-          {/* An ordered list with the number drawn by a CSS counter rather
-              than written into the row. The digit is decorative ordering that
-              <ol> already conveys, and as DOM text it read to the atomicity
-              gate as four undated figures, which is a fair complaint: a bare
-              numeral in a block carrying no date is exactly what that rule
-              exists to catch. */}
-          <ol className="rl-sources">
+          {/* Plain bullets rather than a numbered rail. The rank implied an
+              order these four do not have: a vault is not the second-best
+              kind of venue, it is a different kind. */}
+          <ul className="rl-sources">
             {[
               {
                 title: "Lending markets",
@@ -1006,7 +1008,7 @@ export default function XrpRichListPage() {
                 </span>
               </li>
             ))}
-          </ol>
+          </ul>
 
           {yieldPicks ? (
             <>
@@ -1018,7 +1020,16 @@ export default function XrpRichListPage() {
                 {yieldPicks.picks.map((k) => (
                   <div className="rl-pick" key={k.category}>
                     <div className="rl-pick-head">
-                      <span className="rl-pick-platform">{k.platform}</span>
+                      <span className="rl-pick-name">
+                        {/* The first asset in the pair, which is the token a
+                            depositor actually brings. */}
+                        <AssetIcon
+                          asset={k.asset.split(" / ")[0] as "FXRP" | "stXRP"}
+                          size={22}
+                          decorative
+                        />
+                        <span className="rl-pick-platform">{k.platform}</span>
+                      </span>
                       <span className="rl-pick-badge">{k.category}</span>
                     </div>
                     <div className="rl-pick-rate">{k.apy.toFixed(2)}%</div>
@@ -1032,8 +1043,8 @@ export default function XrpRichListPage() {
                         <dd>{k.asset}</dd>
                       </div>
                       <div>
-                        <dt>Network</dt>
-                        <dd>{k.chain}</dd>
+                        <dt>Holders</dt>
+                        <dd>{k.holders?.count ? count(k.holders.count) : "n/a"}</dd>
                       </div>
                     </dl>
                   </div>
@@ -1048,7 +1059,7 @@ export default function XrpRichListPage() {
                 {yieldPicks.picks
                   .map(
                     (k) =>
-                      `The largest XRP ${k.category.toLowerCase()} Harvest tracks was ${k.asset} on ${k.platform}, paying ${k.apy.toFixed(2)}% on ${usdShort(k.tvlUsd)} of deposits as of ${utcDate(yieldPicks.asOf)}.`,
+                      `The largest XRP ${k.category.toLowerCase()} Harvest tracks was ${k.asset} on ${k.platform}, paying ${k.apy.toFixed(2)}% on ${usdShort(k.tvlUsd)} of deposits held by ${k.holders?.count ? count(k.holders.count) : "an undisclosed number of"} wallets as of ${utcDate(yieldPicks.asOf)}.`,
                   )
                   .join(" ")}
               </p>

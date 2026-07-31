@@ -958,7 +958,6 @@
    shared box rule, which would have measured against the wrong edge. */
 .uni-home-test .rl-sources {
   list-style: none;
-  counter-reset: rl-source;
   margin: 24px 0 30px;
   padding: 0;
   display: flex;
@@ -966,7 +965,6 @@
   gap: 8px;
 }
 .uni-home-test .rl-source {
-  counter-increment: rl-source;
   display: flex;
   align-items: stretch;
   border: 1px solid var(--uni-line, #dddee0);
@@ -978,20 +976,17 @@
   background: rgba(255, 185, 54, 0.10);
   border-color: color-mix(in srgb, var(--uni-gold, #ffb936) 60%, transparent);
 }
-/* The rail draws the number from the counter, so it never enters the DOM. */
+/* A gold bullet rather than a numbered rail. Four kinds of venue have no
+   rank, and a rail numbered 1 to 4 asserted one. */
 .uni-home-test .rl-source::before {
-  content: counter(rl-source);
+  content: "";
   flex: none;
-  width: 56px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-right: 1px solid var(--uni-line, #dddee0);
-  font-family: var(--mono, ui-monospace, SFMono-Regular, Menlo, monospace);
-  font-size: 18px;
-  font-weight: 500;
-  line-height: 1;
-  color: var(--uni-ink-3);
+  width: 9px;
+  height: 9px;
+  margin: 20px 0 0 18px;
+  border-radius: 50%;
+  background: var(--uni-gold, #ffb936);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--uni-gold, #ffb936) 22%, transparent);
 }
 .uni-home-test .rl-source-body {
   flex: 1 1 auto;
@@ -1019,7 +1014,7 @@
   color: var(--uni-ink-3);
 }
 @media (max-width: 560px) {
-  .uni-home-test .rl-source::before { width: 44px; font-size: 16px; }
+  .uni-home-test .rl-source::before { margin-left: 14px; margin-top: 18px; }
   .uni-home-test .rl-source-body { padding: 12px 14px; }
   .uni-home-test .rl-source-title { font-size: 15px; }
   .uni-home-test .rl-source-meta { font-size: 13.5px; }
@@ -1054,6 +1049,18 @@
   padding-bottom: 12px;
   margin-bottom: 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--uni-line, #dddee0) 70%, transparent);
+}
+.uni-home-test .rl-pick-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.uni-home-test .rl-pick-name img,
+.uni-home-test .rl-pick-name svg {
+  flex: none;
+  border-radius: 50%;
+  display: block;
 }
 .uni-home-test .rl-pick-platform {
   font-size: 15px;
@@ -1109,9 +1116,7 @@
 /* ---- bridge ----------------------------------------------------------- */
 
 .uni-home-test .rl-bridge {
-  background:
-    radial-gradient(circle at 92% 8%, rgba(255, 185, 54, 0.16) 0%, rgba(255, 185, 54, 0) 55%),
-    var(--uni-card, #f1f5f4);
+  background: var(--uni-card, #f1f5f4);
   border: 1px solid var(--rl-hair);
   border-radius: var(--uni-radius, 20px);
   padding: 26px 28px;
