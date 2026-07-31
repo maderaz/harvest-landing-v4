@@ -173,8 +173,28 @@ export function PercentileCalculator({
         </span>
       </div>
       <p className="rl-calc-privacy" id="rl-calc-privacy">
-        No wallet connection. No address. Just a number. The calculation runs in
-        your browser and nothing you type is sent anywhere.
+        <svg
+          className="rl-lock"
+          viewBox="0 0 16 16"
+          width="14"
+          height="14"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M4.5 7V5a3.5 3.5 0 1 1 7 0v2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+          <rect x="3" y="7" width="10" height="7" rx="1.6" fill="currentColor" />
+        </svg>
+        <span>
+          No wallet connection. No address. Just a number, and an approximation
+          is fine. The calculation runs in your browser against XRP Ledger data
+          and nothing you type is sent anywhere.
+        </span>
       </p>
 
       <button
@@ -206,13 +226,19 @@ export function PercentileCalculator({
               You are in the <strong>{topPctLabel(result.topPct)}</strong>.
             </p>
             <p className="rl-calc-detail">
-              A balance of {fmt(parsed ?? 0)} XRP is larger than{" "}
-              <strong>{compact(result.below)}</strong> of the {compact(accounts)}{" "}
-              funded XRP Ledger accounts as of {snapshotDate}.
+              A balance of {fmt(parsed ?? 0)} XRP, measured against all{" "}
+              {compact(accounts)} funded XRP Ledger accounts as of {snapshotDate}.
             </p>
-            <p className="rl-calc-detail rl-calc-dim">
-              About {compact(result.above)} accounts hold at least that much.
-            </p>
+            <ul className="rl-calc-facts">
+              <li>
+                There are about <strong>{compact(result.above)}</strong> XRP
+                accounts holding more XRP than that.
+              </li>
+              <li>
+                There are about <strong>{compact(result.below)}</strong> XRP
+                accounts holding less.
+              </li>
+            </ul>
             <button
               type="button"
               className="rl-calc-share"

@@ -99,6 +99,12 @@ export default function XrpRichListPage() {
   // is exactly when the demand rolls.
   const year = new Date(snap).getUTCFullYear();
 
+  // pctLabel drops the decimals above 10% because the tier table reads better
+  // in whole numbers there. The concentration breakdown cannot: 35.65 and 36
+  // are the difference between a figure a reader can check against the table
+  // and one they cannot.
+  const share2 = (v: number) => `${v.toFixed(2)}%`;
+
   const t1 = tierOf(data, 1);
   const t10 = tierOf(data, 10);
   const t50 = tierOf(data, 50);
@@ -116,6 +122,14 @@ export default function XrpRichListPage() {
   // across the whole top 100.
   const labelled = data.top.filter((t) => t.label);
   const selfDeclared = data.top.filter((t) => t.domain);
+  // The evidence line used to sit under every name in the table, which set the
+  // height of forty-nine of the hundred rows. Every current attribution comes
+  // from the same provider, so it is disclosed once here instead. If the
+  // registry ever mixes providers this falls back to the generic wording.
+  const attributions = new Set(
+    labelled.map((t) => t.label?.attribution).filter((a): a is string => !!a),
+  );
+  const attribution = attributions.size === 1 ? [...attributions][0] : null;
 
   // Needs two distinct observation days before a movement sentence means
   // anything. One walk compared against itself reports no change and reads as
@@ -236,8 +250,8 @@ export default function XrpRichListPage() {
       />
 
       {/* ---------------------------------------------------------- hero */}
-      <section className="uni-home-hero">
-        <div className="uni-home-hero-inner rl-hero">
+      <section className="rl-intro">
+        <div className="rl-hero">
         <div className="rl-hero-main">
           <h1 className="uni-home-h1">XRP Rich List</h1>
           <p className="uni-home-sub rl-hero-sub">
@@ -302,7 +316,12 @@ export default function XrpRichListPage() {
         <div className="uni-home-hero-inner rl-calc-grid">
           <div className="rl-calc-pitch">
             <h2 id="calculator-title" className="uni-home-h1 rl-calc-title">
-              The XRP Rich List Calculator
+              <AssetIcon asset="XRP" size={44} decorative />
+              <span>
+                The XRP
+                <br />
+                Rich List Calculator
+              </span>
             </h2>
             <p className="rl-calc-pitch-sub">
               Type a balance and see the position it holds among every funded
@@ -569,9 +588,9 @@ export default function XrpRichListPage() {
           <h2 id="concentration">What the largest 100 accounts hold</h2>
           <p className="rp-lead">
             The 100 largest XRP Ledger accounts controlled{" "}
-            {pctLabel(data.concentration.top100PctOfXrp)} of all XRP as of{" "}
+            {share2(data.concentration.top100PctOfXrp)} of all XRP as of{" "}
             {snapDate}, and{" "}
-            {pctLabel(data.concentration.exExchangePctOfXrp)} once known exchange
+            {share2(data.concentration.exExchangePctOfXrp)} once known exchange
             wallets are set aside.
           </p>
           <p className="rl-section-intro">
@@ -582,16 +601,30 @@ export default function XrpRichListPage() {
             accounts named in this list as of {snapDate}.
           </p>
 
+          {data.concentration.ripplePctOfXrp != null ? (
+            <p className="rl-section-intro">
+              The headline share is also mostly one entity. Ripple itself
+              controlled {data.concentration.rippleAccounts} of these accounts as
+              of {snapDate}, holding{" "}
+              <strong>{share2(data.concentration.ripplePctOfXrp)}</strong> of all
+              XRP in funded accounts on that date, which is more than half of
+              everything the top 100 held. Most of it cannot move:{" "}
+              {xrpAmount(data.concentration.rippleEscrowedXrp ?? 0)} XRP of that
+              position sat in onchain escrow as of {snapDate}, released against a
+              published schedule rather than sitting as a spendable balance.
+            </p>
+          ) : null}
+
           <div className="rl-stats">
             <div className="rl-stat">
-              <span className="rl-stat-num">{pctLabel(data.concentration.top100PctOfXrp)}</span>
+              <span className="rl-stat-num">{share2(data.concentration.top100PctOfXrp)}</span>
               <span className="rl-stat-lab">
                 of all XRP held by the top 100 accounts, {snapDate}
               </span>
             </div>
             <div className="rl-stat">
               <span className="rl-stat-num">
-                {pctLabel(data.concentration.exExchangePctOfXrp)}
+                {share2(data.concentration.exExchangePctOfXrp)}
               </span>
               <span className="rl-stat-lab">
                 held once the {data.concentration.exchangeAccounts} known exchange
@@ -607,6 +640,77 @@ export default function XrpRichListPage() {
               </span>
             </div>
           </div>
+
+          {data.concentration.residualPctOfXrp != null ? (
+            <>
+              <div className="rl-breakdown" role="table" aria-label={`The top 100 XRP Ledger accounts split by who holds them, ${snapDate}`}>
+                <div className="rl-breakdown-head" role="row">
+                  <span role="columnheader">Group</span>
+                  <span role="columnheader" className="rl-rank-n">Accounts</span>
+                  <span role="columnheader" className="rl-rank-n">XRP</span>
+                  <span role="columnheader" className="rl-rank-n">Share of all XRP</span>
+                </div>
+                {[
+                  {
+                    k: "ripple",
+                    name: "Ripple-controlled",
+                    n: data.concentration.rippleAccounts ?? 0,
+                    x: data.concentration.rippleXrp ?? 0,
+                    p: data.concentration.ripplePctOfXrp ?? 0,
+                  },
+                  {
+                    k: "exchange",
+                    name: "Known exchanges",
+                    n: data.concentration.exchangeAccounts,
+                    x: data.concentration.exchangeXrp,
+                    p:
+                      data.concentration.top100PctOfXrp -
+                      data.concentration.exExchangePctOfXrp,
+                  },
+                  {
+                    k: "founder",
+                    name: "Ripple founders",
+                    n: data.concentration.founderAccounts ?? 0,
+                    x: data.concentration.founderXrp ?? 0,
+                    p: data.concentration.founderPctOfXrp ?? 0,
+                  },
+                  {
+                    k: "residual",
+                    name: "Unnamed accounts",
+                    n: data.concentration.residualAccounts ?? 0,
+                    x: data.concentration.residualXrp ?? 0,
+                    p: data.concentration.residualPctOfXrp ?? 0,
+                  },
+                ].map((g) => (
+                  <div className="rl-breakdown-row" role="row" key={g.k}>
+                    <span role="cell">{g.name}</span>
+                    <span role="cell" className="rl-rank-n">{g.n}</span>
+                    <span role="cell" className="rl-rank-n">{xrpAmount(g.x)}</span>
+                    <span role="cell" className="rl-rank-n">{share2(g.p)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="rl-section-intro">
+                Set every named group aside and{" "}
+                {data.concentration.residualAccounts} accounts are left, holding{" "}
+                <strong>{share2(data.concentration.residualPctOfXrp)}</strong> of
+                all XRP as of {snapDate}. Those are the positions this page cannot
+                attribute to anyone as of that date, and they are the part of the
+                ranking where a reader learns something a headline share does not
+                tell them. Each group can be filtered out of the ranking below, so
+                the remainder reads on its own.
+              </p>
+              <p className="rl-section-intro">
+                One more distinction worth keeping. The{" "}
+                {data.concentration.founderAccounts} founder accounts are personal
+                balances attributed to people who co-founded Ripple, holding{" "}
+                {share2(data.concentration.founderPctOfXrp ?? 0)} of all XRP as of{" "}
+                {snapDate}. They are counted apart from the company because the
+                company does not control them, and a total that merges the two
+                overstates what Ripple holds by that margin.
+              </p>
+            </>
+          ) : null}
 
           {data.concentration.largestIndividual ? (
             <p className="rl-highlight">
@@ -648,7 +752,7 @@ export default function XrpRichListPage() {
         </p>
         <p className="rl-section-intro">
           {labelled.length > 0
-            ? `${labelled.length} of the 100 are named as of ${snapDate}, each against the evidence shown beside the name.`
+            ? `${labelled.length} of the 100 carry a name as of ${snapDate}.`
             : `None of the 100 is named as of ${snapDate}.`}{" "}
           {selfDeclared.length === 0
             ? "Not one of them publishes a domain onchain, which is the only identity an account can declare about itself, so no name here rests on that."
@@ -675,9 +779,13 @@ export default function XrpRichListPage() {
             </>
           ) : null}
           Share of supply is measured against all XRP in funded accounts as of{" "}
-          {snapDate}. Names attributed by a third party are that provider&rsquo;s
-          claim, shown with the provider named and linked rather than presented
-          as a finding of this page.
+          {snapDate}, and the escrow column is the part of each balance locked
+          onchain on that date rather than a figure on top of it.{" "}
+          {attribution
+            ? `Every name in the table is attributed by ${attribution} rather than established by this page, and each one links to that provider's record in the dataset export below.`
+            : "Every name in the table is a third-party attribution rather than a finding of this page."}{" "}
+          Addresses are shortened in the middle so the column keeps one width;
+          the full address is in the dataset export and appears on hover.
         </p>
       </section>
 

@@ -49,6 +49,11 @@ export interface TopAccount {
   label?: {
     name: string;
     type?: string;
+    // Who the holder is connected to, held apart from what kind of holder it
+    // is. "ripple" is XRP the company controls; "ripple-founder" is a personal
+    // balance belonging to someone who co-founded it, which is a different
+    // claim and gets a different filter.
+    affiliation?: "ripple" | "ripple-founder" | null;
     evidence: "account-domain" | "xrpl-toml" | "published" | "third-party";
     evidenceUrl: string | null;
     attribution: string | null;
@@ -122,6 +127,16 @@ export interface RichList {
     exchangeXrp: number;
     exExchangeXrp: number;
     exExchangePctOfXrp: number;
+    rippleAccounts?: number;
+    rippleXrp?: number;
+    ripplePctOfXrp?: number;
+    rippleEscrowedXrp?: number;
+    founderAccounts?: number;
+    founderXrp?: number;
+    founderPctOfXrp?: number;
+    residualAccounts?: number;
+    residualXrp?: number;
+    residualPctOfXrp?: number;
     largestIndividual: {
       rank: number;
       address: string;
