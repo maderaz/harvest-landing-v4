@@ -57,39 +57,56 @@
    cap just leaves 40% of a full-width gold panel empty. */
 .uni-home-test.rl-page .uni-home-hero-inner { max-width: 100%; }
 
-/* ---- intro: prose left, asset mark right --------------------------------
+/* ---- intro: an article opener ------------------------------------------
    No gold band. The calculator below it is the page's one gold surface, and
    two of them stacked left the H1 competing with the tool for the same
-   emphasis. This section is plain content on white. */
+   emphasis. Headline, dateline, featured image, summary, in one column. */
 
 .uni-home-test .rl-intro {
   padding: 8px 0 44px;
 }
+.uni-home-test .rl-h1 { margin: 0 0 12px; max-width: 22ch; }
 
-.uni-home-test .rl-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 70%) minmax(0, 30%);
-  gap: 40px;
-  align-items: center;
-}
-@media (max-width: 900px) {
-  .uni-home-test .rl-hero {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 28px;
-  }
-}
-.uni-home-test .rl-hero-mark {
+/* The featured-image slot. Sized by aspect-ratio rather than by height so it
+   holds the same shape at every width, which is what stops a real image
+   dropped in later from reflowing everything under it. */
+.uni-home-test .rl-figure {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
+  aspect-ratio: 40 / 13;
+  margin: 26px 0 0;
+  border-radius: var(--uni-radius, 20px);
+  overflow: hidden;
+  background:
+    radial-gradient(
+      circle at 78% 22%,
+      rgba(255, 145, 30, 0.30) 0%,
+      rgba(255, 185, 54, 0) 58%
+    ),
+    radial-gradient(circle, rgba(25, 23, 23, 0.06) 1px, transparent 1.3px),
+    var(--uni-gold, #ffb936);
+  background-size: auto, 12px 12px, auto;
+  background-repeat: no-repeat, repeat, no-repeat;
 }
-.uni-home-test .rl-hero-mark img {
-  width: min(220px, 46vw);
+.uni-home-test .rl-figure img {
+  width: min(140px, 22vw);
   height: auto;
-  filter: drop-shadow(0 10px 30px rgba(25, 23, 23, 0.16));
+  filter: drop-shadow(0 10px 30px rgba(25, 23, 23, 0.18));
 }
-@media (max-width: 900px) {
-  .uni-home-test .rl-hero-mark { display: none; }
+@media (max-width: 640px) {
+  .uni-home-test .rl-figure { aspect-ratio: 16 / 10; }
+}
+
+.uni-home-test .rl-summary-h {
+  margin: 34px 0 0;
+  font-family: var(--display);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--uni-ink);
 }
 
 /* ---- calculator band --------------------------------------------------- */
@@ -160,8 +177,6 @@
   border: 2px solid rgba(25, 23, 23, 0.55);
 }
 
-.uni-home-test .rl-hero-main .uni-home-h1 { margin: 0 0 12px; max-width: 18ch; }
-
 .uni-home-test .rl-hero-sub {
   margin: 0 0 16px;
   max-width: 52ch;
@@ -199,25 +214,30 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 12px;
-  max-width: 58ch;
+  gap: 13px;
+  margin-top: 14px;
+  max-width: 76ch;
 }
 .uni-home-test .rl-keyfind li {
   position: relative;
-  padding-left: 20px;
-  font-size: 15.5px;
-  line-height: 23px;
+  padding-left: 24px;
+  font-size: 16.5px;
+  line-height: 26px;
   color: var(--uni-ink);
 }
+/* Gold markers. The summary is the block most likely to be read and nothing
+   else, so its bullets carry the page's accent rather than the neutral square
+   the rest of the lists use. */
 .uni-home-test .rl-keyfind li::before {
   content: "";
   position: absolute;
   left: 0;
   top: 9px;
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  background: rgba(25, 23, 23, 0.45);
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--uni-gold, #ffb936);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--uni-gold, #ffb936) 22%, transparent);
 }
 
 /* ---- calculator ------------------------------------------------------- */
@@ -918,9 +938,9 @@
    column name from a data-label, so a stacked row still says what its numbers
    mean once the header row is gone. */
 @media (max-width: 640px) {
-  .uni-home-test .rl-hero { gap: 22px; }
-  .uni-home-test .rl-hero-main .uni-home-h1 { max-width: none; }
+  .uni-home-test .rl-h1 { max-width: none; }
   .uni-home-test .rl-hero-sub { max-width: none; font-size: 15px; }
+  .uni-home-test .rl-summary-h { font-size: 17px; line-height: 23px; }
   /* home.css centres hero content on a phone, which is right for the report's
      prose hero and wrong here: it leaves the bullet markers pinned to the left
      of a centred column, and a form reads as broken when its label is centred
@@ -932,7 +952,7 @@
   .uni-home-test .rl-calc-sub,
   .uni-home-test .rl-calc-privacy,
   .uni-home-test .rl-calc-out { text-align: left; }
-  .uni-home-test .rl-keyfind li { font-size: 13.5px; line-height: 20px; }
+  .uni-home-test .rl-keyfind li { font-size: 15px; line-height: 23px; }
   .uni-home-test .rl-updated { font-size: 12px; white-space: normal; }
 
   .uni-home-test .rl-calc { padding: 18px 16px 16px; }

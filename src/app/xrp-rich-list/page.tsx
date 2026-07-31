@@ -249,63 +249,69 @@ export default function XrpRichListPage() {
         }}
       />
 
-      {/* ---------------------------------------------------------- hero */}
+      {/* ---------------------------------------------------------- hero
+          Laid out as an article rather than as a hero: headline, dateline,
+          featured image, then a summary. That shape is what the pages winning
+          this SERP use, and it puts the three facts a reader came for above
+          the fold without making them read a paragraph to reach them. */}
       <section className="rl-intro">
-        <div className="rl-hero">
-        <div className="rl-hero-main">
-          <h1 className="uni-home-h1">XRP Rich List</h1>
-          <p className="uni-home-sub rl-hero-sub">
-            Enter your balance. See where you stand among the{" "}
-            {countProse(data.accounts)} XRP Ledger accounts funded as of{" "}
-            {snapDate}.
-          </p>
-          <p className="rl-updated">
-            <span className="rl-live-dot" aria-hidden="true" />
-            Updated {snapStamp}
-          </p>
+        <h1 className="uni-home-h1 rl-h1">XRP Rich List &amp; Calculator</h1>
+        <p className="uni-home-sub rl-hero-sub">
+          Enter your balance. See where you stand among the{" "}
+          {countProse(data.accounts)} XRP Ledger accounts funded as of{" "}
+          {snapDate}.
+        </p>
+        <p className="rl-updated">
+          <span className="rl-live-dot" aria-hidden="true" />
+          Updated {snapStamp}
+        </p>
 
-          <ul className="rl-keyfind">
-            {t10 ? (
-              <li>
-                The top 10% of funded XRP Ledger accounts held at least{" "}
-                <strong>{xrpAmount(t10.minXrp)} XRP</strong> as of {snapDate}.
-              </li>
-            ) : null}
-            {t1 ? (
-              <li>
-                The top 1% threshold stood at{" "}
-                <strong>{xrpAmount(t1.minXrp)} XRP</strong> as of {snapDate}.
-              </li>
-            ) : null}
+        {/* Placeholder for the featured image. It holds the slot at the right
+            aspect ratio so dropping a real one in later does not reflow the
+            page, and it carries the asset mark rather than a grey box so it
+            reads as deliberate meanwhile. Decorative, so it is hidden from
+            assistive tech and contributes no alt text to claim. */}
+        <div className="rl-figure" aria-hidden="true">
+          <AssetIcon asset="XRP" size={140} decorative priority />
+        </div>
+
+        <h2 className="rl-summary-h">Summary</h2>
+        <ul className="rl-keyfind">
+          {data.concentration?.largestIndividual ? (
             <li>
-              <strong>{count(data.accounts)}</strong> XRP Ledger accounts were
-              funded as of {snapDate}, controlling {xrpAmount(data.xrpHeld)} XRP
-              between them.
+              The largest holding attributed to an individual rather than to a
+              company or a trading venue was{" "}
+              <strong>
+                {count(data.concentration.largestIndividual.xrp)} XRP
+              </strong>{" "}
+              as of {snapDate}
+              {data.xrpUsd ? (
+                <>
+                  , worth about{" "}
+                  <strong>
+                    $
+                    {count(
+                      data.concentration.largestIndividual.xrp * data.xrpUsd,
+                    )}
+                  </strong>{" "}
+                  at {data.xrpUsd.toFixed(4)} US dollars per XRP on that date
+                </>
+              ) : null}
+              .
             </li>
-            {data.escrowedXrp ? (
-              <li>
-                <strong>{xrpAmount(data.escrowedXrp)} XRP</strong> sat locked in
-                onchain escrow as of {snapDate}, held by{" "}
-                {count(data.escrowAccounts ?? 0)} accounts and unable to move
-                before its release date.
-              </li>
-            ) : null}
-            {yc && yieldRatioPct != null ? (
-              <li>
-                Against those {countProse(data.accounts)} funded accounts,{" "}
-                <strong>{count(yc.receiptTokenHolders)}</strong> addresses held
-                a wrapped or staked XRP product onchain as of {utcDate(yc.asOf ?? snap)},
-                a figure equal to {pctLabel(yieldRatioPct)} of the XRPL account
-                count.
-              </li>
-            ) : null}
-          </ul>
-        </div>
-
-        <div className="rl-hero-mark" aria-hidden="true">
-          <AssetIcon asset="XRP" size={220} decorative priority />
-        </div>
-        </div>
+          ) : null}
+          <li>
+            <strong>{count(data.accounts)}</strong> XRP addresses were funded on
+            the XRP Ledger as of {snapDate}, controlling{" "}
+            {xrpAmount(data.xrpHeld)} XRP between them.
+          </li>
+          {t1 ? (
+            <li>
+              To sit in the top 1% of XRP holders an account needed at least{" "}
+              <strong>{xrpAmount(t1.minXrp)} XRP</strong> as of {snapDate}.
+            </li>
+          ) : null}
+        </ul>
       </section>
 
       {/* The calculator gets its own band rather than a corner of the hero.
