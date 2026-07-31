@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { SITE_AUTHOR } from "@/lib/author";
 import { AssetIcon } from "@/components/token-icons";
+import richListHeader from "@/assets/icons/XRP Rich List Header.png";
 import { breadcrumbSchema, faqPageSchema, reportDatasetSchema } from "@/lib/jsonld";
 import { PercentileCalculator } from "@/components/richlist/percentile-calculator";
 import { TopAccountsTable } from "@/components/richlist/top-accounts-table";
@@ -15,7 +17,6 @@ import {
   tierOf,
   xrpAmount,
   count,
-  countProse,
   pctLabel,
   utcDate,
   utcStamp,
@@ -256,24 +257,28 @@ export default function XrpRichListPage() {
           the fold without making them read a paragraph to reach them. */}
       <section className="rl-intro">
         <h1 className="uni-home-h1 rl-h1">XRP Rich List &amp; Calculator</h1>
-        <p className="uni-home-sub rl-hero-sub">
-          Enter your balance. See where you stand among the{" "}
-          {countProse(data.accounts)} XRP Ledger accounts funded as of{" "}
-          {snapDate}.
-        </p>
         <p className="rl-updated">
           <span className="rl-live-dot" aria-hidden="true" />
           Updated {snapStamp}
         </p>
 
-        {/* Placeholder for the featured image. It holds the slot at the right
-            aspect ratio so dropping a real one in later does not reflow the
-            page, and it carries the asset mark rather than a grey box so it
-            reads as deliberate meanwhile. Decorative, so it is hidden from
-            assistive tech and contributes no alt text to claim. */}
-        <div className="rl-figure" aria-hidden="true">
-          <AssetIcon asset="XRP" size={140} decorative priority />
-        </div>
+        {/* Featured image. Static import, so Next emits the intrinsic size and
+            the slot reserves its own height before the file loads. `priority`
+            because it is the largest element above the fold and is what LCP
+            measures on this page.
+
+            Empty alt on purpose. The image is decorative: it repeats the
+            headline in pixels and shows faces the page never names, and every
+            claim on this page lives in the summary underneath it. An alt that
+            described the faces would be asserting identities the ranking
+            itself refuses to assert without evidence. */}
+        <Image
+          src={richListHeader}
+          alt=""
+          className="rl-figure"
+          sizes="100vw"
+          priority
+        />
 
         <h2 className="rl-summary-h">Summary</h2>
         <ul className="rl-keyfind">

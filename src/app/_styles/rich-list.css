@@ -65,38 +65,29 @@
 .uni-home-test .rl-intro {
   padding: 8px 0 44px;
 }
-.uni-home-test .rl-h1 { margin: 0 0 12px; max-width: 22ch; }
+/* Full width and unwrapped. home.css caps .uni-home-h1 at 26ch for the
+   homepage headline, which is a sentence; this one is a title and reads as a
+   title only on one line. */
+.uni-home-test .rl-h1 {
+  margin: 0 0 14px;
+  max-width: none;
+  white-space: nowrap;
+}
+@media (max-width: 560px) {
+  .uni-home-test .rl-h1 { white-space: normal; }
+}
 
-/* The featured-image slot. Sized by aspect-ratio rather than by height so it
-   holds the same shape at every width, which is what stops a real image
-   dropped in later from reflowing everything under it. */
+/* The featured image. Aspect ratio matches the file's own 1200x671 so the
+   reserved box is exactly what the image fills, which means no letterboxing
+   and no crop, and nothing under it moves when the file finishes loading. */
 .uni-home-test .rl-figure {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 100%;
-  aspect-ratio: 40 / 13;
+  height: auto;
+  aspect-ratio: 1200 / 671;
+  object-fit: cover;
   margin: 26px 0 0;
   border-radius: var(--uni-radius, 20px);
-  overflow: hidden;
-  background:
-    radial-gradient(
-      circle at 78% 22%,
-      rgba(255, 145, 30, 0.30) 0%,
-      rgba(255, 185, 54, 0) 58%
-    ),
-    radial-gradient(circle, rgba(25, 23, 23, 0.06) 1px, transparent 1.3px),
-    var(--uni-gold, #ffb936);
-  background-size: auto, 12px 12px, auto;
-  background-repeat: no-repeat, repeat, no-repeat;
-}
-.uni-home-test .rl-figure img {
-  width: min(140px, 22vw);
-  height: auto;
-  filter: drop-shadow(0 10px 30px rgba(25, 23, 23, 0.18));
-}
-@media (max-width: 640px) {
-  .uni-home-test .rl-figure { aspect-ratio: 16 / 10; }
 }
 
 .uni-home-test .rl-summary-h {
@@ -177,13 +168,6 @@
   border: 2px solid rgba(25, 23, 23, 0.55);
 }
 
-.uni-home-test .rl-hero-sub {
-  margin: 0 0 16px;
-  max-width: 52ch;
-  opacity: 1;
-  color: var(--uni-ink-2);
-}
-
 /* Freshness is a ranking argument on this page, not housekeeping, so the
    stamp sits above the fold rather than in a footer. */
 .uni-home-test .rl-updated {
@@ -216,7 +200,7 @@
   display: grid;
   gap: 13px;
   margin-top: 14px;
-  max-width: 76ch;
+  max-width: none;
 }
 .uni-home-test .rl-keyfind li {
   position: relative;
@@ -938,8 +922,6 @@
    column name from a data-label, so a stacked row still says what its numbers
    mean once the header row is gone. */
 @media (max-width: 640px) {
-  .uni-home-test .rl-h1 { max-width: none; }
-  .uni-home-test .rl-hero-sub { max-width: none; font-size: 15px; }
   .uni-home-test .rl-summary-h { font-size: 17px; line-height: 23px; }
   /* home.css centres hero content on a phone, which is right for the report's
      prose hero and wrong here: it leaves the bullet markers pinned to the left
