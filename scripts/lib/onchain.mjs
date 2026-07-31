@@ -168,7 +168,7 @@ export async function getLogs(chain, address, topic0, fromBlock, toBlock) {
   return out;
 }
 
-async function blockTimestamp(chain, block) {
+export async function blockTimestamp(chain, block) {
   const tag = typeof block === "number" ? "0x" + block.toString(16) : block;
   const b = await rpc(chain, "eth_getBlockByNumber", [tag, false]);
   return b ? parseInt(b.timestamp, 16) : null;

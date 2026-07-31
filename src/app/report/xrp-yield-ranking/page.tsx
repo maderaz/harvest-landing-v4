@@ -30,7 +30,7 @@ import "../../_styles/report.css";
 // wXRP...) earn onchain yield. RLUSD (Ripple's stablecoin) is intentionally out
 // of scope: it isn't XRP-denominated. Every venue is external - none are
 // Harvest products. Isolated from the product pipeline: reads only
-// data/xrp-yield.json (scripts/fetch-xrp-yield.mjs, free DeFiLlama API, hourly).
+// data/xrp-yield.json (scripts/fetch-xrp-yield.mjs, onchain reads, daily).
 // No Supabase, no vaults.json.
 
 const PAGE_URL = `${SITE_URL}/report/xrp-yield-ranking`;
@@ -200,6 +200,19 @@ const usd = (n: number) =>
       ? `$${(n / 1_000_000).toFixed(1)}M`
       : `$${Math.round(n / 1_000)}k`;
 const histRate = (p: XrpPool) => p.apyMean30d ?? p.apy;
+// Only the points that carry a rate. The TVL backfill writes {d, apy: null,
+// tvl} for days it reconstructed from chain state, so raw history.length now
+// counts days that have capital but no rate, and gating a RATE chart on it
+// would render an empty line for a venue whose rate series does not exist.
+const rateHist = (p: XrpPool) => (p.history ?? []).filter((h) => Number.isFinite(h.apy));
+// "May 2026" from a YYYY-MM-DD landscape point, always read as UTC so the month
+// does not slip a day either side of the boundary.
+const landMonth = (d: string) =>
+  new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 // Clean asset headline for the ranking Product column (falls back to the raw
 // symbol for older snapshots that predate the `asset` field).
 const assetHead = (p: XrpPool) => p.asset ?? nice(p.displayName ?? p.symbol);
@@ -305,9 +318,9 @@ export default function XrpYieldRankingPage() {
 
   // Principal Tokens with a daily history feed the max-fixed-rate chart.
   const ptRows = pools.filter(
-    (p) => productTypeOf(p) === "Fixed-rate" && (p.history?.length ?? 0) >= 2,
+    (p) => productTypeOf(p) === "Fixed-rate" && rateHist(p).length >= 2,
   );
-  // Selected venues with a real daily DeFiLlama history feed the 30-day rate
+  // Selected venues with a real daily rate history feed the 30-day rate
   // charts (curated headline products, excluding the fixed-rate PTs which have
   // their own chart). A meaningful window is required — products that only
   // expose a couple of points (e.g. Portals-sourced vaults with 2 days of
@@ -318,7 +331,7 @@ export default function XrpYieldRankingPage() {
       (p) =>
         p.curated &&
         productTypeOf(p) !== "Fixed-rate" &&
-        (p.history?.length ?? 0) >= CHART_MIN_POINTS,
+        rateHist(p).length >= CHART_MIN_POINTS,
     )
     .sort((a, b) => (histRate(b) ?? 0) - (histRate(a) ?? 0))
     .slice(0, 6);
@@ -326,7 +339,7 @@ export default function XrpYieldRankingPage() {
   // spread across the charted venues and the single largest 30-day move, so the
   // section opens with a citable read instead of a caption.
   const rhStats = venueCharts.map((p) => {
-    const h = (p.history ?? []).slice(-30);
+    const h = rateHist(p).slice(-30);
     const start = h[0]?.apy ?? null;
     const now = histRate(p);
     return {
@@ -867,8 +880,8 @@ export default function XrpYieldRankingPage() {
         // Real PT rate history drives the card's bars so it mirrors the
         // stXRP PT · Aug 2026 opportunity, not a decorative series.
         apySpark:
-          featured.history && featured.history.length >= 2
-            ? featured.history.map((h) => h.apy)
+          rateHist(featured).length >= 2
+            ? rateHist(featured).map((h) => h.apy)
             : synthSpark(featured),
         tvlSpark: [featured.tvlUsd * 0.7, featured.tvlUsd * 0.86, featured.tvlUsd],
       }
@@ -1289,23 +1302,32 @@ export default function XrpYieldRankingPage() {
                   have reported the whole XRP DeFi market at these figures.
                   "Today" is replaced with the date for the same reason a model
                   may retrieve this months later. */}
+              {/* The verb has to follow the data. The line used to be one
+                  venue's series, which only ever rose, so "grew from X to a
+                  peak of Y" was safe to hardcode. Now that it aggregates every
+                  venue with an onchain record it can fall, and a drawdown
+                  described as growth is the kind of sentence an answer engine
+                  lifts verbatim. */}
               <p className="rp-lead">
-                XRP-denominated DeFi deposits across the products in this ranking
-                with a continuous onchain record grew from{" "}
-                <strong>{usd(land.start.tvl)}</strong> in{" "}
-                {new Date(`${land.start.d}T00:00:00Z`).toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric",
-                  timeZone: "UTC",
-                })}{" "}
-                to a peak of <strong>{usd(land.peak.tvl)}</strong> in{" "}
-                {new Date(`${land.peak.d}T00:00:00Z`).toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric",
-                  timeZone: "UTC",
-                })}
-                , and stood near <strong>{usd(land.latest.tvl)}</strong> on{" "}
-                {updated}. That continuous-record set covers{" "}
+                XRP-denominated DeFi deposits across the products in this
+                ranking with a continuous onchain record stood at{" "}
+                <strong>{usd(land.latest.tvl)}</strong> on {updated}.{" "}
+                {land.latest.tvl >= land.peak.tvl * 0.98 ? (
+                  <>
+                    Across that same continuous-record set,{" "}
+                    {usd(land.latest.tvl)} is the highest daily total in the
+                    measured window, which opens at{" "}
+                    <strong>{usd(land.start.tvl)}</strong> in {landMonth(land.start.d)}.
+                  </>
+                ) : (
+                  <>
+                    Across that same continuous-record set, deposits peaked at{" "}
+                    <strong>{usd(land.peak.tvl)}</strong> in {landMonth(land.peak.d)}{" "}
+                    and opened the measured window at{" "}
+                    <strong>{usd(land.start.tvl)}</strong> in {landMonth(land.start.d)}.
+                  </>
+                )}{" "}
+                That continuous-record set covers{" "}
                 <strong>{land.indexedShareOfTotalPct}%</strong> of the{" "}
                 {usd(totalTvl)} tracked in total as of {updated}; the
                 remainder sits in products tracked at their current value only.
@@ -1585,11 +1607,11 @@ export default function XrpYieldRankingPage() {
                       {ptRows.map((p) => (
                         <ReportChart
                           key={p.id}
-                          history={p.history ?? []}
+                          history={rateHist(p)}
                           title={nice(p.displayName ?? p.symbol)}
                           tvlLabel={`${usd(p.tvlUsd)} TVL`}
                           nowValue={
-                            p.history?.[p.history.length - 1]?.apy ?? histRate(p)
+                            rateHist(p)[rateHist(p).length - 1]?.apy ?? histRate(p)
                           }
                           nowLabel="max fixed"
                         />
@@ -1763,16 +1785,16 @@ export default function XrpYieldRankingPage() {
                     : " "}
                 </>
               ) : null}
-              How the rate has moved over the last 30 days for a selection of
-              the larger venues, from DeFiLlama&rsquo;s daily record. Useful for
-              telling a steady rate apart from one riding a short-lived incentive
-              spike.
+              Each line below is how one venue&rsquo;s rate moved over the
+              thirty days to {updated}, read from that venue&rsquo;s own
+              contracts once a day. Useful for telling a steady rate apart from
+              one riding a short-lived incentive spike.
             </p>
             <div className="rp-charts">
               {venueCharts.map((p) => (
                 <ReportChart
                   key={p.id}
-                  history={(p.history ?? []).slice(-30)}
+                  history={rateHist(p).slice(-30)}
                   title={assetHead(p)}
                   subtitle={p.platform}
                   tvlLabel={`${usd(p.tvlUsd)} TVL`}
@@ -1782,7 +1804,8 @@ export default function XrpYieldRankingPage() {
               ))}
             </div>
             <p className="rp-source-note">
-              Daily APY from DeFiLlama, last 30 days, as of {updated}.
+              Daily APY read onchain from each venue&rsquo;s own contracts,
+              last 30 days, as of {updated}.
             </p>
           </section>
         )}
@@ -2365,7 +2388,7 @@ function TipBox({ children }: { children: ReactNode }) {
 }
 
 // Resolve a pool to one of the product-type keys. Curated rows carry an
-// explicit productType; everything else is inferred from the DeFiLlama
+// explicit productType; everything else is inferred from the row's
 // category / project / exposure.
 function productTypeOf(p: XrpPool): string {
   const t = (p.productType || "").toLowerCase();

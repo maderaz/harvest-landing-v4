@@ -69,7 +69,7 @@ const DATE_TOKEN =
 // identifiers. Sentences matching these are exempt unless they also carry a
 // currency or percentage figure.
 const ALLOW_DIGIT =
-  /0x[0-9a-f]{6,}|\b1:1\b|\b\d+(\.\d+)?x\b|\bv\d+(\.\d+)?\b|ve\(3,3\)|\bERC-\d+\b|\bSPL\b|\bCC-BY-[\d.]+\b|\b\d+-day\b|\b\d+-hour\b|\bUniswap v\d\b/i;
+  /0x[0-9a-f]{6,}|\b1:1\b|\b\d+(\.\d+)?x\b|\bv\d+(\.\d+)?\b|ve\(3,3\)|\bERC-\d+\b|\bSPL\b|\bCC-BY-[\d.]+\b|\b\d+-day\b|\b\d+-hour\b|\bUniswap v\d\b|\bFTSOv\d\b/i;
 
 const ORPHAN_OPENER =
   /^(Those|These|This|That|It|They|Their|Its|Neither|Both|Each|Such|The former|The latter)\b/;
