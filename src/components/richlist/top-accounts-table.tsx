@@ -1,6 +1,6 @@
 "use client";
 
-// The top-100 table on /xrp-rich-list.
+// The largest-accounts table on /xrp-rich-list.
 //
 // Built on the ranking pattern the asset hubs use (see .uni-hub-row in
 // asset-hub.css): a CSS grid where the header defines the column track and
@@ -8,7 +8,7 @@
 // The reason is uniform rows. A table lets one cell with an extra line push
 // its whole row taller, and a hundred rows of different heights read as a
 // dump rather than as a ranking. Here every cell is exactly one line, so all
-// hundred rows are the same height and the eye can run down a column.
+// the rows are the same height and the eye can run down a column.
 //
 // That constraint is why the escrow figure has its own column instead of a
 // sub-line under the XRP amount, and why the evidence note moved out of the
@@ -36,7 +36,7 @@
 // would call a row "the third largest XRP holder" when it is really the
 // twelfth, and that sentence would be false.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export interface TopRow {
   rank: number;
@@ -100,6 +100,12 @@ const FILTERS: { key: FilterKey; label: string; match: (r: TopRow) => boolean }[
   },
 ];
 
+// A hundred rows is already a long scroll and the snapshot runs five times
+// deeper than that, so the table pages rather than growing without end. A
+// hundred to a page keeps the top 100, the cohort every other figure on this
+// page is measured over, as exactly the first page.
+const PAGE_SIZE = 100;
+
 export function TopAccountsTable({
   rows,
   snapshotDate,
@@ -114,6 +120,7 @@ export function TopAccountsTable({
     ripple: false,
     founder: false,
   });
+  const [page, setPage] = useState(0);
 
   const counts = useMemo(
     () =>
@@ -135,10 +142,19 @@ export function TopAccountsTable({
   const shownXrp = shown.reduce((a, r) => a + r.xrp, 0);
   const shownPct = shown.reduce((a, r) => a + r.pctOfSupply, 0);
 
+  const pages = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  // Filtering can leave fewer pages than the one being viewed, which would
+  // otherwise show an empty table with no way back.
+  useEffect(() => {
+    if (page > pages - 1) setPage(0);
+  }, [page, pages]);
+  const from = page * PAGE_SIZE;
+  const pageRows = shown.slice(from, from + PAGE_SIZE);
+
   return (
     <>
       <div className="rl-rank-box">
-      <div className="rl-rank" role="table" aria-label={`Largest 100 XRP Ledger accounts as of ${snapshotDate}`} data-nosnippet="">
+      <div className="rl-rank" role="table" aria-label={`Largest XRP Ledger accounts as of ${snapshotDate}`} data-nosnippet="">
         <div className="rl-rank-head" role="row">
           <span role="columnheader">#</span>
           <span role="columnheader">Account</span>
@@ -152,7 +168,7 @@ export function TopAccountsTable({
             scroll container, and a bare <div> between a table and its rows
             breaks the role hierarchy, so it declares itself a rowgroup. */}
         <div className="rl-rank-body" role="rowgroup">
-          {shown.map((t) => (
+          {pageRows.map((t) => (
             <div className="rl-rank-row" role="row" key={t.address}>
               <span className="rl-rank-i" role="cell">{t.rank}</span>
               <span className="rl-rank-addr" role="cell">
@@ -186,6 +202,35 @@ export function TopAccountsTable({
         </div>
       </div>
       </div>
+
+      {pages > 1 ? (
+        <div className="rl-pager">
+          <button
+            type="button"
+            className="rl-pager-btn"
+            onClick={() => setPage((n) => Math.max(0, n - 1))}
+            disabled={page === 0}
+          >
+            Previous
+          </button>
+          {/* Positions in the list as filtered, not ledger ranks. Hiding the
+              exchange rows shifts every position up, so "rank 401" would name
+              a different account than the one on the row. */}
+          <span className="rl-pager-at">
+            Accounts {(from + 1).toLocaleString("en-US")} to{" "}
+            {Math.min(from + PAGE_SIZE, shown.length).toLocaleString("en-US")} of{" "}
+            {shown.length.toLocaleString("en-US")}
+          </span>
+          <button
+            type="button"
+            className="rl-pager-btn"
+            onClick={() => setPage((n) => Math.min(pages - 1, n + 1))}
+            disabled={page >= pages - 1}
+          >
+            Next
+          </button>
+        </div>
+      ) : null}
 
       <div className="rl-rank-foot">
       <div className="rl-filters">

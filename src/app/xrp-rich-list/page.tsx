@@ -195,6 +195,12 @@ export default function XrpRichListPage() {
   // across the whole top 100.
   const labelled = data.top.filter((t) => t.label);
   const selfDeclared = data.top.filter((t) => t.domain);
+  // The naming research covers the first hundred rows. The snapshot now runs
+  // five times deeper than that, so the count above would read as thin
+  // coverage of five hundred accounts unless the page says where the work
+  // reaches. Derived rather than asserted, so it stays true if a name is ever
+  // added further down.
+  const namedBelowFirst100 = labelled.filter((t) => t.rank > 100).length;
   // The evidence line used to sit under every name in the table, which set the
   // height of forty-nine of the hundred rows. Every current attribution comes
   // from the same provider, so it is disclosed once here instead. If the
@@ -284,7 +290,7 @@ export default function XrpRichListPage() {
           __html: JSON.stringify(
             reportDatasetSchema({
               name: "XRP Ledger holder distribution dataset",
-              description: `Balance distribution across all ${count(data.accounts)} funded XRP Ledger accounts, with tier thresholds, decade bands and the largest 100 accounts, read from ledger ${count(data.ledgerIndex)}.`,
+              description: `Balance distribution across all ${count(data.accounts)} funded XRP Ledger accounts, with tier thresholds, decade bands and the largest 500 accounts, read from ledger ${count(data.ledgerIndex)}.`,
               url: PAGE_URL,
               // The newest observation, which is the ledger close, not the
               // pipeline run. A build that changed nothing must not advance it.
@@ -452,7 +458,7 @@ export default function XrpRichListPage() {
         <nav className="rp-toc" aria-label="On this page">
           <span className="rp-toc-label">On this page</span>
           <a href="#calculator">Calculator</a>
-          <a href="#top-accounts">Top 100</a>
+          <a href="#top-accounts">Top 500</a>
           <a href="#thresholds">Thresholds</a>
           <a href="#what-it-shows">What it shows</a>
           {yc ? <a href="#working-vs-idle">Working or idle</a> : null}
@@ -470,11 +476,11 @@ export default function XrpRichListPage() {
       {/* ------------------------------------------------ top accounts */}
       <section className="uni-home-content rl-section" aria-labelledby="top-accounts">
         <p className="rp-eyebrow">Largest accounts</p>
-        <h2 id="top-accounts">Top 100 XRP wallets</h2>
+        <h2 id="top-accounts">Top 500 XRP wallets</h2>
         <p className="rp-lead">
-          The 100 largest funded XRP Ledger accounts as of {snapDate}, read from
+          The 500 largest funded XRP Ledger accounts as of {snapDate}, read from
           ledger {count(data.ledgerIndex)} and ranked on the XRP each one
-          controls.
+          controls, a hundred to a page.
         </p>
         <TopAccountsTable
           rows={data.top}
@@ -482,36 +488,43 @@ export default function XrpRichListPage() {
           xrpUsd={data.xrpUsd ?? null}
         />
 
-        <p className="rl-section-intro">
+        <p className="rl-note">
           {labelled.length > 0
-            ? `${labelled.length} of the 100 carry a name as of ${snapDate}.`
-            : `None of the 100 is named as of ${snapDate}.`}{" "}
+            ? `${labelled.length} of the ${data.top.length} ranked accounts carry a name as of ${snapDate}.`
+            : `None of the ${data.top.length} ranked accounts is named as of ${snapDate}.`}{" "}
+          {labelled.length > 0 && namedBelowFirst100 === 0
+            ? "All of them sit in the first hundred rows, which is as far as the naming research reaches."
+            : null}{" "}
           {selfDeclared.length === 0
-            ? "Not one of them publishes a domain onchain, which is the only identity an account can declare about itself, so no name here rests on that."
-            : `${selfDeclared.length} publish a domain onchain, which is the strongest evidence available.`}{" "}
+            ? "Not one of them publishes a domain onchain, which is the only identity an account can declare about itself."
+            : `${selfDeclared.length} publish a domain onchain, which is the strongest evidence available.`}
+        </p>
+        <p className="rl-note">
           Naming an account from how it transacts would be a guess, so this page
-          names an account only against a source it can show. An account is
-          ranked on its spendable balance plus anything it holds in onchain
-          escrow, which is why an account with a few hundred XRP spendable can
-          sit near the top.
+          names an account only against a source it can show.
+        </p>
+        <p className="rl-note">
+          An account is ranked on its spendable balance plus anything it holds
+          in onchain escrow, which is why an account with a few hundred XRP
+          spendable can sit near the top.
         </p>
 
+        {data.xrpUsd ? (
+          <p className="rl-note">
+            Dollar values use {data.xrpUsd.toFixed(4)} US dollars per XRP as of{" "}
+            {snapDate}, read from {data.xrpUsdSource}. They move with the price
+            and the XRP amounts beside them do not.
+          </p>
+        ) : null}
         <p className="rl-note">
-          {data.xrpUsd ? (
-            <>
-              Dollar values use {data.xrpUsd.toFixed(4)} US dollars per XRP as of{" "}
-              {snapDate}, read from {data.xrpUsdSource}. They move with the price
-              and the XRP amounts beside them do not.{" "}
-            </>
-          ) : null}
           Share of supply is measured against all XRP in funded accounts as of{" "}
-          {snapDate}, and the escrow column is the part of each balance locked
-          onchain on that date rather than a figure on top of it.{" "}
+          {snapDate}. The escrow column is the part of each balance locked
+          onchain on that date rather than a figure on top of it.
+        </p>
+        <p className="rl-note">
           {attribution
-            ? `Every name in the table is attributed by ${attribution} rather than established by this page, and each one links to that provider's record in the dataset export below.`
-            : "Every name in the table is a third-party attribution rather than a finding of this page."}{" "}
-          Addresses are shortened in the middle so the column keeps one width;
-          the full address is in the dataset export and appears on hover.
+            ? `Every name in the table is attributed by ${attribution} rather than established by this page.`
+            : "Every name in the table is a third-party attribution rather than a finding of this page."}
         </p>
       </section>
 
@@ -911,50 +924,6 @@ export default function XrpRichListPage() {
         </section>
       ) : null}
 
-      {/* Centred header over a narrower accordion column, questions divided by
-          a hairline with a chevron that turns on open: the faq3 layout.
-
-          Still <details> rather than an accordion component. The answers carry
-          the figures this page is cited for, and a JS accordion hides them
-          from anything that does not run scripts. `name` makes the group
-          exclusive natively, which is what the reference's type="single"
-          collapsible does, and browsers without it just allow several open. */}
-      <section className="uni-home-content rl-section rl-faq-section" aria-labelledby="faq">
-        <div className="rl-faq-head">
-          <p className="rp-eyebrow">Questions</p>
-          <h2 id="faq">XRP rich list questions</h2>
-          <p className="rl-faq-desc">
-            What people ask about XRP holder counts and thresholds, answered
-            from the {snapDate} ledger snapshot behind this page.
-          </p>
-        </div>
-        <div className="rl-faq">
-          {faqs.map((f, i) => (
-            <details className="rl-faq-item" name="rl-faq" key={f.q} open={i === 0}>
-              <summary className="rl-faq-q">
-                <span>{f.q}</span>
-                <svg
-                  className="rl-faq-chev"
-                  viewBox="0 0 24 24"
-                  width="16"
-                  height="16"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                  focusable="false"
-                >
-                  <path d="m6 9 6 6 6-6" />
-                </svg>
-              </summary>
-              <p className="rl-faq-a">{f.a}</p>
-            </details>
-          ))}
-        </div>
-      </section>
-
       {/* ----------------------------------------------------- bridge */}
       {/* Laid out as the draggable-priority-list rows: a numbered mono rail on
           the left, title and meta in the body, bordered and rounded, lit on
@@ -1077,6 +1046,50 @@ export default function XrpRichListPage() {
             Open the XRP yield report
             <span aria-hidden="true">→</span>
           </Link>
+        </div>
+      </section>
+
+      {/* Centred header over a narrower accordion column, questions divided by
+          a hairline with a chevron that turns on open: the faq3 layout.
+
+          Still <details> rather than an accordion component. The answers carry
+          the figures this page is cited for, and a JS accordion hides them
+          from anything that does not run scripts. `name` makes the group
+          exclusive natively, which is what the reference's type="single"
+          collapsible does, and browsers without it just allow several open. */}
+      <section className="uni-home-content rl-section rl-faq-section" aria-labelledby="faq">
+        <div className="rl-faq-head">
+          <p className="rp-eyebrow">Questions</p>
+          <h2 id="faq">XRP rich list questions</h2>
+          <p className="rl-faq-desc">
+            What people ask about XRP holder counts and thresholds, answered
+            from the {snapDate} ledger snapshot behind this page.
+          </p>
+        </div>
+        <div className="rl-faq">
+          {faqs.map((f, i) => (
+            <details className="rl-faq-item" name="rl-faq" key={f.q} open={i === 0}>
+              <summary className="rl-faq-q">
+                <span>{f.q}</span>
+                <svg
+                  className="rl-faq-chev"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
+              </summary>
+              <p className="rl-faq-a">{f.a}</p>
+            </details>
+          ))}
         </div>
       </section>
 
