@@ -43,6 +43,12 @@ const OUT_FILE = join(ROOT, "data", "xrp-yield.json");
 // 30-day archive-block window rather than from a spot lending rate.
 const VAULT_PROTOCOLS = new Set(["mystic-vault", "erc4626", "upshift-vault"]);
 
+// How much per-venue daily history to keep. Sized for the TVL backfill's reach
+// (240 days at the time of writing) with room to grow, not for the rate series,
+// which only needs 90. A bound still exists so the snapshot cannot grow without
+// limit; raise it if the backfill is ever run deeper.
+const HISTORY_MAX_DAYS = 400;
+
 const LLAMA_CACHE = process.env.XRP_LLAMA_CACHE || null;
 const PORTALS_CACHE = process.env.PORTALS_CACHE || null;
 const PORTALS_KEY = process.env.PORTALS_API_KEY || null;
@@ -451,14 +457,27 @@ const main = async () => {
     if (!key) continue;
     if (!p.holders && prevHolders.has(key)) p.holders = prevHolders.get(key);
     if (p.source === "onchain") {
-      // On-chain venues accumulate their OWN daily series: carry prior on-chain
-      // points (never stale aggregator history from before the switch), then
-      // append today's reading. One point per UTC day; keep ~90 days.
-      const prior = prevSource.get(key) === "onchain" ? prevHistory.get(key) ?? [] : [];
+      // On-chain venues accumulate their own daily rate series, and today's
+      // point is appended to whatever history the file already holds.
+      //
+      // Two things this must not do. It must not carry a rate recorded before
+      // the venue switched to on-chain sourcing, because that rate came from an
+      // aggregator and is not comparable; those points keep their TVL and lose
+      // their apy. And it must not truncate to the rate series' own depth: TVL
+      // points come from scripts/backfill-xrp-tvl-onchain.mjs, which reads
+      // archive blocks and reaches back further than this script has ever run.
+      // Capping at 90 here silently deleted that backfill on the next cron and
+      // shrank the landscape chart back to a 90-day window.
+      const carriedRates = prevSource.get(key) === "onchain";
+      const prior = (prevHistory.get(key) ?? []).map((h) =>
+        carriedRates ? h : { ...h, apy: null },
+      );
       if (!p.rateNa && Number.isFinite(p.apy)) {
         const merged = prior.filter((h) => h.d !== today);
-        merged.push({ d: today, apy: p.apy, tvl: p.tvlUsd });
-        p.history = merged.slice(-90);
+        const todayPrior = prior.find((h) => h.d === today);
+        merged.push({ d: today, apy: p.apy, tvl: p.tvlUsd ?? todayPrior?.tvl ?? null });
+        merged.sort((a, b) => (a.d < b.d ? -1 : 1));
+        p.history = merged.slice(-HISTORY_MAX_DAYS);
         p.inception = p.history[0]?.d ?? today;
         const tail = p.history.slice(-90).map((h) => h.apy).filter(Number.isFinite);
         if (tail.length >= 7) {
