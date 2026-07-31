@@ -7,55 +7,47 @@
    Note the deliberate avoidance of report.css's flex `order` block, which keys
    on [aria-labelledby="*-title"]. No section on this page is named *-title. */
 
-.rl-page {
-  --rl-dim: color-mix(in srgb, var(--uni-ink) 55%, transparent);
+.uni-home-test.rl-page {
+  --rl-dim: color-mix(in srgb, var(--uni-ink) 62%, transparent);
   --rl-hair: var(--uni-line, #dddee0);
 }
 
 /* ---- hero: prose and bullets left, calculator right ------------------- */
 
-.rl-hero {
+.uni-home-test .rl-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
   gap: 40px;
   align-items: start;
 }
 @media (max-width: 900px) {
-  .rl-hero {
+  .uni-home-test .rl-hero {
     grid-template-columns: minmax(0, 1fr);
     gap: 28px;
   }
 }
 
-.rl-hero-main h1 {
-  margin: 0 0 10px;
-  letter-spacing: -0.02em;
-}
+.uni-home-test .rl-hero-main .uni-home-h1 { margin: 0 0 12px; max-width: 18ch; }
 
-.rl-hero-sub {
-  font-size: 19px;
-  line-height: 28px;
-  margin: 0 0 14px;
-  color: var(--uni-ink);
-  max-width: 46ch;
-}
+.uni-home-test .rl-hero-sub { margin: 0 0 16px; max-width: 44ch; opacity: 0.82; }
 
 /* Freshness is a ranking argument on this page, not housekeeping, so the
    stamp sits above the fold rather than in a footer. */
-.rl-updated {
+.uni-home-test .rl-updated {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin: 0 0 22px;
   padding: 6px 12px;
   border-radius: var(--uni-radius-pill, 999px);
-  background: var(--uni-gold-bg, #fff5d9);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(25, 23, 23, 0.09);
   color: var(--uni-ink);
   font-size: 13.5px;
   font-weight: 650;
   white-space: nowrap;
 }
-.rl-live-dot {
+.uni-home-test .rl-live-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -64,7 +56,7 @@
   flex: none;
 }
 
-.rl-keyfind {
+.uni-home-test .rl-keyfind {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -72,14 +64,14 @@
   gap: 12px;
   max-width: 58ch;
 }
-.rl-keyfind li {
+.uni-home-test .rl-keyfind li {
   position: relative;
   padding-left: 20px;
   font-size: 15.5px;
   line-height: 23px;
   color: var(--uni-ink);
 }
-.rl-keyfind li::before {
+.uni-home-test .rl-keyfind li::before {
   content: "";
   position: absolute;
   left: 0;
@@ -87,14 +79,15 @@
   width: 7px;
   height: 7px;
   border-radius: 2px;
-  background: var(--uni-gold, #ffb936);
+  background: rgba(25, 23, 23, 0.45);
 }
 
 /* ---- calculator ------------------------------------------------------- */
 
-.rl-calc {
-  background: var(--uni-card, #f1f5f4);
-  border: 1px solid var(--rl-hair);
+.uni-home-test .rl-calc {
+  background: var(--uni-bg, #fff);
+  border: 1px solid rgba(25, 23, 23, 0.10);
+  box-shadow: 0 6px 24px rgba(25, 23, 23, 0.07);
   border-radius: var(--uni-radius, 20px);
   padding: 22px 22px 20px;
   position: sticky;
@@ -104,20 +97,20 @@
   .rl-calc { position: static; }
 }
 
-.rl-calc-h {
+.uni-home-test .rl-calc-h {
   margin: 0 0 6px;
   font-size: 18px;
   line-height: 24px;
   font-weight: 760;
 }
-.rl-calc-sub {
+.uni-home-test .rl-calc-sub {
   margin: 0 0 18px;
   font-size: 13.5px;
   line-height: 20px;
   color: var(--rl-dim);
 }
 
-.rl-calc-label {
+.uni-home-test .rl-calc-label {
   display: block;
   font-size: 12.5px;
   font-weight: 700;
@@ -127,20 +120,20 @@
   margin-bottom: 7px;
 }
 
-.rl-calc-field {
+.uni-home-test .rl-calc-field {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--uni-bg, #fff);
+  background: var(--uni-card, #f1f5f4);
   border: 1.5px solid var(--rl-hair);
   border-radius: var(--uni-radius-sm, 14px);
   padding: 0 14px;
   transition: border-color 0.15s ease;
 }
-.rl-calc-field:focus-within {
+.uni-home-test .rl-calc-field:focus-within {
   border-color: var(--uni-gold, #ffb936);
 }
-.rl-calc-input {
+.uni-home-test .rl-calc-input {
   flex: 1 1 auto;
   min-width: 0;
   border: 0;
@@ -153,46 +146,46 @@
   color: var(--uni-ink);
   font-variant-numeric: tabular-nums;
 }
-.rl-calc-unit {
+.uni-home-test .rl-calc-unit {
   font-size: 14px;
   font-weight: 700;
   color: var(--rl-dim);
   flex: none;
 }
 
-.rl-calc-privacy {
+.uni-home-test .rl-calc-privacy {
   margin: 10px 0 0;
   font-size: 12.5px;
   line-height: 18px;
   color: var(--rl-dim);
 }
 
-.rl-calc-out {
+.uni-home-test .rl-calc-out {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--rl-hair);
   min-height: 108px;
 }
-.rl-calc-idle {
+.uni-home-test .rl-calc-idle {
   margin: 0;
   font-size: 14px;
   color: var(--rl-dim);
 }
-.rl-calc-rank {
+.uni-home-test .rl-calc-rank {
   margin: 0 0 8px;
   font-size: 24px;
   line-height: 30px;
   font-weight: 780;
   letter-spacing: -0.01em;
 }
-.rl-calc-detail {
+.uni-home-test .rl-calc-detail {
   margin: 0 0 6px;
   font-size: 14px;
   line-height: 21px;
 }
 .rl-calc-dim { color: var(--rl-dim); }
 
-.rl-calc-share {
+.uni-home-test .rl-calc-share {
   margin-top: 12px;
   border: 1px solid var(--rl-hair);
   background: var(--uni-bg, #fff);
@@ -208,27 +201,27 @@
 
 /* ---- tables ----------------------------------------------------------- */
 
-.rl-dtable-wrap {
+.uni-home-test .rl-dtable-wrap {
   width: 100%;
   overflow-x: auto;
   margin: 18px 0 6px;
 }
 .rl-scroll { max-height: 620px; overflow-y: auto; }
 
-.rl-dtable {
+.uni-home-test .rl-dtable {
   width: 100%;
   border-collapse: collapse;
   font-size: 14.5px;
   line-height: 20px;
 }
-.rl-dtable-cap {
+.uni-home-test .rl-dtable-cap {
   caption-side: top;
   text-align: left;
   font-size: 12.5px;
   color: var(--rl-dim);
   padding-bottom: 10px;
 }
-.rl-dtable thead th {
+.uni-home-test .rl-dtable thead th {
   text-align: left;
   font-weight: 750;
   color: var(--uni-ink);
@@ -239,34 +232,34 @@
   top: 0;
   background: var(--uni-bg, #fff);
 }
-.rl-dtable tbody th {
+.uni-home-test .rl-dtable tbody th {
   text-align: left;
   font-weight: 700;
   white-space: nowrap;
 }
-.rl-dtable tbody th,
-.rl-dtable td {
+.uni-home-test .rl-dtable tbody th,
+.uni-home-test .rl-dtable td {
   padding: 9px 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--rl-hair) 55%, transparent);
   vertical-align: middle;
 }
-.rl-dtable tbody tr:last-child th,
+.uni-home-test .rl-dtable tbody tr:last-child th,
 .rl-dtable tbody tr:last-child td { border-bottom: 0; }
-.rl-dtable th:first-child,
+.uni-home-test .rl-dtable th:first-child,
 .rl-dtable td:first-child { padding-left: 0; }
-.rl-dtable th:last-child,
+.uni-home-test .rl-dtable th:last-child,
 .rl-dtable td:last-child { padding-right: 0; }
 
-.rl-num {
+.uni-home-test .rl-num {
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .rl-dtable thead th:not(:first-child) { text-align: right; }
-.rl-top thead th:nth-child(2),
+.uni-home-test .rl-top thead th:nth-child(2),
 .rl-top thead th:nth-child(3) { text-align: left; }
 
-.rl-addr {
+.uni-home-test .rl-addr {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
   word-break: break-all;
@@ -280,20 +273,20 @@
 .rl-chart-fig { margin: 26px 0 8px; }
 .rl-chart { display: block; width: 100%; height: auto; }
 .rl-chart-bar { fill: var(--uni-gold, #ffb936); }
-.rl-chart-val {
+.uni-home-test .rl-chart-val {
   font-size: 11px;
   font-weight: 700;
   fill: var(--uni-ink);
   font-variant-numeric: tabular-nums;
 }
-.rl-chart-tick {
+.uni-home-test .rl-chart-tick {
   font-size: 11px;
   fill: var(--rl-dim);
   font-variant-numeric: tabular-nums;
 }
 .rl-chart-tick-dim { font-size: 10px; }
 .rl-chart-axis { stroke: var(--rl-hair); stroke-width: 1; }
-.rl-chart-cap {
+.uni-home-test .rl-chart-cap {
   margin: 10px 0 0;
   font-size: 12.5px;
   line-height: 18px;
@@ -302,7 +295,7 @@
 
 /* ---- bridge ----------------------------------------------------------- */
 
-.rl-bridge {
+.uni-home-test .rl-bridge {
   background: var(--uni-card, #f1f5f4);
   border: 1px solid var(--rl-hair);
   border-radius: var(--uni-radius, 20px);
@@ -310,7 +303,7 @@
 }
 .rl-bridge h2 { margin: 0 0 10px; font-size: 22px; line-height: 28px; }
 .rl-bridge p { margin: 0 0 16px; max-width: 68ch; }
-.rl-bridge-cta {
+.uni-home-test .rl-bridge-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -327,12 +320,12 @@
 /* ---- methodology ------------------------------------------------------ */
 
 .rl-method { margin: 12px 0 0; }
-.rl-method dt {
+.uni-home-test .rl-method dt {
   font-weight: 750;
   margin-top: 16px;
   color: var(--uni-ink);
 }
-.rl-method dd {
+.uni-home-test .rl-method dd {
   margin: 5px 0 0;
   color: var(--uni-ink);
   max-width: 78ch;
@@ -346,7 +339,7 @@
    check at a glance is an assertion. */
 .rl-label { display: block; line-height: 18px; }
 .rl-label strong { font-weight: 700; }
-.rl-evidence {
+.uni-home-test .rl-evidence {
   display: block;
   font-size: 11.5px;
   color: var(--rl-dim);

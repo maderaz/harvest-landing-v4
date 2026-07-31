@@ -157,6 +157,54 @@ export async function walkAccounts({
 }
 
 /**
+ * Walk every Escrow object in one ledger, summing locked XRP per sending
+ * account.
+ *
+ * This exists because AccountRoot.Balance does NOT include escrowed XRP. The
+ * ledger moves escrowed drops out of the sender's balance and into the Escrow
+ * object, so a rich list built on balances alone omits the largest XRP
+ * positions on the network entirely: the six Ripple escrow accounts each hold
+ * a couple of hundred XRP in balance and billions in escrow.
+ *
+ * Cheap next to the account walk. There are a few thousand Escrow objects
+ * against eight million accounts, but they are scattered through the same
+ * state tree, so the scan cost is the tree, not the objects. No page cap:
+ * capping it silently returns a partial total, which is exactly the bug this
+ * function was written to fix.
+ */
+export async function walkEscrows({ ledgerIndex, limit = 200_000, onProgress = null }) {
+  const byAccount = new Map();
+  let marker = null;
+  let objects = 0;
+  let pages = 0;
+  let totalDrops = 0n;
+
+  for (;;) {
+    const res = await xrplRpc("ledger_data", {
+      ledger_index: ledgerIndex,
+      type: "escrow",
+      limit,
+      ...(marker ? { marker } : {}),
+    });
+    for (const e of res.state ?? []) {
+      if (e.LedgerEntryType !== "Escrow") continue;
+      // Only XRP escrows carry a string Amount; an issued-currency escrow is an
+      // object and is not part of an XRP rich list.
+      if (typeof e.Amount !== "string") continue;
+      const drops = BigInt(e.Amount);
+      objects++;
+      totalDrops += drops;
+      byAccount.set(e.Account, (byAccount.get(e.Account) ?? 0n) + drops);
+    }
+    pages++;
+    marker = res.marker ?? null;
+    if (onProgress) onProgress({ pages, objects, totalDrops });
+    if (!marker) break;
+  }
+  return { byAccount, objects, pages, totalDrops };
+}
+
+/**
  * AccountRoot.Domain is hex-encoded ASCII that the account holder set on
  * itself. It is the only identity signal that is both onchain and
  * self-declared, which is exactly the standard the build spec sets for

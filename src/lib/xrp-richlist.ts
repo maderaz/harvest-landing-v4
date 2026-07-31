@@ -37,10 +37,12 @@ export interface TopAccount {
   xrp: number;
   pctOfSupply: number;
   domain: string | null;
-  // Escrow objects the account owns, and the XRP locked inside them. Present
-  // from the enrichment pass; older snapshots predate it.
-  escrows?: number;
+  // `xrp` is the ranked quantity: spendable plus escrowed. These two split it,
+  // because an account holding 200 XRP with 5bn locked is not the same as one
+  // holding 5bn it can move today.
+  spendableXrp?: number;
   escrowedXrp?: number;
+  escrows?: number;
   // Registry label, attached and re-verified by the pipeline. Null when the
   // address is not in data/xrpl-account-labels.json, or when its live check
   // failed, in which case the label is dropped rather than shown stale.
@@ -84,8 +86,21 @@ export interface RichList {
     labelPolicy: string;
   };
   accounts: number;
+  // Total XRP controlled across all funded accounts: spendable plus escrowed.
   xrpHeld: number;
+  escrowedXrp?: number;
+  spendableXrp?: number;
+  escrowAccounts?: number;
+  escrowObjects?: number;
   totalSupplyXrp: number | null;
+  // Walked total against the ledger's own total_coins. A complete walk closes
+  // to within rounding; a truncated one shows a gap of billions.
+  supplyReconciliation?: {
+    ledgerTotalCoinsXrp: number;
+    walkedXrp: number;
+    differenceXrp: number;
+    differencePct: number;
+  } | null;
   tiers: RichListTier[];
   exactCounts: Record<string, number>;
   bands: RichListBand[];
