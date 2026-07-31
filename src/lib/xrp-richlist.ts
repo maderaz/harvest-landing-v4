@@ -185,10 +185,14 @@ export const countProse = (n: number): string => {
 };
 
 export const pctLabel = (v: number): string => {
-  // A share of 99.97 must not print as "100%". On this page that sentence
-  // would read "the top 50% held 100% of XRP", which is false and is exactly
-  // the kind of rounded-up claim a reader checks and a competitor screenshots.
-  if (v >= 99.95 && v < 100) return "over 99.9%";
+  // Nothing short of a true 100 may print as "100%". The tier table renders
+  // shares like 99.91, and rounding that to a whole number put "the top 25%
+  // held 100% of XRP" on the page, which is false and is exactly the kind of
+  // rounded-up claim a reader checks and a competitor screenshots. Anything in
+  // the last percent keeps a decimal so the reader can see it is not all of it.
+  if (v >= 100) return "100%";
+  if (v >= 99.95) return "over 99.9%";
+  if (v >= 99) return `${v.toFixed(1)}%`;
   if (v >= 10) return `${v.toFixed(0)}%`;
   if (v >= 1) return `${v.toFixed(1)}%`;
   if (v >= 0.01) return `${v.toFixed(2)}%`;

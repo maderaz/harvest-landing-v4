@@ -40,12 +40,16 @@ const xrpShort = (n: number): string => {
 export const bandName = (b: Band): string =>
   b.max == null ? `${xrpShort(b.min)}+` : `${xrpShort(b.min)}-${xrpShort(b.max)}`;
 
+// One decimal below 100k. Rounding 9,707 to a whole "10k" puts a number on the
+// bar that the data table two elements below contradicts.
 const compact = (n: number): string =>
   n >= 1_000_000
     ? `${(n / 1_000_000).toFixed(2)}M`
-    : n >= 1_000
+    : n >= 100_000
       ? `${(n / 1_000).toFixed(0)}k`
-      : String(n);
+      : n >= 1_000
+        ? `${(n / 1_000).toFixed(1)}k`
+        : String(n);
 
 export function DistributionChart({
   bands,
