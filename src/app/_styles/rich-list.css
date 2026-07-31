@@ -69,9 +69,19 @@
    homepage headline, which is a sentence; this one is a title and reads as a
    title only on one line. */
 .uni-home-test .rl-h1 {
-  margin: 0 0 14px;
+  margin: 0 0 8px;
   max-width: none;
   white-space: nowrap;
+}
+
+/* The freshness stamp, set as an article dateline rather than as a pill. The
+   claim is the same either way; the badge treatment gave a routine line the
+   visual weight of a status indicator. */
+.uni-home-test .rl-dateline {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 21px;
+  color: var(--uni-ink-3);
 }
 @media (max-width: 560px) {
   .uni-home-test .rl-h1 { white-space: normal; }
@@ -193,10 +203,21 @@
   color: var(--uni-ink);
 }
 
+/* The asset mark above the heading, matching .rp-hero-tokens on the XRP
+   report: small, ringed in white, on its own line. align-self keeps it at its
+   own width; the flex column it sits in would otherwise stretch the ring
+   across the whole card. */
+.uni-home-test .rl-mark {
+  display: inline-flex;
+  align-self: flex-start;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px #fff;
+  margin: 0 0 2px;
+}
+.uni-home-test .rl-mark img,
+.uni-home-test .rl-mark svg { border-radius: 50%; display: block; }
+
 .uni-home-test .rl-calc-title {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
   margin: 0;
   max-width: none;
   font-family: var(--display);
@@ -205,13 +226,6 @@
   line-height: 1.06;
   letter-spacing: -0.022em;
   color: var(--uni-ink);
-}
-/* Centred on the first line rather than on the two-line block, so the mark
-   sits beside "The" instead of floating between the lines. */
-.uni-home-test .rl-calc-title img,
-.uni-home-test .rl-calc-title svg {
-  flex: none;
-  margin-top: -2px;
 }
 .uni-home-test .rl-calc-pitch-sub {
   margin: 0;

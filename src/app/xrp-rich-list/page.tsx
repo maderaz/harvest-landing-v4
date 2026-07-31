@@ -280,6 +280,7 @@ export default function XrpRichListPage() {
           the fold without making them read a paragraph to reach them. */}
       <section className="rl-intro">
         <h1 className="uni-home-h1 rl-h1">XRP Rich List &amp; Calculator</h1>
+        <p className="rl-dateline">Updated {snapStamp}</p>
         {/* Featured image. Static import, so Next emits the intrinsic size and
             the slot reserves its own height before the file loads. `priority`
             because it is the largest element above the fold and is what LCP
@@ -353,13 +354,16 @@ export default function XrpRichListPage() {
               <span className="rl-eyebrow-badge">Calculator</span>
             </div>
             <div className="rl-feature-head">
+              {/* The mark sits on its own line above the heading, the way
+                  .rp-hero-tokens does on the XRP report (report.css:811),
+                  rather than inline beside the first word. */}
+              <span className="rl-mark" aria-hidden="true">
+                <AssetIcon asset="XRP" size={26} decorative />
+              </span>
               <h2 id="calculator-title" className="rl-calc-title">
-                <AssetIcon asset="XRP" size={44} decorative />
-                <span>
-                  The XRP
-                  <br />
-                  Rich List Calculator
-                </span>
+                The XRP
+                <br />
+                Rich List Calculator
               </h2>
               <p className="rl-calc-pitch-sub">
                 Type a balance and see the position it holds among every funded
