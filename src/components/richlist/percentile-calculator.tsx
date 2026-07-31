@@ -93,6 +93,9 @@ export function PercentileCalculator({
   // Held so an unmount or a restart cannot leave a timer writing into a
   // component that is no longer on the page.
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // The button is never disabled, so it needs somewhere to send a visitor who
+  // presses it before typing anything.
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
@@ -122,7 +125,18 @@ export function PercentileCalculator({
   }, [parsed, ladder, accounts]);
 
   const startCheck = () => {
-    if (parsed == null) return;
+    // `disabled` is gone from the button, so the mid-check guard that attribute
+    // used to provide has to live here: a second press while the bar is
+    // running would restart it from zero.
+    if (phase === "checking") return;
+    // A greyed-out primary action on the one control this page exists for
+    // reads as broken, so the button always looks live. When there is nothing
+    // to check it puts the cursor in the field rather than doing nothing.
+    if (parsed == null) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+      return;
+    }
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setPhase("checking");
@@ -152,6 +166,7 @@ export function PercentileCalculator({
       </label>
       <div className="rl-calc-field">
         <input
+          ref={inputRef}
           id="rl-balance"
           className="rl-calc-input"
           type="text"
@@ -201,7 +216,12 @@ export function PercentileCalculator({
         type="button"
         className="rl-calc-go"
         onClick={startCheck}
-        disabled={parsed == null || phase === "checking"}
+        // Only while a check is running, which is the one moment pressing it
+        // genuinely does nothing. It is NOT set for an empty field: assistive
+        // tech and automation both treat aria-disabled as non-interactive, and
+        // with no balance typed the press has a job to do, so marking it
+        // disabled then would be a lie that also blocks the behaviour.
+        aria-disabled={phase === "checking"}
       >
         {phase === "checking" ? "Checking" : phase === "done" ? "Check again" : "Start check"}
       </button>

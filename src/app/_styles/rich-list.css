@@ -179,14 +179,15 @@
   .uni-home-test .rl-feature-card { padding: 22px 18px; gap: 26px; }
 }
 
-/* Distributed rather than stacked: with the column stretched to the
-   calculator's height, space-between puts the badge at the top and the
-   checklist at the bottom instead of leaving a gap under the last item. */
+/* The column still stretches to the calculator's height, but its content is
+   centred in that height rather than pushed to the ends. space-between put a
+   hundred-odd pixels between the lead and the checklist, which read as a
+   missing element rather than as spacing. */
 .uni-home-test .rl-feature-copy {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 34px;
+  justify-content: center;
+  gap: 26px;
   min-height: 100%;
 }
 .uni-home-test .rl-feature-head {
@@ -281,12 +282,64 @@
 
 /* ---- calculator ------------------------------------------------------- */
 
+/* The same three layers as .uni-home-hero (home.css:71): a warm radial glow
+   in the top right, the ink dot raster, and the flat gold under both. The
+   calculator is the one thing on this page a visitor is meant to touch, and
+   on white it read as another card among cards. */
 .uni-home-test .rl-calc {
-  background: var(--uni-bg, #fff);
-  border: 1px solid rgba(25, 23, 23, 0.10);
-  box-shadow: 0 6px 24px rgba(25, 23, 23, 0.07);
+  background-color: var(--uni-gold, #ffb936);
+  background-image:
+    radial-gradient(
+      circle at 88% 18%,
+      rgba(255, 145, 30, 0.42) 0%,
+      rgba(255, 185, 54, 0) 55%
+    ),
+    radial-gradient(circle, rgba(25, 23, 23, 0.07) 1px, transparent 1.3px);
+  background-size: auto, 12px 12px;
+  background-position: 0 0, 0 0;
+  background-repeat: no-repeat, repeat;
+  border: 1px solid color-mix(in srgb, var(--uni-ink) 12%, transparent);
+  box-shadow: 0 6px 24px rgba(25, 23, 23, 0.10);
   border-radius: var(--uni-radius, 20px);
   padding: 26px 26px 24px;
+}
+
+/* On gold, the fields need to be the light surface rather than take one. */
+.uni-home-test .rl-calc .rl-calc-field {
+  background: var(--uni-bg, #fff);
+  border-color: color-mix(in srgb, var(--uni-ink) 14%, transparent);
+}
+.uni-home-test .rl-calc .rl-calc-field:focus-within {
+  border-color: var(--uni-ink);
+}
+/* --rl-dim is ink at 82%, which is fine on white and muddy on gold. The
+   secondary text inside the calculator goes to solid ink at reduced weight. */
+.uni-home-test .rl-calc .rl-calc-sub,
+.uni-home-test .rl-calc .rl-calc-label,
+.uni-home-test .rl-calc .rl-calc-idle,
+.uni-home-test .rl-calc .rl-calc-privacy,
+.uni-home-test .rl-calc .rl-calc-facts li {
+  color: var(--uni-ink);
+}
+.uni-home-test .rl-calc .rl-calc-out {
+  border-top-color: color-mix(in srgb, var(--uni-ink) 16%, transparent);
+}
+/* The padlock and the result bullets were gold, which is invisible now. */
+.uni-home-test .rl-calc .rl-lock { color: var(--uni-ink); }
+.uni-home-test .rl-calc .rl-calc-facts li::before { background: var(--uni-ink); }
+.uni-home-test .rl-calc .rl-check-bar {
+  background: color-mix(in srgb, var(--uni-ink) 14%, transparent);
+}
+.uni-home-test .rl-calc .rl-check-bar span { background: var(--uni-ink); }
+.uni-home-test .rl-calc .rl-check-stages li { color: color-mix(in srgb, var(--uni-ink) 72%, transparent); }
+.uni-home-test .rl-calc .rl-check-stages li.is-on { color: var(--uni-ink); }
+.uni-home-test .rl-calc .rl-check-stages li.is-on::before {
+  background: var(--uni-ink);
+  border-color: var(--uni-ink);
+}
+.uni-home-test .rl-calc .rl-calc-share {
+  background: var(--uni-bg, #fff);
+  border-color: color-mix(in srgb, var(--uni-ink) 16%, transparent);
 }
 
 .uni-home-test .rl-calc-h {
@@ -448,8 +501,15 @@
   cursor: pointer;
   transition: opacity 0.15s ease;
 }
-.uni-home-test .rl-calc-go:hover:not(:disabled) { opacity: 0.88; }
-.uni-home-test .rl-calc-go:disabled { opacity: 0.32; cursor: not-allowed; }
+/* Never dimmed. A greyed-out primary action on the one control this page
+   exists for reads as broken, and the button has something useful to do at
+   every moment: with no balance typed it puts the cursor in the field. */
+.uni-home-test .rl-calc-go {
+  box-shadow: 0 4px 14px rgba(25, 23, 23, 0.22);
+}
+.uni-home-test .rl-calc-go:hover { opacity: 0.9; }
+.uni-home-test .rl-calc-go:active { transform: translateY(1px); }
+.uni-home-test .rl-calc-go[aria-disabled="true"] { cursor: default; }
 
 .uni-home-test .rl-check-bar {
   height: 4px;
