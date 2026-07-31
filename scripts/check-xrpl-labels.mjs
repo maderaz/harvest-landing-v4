@@ -219,7 +219,7 @@ const doc = loadLabels(ROOT);
 const findings = validateLabels(doc);
 
 // Cross-check against the snapshot: a label on an address that is not in the
-// top 100 renders nowhere, and is usually a sign the address is wrong.
+// ranked snapshot renders nowhere, and is usually a sign the address is wrong.
 if (existsSync(SNAPSHOT) && doc.labels.length) {
   const snap = JSON.parse(readFileSync(SNAPSHOT, "utf-8"));
   const top = new Map((snap.top ?? []).map((t) => [t.address, t]));
@@ -227,7 +227,7 @@ if (existsSync(SNAPSHOT) && doc.labels.length) {
     const acct = top.get(l.address);
     if (!acct) {
       console.error(
-        `[xrpl-labels] note: ${l.address} (${l.name}) is not in the current top 100, so its label renders nowhere.`,
+        `[xrpl-labels] note: ${l.address} (${l.name}) is not in the current top ${top.size}, so its label renders nowhere.`,
       );
       continue;
     }

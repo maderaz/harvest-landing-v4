@@ -35,6 +35,7 @@ import { Distribution, BUCKETS_PER_DECADE } from "./lib/richlist-distribution.mj
 import { loadLabels, verifyAgainstAccount } from "./lib/xrpl-labels.mjs";
 import { xrpUsd } from "./lib/xrp-onchain-adapters.mjs";
 import { freezeStampIfUnchanged } from "./lib/snapshot-stamp.mjs";
+import { concentrationOf, CONCENTRATION_N } from "./lib/richlist-concentration.mjs";
 
 const ROOT = process.cwd();
 const OUT_FILE = join(ROOT, "data", "xrp-richlist.json");
@@ -53,7 +54,10 @@ const ENRICH_ONLY = process.argv.includes("--enrich-only");
 const DRY = process.argv.includes("--dry");
 const MAX_PAGES = Number(argVal("max-pages", Infinity));
 const CKPT_EVERY = Number(argVal("checkpoint-every", 20));
-const TOP_N = Number(argVal("top", 100));
+// Five pages of a hundred in the ranking. The hourly job passes no --top, so
+// this default is what the page actually renders; leaving it at 100 while the
+// page pages through 500 would have shipped a pager with nowhere to go.
+const TOP_N = Number(argVal("top", 500));
 
 // ---------------------------------------------------------------- checkpoint
 
@@ -86,60 +90,6 @@ function loadCheckpoint(dist) {
   return c;
 }
 
-// Concentration read three ways. The first is the number every rich list
-// quotes. The second is the one that means something: an exchange wallet is
-// thousands of customers in one row, so counting it as concentration overstates
-// how few hands hold XRP. The third is the largest holding attributed to a
-// person rather than to a venue or a treasury.
-function concentrationOf(rows, totalXrp) {
-  const sum = (r) => r.reduce((a, t) => a + t.xrp, 0);
-  const share = (r) => (totalXrp ? Math.round((sum(r) / totalXrp) * 1e4) / 1e2 : 0);
-  const isExchange = (t) => t.label?.type === "exchange";
-  const isRipple = (t) => t.label?.affiliation === "ripple";
-  const isFounder = (t) => t.label?.affiliation === "ripple-founder";
-  const nonExchange = rows.filter((t) => !isExchange(t));
-  const individuals = rows.filter((t) => t.label?.type === "individual");
-  const ripple = rows.filter(isRipple);
-  const founders = rows.filter(isFounder);
-  const residual = rows.filter((t) => !isExchange(t) && !isRipple(t) && !isFounder(t));
-  return {
-    top100Xrp: Math.round(sum(rows)),
-    top100PctOfXrp: share(rows),
-    exchangeAccounts: rows.length - nonExchange.length,
-    exchangeXrp: Math.round(sum(rows.filter(isExchange))),
-    exExchangeXrp: Math.round(sum(nonExchange)),
-    exExchangePctOfXrp: share(nonExchange),
-    // Ripple's own wallets and the personal wallets of its co-founders, read
-    // apart. Both get folded into "Ripple owns most of XRP" in the usual
-    // telling, and only the first is XRP the company controls.
-    rippleAccounts: ripple.length,
-    rippleXrp: Math.round(sum(ripple)),
-    ripplePctOfXrp: share(ripple),
-    rippleEscrowedXrp: Math.round(ripple.reduce((a, t) => a + (t.escrowedXrp ?? 0), 0)),
-    founderAccounts: founders.length,
-    founderXrp: Math.round(sum(founders)),
-    founderPctOfXrp: share(founders),
-    // What is left once exchanges, Ripple and its founders come out: the part
-    // of the top 100 that is neither a venue holding customer balances nor
-    // connected to the company that issued XRP.
-    residualAccounts: residual.length,
-    residualXrp: Math.round(sum(residual)),
-    residualPctOfXrp: share(residual),
-    largestIndividual: individuals.length
-      ? {
-          rank: individuals[0].rank,
-          address: individuals[0].address,
-          name: individuals[0].label.name,
-          xrp: individuals[0].xrp,
-          attribution: individuals[0].label.attribution ?? null,
-        }
-      : null,
-    labelledAccounts: rows.filter((t) => t.label).length,
-    basis:
-      "Shares are of all XRP in funded accounts, spendable and escrowed together. An exchange wallet holds balances for many customers, so excluding those is the closer read on how concentrated ownership is.",
-  };
-}
-
 // XRP/USD from Flare's FTSOv2, the same oracle the XRP yield report prices
 // every venue with. Read here rather than from a price API so the dollar
 // column on this page and the TVL figures on that one cannot disagree about
@@ -162,7 +112,7 @@ if (ENRICH_ONLY) {
   cur.top = enriched;
   cur.topLabelled = enriched.filter((t) => t.label).length;
   cur.topWithEscrow = enriched.filter((t) => t.escrows > 0).length;
-  cur.concentration = concentrationOf(enriched, cur.xrpHeld);
+  cur.concentration = concentrationOf(enriched.slice(0, CONCENTRATION_N), cur.xrpHeld);
   const p = await readXrpUsd();
   cur.xrpUsd = p;
   cur.xrpUsdSource = p == null ? null : "Flare FTSOv2 XRP/USD oracle";
@@ -389,7 +339,7 @@ const top = await enrichTop(
 const labelled = top.filter((t) => t.label).length;
 const withEscrow = top.filter((t) => t.escrows > 0).length;
 
-const concentration = concentrationOf(top, dist.sumXrp);
+const concentration = concentrationOf(top.slice(0, CONCENTRATION_N), dist.sumXrp);
 const priceUsd = await readXrpUsd();
 
 const payload = {

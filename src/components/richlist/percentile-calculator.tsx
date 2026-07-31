@@ -80,10 +80,14 @@ const STAGES = [
 export function PercentileCalculator({
   ladder,
   accounts,
+  ranked,
   snapshotDate,
 }: {
   ladder: LadderPoint[];
   accounts: number;
+  /** How many accounts the ranking below actually lists, so the button that
+   *  sends a visitor there names the same number the section heading does. */
+  ranked: number;
   snapshotDate: string;
 }) {
   const [raw, setRaw] = useState("");
@@ -258,6 +262,16 @@ export function PercentileCalculator({
                 accounts holding less.
               </li>
             </ul>
+            {/* Two ways on from a result: the ranking the balance was measured
+                against, and the thing to do about it. */}
+            <div className="rl-calc-cta">
+              <a className="rl-calc-cta-a" href="#top-accounts">
+                View top {ranked}
+              </a>
+              <a className="rl-calc-cta-b" href="#bridge">
+                Earn on XRP
+              </a>
+            </div>
           </>
         ) : null}
       </div>

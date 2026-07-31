@@ -141,13 +141,23 @@
    still needs a clear gap, just a smaller one than a new paragraph gets.
    Sibling margins collapse to the larger of the two, so this is the floor
    rather than an addition to the box's own bottom margin. */
-.uni-home-test.rl-page .rl-note { margin-top: 20px; }
-.uni-home-test.rl-page .rl-note + .rl-note { margin-top: 12px; }
+/* Notes are annotation, not body copy: smaller and lighter than a paragraph,
+   so a stack of them under a table reads as fine print rather than as more
+   article to get through. Prefixed with all three page classes because
+   `.uni-home-test .uni-home-content p` carries an element and outranks a
+   two-class rule, which is what had them rendering at full 16px body size. */
+.uni-home-test.rp-page.rl-page .rl-note {
+  margin-top: 20px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: color-mix(in srgb, var(--uni-ink) 60%, transparent);
+  max-width: none;
+}
+.uni-home-test.rp-page.rl-page .rl-note + .rl-note { margin-top: 10px; }
 
 
 .uni-home-test.rp-page.rl-page .rp-lead,
 .uni-home-test.rp-page.rl-page .rl-section-intro,
-.uni-home-test.rp-page.rl-page .rl-note,
 .uni-home-test.rp-page.rl-page .rl-highlight,
 .uni-home-test.rp-page.rl-page .rl-calc-pitch-sub,
 .uni-home-test.rp-page.rl-page .rl-faq-desc,
@@ -280,7 +290,7 @@
    maintaining a second set of colour tokens beside --uni-*, for one section.
    The layout is what was worth taking; it is reproduced exactly. */
 
-.uni-home-test .rl-feature { padding: 30px 0 20px; }
+.uni-home-test .rl-feature { padding: 14px 0 10px; }
 
 .uni-home-test .rl-feature-card {
   display: grid;
@@ -298,10 +308,16 @@
   background-size: 12px 12px;
 }
 @media (min-width: 1024px) {
+  /* The form takes three quarters of the width it had, which is enough for a
+     number field and gives the copy beside it room to breathe. */
   .uni-home-test .rl-feature-card {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 40px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr);
+    gap: 36px;
   }
+  .uni-home-test .rl-calc { padding: 20px 20px 18px; }
+  .uni-home-test .rl-calc-input { font-size: 19px; }
+  .uni-home-test.rl-page { --rl-control-h: 54px; }
+  .uni-home-test .rl-calc-rank { font-size: 21px; line-height: 27px; }
 }
 @media (max-width: 640px) {
   .uni-home-test .rl-feature-card { padding: 22px 18px; gap: 26px; }
@@ -924,7 +940,9 @@
   fill: var(--uni-ink-2);
   font-variant-numeric: tabular-nums;
 }
-.rl-chart-tick-dim { font-size: 10.5px; fill: var(--uni-ink-3); }
+/* Needs the same prefix as .rl-chart-tick or it loses on specificity and the
+   second row draws at full size, which is what made "smaller line" false. */
+.uni-home-test .rl-chart-tick-dim { font-size: 10px; fill: var(--uni-ink-3); }
 .uni-home-test .rl-chart-axis-title {
   font-size: 13px;
   font-weight: 700;
@@ -1152,7 +1170,6 @@
   line-height: 22px;
 }
 
-.rl-note { font-size: 13px; color: var(--uni-ink); }
 
 
 /* Screen-reader-only heading for the jump-links section: the nav needs a
@@ -1361,11 +1378,13 @@
   font-variant-numeric: tabular-nums;
   color: var(--uni-ink-3);
 }
-.uni-home-test .rl-filters-read {
-  margin: 14px 0 0;
-  font-size: 14px;
-  line-height: 21px;
-  color: var(--uni-ink-2);
+/* Prefixed with all three page classes: .uni-home-test .uni-home-content p
+   carries an element in its selector and outranks a two-class rule. */
+.uni-home-test.rp-page.rl-page .rl-filters-read {
+  margin: 22px 0 0;
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--uni-ink-3);
 }
 
 /* The table sits in a bordered, rounded, overflow-hidden box, which is the
@@ -1528,7 +1547,6 @@
 @media (max-width: 640px) {
   .uni-home-test.rp-page.rl-page .rp-lead,
   .uni-home-test.rp-page.rl-page .rl-section-intro,
-  .uni-home-test.rp-page.rl-page .rl-note,
   .uni-home-test.rp-page.rl-page .rl-highlight,
   .uni-home-test.rp-page.rl-page .rl-calc-pitch-sub,
   .uni-home-test.rp-page.rl-page .rl-faq-desc,
@@ -1540,6 +1558,62 @@
     font-size: 15px;
     line-height: 1.65;
   }
+}
+
+/* ---- pager + result CTAs ------------------------------------------------ */
+.uni-home-test .rl-pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 14px 0 0;
+}
+.uni-home-test .rl-pager-at {
+  font-size: 13px;
+  color: var(--uni-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.uni-home-test .rl-pager-btn {
+  border: 1px solid var(--uni-line, #dddee0);
+  border-radius: var(--uni-radius-pill, 999px);
+  background: var(--uni-bg, #fff);
+  padding: 7px 15px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--uni-ink);
+  cursor: pointer;
+}
+.uni-home-test .rl-pager-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--uni-ink) 35%, transparent);
+}
+.uni-home-test .rl-pager-btn:disabled { opacity: 0.35; cursor: default; }
+
+.uni-home-test .rl-calc-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+.uni-home-test .rl-calc-cta a {
+  flex: 1 1 auto;
+  text-align: center;
+  border-radius: var(--uni-radius-pill, 999px);
+  padding: 11px 18px;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.uni-home-test .rl-calc .rl-calc-cta a { color: var(--uni-ink); }
+.uni-home-test .rl-calc-cta .rl-calc-cta-a {
+  background: var(--uni-bg, #fff);
+  border: 1px solid color-mix(in srgb, var(--uni-ink) 16%, transparent);
+}
+.uni-home-test .rl-calc .rl-calc-cta .rl-calc-cta-b {
+  background: var(--uni-ink);
+  color: var(--uni-bg, #fff);
+  border: 1px solid var(--uni-ink);
 }
 
 /* ---- mobile ------------------------------------------------------------
@@ -1636,4 +1710,18 @@
 
   .uni-home-test .rl-filters { gap: 8px; }
   .uni-home-test .rl-chip { font-size: 12.5px; padding: 7px 12px; }
+}
+
+/* ---- overrides that must come last -------------------------------------
+   .rl-bridge is declared further up at the same specificity, so a mobile
+   rule written earlier in the file loses on source order and the panel
+   survives on a phone. This block is last for that reason. */
+@media (max-width: 640px) {
+  /* A box nested inside an already narrow column is chrome a phone does not
+     need. The section keeps its rhythm and loses the panel. */
+  .uni-home-test .rl-bridge {
+    background: none;
+    border: 0;
+    padding: 0;
+  }
 }

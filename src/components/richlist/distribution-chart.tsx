@@ -187,7 +187,7 @@ export function DistributionChart({
           XRP held in wallet
         </text>
         <text x={W / 2} y={axisY + 79} textAnchor="middle" className="rl-chart-axis-sub">
-          smaller line: that band&rsquo;s share of all funded accounts
+          second line under each band: its share of all funded accounts
         </text>
       </svg>
       <figcaption className="rl-chart-cap">

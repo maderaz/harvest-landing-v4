@@ -11,7 +11,7 @@
 //   public/data/xrp-rich-list/index.json        whole snapshot in one fetch
 //   public/data/xrp-rich-list/distribution.csv  balance bands
 //   public/data/xrp-rich-list/thresholds.csv    percentage tiers
-//   public/data/xrp-rich-list/top-accounts.csv  largest 100 accounts
+//   public/data/xrp-rich-list/top-accounts.csv  the ranked accounts, deepest first
 //
 // Runs in the post-export phase of `npm run build`, after `mv out public`, so
 // the files survive rather than being wiped. Reads only the generated snapshot,
