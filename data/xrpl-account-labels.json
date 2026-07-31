@@ -1,0 +1,11 @@
+{
+  "note": "Account labels for the /xrp-rich-list top-100 table. Every entry is a claim about who controls an address, so every entry carries the evidence it rests on. See scripts/lib/xrpl-labels.mjs for the tier definitions and scripts/check-xrpl-labels.mjs for what the build enforces.",
+  "tiers": {
+    "account-domain": "The account publishes a Domain onchain matching the operator. Re-verified against the ledger on every run.",
+    "xrpl-toml": "The operator's domain publishes /.well-known/xrp-ledger.toml listing this address, which is the XRP Ledger standard for making exactly this claim.",
+    "published": "The operator published the address on an official page. Requires evidenceUrl and verifiedOn.",
+    "third-party": "An explorer or data provider attributes the address. Requires evidenceUrl, verifiedOn and attribution, and the page names the provider rather than presenting the label as its own finding."
+  },
+  "rejected": "Inference from transaction behaviour, address clustering, or 'this wallet moves like an exchange'. The validator rejects the tier name so it cannot be added quietly. Wrong labels on this page are found within the hour and cost more than the missing label saves.",
+  "labels": []
+}

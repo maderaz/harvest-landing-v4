@@ -41,7 +41,35 @@ export interface TopAccount {
   // from the enrichment pass; older snapshots predate it.
   escrows?: number;
   escrowedXrp?: number;
+  // Registry label, attached and re-verified by the pipeline. Null when the
+  // address is not in data/xrpl-account-labels.json, or when its live check
+  // failed, in which case the label is dropped rather than shown stale.
+  label?: {
+    name: string;
+    evidence: "account-domain" | "xrpl-toml" | "published" | "third-party";
+    evidenceUrl: string | null;
+    attribution: string | null;
+    verifiedOn: string | null;
+  } | null;
 }
+
+/**
+ * How a label was established, in reader-facing words. Shown next to the name
+ * so an attribution is never a bare assertion: the table says who, and this
+ * says on what basis.
+ */
+export const evidenceLabel = (e: NonNullable<TopAccount["label"]>): string => {
+  switch (e.evidence) {
+    case "account-domain":
+      return "verified onchain: the account publishes this domain";
+    case "xrpl-toml":
+      return "verified: the operator's domain lists this address";
+    case "published":
+      return `published by the operator, checked ${e.verifiedOn ?? "on file"}`;
+    case "third-party":
+      return `attributed by ${e.attribution ?? "a third party"}`;
+  }
+};
 
 export interface RichList {
   generatedAt: string;

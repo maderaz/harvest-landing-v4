@@ -31,6 +31,7 @@ import {
   BASE_RESERVE_XRP,
 } from "./lib/xrpl.mjs";
 import { Distribution, BUCKETS_PER_DECADE } from "./lib/richlist-distribution.mjs";
+import { loadLabels, verifyAgainstAccount } from "./lib/xrpl-labels.mjs";
 import { freezeStampIfUnchanged } from "./lib/snapshot-stamp.mjs";
 
 const ROOT = process.cwd();
@@ -89,11 +90,16 @@ if (ENRICH_ONLY) {
   const cur = JSON.parse(readFileSync(OUT_FILE, "utf-8"));
   const enriched = await enrichTop(cur.ledgerIndex, cur.top);
   cur.top = enriched;
-  cur.topLabelled = enriched.filter((t) => t.domain).length;
+  cur.topLabelled = enriched.filter((t) => t.label).length;
   cur.topWithEscrow = enriched.filter((t) => t.escrows > 0).length;
   writeFileSync(OUT_FILE, JSON.stringify(cur, null, 2) + "\n");
   console.error(
-    `[richlist] enriched ${enriched.length} top accounts: ${cur.topLabelled} with a domain, ${cur.topWithEscrow} holding escrow`,
+    `[richlist] enriched ${enriched.length} top accounts: ${cur.topLabelled} labelled, ` +
+      `${enriched.filter((t) => t.domain).length} publishing a domain onchain, ` +
+      `${cur.topWithEscrow} holding escrow` +
+      (enriched.filter((t) => t.labelDropped).length
+        ? `, ${enriched.filter((t) => t.labelDropped).length} label(s) dropped on a failed live check`
+        : ""),
   );
   process.exit(0);
 }
@@ -166,22 +172,27 @@ if (!result.done) {
 
 // ---------------------------------------------------------------- enrichment
 
-// What the top accounts publish about themselves, checked against the ledger.
+// Everything the top-100 table shows beyond a balance: the registry label, the
+// account's self-declared Domain, and its escrow position.
 //
-// The build spec expects the labels to be the whole point of the top-100 table,
-// on the reasoning that an explorer shows addresses and we would show
-// "Binance cold wallet". Contact with the data says otherwise: not one of the
-// hundred largest accounts sets a Domain, which is the only identity field an
-// account can publish about itself onchain. Naming them anyway would mean
-// inferring identity from transaction behaviour, which the same spec forbids
-// and which the XRP community would falsify within the hour.
+// Labels are the reason this table beats an explorer, so they stay. What
+// changed after measuring is where they can come from. Not one of the hundred
+// largest accounts sets a Domain, which is the only identity an account can
+// publish about itself onchain, so the labels cannot be harvested from the
+// walk. They come from data/xrpl-account-labels.json, where each one carries
+// the evidence it rests on, and scripts/check-xrpl-labels.mjs refuses to build
+// an entry that cannot say where it came from.
 //
-// So the column reports what the ledger actually says. A Domain when there is
-// one, and the account's escrow position when it holds one, which is a fact
-// about its onchain state rather than a claim about who owns it. That
-// distinction is the difference between a table that is useful and one that is
-// wrong in public.
+// The one tier that is machine-checkable, an account publishing a Domain, is
+// re-verified here on every run rather than trusted from the file. An exchange
+// that rotates a wallet or drops its Domain silently invalidates a label, and
+// a stale attribution on somebody else's money is worse than no attribution.
+//
+// Alongside the label, the column carries what the ledger says directly: the
+// Domain when there is one, and the escrow position when the account holds
+// one. Those are facts about state rather than claims about ownership.
 async function enrichTop(ledgerIdx, list) {
+  const labels = loadLabels(ROOT);
   const out = [];
   for (const t of list) {
     let escrows = 0;
@@ -211,10 +222,26 @@ async function enrichTop(ledgerIdx, list) {
       // An account that will not answer keeps its row and loses the column,
       // which is better than dropping it out of the ranking.
     }
+    // Attach the registry label, and re-verify the one tier that can be
+    // checked from an AccountRoot. A label that no longer matches the ledger is
+    // dropped rather than shown, because a stale attribution is worse than none.
+    const label = labels.byAddress.get(t.address) ?? null;
+    const check = verifyAgainstAccount(label, t.domain);
     out.push({
       ...t,
       escrows,
       escrowedXrp: escrows ? Math.round(Number(escrowedDrops) / 1e6) : 0,
+      label:
+        label && check.ok
+          ? {
+              name: label.name,
+              evidence: label.evidence,
+              evidenceUrl: label.evidenceUrl ?? null,
+              attribution: label.attribution ?? null,
+              verifiedOn: label.verifiedOn ?? null,
+            }
+          : null,
+      labelDropped: label && !check.ok ? check.note : null,
     });
   }
   return out;
@@ -270,7 +297,7 @@ const top = await enrichTop(
   })),
 );
 
-const labelled = top.filter((t) => t.domain).length;
+const labelled = top.filter((t) => t.label).length;
 const withEscrow = top.filter((t) => t.escrows > 0).length;
 
 const payload = {

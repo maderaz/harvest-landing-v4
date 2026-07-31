@@ -17,6 +17,7 @@ import {
   pctLabel,
   utcDate,
   utcStamp,
+  evidenceLabel,
 } from "@/lib/xrp-richlist";
 import "../_styles/home.css";
 import "../_styles/report.css";
@@ -95,11 +96,12 @@ export default function XrpRichListPage() {
   // are not the same thing, and one person can be several of either.
   const yieldRatioPct = yc ? (yc.receiptTokenHolders / data.accounts) * 100 : null;
 
-  const labelled = data.top.filter((t) => t.domain);
-  // The spec expected exchange labels here. Not one of the hundred largest
-  // accounts publishes a Domain, so the column reports the escrow position
-  // instead, which is a fact about the account's onchain state rather than a
-  // guess about its owner.
+  // Labels come from data/xrpl-account-labels.json, each carrying the evidence
+  // it rests on. Separately, `domain` is what the account publishes about
+  // itself onchain, which is the strongest evidence tier and currently empty
+  // across the whole top 100.
+  const labelled = data.top.filter((t) => t.label);
+  const selfDeclared = data.top.filter((t) => t.domain);
   const withEscrow = data.top.filter((t) => (t.escrows ?? 0) > 0);
 
   // Needs two distinct observation days before a movement sentence means
@@ -137,7 +139,7 @@ export default function XrpRichListPage() {
     {
       q: "Who owns the most XRP?",
       a: data.top[0]
-        ? `The largest single XRP Ledger account held ${xrpAmount(data.top[0].xrp)} XRP as of ${snapDate}, which is ${pctLabel(data.top[0].pctOfSupply)} of the XRP in funded accounts. Large accounts are usually exchange or custodian wallets holding balances for many customers rather than one owner, and this page labels an account only when the account itself publishes a domain onchain.`
+        ? `The largest single XRP Ledger account held ${xrpAmount(data.top[0].xrp)} XRP as of ${snapDate}, which is ${pctLabel(data.top[0].pctOfSupply)} of the XRP in funded accounts. Large accounts are usually exchange or custodian wallets holding balances for many customers rather than one owner, and this page names an account only against evidence it can show beside the name.`
         : "",
     },
     {
@@ -423,12 +425,15 @@ export default function XrpRichListPage() {
         <p className="rp-lead">
           The 100 largest funded XRP Ledger accounts as of {snapDate}, read from
           ledger {count(data.ledgerIndex)}.{" "}
-          {labelled.length === 0
-            ? `None of the 100 published a domain onchain as of ${snapDate}, so none is named here.`
-            : `${labelled.length} of the 100 published a domain onchain as of ${snapDate}.`}{" "}
-          Large accounts are usually exchange or custodian wallets, and naming
-          one would mean inferring identity from how it transacts, which this
-          page does not do.
+          {labelled.length > 0
+            ? `${labelled.length} of the 100 are named as of ${snapDate}, each against evidence shown beside the name.`
+            : `None of the 100 is named as of ${snapDate}.`}{" "}
+          {selfDeclared.length === 0
+            ? "Not one of them publishes a domain onchain, which is the only identity an account can declare about itself, so no name here rests on that."
+            : `${selfDeclared.length} publish a domain onchain, which is the strongest evidence available.`}{" "}
+          Large accounts are usually exchange or custodian wallets. Naming one
+          from how it transacts would be a guess, so this page names an account
+          only against a source it can show.
         </p>
         {withEscrow.length ? (
           <p className="rp-lead">
@@ -459,8 +464,28 @@ export default function XrpRichListPage() {
                   <th scope="row">{t.rank}</th>
                   <td className="rl-addr">{t.address}</td>
                   <td>
-                    {t.domain ? (
-                      t.domain
+                    {t.label ? (
+                      <span className="rl-label">
+                        <strong>{t.label.name}</strong>
+                        <span className="rl-evidence">
+                          {t.label.evidenceUrl ? (
+                            <a
+                              href={t.label.evidenceUrl}
+                              target="_blank"
+                              rel="noopener noreferrer nofollow"
+                            >
+                              {evidenceLabel(t.label)}
+                            </a>
+                          ) : (
+                            evidenceLabel(t.label)
+                          )}
+                        </span>
+                      </span>
+                    ) : t.domain ? (
+                      <span className="rl-label">
+                        <strong>{t.domain}</strong>
+                        <span className="rl-evidence">published by the account onchain</span>
+                      </span>
                     ) : t.escrows ? (
                       <span className="rl-note">
                         {t.escrows} escrow{t.escrows === 1 ? "" : "s"} locking{" "}
@@ -548,7 +573,15 @@ export default function XrpRichListPage() {
             histogram.
           </dd>
           <dt>Labels</dt>
-          <dd>{data.method.labelPolicy}</dd>
+          <dd>
+            An account is named only against evidence the page can show: a
+            domain the account publishes onchain, an operator whose domain lists
+            the address under the XRP Ledger&rsquo;s own standard, an address the
+            operator published officially, or an attribution by a named data
+            provider. Which one applies is printed next to every name. Identity
+            is never inferred from how an account transacts, and the build
+            rejects a label that cannot state its source.
+          </dd>
           <dt>Known limitations</dt>
           <dd>
             An account is not a person. Exchanges and custodians hold balances

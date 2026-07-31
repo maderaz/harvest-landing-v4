@@ -340,3 +340,16 @@
 }
 
 .rl-note { font-size: 13px; color: var(--uni-ink); }
+
+/* Label plus the evidence it rests on. The provenance line is deliberately
+   part of the cell rather than a tooltip: an attribution a reader cannot
+   check at a glance is an assertion. */
+.rl-label { display: block; line-height: 18px; }
+.rl-label strong { font-weight: 700; }
+.rl-evidence {
+  display: block;
+  font-size: 11.5px;
+  color: var(--rl-dim);
+  margin-top: 2px;
+}
+.rl-evidence a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
