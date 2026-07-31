@@ -22,7 +22,14 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
-import { validatedLedger, walkAccounts, decodeDomain, dropsToXrp, BASE_RESERVE_XRP } from "./lib/xrpl.mjs";
+import {
+  validatedLedger,
+  walkAccounts,
+  decodeDomain,
+  dropsToXrp,
+  xrplRpc,
+  BASE_RESERVE_XRP,
+} from "./lib/xrpl.mjs";
 import { Distribution, BUCKETS_PER_DECADE } from "./lib/richlist-distribution.mjs";
 import { freezeStampIfUnchanged } from "./lib/snapshot-stamp.mjs";
 
@@ -36,9 +43,13 @@ const argVal = (n, d) => {
   return hit ? hit.slice(n.length + 3) : d;
 };
 const RESUME = process.argv.includes("--resume");
+// Re-runs only the top-account enrichment against the snapshot already on
+// disk. The walk is the expensive part and the enrichment is 100 calls, so
+// iterating on the column should not cost eleven minutes.
+const ENRICH_ONLY = process.argv.includes("--enrich-only");
 const DRY = process.argv.includes("--dry");
 const MAX_PAGES = Number(argVal("max-pages", Infinity));
-const CKPT_EVERY = Number(argVal("checkpoint-every", 200));
+const CKPT_EVERY = Number(argVal("checkpoint-every", 20));
 const TOP_N = Number(argVal("top", 100));
 
 // ---------------------------------------------------------------- checkpoint
@@ -73,6 +84,19 @@ function loadCheckpoint(dist) {
 }
 
 // ---------------------------------------------------------------------- walk
+
+if (ENRICH_ONLY) {
+  const cur = JSON.parse(readFileSync(OUT_FILE, "utf-8"));
+  const enriched = await enrichTop(cur.ledgerIndex, cur.top);
+  cur.top = enriched;
+  cur.topLabelled = enriched.filter((t) => t.domain).length;
+  cur.topWithEscrow = enriched.filter((t) => t.escrows > 0).length;
+  writeFileSync(OUT_FILE, JSON.stringify(cur, null, 2) + "\n");
+  console.error(
+    `[richlist] enriched ${enriched.length} top accounts: ${cur.topLabelled} with a domain, ${cur.topWithEscrow} holding escrow`,
+  );
+  process.exit(0);
+}
 
 const dist = new Distribution({ topN: TOP_N });
 
@@ -118,7 +142,7 @@ const result = await walkAccounts({
   },
   onProgress: ({ pages, seen, marker }) => {
     const n = pagesDone + pages;
-    if (n % 50 === 0) {
+    if (n % 5 === 0) {
       const rate = dist.total / ((Date.now() - t0) / 1000);
       console.error(
         `[richlist] page ${n}, ${dist.total.toLocaleString()} accounts, ${Math.round(rate).toLocaleString()}/s`,
@@ -138,6 +162,62 @@ if (!result.done) {
     `[richlist] stopped after ${pagesDone} pages with a marker outstanding; rerun with --resume`,
   );
   if (!DRY) process.exit(0);
+}
+
+// ---------------------------------------------------------------- enrichment
+
+// What the top accounts publish about themselves, checked against the ledger.
+//
+// The build spec expects the labels to be the whole point of the top-100 table,
+// on the reasoning that an explorer shows addresses and we would show
+// "Binance cold wallet". Contact with the data says otherwise: not one of the
+// hundred largest accounts sets a Domain, which is the only identity field an
+// account can publish about itself onchain. Naming them anyway would mean
+// inferring identity from transaction behaviour, which the same spec forbids
+// and which the XRP community would falsify within the hour.
+//
+// So the column reports what the ledger actually says. A Domain when there is
+// one, and the account's escrow position when it holds one, which is a fact
+// about its onchain state rather than a claim about who owns it. That
+// distinction is the difference between a table that is useful and one that is
+// wrong in public.
+async function enrichTop(ledgerIdx, list) {
+  const out = [];
+  for (const t of list) {
+    let escrows = 0;
+    let escrowedDrops = 0n;
+    let marker = null;
+    let pages = 0;
+    try {
+      do {
+        const r = await xrplRpc("account_objects", {
+          account: t.address,
+          ledger_index: ledgerIdx,
+          type: "escrow",
+          limit: 400,
+          ...(marker ? { marker } : {}),
+        });
+        for (const o of r.account_objects ?? []) {
+          if (o.LedgerEntryType !== "Escrow") continue;
+          escrows++;
+          if (typeof o.Amount === "string") escrowedDrops += BigInt(o.Amount);
+        }
+        marker = r.marker ?? null;
+        pages++;
+        // Ripple's escrow accounts hold hundreds of objects. Cap the paging so
+        // one unusual account cannot stall the whole enrichment pass.
+      } while (marker && pages < 12);
+    } catch {
+      // An account that will not answer keeps its row and loses the column,
+      // which is better than dropping it out of the ranking.
+    }
+    out.push({
+      ...t,
+      escrows,
+      escrowedXrp: escrows ? Math.round(Number(escrowedDrops) / 1e6) : 0,
+    });
+  }
+  return out;
 }
 
 // ------------------------------------------------------------- reconciliation
@@ -179,15 +259,19 @@ function yieldHolders() {
 const tiers = dist.tiers();
 const ladder = dist.ladder({ perDecade: 40 });
 const bands = dist.bands();
-const top = dist.topAccounts().map((t) => ({
-  rank: t.rank,
-  address: t.address,
-  xrp: t.xrp,
-  pctOfSupply: dist.sumXrp ? Math.round((t.xrp / dist.sumXrp) * 1e6) / 1e4 : 0,
-  domain: t.domain ?? null,
-}));
+const top = await enrichTop(
+  ledgerIndex,
+  dist.topAccounts().map((t) => ({
+    rank: t.rank,
+    address: t.address,
+    xrp: t.xrp,
+    pctOfSupply: dist.sumXrp ? Math.round((t.xrp / dist.sumXrp) * 1e6) / 1e4 : 0,
+    domain: t.domain ?? null,
+  })),
+);
 
 const labelled = top.filter((t) => t.domain).length;
+const withEscrow = top.filter((t) => t.escrows > 0).length;
 
 const payload = {
   generatedAt: new Date().toISOString(),
@@ -213,8 +297,29 @@ const payload = {
   ladder,
   top,
   topLabelled: labelled,
+  topWithEscrow: withEscrow,
   yieldComparison: yieldHolders(),
 };
+
+// Threshold history. Nobody on this SERP shows how the top 10% cutoff has
+// moved, and it is the reason to come back to the page next month, which is
+// worth more than any single visit. One row per UTC day, the last walk of the
+// day winning, capped so the snapshot cannot grow without limit.
+{
+  const prevHist = existsSync(OUT_FILE)
+    ? (JSON.parse(readFileSync(OUT_FILE, "utf-8")).thresholdHistory ?? [])
+    : [];
+  const day = payload.ledgerCloseIso.slice(0, 10);
+  const row = {
+    d: day,
+    accounts: payload.accounts,
+    xrpHeld: payload.xrpHeld,
+    tiers: Object.fromEntries(tiers.map((t) => [String(t.pct), t.minXrp])),
+  };
+  payload.thresholdHistory = [...prevHist.filter((h) => h.d !== day), row]
+    .sort((a, b) => (a.d < b.d ? -1 : 1))
+    .slice(-400);
+}
 
 if (DRY) {
   console.error(

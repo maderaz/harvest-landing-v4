@@ -1,0 +1,342 @@
+/* /xrp-rich-list.
+   Layered on top of home.css + report.css, which supply the tokens
+   (--uni-ink, --uni-line, --uni-card, --uni-gold) and the page shell. Only
+   what the rich list adds lives here, under an rl- prefix so nothing collides
+   with the rp- report styles the page also loads.
+
+   Note the deliberate avoidance of report.css's flex `order` block, which keys
+   on [aria-labelledby="*-title"]. No section on this page is named *-title. */
+
+.rl-page {
+  --rl-dim: color-mix(in srgb, var(--uni-ink) 55%, transparent);
+  --rl-hair: var(--uni-line, #dddee0);
+}
+
+/* ---- hero: prose and bullets left, calculator right ------------------- */
+
+.rl-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+  gap: 40px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .rl-hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+  }
+}
+
+.rl-hero-main h1 {
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.rl-hero-sub {
+  font-size: 19px;
+  line-height: 28px;
+  margin: 0 0 14px;
+  color: var(--uni-ink);
+  max-width: 46ch;
+}
+
+/* Freshness is a ranking argument on this page, not housekeeping, so the
+   stamp sits above the fold rather than in a footer. */
+.rl-updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 6px 12px;
+  border-radius: var(--uni-radius-pill, 999px);
+  background: var(--uni-gold-bg, #fff5d9);
+  color: var(--uni-ink);
+  font-size: 13.5px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+.rl-live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1fa971;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #1fa971 22%, transparent);
+  flex: none;
+}
+
+.rl-keyfind {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+  max-width: 58ch;
+}
+.rl-keyfind li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 15.5px;
+  line-height: 23px;
+  color: var(--uni-ink);
+}
+.rl-keyfind li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 9px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--uni-gold, #ffb936);
+}
+
+/* ---- calculator ------------------------------------------------------- */
+
+.rl-calc {
+  background: var(--uni-card, #f1f5f4);
+  border: 1px solid var(--rl-hair);
+  border-radius: var(--uni-radius, 20px);
+  padding: 22px 22px 20px;
+  position: sticky;
+  top: 24px;
+}
+@media (max-width: 900px) {
+  .rl-calc { position: static; }
+}
+
+.rl-calc-h {
+  margin: 0 0 6px;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 760;
+}
+.rl-calc-sub {
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  line-height: 20px;
+  color: var(--rl-dim);
+}
+
+.rl-calc-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--rl-dim);
+  margin-bottom: 7px;
+}
+
+.rl-calc-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--uni-bg, #fff);
+  border: 1.5px solid var(--rl-hair);
+  border-radius: var(--uni-radius-sm, 14px);
+  padding: 0 14px;
+  transition: border-color 0.15s ease;
+}
+.rl-calc-field:focus-within {
+  border-color: var(--uni-gold, #ffb936);
+}
+.rl-calc-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  padding: 14px 0;
+  font: inherit;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--uni-ink);
+  font-variant-numeric: tabular-nums;
+}
+.rl-calc-unit {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--rl-dim);
+  flex: none;
+}
+
+.rl-calc-privacy {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--rl-dim);
+}
+
+.rl-calc-out {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rl-hair);
+  min-height: 108px;
+}
+.rl-calc-idle {
+  margin: 0;
+  font-size: 14px;
+  color: var(--rl-dim);
+}
+.rl-calc-rank {
+  margin: 0 0 8px;
+  font-size: 24px;
+  line-height: 30px;
+  font-weight: 780;
+  letter-spacing: -0.01em;
+}
+.rl-calc-detail {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 21px;
+}
+.rl-calc-dim { color: var(--rl-dim); }
+
+.rl-calc-share {
+  margin-top: 12px;
+  border: 1px solid var(--rl-hair);
+  background: var(--uni-bg, #fff);
+  border-radius: var(--uni-radius-pill, 999px);
+  padding: 8px 16px;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 650;
+  color: var(--uni-ink);
+  cursor: pointer;
+}
+.rl-calc-share:hover { border-color: var(--uni-ink); }
+
+/* ---- tables ----------------------------------------------------------- */
+
+.rl-dtable-wrap {
+  width: 100%;
+  overflow-x: auto;
+  margin: 18px 0 6px;
+}
+.rl-scroll { max-height: 620px; overflow-y: auto; }
+
+.rl-dtable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  line-height: 20px;
+}
+.rl-dtable-cap {
+  caption-side: top;
+  text-align: left;
+  font-size: 12.5px;
+  color: var(--rl-dim);
+  padding-bottom: 10px;
+}
+.rl-dtable thead th {
+  text-align: left;
+  font-weight: 750;
+  color: var(--uni-ink);
+  padding: 0 12px 9px;
+  border-bottom: 1px solid var(--rl-hair);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  background: var(--uni-bg, #fff);
+}
+.rl-dtable tbody th {
+  text-align: left;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.rl-dtable tbody th,
+.rl-dtable td {
+  padding: 9px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--rl-hair) 55%, transparent);
+  vertical-align: middle;
+}
+.rl-dtable tbody tr:last-child th,
+.rl-dtable tbody tr:last-child td { border-bottom: 0; }
+.rl-dtable th:first-child,
+.rl-dtable td:first-child { padding-left: 0; }
+.rl-dtable th:last-child,
+.rl-dtable td:last-child { padding-right: 0; }
+
+.rl-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.rl-dtable thead th:not(:first-child) { text-align: right; }
+.rl-top thead th:nth-child(2),
+.rl-top thead th:nth-child(3) { text-align: left; }
+
+.rl-addr {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+  word-break: break-all;
+}
+.rl-dim { color: var(--rl-dim); }
+
+.rl-tiers tbody th { font-size: 15px; }
+
+/* ---- chart ------------------------------------------------------------ */
+
+.rl-chart-fig { margin: 26px 0 8px; }
+.rl-chart { display: block; width: 100%; height: auto; }
+.rl-chart-bar { fill: var(--uni-gold, #ffb936); }
+.rl-chart-val {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--uni-ink);
+  font-variant-numeric: tabular-nums;
+}
+.rl-chart-tick {
+  font-size: 11px;
+  fill: var(--rl-dim);
+  font-variant-numeric: tabular-nums;
+}
+.rl-chart-tick-dim { font-size: 10px; }
+.rl-chart-axis { stroke: var(--rl-hair); stroke-width: 1; }
+.rl-chart-cap {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  line-height: 18px;
+  color: var(--rl-dim);
+}
+
+/* ---- bridge ----------------------------------------------------------- */
+
+.rl-bridge {
+  background: var(--uni-card, #f1f5f4);
+  border: 1px solid var(--rl-hair);
+  border-radius: var(--uni-radius, 20px);
+  padding: 26px 28px;
+}
+.rl-bridge h2 { margin: 0 0 10px; font-size: 22px; line-height: 28px; }
+.rl-bridge p { margin: 0 0 16px; max-width: 68ch; }
+.rl-bridge-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--uni-ink);
+  color: var(--uni-bg, #fff);
+  border-radius: var(--uni-radius-pill, 999px);
+  padding: 11px 20px;
+  font-size: 14.5px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.rl-bridge-cta:hover { opacity: 0.88; }
+
+/* ---- methodology ------------------------------------------------------ */
+
+.rl-method { margin: 12px 0 0; }
+.rl-method dt {
+  font-weight: 750;
+  margin-top: 16px;
+  color: var(--uni-ink);
+}
+.rl-method dd {
+  margin: 5px 0 0;
+  color: var(--uni-ink);
+  max-width: 78ch;
+  line-height: 22px;
+}
+
+.rl-note { font-size: 13px; color: var(--uni-ink); }

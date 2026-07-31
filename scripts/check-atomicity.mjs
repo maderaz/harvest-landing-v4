@@ -38,6 +38,7 @@ const PUBLIC = join(ROOT, "public");
 // date rule would fire on every generated rank sentence.
 const PAGES = [
   "report/xrp-yield-ranking",
+  "xrp-rich-list",
   "report/aerodrome",
   "polygon",
   "ethereum",
@@ -58,7 +59,7 @@ const ENTITY_CAP = 10;
 // Pages held to the gate. Everything else in PAGES is reported as a warning so
 // the backlog stays visible without blocking the build. Move a page here once
 // its prose has been brought up to spec.
-const ENFORCED = new Set(["report/xrp-yield-ranking"]);
+const ENFORCED = new Set(["report/xrp-yield-ranking", "xrp-rich-list"]);
 
 // A date token is "as of", a month name, or a four-digit year.
 const DATE_TOKEN =
@@ -142,7 +143,14 @@ export function lint(html, { entityCap = ENTITY_CAP } = {}) {
     ss.forEach((s, i) => {
       // Rule 1: undated figures. Fires on any digit, not just % or $, because
       // "5 of the 14" carries neither and is exactly the case this catches.
-      if (/\d/.test(s) && !DATE_TOKEN.test(s)) {
+      //
+      // Questions are exempt. An interrogative asserts nothing, so there is no
+      // measurement to date, and the FAQ headings that carry a figure are
+      // deliberately verbatim from the People Also Ask block. Rewriting "How
+      // many XRP holders have 10,000 or more?" to carry a date would break the
+      // exact match the heading exists for. The ANSWER underneath still has to
+      // pass, which is where the claim actually lives.
+      if (/\d/.test(s) && !DATE_TOKEN.test(s) && !s.trimEnd().endsWith("?")) {
         const money = /[%$]/.test(s);
         if (money || !ALLOW_DIGIT.test(s)) {
           findings.push({ rule: "undated-figure", where: b.tag, text: s });
@@ -187,6 +195,10 @@ function selfTest() {
     ["<p>Both are wrapped XRP, but the trust model differs.</p>", "orphan-opener", true],
     [`<p>${"Harvest ".repeat(12)}</p>`, "entity-density", true],
     ["<p>Harvest tracks these products.</p>", "entity-density", false],
+    // A question carries no claim, so there is nothing to date. The answer
+    // beneath it is still held to the rule.
+    ["<summary>How many holders have 10,000 or more?</summary>", "undated-figure", false],
+    ["<p>10,000 holders qualified.</p>", "undated-figure", true],
   ];
   let failed = 0;
   for (const [html, rule, shouldFire] of cases) {
