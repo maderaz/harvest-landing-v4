@@ -476,12 +476,13 @@ export default function XrpYieldRankingPage() {
   // Two things make this honest rather than a heartbeat:
   //
   // 1. The pipeline scripts only rewrite data/xrp-yield.json when something
-  //    other than their own run stamp changed (see fetch-xrp-yield.mjs). So each
-  //    stamp below advances only when that pass produced different data, and the
-  //    max of them means "when the report's data last changed".
+  //    other than their own run stamp changed (see fetch-xrp-yield.mjs and
+  //    scripts/lib/snapshot-stamp.mjs). So each stamp below advances only when
+  //    that pass produced different data, and the max of them means "when the
+  //    report's data last changed" rather than "when a job last ran".
   // 2. The result is then capped by the newest observation actually present in
-  //    the data. If the daily series have gone stale — a degraded run where
-  //    venues fall back to their previous values while the job still completes —
+  //    the data. If the daily series have gone stale - a degraded run where
+  //    venues fall back to their previous values while the job still completes -
   //    the cap stops the page advertising freshness it does not have. The cap is
   //    end-of-day so a same-day observation never drags the timestamp backwards
   //    within the day, which means it costs nothing in the healthy case.
@@ -574,10 +575,11 @@ export default function XrpYieldRankingPage() {
     name: `${assetHead(p)} on ${p.platform}`,
     url: p.platformUrl ?? p.llamaUrl,
   }));
-  // Two levels only: "Report" was an intermediate crumb with no page of its
-  // own (there is no /report index), so Google flagged its ListItem for a
-  // missing `item` URL. Drop it — Home › XRP Yield Ranking is valid and matches
-  // the visible breadcrumb.
+  // Two levels only. "Report" was an intermediate crumb with no page of its
+  // own (there is no /report index), so breadcrumbSchema emitted a middle
+  // ListItem with a name and no `item` URL, which Google Search Console flags
+  // as an error. Home > XRP Yield Ranking is valid, and the visible breadcrumb
+  // below drops the same segment so the two stay in lockstep.
   const crumbs = [
     { name: SITE_NAME, url: SITE_URL },
     { name: "XRP Yield Ranking", url: PAGE_URL },
@@ -896,16 +898,13 @@ export default function XrpYieldRankingPage() {
                 "Principal Token",
               ],
               // Provenance must match what the page body states: rates and TVL
-              // are read from each venue's own contracts on Base and Flare,
-              // priced with onchain oracles, with the Spectra API for Spectra's
-              // own markets and Portals for the few products the others do not
-              // reach. This previously credited DeFiLlama, which the pipeline no
-              // longer reads and whose terms restrict commercial republishing,
-              // and crediting it contradicted the Method section's "no
-              // third-party yield aggregator is used" on the exact surface
-              // answer engines read. Portals is listed because 3 of the tracked
-              // products are hydrated through it, so omitting it would be the
-              // same class of error in the other direction.
+              // are read directly from each venue's own contracts on Base and
+              // Flare, priced with onchain oracles, with the Spectra API for
+              // Spectra's own markets. This previously credited DeFiLlama, which
+              // the pipeline no longer reads and whose terms restrict commercial
+              // republishing - the reason the onchain path was built. Crediting
+              // it here contradicted the Method section ("No third-party yield
+              // aggregator is used") on the exact surface answer engines read.
               sources: [
                 "https://spectra.finance",
                 "https://aerodrome.finance",
@@ -1344,7 +1343,7 @@ export default function XrpYieldRankingPage() {
             <p>
               {land
                 ? land.note
-                : "Total XRP-denominated DeFi TVL across tracked venues. Sources: onchain reads (Base and Flare), Spectra and Portals."}{" "}
+                : "Total XRP-denominated DeFi TVL across tracked venues. Sources: onchain reads (Base and Flare) and the Spectra API."}{" "}
               TVL split by network and type is computed from the {stats.venues}{" "}
               tracked products as of {updated}.
             </p>
@@ -2175,8 +2174,9 @@ export default function XrpYieldRankingPage() {
                 (lending supply rates, vault share prices, pool reserves and
                 gauge emissions), priced with onchain oracles (Flare&rsquo;s
                 FTSOv2 for XRP, Chainlink on Base). Spectra&rsquo;s own markets
-                come from the Spectra API, and Portals covers the few products
-                the others do not. No third-party yield aggregator is used.
+                come from the Spectra API. A small number of vaults publish no
+                machine-readable rate feed; those carry their last verified
+                figures rather than a live read. No third-party yield aggregator is used.
               </span>
             </dd>
             <dt>Ranking</dt>
@@ -2423,7 +2423,7 @@ function RankTable({ rows }: { rows: XrpPool[] }) {
                   platform={p.platform}
                   label="Open"
                   source={`ranking:${p.venueSlug ?? p.project}`}
-                  product={`${assetHead(p)}${p.detail ? ` · ${p.detail}` : ""}`}
+                  product={assetHead(p)}
                   chain={p.chain}
                   rank={i + 1}
                   icon={<TokenIcons symbol={p.symbol} />}
