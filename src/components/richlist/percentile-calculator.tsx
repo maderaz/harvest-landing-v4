@@ -87,7 +87,6 @@ export function PercentileCalculator({
   snapshotDate: string;
 }) {
   const [raw, setRaw] = useState("");
-  const [copied, setCopied] = useState(false);
   const [phase, setPhase] = useState<"idle" | "checking" | "done">("idle");
   const [stage, setStage] = useState(0);
   // Held so an unmount or a restart cannot leave a timer writing into a
@@ -104,7 +103,6 @@ export function PercentileCalculator({
     timers.current = [];
     setPhase("idle");
     setStage(0);
-    setCopied(false);
   };
 
   const parsed = useMemo(() => {
@@ -147,11 +145,6 @@ export function PercentileCalculator({
     }
     timers.current.push(setTimeout(() => setPhase("done"), CHECK_MS));
   };
-
-  const shareText = result
-    ? `${fmt(parsed ?? 0)} XRP puts you in the ${topPctLabel(result.topPct)} of XRP Ledger accounts, ` +
-      `larger than ${compact(result.below)} of them (${snapshotDate}).`
-    : "";
 
   return (
     <div className="rl-calc" id="calculator">
@@ -265,21 +258,6 @@ export function PercentileCalculator({
                 accounts holding less.
               </li>
             </ul>
-            <button
-              type="button"
-              className="rl-calc-share"
-              onClick={() => {
-                // Clipboard is unavailable over plain HTTP and in some
-                // embedded browsers, so a failure leaves the button silent
-                // rather than throwing into an empty catch the user can see.
-                navigator.clipboard?.writeText(shareText).then(
-                  () => setCopied(true),
-                  () => setCopied(false),
-                );
-              }}
-            >
-              {copied ? "Copied" : "Copy result"}
-            </button>
           </>
         ) : null}
       </div>

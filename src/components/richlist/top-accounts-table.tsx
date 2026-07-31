@@ -80,11 +80,6 @@ const pct = (v: number): string => {
   return "<0.01%";
 };
 
-// Middle-truncated so the row keeps a fixed width and the address stays
-// recognisable from both ends, which is how anyone actually checks one.
-const shortAddr = (a: string): string =>
-  a.length > 20 ? `${a.slice(0, 10)}…${a.slice(-6)}` : a;
-
 type FilterKey = "exchange" | "ripple" | "founder";
 
 const FILTERS: { key: FilterKey; label: string; match: (r: TopRow) => boolean }[] = [
@@ -160,8 +155,8 @@ export function TopAccountsTable({
           {shown.map((t) => (
             <div className="rl-rank-row" role="row" key={t.address}>
               <span className="rl-rank-i" role="cell">{t.rank}</span>
-              <span className="rl-rank-addr" role="cell" title={t.address}>
-                {shortAddr(t.address)}
+              <span className="rl-rank-addr" role="cell">
+                {t.address}
               </span>
               <span className="rl-rank-n rl-rank-xrp" role="cell">
                 {xrpShort(t.xrp)}
