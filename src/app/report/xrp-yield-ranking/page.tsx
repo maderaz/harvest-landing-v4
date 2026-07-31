@@ -911,7 +911,6 @@ export default function XrpYieldRankingPage() {
                 "https://aerodrome.finance",
                 "https://moonwell.fi",
                 "https://flare.network",
-                "https://portals.fi",
               ],
               distribution: [
                 {
