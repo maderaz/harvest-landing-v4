@@ -100,106 +100,15 @@
   color: var(--uni-ink);
 }
 
-/* ---- calculator band --------------------------------------------------- */
-
-.uni-home-test .rl-calc-band { margin-top: 26px; }
-.uni-home-test .rl-calc-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 44px;
-  align-items: center;
-}
-@media (max-width: 900px) {
-  .uni-home-test .rl-calc-grid {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 26px;
-  }
-}
-/* A section heading, so it sits below the page H1 in the scale rather than
-   matching it. The XRP mark sits on the first line of the heading, ahead of
-   "The", and is vertically centred against the two-line block. */
-.uni-home-test .rl-calc-title {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  margin: 0 0 14px;
-  max-width: none;
-  font-size: clamp(24px, 2.6vw, 34px);
-}
-/* Centred on the first line rather than on the two-line block, so the mark
-   sits beside "The" instead of floating between the lines. The offset is half
-   the difference between the 44px mark and the line box it sits against. */
-.uni-home-test .rl-calc-title img,
-.uni-home-test .rl-calc-title svg {
-  flex: none;
-  margin-top: -4px;
-  filter: drop-shadow(0 3px 10px rgba(25, 23, 23, 0.18));
-}
-.uni-home-test .rl-calc-pitch-sub {
-  font-size: 17px;
-  line-height: 1.6;
-  color: var(--uni-ink);
-  opacity: 0.95;
-  margin: 0 0 18px;
-  max-width: 46ch;
-}
-.uni-home-test .rl-calc-points {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 9px;
-}
-.uni-home-test .rl-calc-points li {
-  position: relative;
-  padding-left: 22px;
-  font-size: 15px;
-  line-height: 22px;
-  color: var(--uni-ink);
-}
-.uni-home-test .rl-calc-points li::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 7px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  border: 2px solid rgba(25, 23, 23, 0.55);
-}
-
-/* Freshness is a ranking argument on this page, not housekeeping, so the
-   stamp sits above the fold rather than in a footer. */
-.uni-home-test .rl-updated {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 22px;
-  padding: 6px 12px;
-  border-radius: var(--uni-radius-pill, 999px);
-  background: color-mix(in srgb, var(--uni-gold, #ffb936) 16%, #fff);
-  border: 1px solid color-mix(in srgb, var(--uni-gold, #ffb936) 45%, transparent);
-  color: var(--uni-ink);
-  font-size: 13.5px;
-  font-weight: 650;
-  white-space: nowrap;
-}
-.uni-home-test .rl-live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #1fa971;
-  box-shadow: 0 0 0 3px color-mix(in srgb, #1fa971 22%, transparent);
-  flex: none;
-}
-
+/* The summary bullets. Gold markers, because the summary is the block most
+   likely to be read and nothing else, so it carries the page's accent rather
+   than the neutral square the other lists use. */
 .uni-home-test .rl-keyfind {
   list-style: none;
-  margin: 0;
+  margin: 14px 0 0;
   padding: 0;
   display: grid;
   gap: 13px;
-  margin-top: 14px;
   max-width: none;
 }
 .uni-home-test .rl-keyfind li {
@@ -209,9 +118,6 @@
   line-height: 26px;
   color: var(--uni-ink);
 }
-/* Gold markers. The summary is the block most likely to be read and nothing
-   else, so its bullets carry the page's accent rather than the neutral square
-   the rest of the lists use. */
 .uni-home-test .rl-keyfind li::before {
   content: "";
   position: absolute;
@@ -222,6 +128,135 @@
   border-radius: 50%;
   background: var(--uni-gold, #ffb936);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--uni-gold, #ffb936) 22%, transparent);
+}
+
+/* ---- calculator: the shadcn "feature" layout ---------------------------
+   One bordered, rounded card holding a two-column grid: eyebrow badge,
+   heading, lead and a checklist on the left, the artifact on the right. That
+   is the reference component's shape, with the calculator standing in for its
+   empty muted square.
+
+   Written against this repo's tokens rather than pasted in. The reference is
+   Tailwind + shadcn, and while Tailwind v4 is installed here (globals.css:1)
+   shadcn is not: there is no components.json, no components/ui, no cn(), and
+   none of `border`, `bg-muted`, `text-muted-foreground` or `text-primary`
+   resolve, because those are shadcn theme variables this project never
+   defined. Pasting the component would have meant adding shadcn plus
+   class-variance-authority, clsx, tailwind-merge and lucide-react, and then
+   maintaining a second set of colour tokens beside --uni-*, for one section.
+   The layout is what was worth taking; it is reproduced exactly. */
+
+.uni-home-test .rl-feature { padding: 34px 0 44px; }
+
+.uni-home-test .rl-feature-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+  padding: 32px;
+  border: 1px solid var(--uni-line, #dddee0);
+  border-radius: var(--uni-radius, 20px);
+}
+@media (min-width: 1024px) {
+  .uni-home-test .rl-feature-card {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 40px;
+  }
+}
+@media (max-width: 640px) {
+  .uni-home-test .rl-feature-card { padding: 22px 18px; gap: 26px; }
+}
+
+.uni-home-test .rl-feature-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 34px;
+}
+.uni-home-test .rl-feature-head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+/* The outline badge. Same shape as the reference's Badge variant="outline":
+   pill, hairline border, small semibold type. */
+.uni-home-test .rl-eyebrow-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--uni-line, #dddee0);
+  border-radius: var(--uni-radius-pill, 999px);
+  padding: 3px 11px;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--uni-ink);
+}
+
+.uni-home-test .rl-calc-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 0;
+  max-width: none;
+  font-family: var(--display);
+  font-size: clamp(28px, 3.2vw, 44px);
+  font-weight: 600;
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  color: var(--uni-ink);
+}
+/* Centred on the first line rather than on the two-line block, so the mark
+   sits beside "The" instead of floating between the lines. */
+.uni-home-test .rl-calc-title img,
+.uni-home-test .rl-calc-title svg {
+  flex: none;
+  margin-top: -2px;
+}
+.uni-home-test .rl-calc-pitch-sub {
+  margin: 0;
+  font-size: 17.5px;
+  line-height: 1.62;
+  letter-spacing: -0.005em;
+  color: var(--uni-ink-2);
+  max-width: 54ch;
+}
+
+/* The checklist. One column, because the calculator already owns the other
+   half of the card; the reference goes three-across only when its right
+   column is absent. */
+.uni-home-test .rl-checklist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 22px;
+}
+@media (min-width: 640px) and (max-width: 1023px) {
+  .uni-home-test .rl-checklist { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+}
+.uni-home-test .rl-checklist li {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  align-items: flex-start;
+}
+.uni-home-test .rl-check {
+  flex: none;
+  margin-top: 5px;
+  color: var(--uni-gold, #ffb936);
+}
+.uni-home-test .rl-checklist p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 23px;
+  color: var(--uni-ink);
+}
+.uni-home-test .rl-checklist .rl-checklist-sub {
+  margin-top: 4px;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--uni-ink-3);
 }
 
 /* ---- calculator ------------------------------------------------------- */
@@ -935,7 +970,6 @@
   .uni-home-test .rl-calc-privacy,
   .uni-home-test .rl-calc-out { text-align: left; }
   .uni-home-test .rl-keyfind li { font-size: 15px; line-height: 23px; }
-  .uni-home-test .rl-updated { font-size: 12px; white-space: normal; }
 
   .uni-home-test .rl-calc { padding: 18px 16px 16px; }
   .uni-home-test .rl-calc-h { font-size: 16px; }

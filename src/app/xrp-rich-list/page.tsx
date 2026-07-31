@@ -62,6 +62,29 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
+/** Lucide's `check` glyph, inlined. See the note on the calculator section:
+ *  one icon does not justify a runtime dependency, and this is that icon's
+ *  own path data at its own stroke settings, so it is the same mark. */
+function Check() {
+  return (
+    <svg
+      className="rl-check"
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
 function Crumbs() {
   return (
     <nav className="rp-crumbs" aria-label="Breadcrumb">
@@ -257,11 +280,6 @@ export default function XrpRichListPage() {
           the fold without making them read a paragraph to reach them. */}
       <section className="rl-intro">
         <h1 className="uni-home-h1 rl-h1">XRP Rich List &amp; Calculator</h1>
-        <p className="rl-updated">
-          <span className="rl-live-dot" aria-hidden="true" />
-          Updated {snapStamp}
-        </p>
-
         {/* Featured image. Static import, so Next emits the intrinsic size and
             the slot reserves its own height before the file loads. `priority`
             because it is the largest element above the fold and is what LCP
@@ -319,41 +337,78 @@ export default function XrpRichListPage() {
         </ul>
       </section>
 
-      {/* The calculator gets its own band rather than a corner of the hero.
-          It is the reason a large part of this page's traffic arrives, and a
-          form squeezed beside five bullet points reads as a sidebar widget
-          rather than as the tool the page is. */}
-      <section className="uni-home-hero rl-calc-band" aria-labelledby="calculator-title">
-        <div className="uni-home-hero-inner rl-calc-grid">
-          <div className="rl-calc-pitch">
-            <h2 id="calculator-title" className="uni-home-h1 rl-calc-title">
-              <AssetIcon asset="XRP" size={44} decorative />
-              <span>
-                The XRP
-                <br />
-                Rich List Calculator
-              </span>
-            </h2>
-            <p className="rl-calc-pitch-sub">
-              Type a balance and see the position it holds among every funded
-              account on the XRP Ledger as of {snapDate}. Most people place
-              higher than they expect, because as of {snapDate}{" "}
-              {pctLabel(
-                data.bands
-                  .filter((b) => b.max != null && b.max <= 1_000)
-                  .reduce((a, b) => a + b.pctOfAccounts, 0),
-              )}{" "}
-              of funded accounts held under 1,000 XRP on that date.
-            </p>
-            <ul className="rl-calc-points">
-              <li>No wallet connection and no address, ever.</li>
-              <li>Runs in your browser, so nothing you type leaves it.</li>
+      {/* Calculator.
+          Laid out on the shadcn "feature" pattern: one bordered, rounded card
+          holding a two-column grid, with an eyebrow badge, heading, lead and a
+          checklist on the left and the artifact on the right. In that pattern's
+          reference markup the right column is an empty muted square; here it is
+          the calculator itself, which is the point of the section.
+
+          Written against this repo's own tokens rather than copied verbatim.
+          See the note in _styles/rich-list.css for why. */}
+      <section className="rl-section rl-feature" aria-labelledby="calculator-title">
+        <div className="rl-feature-card">
+          <div className="rl-feature-copy">
+            <div>
+              <span className="rl-eyebrow-badge">Calculator</span>
+            </div>
+            <div className="rl-feature-head">
+              <h2 id="calculator-title" className="rl-calc-title">
+                <AssetIcon asset="XRP" size={44} decorative />
+                <span>
+                  The XRP
+                  <br />
+                  Rich List Calculator
+                </span>
+              </h2>
+              <p className="rl-calc-pitch-sub">
+                Type a balance and see the position it holds among every funded
+                account on the XRP Ledger as of {snapDate}. Most people place
+                higher than they expect, because as of {snapDate}{" "}
+                {pctLabel(
+                  data.bands
+                    .filter((b) => b.max != null && b.max <= 1_000)
+                    .reduce((a, b) => a + b.pctOfAccounts, 0),
+                )}{" "}
+                of funded accounts held under 1,000 XRP on that date.
+              </p>
+            </div>
+
+            <ul className="rl-checklist">
               <li>
-                Measured against all {count(data.accounts)} funded accounts as of{" "}
-                {snapDate}.
+                <Check />
+                <div>
+                  <p>No wallet, no address</p>
+                  <p className="rl-checklist-sub">
+                    A form asking for an address on a page about the largest
+                    holders is what phishing looks like, so this one never asks.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <Check />
+                <div>
+                  <p>Runs in your browser</p>
+                  <p className="rl-checklist-sub">
+                    The distribution ships with the page, so the balance you
+                    type is never sent anywhere and never logged.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <Check />
+                <div>
+                  <p>Measured against every funded account</p>
+                  <p className="rl-checklist-sub">
+                    All {count(data.accounts)} of them, read from ledger{" "}
+                    {count(data.ledgerIndex)} as of {snapDate}, rather than from
+                    a sample.
+                  </p>
+                </div>
               </li>
             </ul>
           </div>
+
           <PercentileCalculator
             ladder={data.ladder}
             accounts={data.accounts}
