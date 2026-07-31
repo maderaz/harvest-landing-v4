@@ -25,6 +25,7 @@ import { join, dirname } from "node:path";
 import {
   validatedLedger,
   walkAccounts,
+  walkEscrows,
   decodeDomain,
   dropsToXrp,
   xrplRpc,
@@ -129,6 +130,31 @@ if (resumed) {
   console.error(`[richlist] ledger ${ledgerIndex} closed ${closeIso}`);
 }
 
+// Escrowed XRP, walked first so the account pass can add it to each balance.
+//
+// AccountRoot.Balance excludes escrowed drops: the ledger moves them out of the
+// balance and into the Escrow object. A rich list on balances alone therefore
+// omits the six largest XRP positions on the network, which each hold a couple
+// of hundred XRP in balance and five billion in escrow. It also fails to
+// reconcile: balances alone come to 67.5bn against a 100bn supply, and the
+// 32.4bn gap is exactly the escrow.
+//
+// Both walks are pinned to the same ledger index so the totals add up to the
+// ledger's own total_coins rather than to two different moments.
+console.error(`[richlist] walking escrows at ledger ${ledgerIndex}`);
+const esc = await walkEscrows({
+  ledgerIndex,
+  onProgress: ({ pages, objects }) => {
+    if (pages % 25 === 0) console.error(`[richlist] escrow page ${pages}, ${objects} objects`);
+  },
+});
+const escrowByAccount = esc.byAccount;
+const escrowedXrpTotal = Number(esc.totalDrops) / 1e6;
+console.error(
+  `[richlist] ${esc.objects} escrow objects across ${escrowByAccount.size} accounts, ` +
+    `${Math.round(escrowedXrpTotal).toLocaleString()} XRP locked`,
+);
+
 const t0 = Date.now();
 const result = await walkAccounts({
   ledgerIndex,
@@ -138,8 +164,16 @@ const result = await walkAccounts({
     for (const a of accounts) {
       const d = a.Balance;
       if (d == null) continue;
-      dist.add(dropsToXrp(d), {
+      const spendable = dropsToXrp(d);
+      const lockedDrops = escrowByAccount.get(a.Account) ?? 0n;
+      const locked = Number(lockedDrops) / 1e6;
+      // The ranked quantity is what the account controls: spendable plus
+      // escrowed. That is what "rich list" means, and it is the only definition
+      // under which the distribution reconciles against the ledger's supply.
+      dist.add(spendable + locked, {
         address: a.Account,
+        spendableXrp: Math.round(spendable),
+        escrowedXrp: Math.round(locked),
         // Self-declared and onchain. Anything absent stays unlabelled rather
         // than being guessed at from transaction behaviour.
         domain: decodeDomain(a.Domain),
@@ -172,8 +206,12 @@ if (!result.done) {
 
 // ---------------------------------------------------------------- enrichment
 
-// Everything the top-100 table shows beyond a balance: the registry label, the
-// account's self-declared Domain, and its escrow position.
+// Everything the top-100 table shows beyond its numbers: the registry label and
+// the account's self-declared Domain. Escrow is not queried per account here,
+// because the escrow walk above already has every account's locked total, and
+// the old per-account pass could only see accounts that reached the top 100 on
+// spendable balance alone. That is precisely the set which excludes the six
+// largest positions on the ledger.
 //
 // Labels are the reason this table beats an explorer, so they stay. What
 // changed after measuring is where they can come from. Not one of the hundred
@@ -189,48 +227,18 @@ if (!result.done) {
 // a stale attribution on somebody else's money is worse than no attribution.
 //
 // Alongside the label, the column carries what the ledger says directly: the
-// Domain when there is one, and the escrow position when the account holds
-// one. Those are facts about state rather than claims about ownership.
+// Domain when there is one, and the escrow position when the account holds one.
+// Those are facts about state rather than claims about ownership.
 async function enrichTop(ledgerIdx, list) {
   const labels = loadLabels(ROOT);
-  const out = [];
-  for (const t of list) {
-    let escrows = 0;
-    let escrowedDrops = 0n;
-    let marker = null;
-    let pages = 0;
-    try {
-      do {
-        const r = await xrplRpc("account_objects", {
-          account: t.address,
-          ledger_index: ledgerIdx,
-          type: "escrow",
-          limit: 400,
-          ...(marker ? { marker } : {}),
-        });
-        for (const o of r.account_objects ?? []) {
-          if (o.LedgerEntryType !== "Escrow") continue;
-          escrows++;
-          if (typeof o.Amount === "string") escrowedDrops += BigInt(o.Amount);
-        }
-        marker = r.marker ?? null;
-        pages++;
-        // Ripple's escrow accounts hold hundreds of objects. Cap the paging so
-        // one unusual account cannot stall the whole enrichment pass.
-      } while (marker && pages < 12);
-    } catch {
-      // An account that will not answer keeps its row and loses the column,
-      // which is better than dropping it out of the ranking.
-    }
-    // Attach the registry label, and re-verify the one tier that can be
-    // checked from an AccountRoot. A label that no longer matches the ledger is
-    // dropped rather than shown, because a stale attribution is worse than none.
+  return list.map((t) => {
+    // Attach the registry label, and re-verify the one tier that can be checked
+    // from an AccountRoot. A label that no longer matches the ledger is dropped
+    // rather than shown, because a stale attribution is worse than none.
     const label = labels.byAddress.get(t.address) ?? null;
     const check = verifyAgainstAccount(label, t.domain);
-    out.push({
+    return {
       ...t,
-      escrows,
-      escrowedXrp: escrows ? Math.round(Number(escrowedDrops) / 1e6) : 0,
       label:
         label && check.ok
           ? {
@@ -242,9 +250,8 @@ async function enrichTop(ledgerIdx, list) {
             }
           : null,
       labelDropped: label && !check.ok ? check.note : null,
-    });
-  }
-  return out;
+    };
+  });
 }
 
 // ------------------------------------------------------------- reconciliation
@@ -291,7 +298,14 @@ const top = await enrichTop(
   dist.topAccounts().map((t) => ({
     rank: t.rank,
     address: t.address,
+    // `xrp` is the ranked quantity: spendable plus escrowed. Both parts are
+    // carried separately so the table can show that an account holding two
+    // hundred XRP and five billion in escrow is not the same as one holding
+    // five billion it can move today.
     xrp: t.xrp,
+    spendableXrp: t.spendableXrp ?? t.xrp,
+    escrowedXrp: t.escrowedXrp ?? 0,
+    escrows: (t.escrowedXrp ?? 0) > 0 ? 1 : 0,
     pctOfSupply: dist.sumXrp ? Math.round((t.xrp / dist.sumXrp) * 1e6) / 1e4 : 0,
     domain: t.domain ?? null,
   })),
@@ -317,7 +331,28 @@ const payload = {
   },
   accounts: dist.total,
   xrpHeld: Math.round(dist.sumXrp),
+  escrowedXrp: Math.round(escrowedXrpTotal),
+  spendableXrp: Math.round(dist.sumXrp - escrowedXrpTotal),
+  escrowAccounts: escrowByAccount.size,
+  escrowObjects: esc.objects,
   totalSupplyXrp: totalSupplyDrops != null ? Math.round(Number(totalSupplyDrops) / 1e6) : null,
+  // The check that says the walk saw everything. Spendable plus escrowed, both
+  // read at the same ledger, must equal the ledger's own total_coins. A walk
+  // that silently truncated shows up here as a gap of billions rather than of
+  // rounding, which is how the first escrow pass was caught.
+  supplyReconciliation:
+    totalSupplyDrops != null
+      ? (() => {
+          const supply = Number(totalSupplyDrops) / 1e6;
+          const walked = dist.sumXrp;
+          return {
+            ledgerTotalCoinsXrp: Math.round(supply),
+            walkedXrp: Math.round(walked),
+            differenceXrp: Math.round(supply - walked),
+            differencePct: Math.round(((supply - walked) / supply) * 1e8) / 1e6,
+          };
+        })()
+      : null,
   tiers,
   exactCounts: dist.exactCounts(),
   bands,

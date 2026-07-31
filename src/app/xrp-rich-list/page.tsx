@@ -60,20 +60,33 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
+function Crumbs() {
+  return (
+    <nav className="rp-crumbs" aria-label="Breadcrumb">
+      <Link href="/">{SITE_NAME}</Link>
+      <span className="sep">/</span>
+      <span>XRP Rich List</span>
+    </nav>
+  );
+}
+
 export default function XrpRichListPage() {
   const data = loadRichList();
 
   if (!data) {
     return (
-      <main className="uni-home">
-        <section className="uni-home-content">
-          <h1>XRP Rich List</h1>
+      <div className="uni-home-test rp-page rl-page">
+        <Crumbs />
+        <section className="uni-home-hero">
+          <div className="uni-home-hero-inner">
+            <h1 className="uni-home-h1">XRP Rich List</h1>
           <p className="rp-lead">
             The XRP Ledger snapshot behind this page is being rebuilt. Live
             figures return once the next ledger walk completes.
-          </p>
+            </p>
+          </div>
         </section>
-      </main>
+      </div>
     );
   }
 
@@ -168,7 +181,8 @@ export default function XrpRichListPage() {
   ];
 
   return (
-    <main className="uni-home rl-page">
+    <div className="uni-home-test rp-page rl-page">
+      <Crumbs />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(crumbs)) }}
@@ -222,10 +236,11 @@ export default function XrpRichListPage() {
       />
 
       {/* ---------------------------------------------------------- hero */}
-      <section className="uni-home-hero rl-hero">
+      <section className="uni-home-hero">
+        <div className="uni-home-hero-inner rl-hero">
         <div className="rl-hero-main">
-          <h1>XRP Rich List</h1>
-          <p className="rl-hero-sub">
+          <h1 className="uni-home-h1">XRP Rich List</h1>
+          <p className="uni-home-sub rl-hero-sub">
             Enter your balance. See where you stand among the{" "}
             {countProse(data.accounts)} XRP Ledger accounts funded as of{" "}
             {snapDate}.
@@ -250,9 +265,17 @@ export default function XrpRichListPage() {
             ) : null}
             <li>
               <strong>{count(data.accounts)}</strong> XRP Ledger accounts were
-              funded as of {snapDate}, holding{" "}
-              {xrpAmount(data.xrpHeld)} XRP between them.
+              funded as of {snapDate}, controlling {xrpAmount(data.xrpHeld)} XRP
+              between them.
             </li>
+            {data.escrowedXrp ? (
+              <li>
+                <strong>{xrpAmount(data.escrowedXrp)} XRP</strong> sat locked in
+                onchain escrow as of {snapDate}, held by{" "}
+                {count(data.escrowAccounts ?? 0)} accounts and unable to move
+                before its release date.
+              </li>
+            ) : null}
             {yc && yieldRatioPct != null ? (
               <li>
                 Against those {countProse(data.accounts)} funded accounts,{" "}
@@ -272,6 +295,21 @@ export default function XrpRichListPage() {
             snapshotDate={snapDate}
           />
         </div>
+        </div>
+      </section>
+
+      <section className="uni-home-content" aria-labelledby="jump">
+        <h2 id="jump" className="rl-sr">On this page</h2>
+        <nav className="rp-toc" aria-label="On this page">
+          <span className="rp-toc-label">On this page</span>
+          <a href="#calculator">Calculator</a>
+          <a href="#thresholds">Thresholds</a>
+          <a href="#what-it-shows">What it shows</a>
+          {yc ? <a href="#working-vs-idle">Working or idle</a> : null}
+          <a href="#top-accounts">Top 100</a>
+          <a href="#faq">Questions</a>
+          <a href="#methodology">Method</a>
+        </nav>
       </section>
 
       {/* -------------------------------------------------- thresholds */}
@@ -282,7 +320,7 @@ export default function XrpRichListPage() {
           {t1 && t10 && t50
             ? `The minimum balance for the top 1% of funded XRP Ledger accounts was ${xrpAmount(t1.minXrp)} XRP as of ${snapDate}, against ${xrpAmount(t10.minXrp)} XRP for the top 10% and ${xrpAmount(t50.minXrp)} XRP for the top 50%.`
             : ""}{" "}
-          Each threshold below is the smallest balance that placed an account in
+          Each threshold below is the smallest amount of XRP that placed an account in
           that percentage of all {count(data.accounts)} funded accounts as of{" "}
           {snapDate}.
         </p>
@@ -295,7 +333,7 @@ export default function XrpRichListPage() {
             <thead>
               <tr>
                 <th scope="col">Percentage tier</th>
-                <th scope="col">Minimum XRP balance</th>
+                <th scope="col">Minimum XRP controlled</th>
                 <th scope="col">Accounts at or above</th>
                 <th scope="col">Share of XRP held</th>
               </tr>
@@ -304,20 +342,22 @@ export default function XrpRichListPage() {
               {data.tiers.map((t) => (
                 <tr key={t.pct}>
                   <th scope="row">Top {t.pct}%</th>
-                  <td className="rl-num">{xrpAmount(t.minXrp)}</td>
-                  <td className="rl-num">{count(t.accounts)}</td>
-                  <td className="rl-num">{pctLabel(t.pctOfXrp)}</td>
+                  <td className="rl-num" data-label="Minimum XRP">{xrpAmount(t.minXrp)}</td>
+                  <td className="rl-num" data-label="Accounts at or above">{count(t.accounts)}</td>
+                  <td className="rl-num" data-label="Share of XRP">{pctLabel(t.pctOfXrp)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <DistributionChart
-          bands={data.bands}
-          snapshotDate={snapDate}
-          totalAccounts={data.accounts}
-        />
+        <div className="rl-chart-scroll">
+          <DistributionChart
+            bands={data.bands}
+            snapshotDate={snapDate}
+            totalAccounts={data.accounts}
+          />
+        </div>
         <DistributionTable bands={data.bands} snapshotDate={snapDate} />
       </section>
 
@@ -328,10 +368,13 @@ export default function XrpRichListPage() {
         <div className="rp-article">
           <p>
             {t1
-              ? `The top 1% of funded XRP Ledger accounts held ${pctLabel(t1.pctOfXrp)} of the XRP sitting in funded accounts as of ${snapDate}.`
+              ? `The top 1% of funded XRP Ledger accounts held ${pctLabel(t1.pctOfXrp)} of the XRP controlled across funded accounts as of ${snapDate}.`
               : ""}{" "}
             {t50
               ? `The top 50% held ${pctLabel(t50.pctOfXrp)} as of ${snapDate}, which leaves the smaller half of accounts holding the rest.`
+              : ""}{" "}
+            {data.escrowedXrp
+              ? `Those shares count escrowed XRP alongside spendable balances, and ${xrpAmount(data.escrowedXrp)} XRP of the total was locked in escrow as of ${snapDate}.`
               : ""}
           </p>
           <p>
@@ -339,7 +382,7 @@ export default function XrpRichListPage() {
             concentration of ownership. The largest accounts on the XRP Ledger
             are mostly exchange and custodian wallets, and a single one of them
             can hold balances for millions of customers, which is why this page
-            labels an account only when that account publishes a domain onchain.
+            names an account only against evidence it can show beside the name.
           </p>
           <p>
             Most funded accounts hold very little. {" "}
@@ -435,26 +478,34 @@ export default function XrpRichListPage() {
           from how it transacts would be a guess, so this page names an account
           only against a source it can show.
         </p>
-        {withEscrow.length ? (
-          <p className="rp-lead">
-            {withEscrow.length} of the 100 largest accounts held XRP in onchain
-            escrow as of {snapDate}, locking{" "}
-            {xrpAmount(withEscrow.reduce((s, t) => s + (t.escrowedXrp ?? 0), 0))}{" "}
-            XRP on top of their spendable balances. Escrowed XRP is time-locked
-            by the ledger itself and cannot be moved before its release date.
-          </p>
-        ) : null}
+        <p className="rp-lead">
+          Accounts are ranked on the XRP they control, which is their spendable
+          balance plus anything they have locked in onchain escrow.{" "}
+          {withEscrow.length ? (
+            <>
+              {withEscrow.length} of the 100 largest held escrowed XRP as of{" "}
+              {snapDate}, locking{" "}
+              {xrpAmount(withEscrow.reduce((a, t) => a + (t.escrowedXrp ?? 0), 0))}{" "}
+              XRP between them.
+            </>
+          ) : null}{" "}
+          A ranking on spendable balance alone would place the largest positions
+          on the ledger outside this table entirely, because an escrow account
+          can hold a few hundred XRP spendable while controlling billions.
+        </p>
         <div className="rl-dtable-wrap rl-scroll" data-nosnippet="">
           <table className="rl-dtable rl-top">
             <caption className="rl-dtable-cap">
-              Largest 100 XRP Ledger accounts by balance, as of {snapDate}
+              Largest 100 XRP Ledger accounts by XRP controlled, as of {snapDate}
             </caption>
             <thead>
               <tr>
                 <th scope="col">Rank</th>
                 <th scope="col">Account</th>
                 <th scope="col">Onchain notes</th>
-                <th scope="col">XRP balance</th>
+                <th scope="col">Total XRP</th>
+                <th scope="col">Spendable</th>
+                <th scope="col">In escrow</th>
                 <th scope="col">Share of XRP</th>
               </tr>
             </thead>
@@ -462,8 +513,8 @@ export default function XrpRichListPage() {
               {data.top.map((t) => (
                 <tr key={t.address}>
                   <th scope="row">{t.rank}</th>
-                  <td className="rl-addr">{t.address}</td>
-                  <td>
+                  <td className="rl-addr" data-label="Account">{t.address}</td>
+                  <td data-label="Onchain notes">
                     {t.label ? (
                       <span className="rl-label">
                         <strong>{t.label.name}</strong>
@@ -495,8 +546,12 @@ export default function XrpRichListPage() {
                       <span className="rl-dim">nothing published</span>
                     )}
                   </td>
-                  <td className="rl-num">{count(t.xrp)}</td>
-                  <td className="rl-num">{pctLabel(t.pctOfSupply)}</td>
+                  <td className="rl-num" data-label="Total XRP">{count(t.xrp)}</td>
+                  <td className="rl-num" data-label="Spendable">{count(t.spendableXrp ?? t.xrp)}</td>
+                  <td className="rl-num" data-label="In escrow">
+                    {t.escrowedXrp ? count(t.escrowedXrp) : <span className="rl-dim">0</span>}
+                  </td>
+                  <td className="rl-num" data-label="Share of XRP">{pctLabel(t.pctOfSupply)}</td>
                 </tr>
               ))}
             </tbody>
@@ -562,6 +617,16 @@ export default function XrpRichListPage() {
           </dd>
           <dt>What counts as a funded account</dt>
           <dd>{data.method.fundedAccountDefinition}</dd>
+          <dt>What each account is ranked on</dt>
+          <dd>
+            The XRP an account controls, which is its spendable balance plus
+            anything it has locked in onchain escrow. The two are separate on the
+            ledger: escrowed drops leave the account&rsquo;s balance and sit in an
+            Escrow object until their release date. Ranking on balance alone
+            would put the six largest XRP positions on the network outside this
+            list, since each of those accounts holds a few hundred XRP spendable
+            against billions locked.
+          </dd>
           <dt>How percentiles are computed</dt>
           <dd>
             Balances are aggregated into a log-spaced histogram as they stream,
@@ -571,6 +636,29 @@ export default function XrpRichListPage() {
             balances as of {snapDate}, such as the number of accounts holding at
             least 10,000 XRP, are counted exactly rather than read off the
             histogram.
+          </dd>
+          <dt>How the walk is checked</dt>
+          <dd>
+            {data.supplyReconciliation ? (
+              <>
+                Spendable balances and escrowed XRP, both read at ledger{" "}
+                {count(data.ledgerIndex)}, came to{" "}
+                {count(data.supplyReconciliation.walkedXrp)} XRP against the
+                ledger&rsquo;s own total supply of{" "}
+                {count(data.supplyReconciliation.ledgerTotalCoinsXrp)} XRP as of{" "}
+                {snapDate}, a difference of{" "}
+                {count(Math.abs(data.supplyReconciliation.differenceXrp))} XRP,
+                or {data.supplyReconciliation.differencePct}% of supply. That
+                remainder sits in ledger objects which also hold XRP outside an
+                account balance, chiefly payment channels, and it is reported
+                rather than distributed across accounts it cannot be attributed
+                to. The check earns its place by size: a walk that missed pages
+                would show a gap of billions rather than of thousands, which is
+                how a truncated escrow pass was caught during development.
+              </>
+            ) : (
+              "Spendable balances and escrowed XRP are read at the same ledger index and summed against the ledger's own total supply. Every XRP that exists sits in an account or in an escrow, so a truncated walk shows up as a gap of billions."
+            )}
           </dd>
           <dt>Labels</dt>
           <dd>
@@ -596,6 +684,6 @@ export default function XrpRichListPage() {
           research, not financial advice.
         </p>
       </section>
-    </main>
+    </div>
   );
 }

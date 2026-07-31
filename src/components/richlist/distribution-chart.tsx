@@ -40,12 +40,16 @@ const xrpShort = (n: number): string => {
 export const bandName = (b: Band): string =>
   b.max == null ? `${xrpShort(b.min)}+` : `${xrpShort(b.min)}-${xrpShort(b.max)}`;
 
+// One decimal below 100k. Rounding 9,707 to a whole "10k" puts a number on the
+// bar that the data table two elements below contradicts.
 const compact = (n: number): string =>
   n >= 1_000_000
     ? `${(n / 1_000_000).toFixed(2)}M`
-    : n >= 1_000
+    : n >= 100_000
       ? `${(n / 1_000).toFixed(0)}k`
-      : String(n);
+      : n >= 1_000
+        ? `${(n / 1_000).toFixed(1)}k`
+        : String(n);
 
 export function DistributionChart({
   bands,
@@ -163,11 +167,11 @@ export function DistributionTable({
     <div className="rl-dtable-wrap">
       <table className="rl-dtable">
         <caption className="rl-dtable-cap">
-          XRP Ledger balance distribution by band, as of {snapshotDate}
+          XRP Ledger distribution by amount controlled, as of {snapshotDate}
         </caption>
         <thead>
           <tr>
-            <th scope="col">Balance band (XRP)</th>
+            <th scope="col">Band (XRP)</th>
             <th scope="col">Accounts</th>
             <th scope="col">Percentage of accounts</th>
             <th scope="col">XRP held</th>
@@ -178,12 +182,12 @@ export function DistributionTable({
           {rows.map((b) => (
             <tr key={bandName(b)}>
               <th scope="row">{bandName(b)}</th>
-              <td>{b.accounts.toLocaleString("en-US")}</td>
-              <td>
+              <td data-label="Accounts">{b.accounts.toLocaleString("en-US")}</td>
+              <td data-label="Share of accounts">
                 {b.pctOfAccounts >= 0.01 ? `${b.pctOfAccounts.toFixed(2)}%` : "under 0.01%"}
               </td>
-              <td>{Math.round(b.xrpHeld).toLocaleString("en-US")}</td>
-              <td>{b.pctOfXrp >= 0.01 ? `${b.pctOfXrp.toFixed(2)}%` : "under 0.01%"}</td>
+              <td data-label="XRP held">{Math.round(b.xrpHeld).toLocaleString("en-US")}</td>
+              <td data-label="Share of XRP">{b.pctOfXrp >= 0.01 ? `${b.pctOfXrp.toFixed(2)}%` : "under 0.01%"}</td>
             </tr>
           ))}
         </tbody>

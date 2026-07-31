@@ -7,55 +7,47 @@
    Note the deliberate avoidance of report.css's flex `order` block, which keys
    on [aria-labelledby="*-title"]. No section on this page is named *-title. */
 
-.rl-page {
-  --rl-dim: color-mix(in srgb, var(--uni-ink) 55%, transparent);
+.uni-home-test.rl-page {
+  --rl-dim: color-mix(in srgb, var(--uni-ink) 62%, transparent);
   --rl-hair: var(--uni-line, #dddee0);
 }
 
 /* ---- hero: prose and bullets left, calculator right ------------------- */
 
-.rl-hero {
+.uni-home-test .rl-hero {
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
   gap: 40px;
   align-items: start;
 }
 @media (max-width: 900px) {
-  .rl-hero {
+  .uni-home-test .rl-hero {
     grid-template-columns: minmax(0, 1fr);
     gap: 28px;
   }
 }
 
-.rl-hero-main h1 {
-  margin: 0 0 10px;
-  letter-spacing: -0.02em;
-}
+.uni-home-test .rl-hero-main .uni-home-h1 { margin: 0 0 12px; max-width: 18ch; }
 
-.rl-hero-sub {
-  font-size: 19px;
-  line-height: 28px;
-  margin: 0 0 14px;
-  color: var(--uni-ink);
-  max-width: 46ch;
-}
+.uni-home-test .rl-hero-sub { margin: 0 0 16px; max-width: 44ch; opacity: 0.82; }
 
 /* Freshness is a ranking argument on this page, not housekeeping, so the
    stamp sits above the fold rather than in a footer. */
-.rl-updated {
+.uni-home-test .rl-updated {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   margin: 0 0 22px;
   padding: 6px 12px;
   border-radius: var(--uni-radius-pill, 999px);
-  background: var(--uni-gold-bg, #fff5d9);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(25, 23, 23, 0.09);
   color: var(--uni-ink);
   font-size: 13.5px;
   font-weight: 650;
   white-space: nowrap;
 }
-.rl-live-dot {
+.uni-home-test .rl-live-dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
@@ -64,7 +56,7 @@
   flex: none;
 }
 
-.rl-keyfind {
+.uni-home-test .rl-keyfind {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -72,14 +64,14 @@
   gap: 12px;
   max-width: 58ch;
 }
-.rl-keyfind li {
+.uni-home-test .rl-keyfind li {
   position: relative;
   padding-left: 20px;
   font-size: 15.5px;
   line-height: 23px;
   color: var(--uni-ink);
 }
-.rl-keyfind li::before {
+.uni-home-test .rl-keyfind li::before {
   content: "";
   position: absolute;
   left: 0;
@@ -87,14 +79,15 @@
   width: 7px;
   height: 7px;
   border-radius: 2px;
-  background: var(--uni-gold, #ffb936);
+  background: rgba(25, 23, 23, 0.45);
 }
 
 /* ---- calculator ------------------------------------------------------- */
 
-.rl-calc {
-  background: var(--uni-card, #f1f5f4);
-  border: 1px solid var(--rl-hair);
+.uni-home-test .rl-calc {
+  background: var(--uni-bg, #fff);
+  border: 1px solid rgba(25, 23, 23, 0.10);
+  box-shadow: 0 6px 24px rgba(25, 23, 23, 0.07);
   border-radius: var(--uni-radius, 20px);
   padding: 22px 22px 20px;
   position: sticky;
@@ -104,20 +97,20 @@
   .rl-calc { position: static; }
 }
 
-.rl-calc-h {
+.uni-home-test .rl-calc-h {
   margin: 0 0 6px;
   font-size: 18px;
   line-height: 24px;
   font-weight: 760;
 }
-.rl-calc-sub {
+.uni-home-test .rl-calc-sub {
   margin: 0 0 18px;
   font-size: 13.5px;
   line-height: 20px;
   color: var(--rl-dim);
 }
 
-.rl-calc-label {
+.uni-home-test .rl-calc-label {
   display: block;
   font-size: 12.5px;
   font-weight: 700;
@@ -127,20 +120,20 @@
   margin-bottom: 7px;
 }
 
-.rl-calc-field {
+.uni-home-test .rl-calc-field {
   display: flex;
   align-items: center;
   gap: 8px;
-  background: var(--uni-bg, #fff);
+  background: var(--uni-card, #f1f5f4);
   border: 1.5px solid var(--rl-hair);
   border-radius: var(--uni-radius-sm, 14px);
   padding: 0 14px;
   transition: border-color 0.15s ease;
 }
-.rl-calc-field:focus-within {
+.uni-home-test .rl-calc-field:focus-within {
   border-color: var(--uni-gold, #ffb936);
 }
-.rl-calc-input {
+.uni-home-test .rl-calc-input {
   flex: 1 1 auto;
   min-width: 0;
   border: 0;
@@ -153,46 +146,46 @@
   color: var(--uni-ink);
   font-variant-numeric: tabular-nums;
 }
-.rl-calc-unit {
+.uni-home-test .rl-calc-unit {
   font-size: 14px;
   font-weight: 700;
   color: var(--rl-dim);
   flex: none;
 }
 
-.rl-calc-privacy {
+.uni-home-test .rl-calc-privacy {
   margin: 10px 0 0;
   font-size: 12.5px;
   line-height: 18px;
   color: var(--rl-dim);
 }
 
-.rl-calc-out {
+.uni-home-test .rl-calc-out {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--rl-hair);
   min-height: 108px;
 }
-.rl-calc-idle {
+.uni-home-test .rl-calc-idle {
   margin: 0;
   font-size: 14px;
   color: var(--rl-dim);
 }
-.rl-calc-rank {
+.uni-home-test .rl-calc-rank {
   margin: 0 0 8px;
   font-size: 24px;
   line-height: 30px;
   font-weight: 780;
   letter-spacing: -0.01em;
 }
-.rl-calc-detail {
+.uni-home-test .rl-calc-detail {
   margin: 0 0 6px;
   font-size: 14px;
   line-height: 21px;
 }
 .rl-calc-dim { color: var(--rl-dim); }
 
-.rl-calc-share {
+.uni-home-test .rl-calc-share {
   margin-top: 12px;
   border: 1px solid var(--rl-hair);
   background: var(--uni-bg, #fff);
@@ -208,27 +201,27 @@
 
 /* ---- tables ----------------------------------------------------------- */
 
-.rl-dtable-wrap {
+.uni-home-test .rl-dtable-wrap {
   width: 100%;
   overflow-x: auto;
   margin: 18px 0 6px;
 }
 .rl-scroll { max-height: 620px; overflow-y: auto; }
 
-.rl-dtable {
+.uni-home-test .rl-dtable {
   width: 100%;
   border-collapse: collapse;
   font-size: 14.5px;
   line-height: 20px;
 }
-.rl-dtable-cap {
+.uni-home-test .rl-dtable-cap {
   caption-side: top;
   text-align: left;
   font-size: 12.5px;
   color: var(--rl-dim);
   padding-bottom: 10px;
 }
-.rl-dtable thead th {
+.uni-home-test .rl-dtable thead th {
   text-align: left;
   font-weight: 750;
   color: var(--uni-ink);
@@ -239,34 +232,34 @@
   top: 0;
   background: var(--uni-bg, #fff);
 }
-.rl-dtable tbody th {
+.uni-home-test .rl-dtable tbody th {
   text-align: left;
   font-weight: 700;
   white-space: nowrap;
 }
-.rl-dtable tbody th,
-.rl-dtable td {
+.uni-home-test .rl-dtable tbody th,
+.uni-home-test .rl-dtable td {
   padding: 9px 12px;
   border-bottom: 1px solid color-mix(in srgb, var(--rl-hair) 55%, transparent);
   vertical-align: middle;
 }
-.rl-dtable tbody tr:last-child th,
+.uni-home-test .rl-dtable tbody tr:last-child th,
 .rl-dtable tbody tr:last-child td { border-bottom: 0; }
-.rl-dtable th:first-child,
+.uni-home-test .rl-dtable th:first-child,
 .rl-dtable td:first-child { padding-left: 0; }
-.rl-dtable th:last-child,
+.uni-home-test .rl-dtable th:last-child,
 .rl-dtable td:last-child { padding-right: 0; }
 
-.rl-num {
+.uni-home-test .rl-num {
   text-align: right;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .rl-dtable thead th:not(:first-child) { text-align: right; }
-.rl-top thead th:nth-child(2),
+.uni-home-test .rl-top thead th:nth-child(2),
 .rl-top thead th:nth-child(3) { text-align: left; }
 
-.rl-addr {
+.uni-home-test .rl-addr {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 12.5px;
   word-break: break-all;
@@ -280,20 +273,20 @@
 .rl-chart-fig { margin: 26px 0 8px; }
 .rl-chart { display: block; width: 100%; height: auto; }
 .rl-chart-bar { fill: var(--uni-gold, #ffb936); }
-.rl-chart-val {
+.uni-home-test .rl-chart-val {
   font-size: 11px;
   font-weight: 700;
   fill: var(--uni-ink);
   font-variant-numeric: tabular-nums;
 }
-.rl-chart-tick {
+.uni-home-test .rl-chart-tick {
   font-size: 11px;
   fill: var(--rl-dim);
   font-variant-numeric: tabular-nums;
 }
 .rl-chart-tick-dim { font-size: 10px; }
 .rl-chart-axis { stroke: var(--rl-hair); stroke-width: 1; }
-.rl-chart-cap {
+.uni-home-test .rl-chart-cap {
   margin: 10px 0 0;
   font-size: 12.5px;
   line-height: 18px;
@@ -302,7 +295,7 @@
 
 /* ---- bridge ----------------------------------------------------------- */
 
-.rl-bridge {
+.uni-home-test .rl-bridge {
   background: var(--uni-card, #f1f5f4);
   border: 1px solid var(--rl-hair);
   border-radius: var(--uni-radius, 20px);
@@ -310,7 +303,7 @@
 }
 .rl-bridge h2 { margin: 0 0 10px; font-size: 22px; line-height: 28px; }
 .rl-bridge p { margin: 0 0 16px; max-width: 68ch; }
-.rl-bridge-cta {
+.uni-home-test .rl-bridge-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -327,12 +320,12 @@
 /* ---- methodology ------------------------------------------------------ */
 
 .rl-method { margin: 12px 0 0; }
-.rl-method dt {
+.uni-home-test .rl-method dt {
   font-weight: 750;
   margin-top: 16px;
   color: var(--uni-ink);
 }
-.rl-method dd {
+.uni-home-test .rl-method dd {
   margin: 5px 0 0;
   color: var(--uni-ink);
   max-width: 78ch;
@@ -346,10 +339,152 @@
    check at a glance is an assertion. */
 .rl-label { display: block; line-height: 18px; }
 .rl-label strong { font-weight: 700; }
-.rl-evidence {
+.uni-home-test .rl-evidence {
   display: block;
   font-size: 11.5px;
   color: var(--rl-dim);
   margin-top: 2px;
 }
 .rl-evidence a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Screen-reader-only heading for the jump-links section: the nav needs a
+   labelled section to sit in, but a visible "On this page" would duplicate the
+   label already inside the nav. */
+.uni-home-test .rl-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Nine bands squeezed into a phone render their labels at about six pixels,
+   because the SVG scales as one unit. Give the chart a floor and let it scroll,
+   which keeps it readable and keeps the crawler-visible SVG intact. */
+.uni-home-test .rl-chart-scroll { width: 100%; }
+@media (max-width: 720px) {
+  .uni-home-test .rl-chart-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .uni-home-test .rl-chart-scroll .rl-chart { min-width: 620px; }
+}
+
+/* ---- mobile ------------------------------------------------------------
+   The house pattern for a wide table on a phone is to reflow it into stacked
+   rows, not to scroll it sideways: see .rp-ref-table at report.css:1218. A
+   six-column table carrying a 34-character base58 address is unusable at
+   390px either way, so these follow the same shape. Each cell carries its
+   column name from a data-label, so a stacked row still says what its numbers
+   mean once the header row is gone. */
+@media (max-width: 640px) {
+  .uni-home-test .rl-hero { gap: 22px; }
+  .uni-home-test .rl-hero-main .uni-home-h1 { max-width: none; }
+  .uni-home-test .rl-hero-sub { max-width: none; font-size: 15px; }
+  /* home.css centres hero content on a phone, which is right for the report's
+     prose hero and wrong here: it leaves the bullet markers pinned to the left
+     of a centred column, and a form reads as broken when its label is centred
+     over a left-aligned input. Headline and subhead keep the house centring;
+     the list and the calculator go back to left. */
+  .uni-home-test .rl-keyfind { max-width: none; gap: 10px; text-align: left; }
+  .uni-home-test .rl-calc,
+  .uni-home-test .rl-calc-h,
+  .uni-home-test .rl-calc-sub,
+  .uni-home-test .rl-calc-privacy,
+  .uni-home-test .rl-calc-out { text-align: left; }
+  .uni-home-test .rl-keyfind li { font-size: 13.5px; line-height: 20px; }
+  .uni-home-test .rl-updated { font-size: 12px; white-space: normal; }
+
+  .uni-home-test .rl-calc { padding: 18px 16px 16px; }
+  .uni-home-test .rl-calc-h { font-size: 16px; }
+  .uni-home-test .rl-calc-input { font-size: 19px; }
+  .uni-home-test .rl-calc-rank { font-size: 20px; line-height: 26px; }
+  .uni-home-test .rl-calc-out { min-height: 96px; }
+
+  /* Stacked rows. thead goes, each row becomes a card-ish block, and each cell
+     prints its own label. */
+  .uni-home-test .rl-dtable,
+  .uni-home-test .rl-dtable tbody,
+  .uni-home-test .rl-dtable tr { display: block; width: 100%; }
+  .uni-home-test .rl-dtable thead { display: none; }
+  /* A caption in a table switched to display:block collapses to its longest
+     word and wraps one word per line. It has to become a block of its own. */
+  .uni-home-test .rl-dtable-cap { display: block; width: 100%; }
+  .uni-home-test .rl-dtable-wrap { overflow-x: visible; }
+  .uni-home-test .rl-dtable tr {
+    padding: 11px 0;
+    border-bottom: 1px solid var(--rl-hair);
+  }
+  .uni-home-test .rl-dtable tbody tr:last-child { border-bottom: 0; }
+  .uni-home-test .rl-dtable tbody th {
+    display: block;
+    padding: 0 0 4px;
+    border: 0;
+    font-size: 14px;
+    white-space: normal;
+  }
+  .uni-home-test .rl-dtable td {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 2px 0;
+    border: 0;
+    font-size: 13px;
+    line-height: 19px;
+    text-align: left;
+    white-space: normal;
+  }
+  .uni-home-test .rl-dtable td::before {
+    content: attr(data-label);
+    color: var(--rl-dim);
+    flex: none;
+  }
+  .uni-home-test .rl-num { text-align: right; }
+  .uni-home-test .rl-addr { font-size: 11.5px; }
+  /* The address is the row's identity on a phone, so it leads rather than
+     sitting in a labelled pair like the figures. */
+  .uni-home-test .rl-top td.rl-addr {
+    display: block;
+    padding-bottom: 6px;
+  }
+  .uni-home-test .rl-top td.rl-addr::before { content: none; }
+
+  /* A 100-row stacked table is far too tall to sit in a fixed scroll box. */
+  .uni-home-test .rl-scroll { max-height: none; overflow-y: visible; }
+
+  /* Stacked at one labelled line per figure, a hundred accounts run to nearly
+     thirty thousand pixels. Spendable is dropped on a phone because it is
+     total minus escrow and both of those are still shown, and the remaining
+     figures share a line. That takes a row from six lines to three. */
+  .uni-home-test .rl-top td[data-label="Spendable"] { display: none; }
+  .uni-home-test .rl-top tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding: 10px 0;
+  }
+  .uni-home-test .rl-top tbody th {
+    flex: none;
+    padding: 0;
+    color: var(--rl-dim);
+    font-size: 12px;
+    line-height: 17px;
+  }
+  .uni-home-test .rl-top tbody th::before { content: "#"; }
+  .uni-home-test .rl-top td.rl-addr { flex: 1 1 100%; order: 2; padding: 3px 0 5px; }
+  .uni-home-test .rl-top td[data-label="Onchain notes"] { flex: 1 1 100%; order: 3; }
+  .uni-home-test .rl-top td[data-label="Total XRP"],
+  .uni-home-test .rl-top td[data-label="In escrow"],
+  .uni-home-test .rl-top td[data-label="Share of XRP"] {
+    order: 4;
+    flex: 0 1 auto;
+    display: inline-flex;
+    gap: 5px;
+    font-size: 12.5px;
+  }
+
+  .uni-home-test .rl-bridge { padding: 20px 18px; }
+  .uni-home-test .rl-bridge h2 { font-size: 17px; line-height: 23px; }
+  .uni-home-test .rl-method dd { font-size: 13.5px; line-height: 20px; }
+}
