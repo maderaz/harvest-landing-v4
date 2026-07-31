@@ -40,6 +40,15 @@ export const EVIDENCE_TIERS = ["account-domain", "xrpl-toml", "published", "thir
 // customer balances.
 export const HOLDER_TYPES = ["exchange", "company", "protocol", "individual", "unknown"];
 
+// Who the holder is connected to, kept separate from what kind of holder it
+// is. The distinction the top 100 needs is that "Ripple" and "a person who
+// co-founded Ripple" are not the same claim: the first is XRP the company
+// controls, the second is a personal balance the company does not. Collapsing
+// them into one "Ripple" bucket would overstate company control by a third of
+// the top 100, so the two are separate values and the page filters them
+// separately.
+export const AFFILIATIONS = ["ripple", "ripple-founder"];
+
 // A tier that needs a human to have looked at something, and therefore a date
 // on which they did. The two machine-checkable tiers re-verify themselves.
 const NEEDS_URL = new Set(["published", "third-party"]);
@@ -150,6 +159,12 @@ export function validateLabels(doc) {
       findings.push({
         address: where,
         problem: `type "${l.type}" is not one of ${HOLDER_TYPES.join(", ")}`,
+      });
+    }
+    if (l.affiliation != null && !AFFILIATIONS.includes(l.affiliation)) {
+      findings.push({
+        address: where,
+        problem: `affiliation "${l.affiliation}" is not one of ${AFFILIATIONS.join(", ")}`,
       });
     }
     if (l.evidence === "third-party" && !l.attribution) {

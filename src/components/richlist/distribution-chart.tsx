@@ -29,10 +29,17 @@ export interface Band {
 // renders at the 16px the report uses for body copy.
 const W = 720;
 const H = 340;
-const PAD_L = 8;
+// Left padding carries the y-axis tick labels the grid lines need to mean
+// anything. Without them a grid is decoration.
+const PAD_L = 46;
 const PAD_R = 8;
 const PAD_T = 22;
 const PAD_B = 86;
+
+// Grid lines as fractions of the plot height. Because the bar scale is a
+// square root, the value at a given height is the fraction squared times the
+// maximum, which is what makes the compression visible rather than hidden.
+const GRID = [0.25, 0.5, 0.75, 1];
 
 const xrpShort = (n: number): string => {
   if (n >= 1_000_000_000) return `${n / 1_000_000_000}bn`;
@@ -100,6 +107,31 @@ export function DistributionChart({
         preserveAspectRatio="xMidYMid meet"
       >
         <title>Funded XRP Ledger accounts by balance band, {snapshotDate}</title>
+        {/* Grid first, so the bars sit over it. Hairlines at low contrast,
+            following the shadcn chart container, which strokes its cartesian
+            grid at half the border colour. */}
+        {GRID.map((f) => {
+          const y = PAD_T + plotH - f * plotH;
+          return (
+            <g key={f}>
+              <line
+                x1={PAD_L}
+                y1={y + 0.5}
+                x2={W - PAD_R}
+                y2={y + 0.5}
+                className="rl-chart-grid"
+              />
+              <text
+                x={PAD_L - 8}
+                y={y + 4}
+                textAnchor="end"
+                className="rl-chart-tick rl-chart-tick-dim"
+              >
+                {compact(Math.round(f * f * maxAccounts))}
+              </text>
+            </g>
+          );
+        })}
         {rows.map((b, i) => {
           const h = barH(b.accounts);
           const x = PAD_L + i * slot + (slot - barW) / 2;

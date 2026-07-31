@@ -93,6 +93,9 @@ export function PercentileCalculator({
   // Held so an unmount or a restart cannot leave a timer writing into a
   // component that is no longer on the page.
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  // The button is never disabled, so it needs somewhere to send a visitor who
+  // presses it before typing anything.
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => () => timers.current.forEach(clearTimeout), []);
 
@@ -122,7 +125,18 @@ export function PercentileCalculator({
   }, [parsed, ladder, accounts]);
 
   const startCheck = () => {
-    if (parsed == null) return;
+    // `disabled` is gone from the button, so the mid-check guard that attribute
+    // used to provide has to live here: a second press while the bar is
+    // running would restart it from zero.
+    if (phase === "checking") return;
+    // A greyed-out primary action on the one control this page exists for
+    // reads as broken, so the button always looks live. When there is nothing
+    // to check it puts the cursor in the field rather than doing nothing.
+    if (parsed == null) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+      return;
+    }
     timers.current.forEach(clearTimeout);
     timers.current = [];
     setPhase("checking");
@@ -141,17 +155,20 @@ export function PercentileCalculator({
 
   return (
     <div className="rl-calc" id="calculator">
-      <h2 className="rl-calc-h">XRP rich list calculator</h2>
-      <p className="rl-calc-sub">
-        Enter a balance to see where it ranks among all funded XRP Ledger
-        accounts as of {snapshotDate}.
-      </p>
+      {/* Framed as the instruction rather than as a name. The card is already
+          inside a section headed "The XRP Rich List Calculator", so repeating
+          the name here spent the most-read line saying nothing. The sub that
+          used to sit under it said the same thing a third time and is gone. */}
+      <h2 className="rl-calc-h">
+        Enter XRP, then click &ldquo;Start check&rdquo; to run the calculator.
+      </h2>
 
       <label className="rl-calc-label" htmlFor="rl-balance">
         Your XRP balance
       </label>
       <div className="rl-calc-field">
         <input
+          ref={inputRef}
           id="rl-balance"
           className="rl-calc-input"
           type="text"
@@ -172,22 +189,51 @@ export function PercentileCalculator({
           XRP
         </span>
       </div>
-      <p className="rl-calc-privacy" id="rl-calc-privacy">
-        No wallet connection. No address. Just a number. The calculation runs in
-        your browser and nothing you type is sent anywhere.
-      </p>
-
       <button
         type="button"
         className="rl-calc-go"
         onClick={startCheck}
-        disabled={parsed == null || phase === "checking"}
+        // Only while a check is running, which is the one moment pressing it
+        // genuinely does nothing. It is NOT set for an empty field: assistive
+        // tech and automation both treat aria-disabled as non-interactive, and
+        // with no balance typed the press has a job to do, so marking it
+        // disabled then would be a lie that also blocks the behaviour.
+        aria-disabled={phase === "checking"}
       >
         {phase === "checking" ? "Checking" : phase === "done" ? "Check again" : "Start check"}
       </button>
 
+      <p className="rl-calc-privacy" id="rl-calc-privacy">
+        <svg
+          className="rl-lock"
+          viewBox="0 0 16 16"
+          width="14"
+          height="14"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M4.5 7V5a3.5 3.5 0 1 1 7 0v2"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+          />
+          <rect x="3" y="7" width="10" height="7" rx="1.6" fill="currentColor" />
+        </svg>
+        <span>
+          No wallet connection. No address. Just a number, and an approximation
+          is fine. The calculation runs in your browser against XRP Ledger data
+          and nothing you type is sent anywhere.
+        </span>
+      </p>
+
+      {/* The live region stays mounted so a result is announced when it lands,
+          but it renders nothing at idle and collapses to zero height, so there
+          is no empty panel and no divider under the button until the check has
+          something to say. */}
       <div className="rl-calc-out" role="status" aria-live="polite">
-        {phase === "checking" ? (
+        {phase === "idle" ? null : phase === "checking" ? (
           <div className="rl-check">
             <div className="rl-check-bar" aria-hidden="true">
               <span style={{ animationDuration: `${CHECK_MS}ms` }} />
@@ -206,13 +252,19 @@ export function PercentileCalculator({
               You are in the <strong>{topPctLabel(result.topPct)}</strong>.
             </p>
             <p className="rl-calc-detail">
-              A balance of {fmt(parsed ?? 0)} XRP is larger than{" "}
-              <strong>{compact(result.below)}</strong> of the {compact(accounts)}{" "}
-              funded XRP Ledger accounts as of {snapshotDate}.
+              A balance of {fmt(parsed ?? 0)} XRP, measured against all{" "}
+              {compact(accounts)} funded XRP Ledger accounts as of {snapshotDate}.
             </p>
-            <p className="rl-calc-detail rl-calc-dim">
-              About {compact(result.above)} accounts hold at least that much.
-            </p>
+            <ul className="rl-calc-facts">
+              <li>
+                There are about <strong>{compact(result.above)}</strong> XRP
+                accounts holding more XRP than that.
+              </li>
+              <li>
+                There are about <strong>{compact(result.below)}</strong> XRP
+                accounts holding less.
+              </li>
+            </ul>
             <button
               type="button"
               className="rl-calc-share"
@@ -229,15 +281,7 @@ export function PercentileCalculator({
               {copied ? "Copied" : "Copy result"}
             </button>
           </>
-        ) : (
-          <p className="rl-calc-idle">
-            {raw.trim() === ""
-              ? "Enter a balance, then start the check."
-              : parsed == null
-                ? "Enter a balance greater than zero."
-                : "Ready. Start the check to see where this balance ranks."}
-          </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

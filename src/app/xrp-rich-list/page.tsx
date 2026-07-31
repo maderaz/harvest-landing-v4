@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { SITE_AUTHOR } from "@/lib/author";
 import { AssetIcon } from "@/components/token-icons";
+import richListHeader from "@/assets/icons/XRP Rich List Header.png";
 import { breadcrumbSchema, faqPageSchema, reportDatasetSchema } from "@/lib/jsonld";
 import { PercentileCalculator } from "@/components/richlist/percentile-calculator";
 import { TopAccountsTable } from "@/components/richlist/top-accounts-table";
@@ -15,7 +17,6 @@ import {
   tierOf,
   xrpAmount,
   count,
-  countProse,
   pctLabel,
   utcDate,
   utcStamp,
@@ -61,6 +62,29 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
+/** Lucide's `check` glyph, inlined. See the note on the calculator section:
+ *  one icon does not justify a runtime dependency, and this is that icon's
+ *  own path data at its own stroke settings, so it is the same mark. */
+function Check() {
+  return (
+    <svg
+      className="rl-check"
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="M20 6 9 17l-5-5" />
+    </svg>
+  );
+}
+
 function Crumbs() {
   return (
     <nav className="rp-crumbs" aria-label="Breadcrumb">
@@ -99,6 +123,12 @@ export default function XrpRichListPage() {
   // is exactly when the demand rolls.
   const year = new Date(snap).getUTCFullYear();
 
+  // pctLabel drops the decimals above 10% because the tier table reads better
+  // in whole numbers there. The concentration breakdown cannot: 35.65 and 36
+  // are the difference between a figure a reader can check against the table
+  // and one they cannot.
+  const share2 = (v: number) => `${v.toFixed(2)}%`;
+
   const t1 = tierOf(data, 1);
   const t10 = tierOf(data, 10);
   const t50 = tierOf(data, 50);
@@ -116,6 +146,14 @@ export default function XrpRichListPage() {
   // across the whole top 100.
   const labelled = data.top.filter((t) => t.label);
   const selfDeclared = data.top.filter((t) => t.domain);
+  // The evidence line used to sit under every name in the table, which set the
+  // height of forty-nine of the hundred rows. Every current attribution comes
+  // from the same provider, so it is disclosed once here instead. If the
+  // registry ever mixes providers this falls back to the generic wording.
+  const attributions = new Set(
+    labelled.map((t) => t.label?.attribution).filter((a): a is string => !!a),
+  );
+  const attribution = attributions.size === 1 ? [...attributions][0] : null;
 
   // Needs two distinct observation days before a movement sentence means
   // anything. One walk compared against itself reports no change and reads as
@@ -235,95 +273,123 @@ export default function XrpRichListPage() {
         }}
       />
 
-      {/* ---------------------------------------------------------- hero */}
-      <section className="uni-home-hero">
-        <div className="uni-home-hero-inner rl-hero">
-        <div className="rl-hero-main">
-          <h1 className="uni-home-h1">XRP Rich List</h1>
-          <p className="uni-home-sub rl-hero-sub">
-            Enter your balance. See where you stand among the{" "}
-            {countProse(data.accounts)} XRP Ledger accounts funded as of{" "}
-            {snapDate}.
-          </p>
-          <p className="rl-updated">
-            <span className="rl-live-dot" aria-hidden="true" />
-            Updated {snapStamp}
-          </p>
+      {/* ---------------------------------------------------------- hero
+          Laid out as an article rather than as a hero: headline, dateline,
+          featured image, then a summary. That shape is what the pages winning
+          this SERP use, and it puts the three facts a reader came for above
+          the fold without making them read a paragraph to reach them. */}
+      <section className="rl-intro">
+        <h1 className="uni-home-h1 rl-h1">XRP Rich List &amp; Calculator</h1>
+        <p className="rl-dateline">Updated {snapStamp}</p>
+        {/* Featured image. Static import, so Next emits the intrinsic size and
+            the slot reserves its own height before the file loads. `priority`
+            because it is the largest element above the fold and is what LCP
+            measures on this page.
 
-          <ul className="rl-keyfind">
-            {t10 ? (
-              <li>
-                The top 10% of funded XRP Ledger accounts held at least{" "}
-                <strong>{xrpAmount(t10.minXrp)} XRP</strong> as of {snapDate}.
-              </li>
-            ) : null}
-            {t1 ? (
-              <li>
-                The top 1% threshold stood at{" "}
-                <strong>{xrpAmount(t1.minXrp)} XRP</strong> as of {snapDate}.
-              </li>
-            ) : null}
+            Empty alt on purpose. The image is decorative: it repeats the
+            headline in pixels and shows faces the page never names, and every
+            claim on this page lives in the summary underneath it. An alt that
+            described the faces would be asserting identities the ranking
+            itself refuses to assert without evidence. */}
+        <Image
+          src={richListHeader}
+          alt=""
+          className="rl-figure"
+          sizes="100vw"
+          priority
+        />
+
+        <h2 className="rl-summary-h">Summary</h2>
+        <ul className="rl-keyfind">
+          {data.concentration?.largestIndividual ? (
             <li>
-              <strong>{count(data.accounts)}</strong> XRP Ledger accounts were
-              funded as of {snapDate}, controlling {xrpAmount(data.xrpHeld)} XRP
-              between them.
+              The largest holding attributed to an individual rather than to a
+              company or a trading venue was{" "}
+              <strong>
+                {count(data.concentration.largestIndividual.xrp)} XRP
+              </strong>{" "}
+              as of {snapDate}
+              {data.xrpUsd ? (
+                <>
+                  , worth about{" "}
+                  <strong>
+                    $
+                    {count(
+                      data.concentration.largestIndividual.xrp * data.xrpUsd,
+                    )}
+                  </strong>{" "}
+                  at {data.xrpUsd.toFixed(4)} US dollars per XRP on that date
+                </>
+              ) : null}
+              .
             </li>
-            {data.escrowedXrp ? (
-              <li>
-                <strong>{xrpAmount(data.escrowedXrp)} XRP</strong> sat locked in
-                onchain escrow as of {snapDate}, held by{" "}
-                {count(data.escrowAccounts ?? 0)} accounts and unable to move
-                before its release date.
-              </li>
-            ) : null}
-            {yc && yieldRatioPct != null ? (
-              <li>
-                Against those {countProse(data.accounts)} funded accounts,{" "}
-                <strong>{count(yc.receiptTokenHolders)}</strong> addresses held
-                a wrapped or staked XRP product onchain as of {utcDate(yc.asOf ?? snap)},
-                a figure equal to {pctLabel(yieldRatioPct)} of the XRPL account
-                count.
-              </li>
-            ) : null}
-          </ul>
-        </div>
-
-        <div className="rl-hero-mark" aria-hidden="true">
-          <AssetIcon asset="XRP" size={220} decorative priority />
-        </div>
-        </div>
+          ) : null}
+          <li>
+            <strong>{count(data.accounts)}</strong> XRP addresses were funded on
+            the XRP Ledger as of {snapDate}, controlling{" "}
+            {xrpAmount(data.xrpHeld)} XRP between them.
+          </li>
+          {t1 ? (
+            <li>
+              To sit in the top 1% of XRP holders an account needed at least{" "}
+              <strong>{xrpAmount(t1.minXrp)} XRP</strong> as of {snapDate}.
+            </li>
+          ) : null}
+        </ul>
       </section>
 
-      {/* The calculator gets its own band rather than a corner of the hero.
-          It is the reason a large part of this page's traffic arrives, and a
-          form squeezed beside five bullet points reads as a sidebar widget
-          rather than as the tool the page is. */}
-      <section className="uni-home-hero rl-calc-band" aria-labelledby="calculator-title">
-        <div className="uni-home-hero-inner rl-calc-grid">
-          <div className="rl-calc-pitch">
-            <h2 id="calculator-title" className="uni-home-h1 rl-calc-title">
-              The XRP Rich List Calculator
-            </h2>
-            <p className="rl-calc-pitch-sub">
-              Type a balance and see the position it holds among every funded
-              account on the XRP Ledger as of {snapDate}. Most people place
-              higher than they expect, because as of {snapDate}{" "}
-              {pctLabel(
-                data.bands
-                  .filter((b) => b.max != null && b.max <= 1_000)
-                  .reduce((a, b) => a + b.pctOfAccounts, 0),
-              )}{" "}
-              of funded accounts held under 1,000 XRP on that date.
-            </p>
-            <ul className="rl-calc-points">
-              <li>No wallet connection and no address, ever.</li>
-              <li>Runs in your browser, so nothing you type leaves it.</li>
+      {/* Calculator.
+          Laid out on the shadcn "feature" pattern: one bordered, rounded card
+          holding a two-column grid, with an eyebrow badge, heading, lead and a
+          checklist on the left and the artifact on the right. In that pattern's
+          reference markup the right column is an empty muted square; here it is
+          the calculator itself, which is the point of the section.
+
+          Written against this repo's own tokens rather than copied verbatim.
+          See the note in _styles/rich-list.css for why. */}
+      <section className="rl-section rl-feature" aria-labelledby="calculator-title">
+        <div className="rl-feature-card">
+          <div className="rl-feature-copy">
+            {/* The badge sits inside the heading block rather than above it,
+                so the flex gap between the two is the block's own 10px rather
+                than the column's 26px. The mark lives in the badge, sized to
+                its line box. */}
+            <div className="rl-feature-head">
+              <span className="rl-eyebrow-badge">
+                <AssetIcon asset="XRP" size={16} decorative />
+                Calculator
+              </span>
+              <h2 id="calculator-title" className="rl-calc-title">
+                The XRP
+                <br />
+                Rich List Calculator
+              </h2>
+              <p className="rl-calc-pitch-sub">
+                Enter your XRP balance to see where you rank on the rich list.
+              </p>
+            </div>
+
+            <ul className="rl-checklist">
               <li>
-                Measured against all {count(data.accounts)} funded accounts as of{" "}
-                {snapDate}.
+                <Check />
+                <div>
+                  <p>Free to use</p>
+                  <p className="rl-checklist-sub">No address or wallet needed.</p>
+                </div>
+              </li>
+              <li>
+                <Check />
+                <div>
+                  <p>Measured against over 8M XRP accounts</p>
+                  <p className="rl-checklist-sub">
+                    Checked against all {count(data.accounts)} funded XRP
+                    accounts as of {snapDate}.
+                  </p>
+                </div>
               </li>
             </ul>
           </div>
+
           <PercentileCalculator
             ladder={data.ladder}
             accounts={data.accounts}
@@ -421,12 +487,32 @@ export default function XrpRichListPage() {
           share of all funded accounts on the same date.
         </p>
 
-        <div className="rl-chart-scroll">
-          <DistributionChart
-            bands={data.bands}
-            snapshotDate={snapDate}
-            totalAccounts={data.accounts}
-          />
+        {/* Card chrome in the shape shadcn gives a chart: bordered and
+            rounded, a header carrying the title and a one-line description,
+            the plot in the body below it. */}
+        <div className="rl-chart-card">
+          <div className="rl-chart-card-head">
+            <div>
+              <h3 className="rl-chart-card-title">
+                Funded accounts by balance band
+              </h3>
+              <p className="rl-chart-card-desc">
+                All {count(data.accounts)} funded XRP Ledger accounts as of{" "}
+                {snapDate}
+              </p>
+            </div>
+            <span className="rl-chart-legend">
+              <span className="rl-chart-swatch" aria-hidden="true" />
+              Accounts
+            </span>
+          </div>
+          <div className="rl-chart-card-body rl-chart-scroll">
+            <DistributionChart
+              bands={data.bands}
+              snapshotDate={snapDate}
+              totalAccounts={data.accounts}
+            />
+          </div>
         </div>
 
         <p className="rl-note">
@@ -569,9 +655,9 @@ export default function XrpRichListPage() {
           <h2 id="concentration">What the largest 100 accounts hold</h2>
           <p className="rp-lead">
             The 100 largest XRP Ledger accounts controlled{" "}
-            {pctLabel(data.concentration.top100PctOfXrp)} of all XRP as of{" "}
+            {share2(data.concentration.top100PctOfXrp)} of all XRP as of{" "}
             {snapDate}, and{" "}
-            {pctLabel(data.concentration.exExchangePctOfXrp)} once known exchange
+            {share2(data.concentration.exExchangePctOfXrp)} once known exchange
             wallets are set aside.
           </p>
           <p className="rl-section-intro">
@@ -582,16 +668,30 @@ export default function XrpRichListPage() {
             accounts named in this list as of {snapDate}.
           </p>
 
+          {data.concentration.ripplePctOfXrp != null ? (
+            <p className="rl-section-intro">
+              The headline share is also mostly one entity. Ripple itself
+              controlled {data.concentration.rippleAccounts} of these accounts as
+              of {snapDate}, holding{" "}
+              <strong>{share2(data.concentration.ripplePctOfXrp)}</strong> of all
+              XRP in funded accounts on that date, which is more than half of
+              everything the top 100 held. Most of it cannot move:{" "}
+              {xrpAmount(data.concentration.rippleEscrowedXrp ?? 0)} XRP of that
+              position sat in onchain escrow as of {snapDate}, released against a
+              published schedule rather than sitting as a spendable balance.
+            </p>
+          ) : null}
+
           <div className="rl-stats">
             <div className="rl-stat">
-              <span className="rl-stat-num">{pctLabel(data.concentration.top100PctOfXrp)}</span>
+              <span className="rl-stat-num">{share2(data.concentration.top100PctOfXrp)}</span>
               <span className="rl-stat-lab">
                 of all XRP held by the top 100 accounts, {snapDate}
               </span>
             </div>
             <div className="rl-stat">
               <span className="rl-stat-num">
-                {pctLabel(data.concentration.exExchangePctOfXrp)}
+                {share2(data.concentration.exExchangePctOfXrp)}
               </span>
               <span className="rl-stat-lab">
                 held once the {data.concentration.exchangeAccounts} known exchange
@@ -607,6 +707,77 @@ export default function XrpRichListPage() {
               </span>
             </div>
           </div>
+
+          {data.concentration.residualPctOfXrp != null ? (
+            <>
+              <div className="rl-breakdown" role="table" aria-label={`The top 100 XRP Ledger accounts split by who holds them, ${snapDate}`}>
+                <div className="rl-breakdown-head" role="row">
+                  <span role="columnheader">Group</span>
+                  <span role="columnheader" className="rl-rank-n">Accounts</span>
+                  <span role="columnheader" className="rl-rank-n">XRP</span>
+                  <span role="columnheader" className="rl-rank-n">Share of all XRP</span>
+                </div>
+                {[
+                  {
+                    k: "ripple",
+                    name: "Ripple-controlled",
+                    n: data.concentration.rippleAccounts ?? 0,
+                    x: data.concentration.rippleXrp ?? 0,
+                    p: data.concentration.ripplePctOfXrp ?? 0,
+                  },
+                  {
+                    k: "exchange",
+                    name: "Known exchanges",
+                    n: data.concentration.exchangeAccounts,
+                    x: data.concentration.exchangeXrp,
+                    p:
+                      data.concentration.top100PctOfXrp -
+                      data.concentration.exExchangePctOfXrp,
+                  },
+                  {
+                    k: "founder",
+                    name: "Ripple founders",
+                    n: data.concentration.founderAccounts ?? 0,
+                    x: data.concentration.founderXrp ?? 0,
+                    p: data.concentration.founderPctOfXrp ?? 0,
+                  },
+                  {
+                    k: "residual",
+                    name: "Unnamed accounts",
+                    n: data.concentration.residualAccounts ?? 0,
+                    x: data.concentration.residualXrp ?? 0,
+                    p: data.concentration.residualPctOfXrp ?? 0,
+                  },
+                ].map((g) => (
+                  <div className="rl-breakdown-row" role="row" key={g.k}>
+                    <span role="cell">{g.name}</span>
+                    <span role="cell" className="rl-rank-n">{g.n}</span>
+                    <span role="cell" className="rl-rank-n">{xrpAmount(g.x)}</span>
+                    <span role="cell" className="rl-rank-n">{share2(g.p)}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="rl-section-intro">
+                Set every named group aside and{" "}
+                {data.concentration.residualAccounts} accounts are left, holding{" "}
+                <strong>{share2(data.concentration.residualPctOfXrp)}</strong> of
+                all XRP as of {snapDate}. Those are the positions this page cannot
+                attribute to anyone as of that date, and they are the part of the
+                ranking where a reader learns something a headline share does not
+                tell them. Each group can be filtered out of the ranking below, so
+                the remainder reads on its own.
+              </p>
+              <p className="rl-section-intro">
+                One more distinction worth keeping. The{" "}
+                {data.concentration.founderAccounts} founder accounts are personal
+                balances attributed to people who co-founded Ripple, holding{" "}
+                {share2(data.concentration.founderPctOfXrp ?? 0)} of all XRP as of{" "}
+                {snapDate}. They are counted apart from the company because the
+                company does not control them, and a total that merges the two
+                overstates what Ripple holds by that margin.
+              </p>
+            </>
+          ) : null}
 
           {data.concentration.largestIndividual ? (
             <p className="rl-highlight">
@@ -648,7 +819,7 @@ export default function XrpRichListPage() {
         </p>
         <p className="rl-section-intro">
           {labelled.length > 0
-            ? `${labelled.length} of the 100 are named as of ${snapDate}, each against the evidence shown beside the name.`
+            ? `${labelled.length} of the 100 carry a name as of ${snapDate}.`
             : `None of the 100 is named as of ${snapDate}.`}{" "}
           {selfDeclared.length === 0
             ? "Not one of them publishes a domain onchain, which is the only identity an account can declare about itself, so no name here rests on that."
@@ -675,24 +846,56 @@ export default function XrpRichListPage() {
             </>
           ) : null}
           Share of supply is measured against all XRP in funded accounts as of{" "}
-          {snapDate}. Names attributed by a third party are that provider&rsquo;s
-          claim, shown with the provider named and linked rather than presented
-          as a finding of this page.
+          {snapDate}, and the escrow column is the part of each balance locked
+          onchain on that date rather than a figure on top of it.{" "}
+          {attribution
+            ? `Every name in the table is attributed by ${attribution} rather than established by this page, and each one links to that provider's record in the dataset export below.`
+            : "Every name in the table is a third-party attribution rather than a finding of this page."}{" "}
+          Addresses are shortened in the middle so the column keeps one width;
+          the full address is in the dataset export and appears on hover.
         </p>
       </section>
 
       {/* -------------------------------------------------------- FAQ */}
-      <section className="uni-home-content rl-section" aria-labelledby="faq">
-        <p className="rp-eyebrow">Questions</p>
-        <h2 id="faq">XRP rich list questions</h2>
-        <div className="rp-faq">
+      {/* Centred header over a narrower accordion column, questions divided by
+          a hairline with a chevron that turns on open: the faq3 layout.
+
+          Still <details> rather than an accordion component. The answers carry
+          the figures this page is cited for, and a JS accordion hides them
+          from anything that does not run scripts. `name` makes the group
+          exclusive natively, which is what the reference's type="single"
+          collapsible does, and browsers without it just allow several open. */}
+      <section className="uni-home-content rl-section rl-faq-section" aria-labelledby="faq">
+        <div className="rl-faq-head">
+          <p className="rp-eyebrow">Questions</p>
+          <h2 id="faq">XRP rich list questions</h2>
+          <p className="rl-faq-desc">
+            What people ask about XRP holder counts and thresholds, answered
+            from the {snapDate} ledger snapshot behind this page.
+          </p>
+        </div>
+        <div className="rl-faq">
           {faqs.map((f, i) => (
-            <details className="rp-faq-item" key={f.q} open={i === 0}>
-              <summary className="rp-faq-q">
+            <details className="rl-faq-item" name="rl-faq" key={f.q} open={i === 0}>
+              <summary className="rl-faq-q">
                 <span>{f.q}</span>
-                <span className="rp-faq-mark" aria-hidden="true" />
+                <svg
+                  className="rl-faq-chev"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
               </summary>
-              <p className="rp-faq-a">{f.a}</p>
+              <p className="rl-faq-a">{f.a}</p>
             </details>
           ))}
         </div>
