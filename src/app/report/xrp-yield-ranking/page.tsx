@@ -1343,7 +1343,7 @@ export default function XrpYieldRankingPage() {
             <p>
               {land
                 ? land.note
-                : "Total XRP-denominated DeFi TVL across tracked venues. Sources: onchain reads (Base and Flare), Spectra and Portals."}{" "}
+                : "Total XRP-denominated DeFi TVL across tracked venues. Sources: onchain reads (Base and Flare) and the Spectra API."}{" "}
               TVL split by network and type is computed from the {stats.venues}{" "}
               tracked products as of {updated}.
             </p>
@@ -2174,8 +2174,9 @@ export default function XrpYieldRankingPage() {
                 (lending supply rates, vault share prices, pool reserves and
                 gauge emissions), priced with onchain oracles (Flare&rsquo;s
                 FTSOv2 for XRP, Chainlink on Base). Spectra&rsquo;s own markets
-                come from the Spectra API, and Portals covers the few products
-                the others do not. No third-party yield aggregator is used.
+                come from the Spectra API. A small number of vaults publish no
+                machine-readable rate feed; those carry their last verified
+                figures rather than a live read. No third-party yield aggregator is used.
               </span>
             </dd>
             <dt>Ranking</dt>
