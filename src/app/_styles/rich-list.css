@@ -162,7 +162,9 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 32px;
-  align-items: center;
+  /* stretch, not center: the copy column and the calculator card are always
+     the same height, whichever of the two is taller. */
+  align-items: stretch;
   padding: 32px;
   border: 1px solid var(--uni-line, #dddee0);
   border-radius: var(--uni-radius, 20px);
@@ -177,16 +179,20 @@
   .uni-home-test .rl-feature-card { padding: 22px 18px; gap: 26px; }
 }
 
+/* Distributed rather than stacked: with the column stretched to the
+   calculator's height, space-between puts the badge at the top and the
+   checklist at the bottom instead of leaving a gap under the last item. */
 .uni-home-test .rl-feature-copy {
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
   gap: 34px;
+  min-height: 100%;
 }
 .uni-home-test .rl-feature-head {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  margin-top: 14px;
 }
 
 /* The outline badge. Same shape as the reference's Badge variant="outline":

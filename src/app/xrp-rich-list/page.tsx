@@ -366,15 +366,7 @@ export default function XrpRichListPage() {
                 Rich List Calculator
               </h2>
               <p className="rl-calc-pitch-sub">
-                Type a balance and see the position it holds among every funded
-                account on the XRP Ledger as of {snapDate}. Most people place
-                higher than they expect, because as of {snapDate}{" "}
-                {pctLabel(
-                  data.bands
-                    .filter((b) => b.max != null && b.max <= 1_000)
-                    .reduce((a, b) => a + b.pctOfAccounts, 0),
-                )}{" "}
-                of funded accounts held under 1,000 XRP on that date.
+                Enter your XRP balance to see where you rank on the rich list.
               </p>
             </div>
 
@@ -382,31 +374,17 @@ export default function XrpRichListPage() {
               <li>
                 <Check />
                 <div>
-                  <p>No wallet, no address</p>
-                  <p className="rl-checklist-sub">
-                    A form asking for an address on a page about the largest
-                    holders is what phishing looks like, so this one never asks.
-                  </p>
+                  <p>Free to use</p>
+                  <p className="rl-checklist-sub">No address or wallet needed.</p>
                 </div>
               </li>
               <li>
                 <Check />
                 <div>
-                  <p>Runs in your browser</p>
+                  <p>Measured against over 8M XRP accounts</p>
                   <p className="rl-checklist-sub">
-                    The distribution ships with the page, so the balance you
-                    type is never sent anywhere and never logged.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <Check />
-                <div>
-                  <p>Measured against every funded account</p>
-                  <p className="rl-checklist-sub">
-                    All {count(data.accounts)} of them, read from ledger{" "}
-                    {count(data.ledgerIndex)} as of {snapDate}, rather than from
-                    a sample.
+                    Checked against all {count(data.accounts)} funded XRP
+                    accounts as of {snapDate}.
                   </p>
                 </div>
               </li>
