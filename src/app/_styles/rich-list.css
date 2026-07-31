@@ -346,3 +346,145 @@
   margin-top: 2px;
 }
 .rl-evidence a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
+
+/* Screen-reader-only heading for the jump-links section: the nav needs a
+   labelled section to sit in, but a visible "On this page" would duplicate the
+   label already inside the nav. */
+.uni-home-test .rl-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Nine bands squeezed into a phone render their labels at about six pixels,
+   because the SVG scales as one unit. Give the chart a floor and let it scroll,
+   which keeps it readable and keeps the crawler-visible SVG intact. */
+.uni-home-test .rl-chart-scroll { width: 100%; }
+@media (max-width: 720px) {
+  .uni-home-test .rl-chart-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .uni-home-test .rl-chart-scroll .rl-chart { min-width: 620px; }
+}
+
+/* ---- mobile ------------------------------------------------------------
+   The house pattern for a wide table on a phone is to reflow it into stacked
+   rows, not to scroll it sideways: see .rp-ref-table at report.css:1218. A
+   six-column table carrying a 34-character base58 address is unusable at
+   390px either way, so these follow the same shape. Each cell carries its
+   column name from a data-label, so a stacked row still says what its numbers
+   mean once the header row is gone. */
+@media (max-width: 640px) {
+  .uni-home-test .rl-hero { gap: 22px; }
+  .uni-home-test .rl-hero-main .uni-home-h1 { max-width: none; }
+  .uni-home-test .rl-hero-sub { max-width: none; font-size: 15px; }
+  /* home.css centres hero content on a phone, which is right for the report's
+     prose hero and wrong here: it leaves the bullet markers pinned to the left
+     of a centred column, and a form reads as broken when its label is centred
+     over a left-aligned input. Headline and subhead keep the house centring;
+     the list and the calculator go back to left. */
+  .uni-home-test .rl-keyfind { max-width: none; gap: 10px; text-align: left; }
+  .uni-home-test .rl-calc,
+  .uni-home-test .rl-calc-h,
+  .uni-home-test .rl-calc-sub,
+  .uni-home-test .rl-calc-privacy,
+  .uni-home-test .rl-calc-out { text-align: left; }
+  .uni-home-test .rl-keyfind li { font-size: 13.5px; line-height: 20px; }
+  .uni-home-test .rl-updated { font-size: 12px; white-space: normal; }
+
+  .uni-home-test .rl-calc { padding: 18px 16px 16px; }
+  .uni-home-test .rl-calc-h { font-size: 16px; }
+  .uni-home-test .rl-calc-input { font-size: 19px; }
+  .uni-home-test .rl-calc-rank { font-size: 20px; line-height: 26px; }
+  .uni-home-test .rl-calc-out { min-height: 96px; }
+
+  /* Stacked rows. thead goes, each row becomes a card-ish block, and each cell
+     prints its own label. */
+  .uni-home-test .rl-dtable,
+  .uni-home-test .rl-dtable tbody,
+  .uni-home-test .rl-dtable tr { display: block; width: 100%; }
+  .uni-home-test .rl-dtable thead { display: none; }
+  /* A caption in a table switched to display:block collapses to its longest
+     word and wraps one word per line. It has to become a block of its own. */
+  .uni-home-test .rl-dtable-cap { display: block; width: 100%; }
+  .uni-home-test .rl-dtable-wrap { overflow-x: visible; }
+  .uni-home-test .rl-dtable tr {
+    padding: 11px 0;
+    border-bottom: 1px solid var(--rl-hair);
+  }
+  .uni-home-test .rl-dtable tbody tr:last-child { border-bottom: 0; }
+  .uni-home-test .rl-dtable tbody th {
+    display: block;
+    padding: 0 0 4px;
+    border: 0;
+    font-size: 14px;
+    white-space: normal;
+  }
+  .uni-home-test .rl-dtable td {
+    display: flex;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 2px 0;
+    border: 0;
+    font-size: 13px;
+    line-height: 19px;
+    text-align: left;
+    white-space: normal;
+  }
+  .uni-home-test .rl-dtable td::before {
+    content: attr(data-label);
+    color: var(--rl-dim);
+    flex: none;
+  }
+  .uni-home-test .rl-num { text-align: right; }
+  .uni-home-test .rl-addr { font-size: 11.5px; }
+  /* The address is the row's identity on a phone, so it leads rather than
+     sitting in a labelled pair like the figures. */
+  .uni-home-test .rl-top td.rl-addr {
+    display: block;
+    padding-bottom: 6px;
+  }
+  .uni-home-test .rl-top td.rl-addr::before { content: none; }
+
+  /* A 100-row stacked table is far too tall to sit in a fixed scroll box. */
+  .uni-home-test .rl-scroll { max-height: none; overflow-y: visible; }
+
+  /* Stacked at one labelled line per figure, a hundred accounts run to nearly
+     thirty thousand pixels. Spendable is dropped on a phone because it is
+     total minus escrow and both of those are still shown, and the remaining
+     figures share a line. That takes a row from six lines to three. */
+  .uni-home-test .rl-top td[data-label="Spendable"] { display: none; }
+  .uni-home-test .rl-top tr {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 12px;
+    padding: 10px 0;
+  }
+  .uni-home-test .rl-top tbody th {
+    flex: none;
+    padding: 0;
+    color: var(--rl-dim);
+    font-size: 12px;
+    line-height: 17px;
+  }
+  .uni-home-test .rl-top tbody th::before { content: "#"; }
+  .uni-home-test .rl-top td.rl-addr { flex: 1 1 100%; order: 2; padding: 3px 0 5px; }
+  .uni-home-test .rl-top td[data-label="Onchain notes"] { flex: 1 1 100%; order: 3; }
+  .uni-home-test .rl-top td[data-label="Total XRP"],
+  .uni-home-test .rl-top td[data-label="In escrow"],
+  .uni-home-test .rl-top td[data-label="Share of XRP"] {
+    order: 4;
+    flex: 0 1 auto;
+    display: inline-flex;
+    gap: 5px;
+    font-size: 12.5px;
+  }
+
+  .uni-home-test .rl-bridge { padding: 20px 18px; }
+  .uni-home-test .rl-bridge h2 { font-size: 17px; line-height: 23px; }
+  .uni-home-test .rl-method dd { font-size: 13.5px; line-height: 20px; }
+}

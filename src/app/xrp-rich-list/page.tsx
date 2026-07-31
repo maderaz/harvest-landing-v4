@@ -60,12 +60,23 @@ export const metadata: Metadata = {
   twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
 };
 
+function Crumbs() {
+  return (
+    <nav className="rp-crumbs" aria-label="Breadcrumb">
+      <Link href="/">{SITE_NAME}</Link>
+      <span className="sep">/</span>
+      <span>XRP Rich List</span>
+    </nav>
+  );
+}
+
 export default function XrpRichListPage() {
   const data = loadRichList();
 
   if (!data) {
     return (
       <div className="uni-home-test rp-page rl-page">
+        <Crumbs />
         <section className="uni-home-hero">
           <div className="uni-home-hero-inner">
             <h1 className="uni-home-h1">XRP Rich List</h1>
@@ -171,6 +182,7 @@ export default function XrpRichListPage() {
 
   return (
     <div className="uni-home-test rp-page rl-page">
+      <Crumbs />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(crumbs)) }}
@@ -286,6 +298,20 @@ export default function XrpRichListPage() {
         </div>
       </section>
 
+      <section className="uni-home-content" aria-labelledby="jump">
+        <h2 id="jump" className="rl-sr">On this page</h2>
+        <nav className="rp-toc" aria-label="On this page">
+          <span className="rp-toc-label">On this page</span>
+          <a href="#calculator">Calculator</a>
+          <a href="#thresholds">Thresholds</a>
+          <a href="#what-it-shows">What it shows</a>
+          {yc ? <a href="#working-vs-idle">Working or idle</a> : null}
+          <a href="#top-accounts">Top 100</a>
+          <a href="#faq">Questions</a>
+          <a href="#methodology">Method</a>
+        </nav>
+      </section>
+
       {/* -------------------------------------------------- thresholds */}
       <section className="uni-home-content" aria-labelledby="thresholds">
         <p className="rp-eyebrow">Distribution</p>
@@ -316,20 +342,22 @@ export default function XrpRichListPage() {
               {data.tiers.map((t) => (
                 <tr key={t.pct}>
                   <th scope="row">Top {t.pct}%</th>
-                  <td className="rl-num">{xrpAmount(t.minXrp)}</td>
-                  <td className="rl-num">{count(t.accounts)}</td>
-                  <td className="rl-num">{pctLabel(t.pctOfXrp)}</td>
+                  <td className="rl-num" data-label="Minimum XRP">{xrpAmount(t.minXrp)}</td>
+                  <td className="rl-num" data-label="Accounts at or above">{count(t.accounts)}</td>
+                  <td className="rl-num" data-label="Share of XRP">{pctLabel(t.pctOfXrp)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
 
-        <DistributionChart
-          bands={data.bands}
-          snapshotDate={snapDate}
-          totalAccounts={data.accounts}
-        />
+        <div className="rl-chart-scroll">
+          <DistributionChart
+            bands={data.bands}
+            snapshotDate={snapDate}
+            totalAccounts={data.accounts}
+          />
+        </div>
         <DistributionTable bands={data.bands} snapshotDate={snapDate} />
       </section>
 
@@ -354,7 +382,7 @@ export default function XrpRichListPage() {
             concentration of ownership. The largest accounts on the XRP Ledger
             are mostly exchange and custodian wallets, and a single one of them
             can hold balances for millions of customers, which is why this page
-            labels an account only when that account publishes a domain onchain.
+            names an account only against evidence it can show beside the name.
           </p>
           <p>
             Most funded accounts hold very little. {" "}
@@ -468,7 +496,7 @@ export default function XrpRichListPage() {
         <div className="rl-dtable-wrap rl-scroll" data-nosnippet="">
           <table className="rl-dtable rl-top">
             <caption className="rl-dtable-cap">
-              Largest 100 XRP Ledger accounts by balance, as of {snapDate}
+              Largest 100 XRP Ledger accounts by XRP controlled, as of {snapDate}
             </caption>
             <thead>
               <tr>
@@ -485,8 +513,8 @@ export default function XrpRichListPage() {
               {data.top.map((t) => (
                 <tr key={t.address}>
                   <th scope="row">{t.rank}</th>
-                  <td className="rl-addr">{t.address}</td>
-                  <td>
+                  <td className="rl-addr" data-label="Account">{t.address}</td>
+                  <td data-label="Onchain notes">
                     {t.label ? (
                       <span className="rl-label">
                         <strong>{t.label.name}</strong>
@@ -518,12 +546,12 @@ export default function XrpRichListPage() {
                       <span className="rl-dim">nothing published</span>
                     )}
                   </td>
-                  <td className="rl-num">{count(t.xrp)}</td>
-                  <td className="rl-num">{count(t.spendableXrp ?? t.xrp)}</td>
-                  <td className="rl-num">
+                  <td className="rl-num" data-label="Total XRP">{count(t.xrp)}</td>
+                  <td className="rl-num" data-label="Spendable">{count(t.spendableXrp ?? t.xrp)}</td>
+                  <td className="rl-num" data-label="In escrow">
                     {t.escrowedXrp ? count(t.escrowedXrp) : <span className="rl-dim">0</span>}
                   </td>
-                  <td className="rl-num">{pctLabel(t.pctOfSupply)}</td>
+                  <td className="rl-num" data-label="Share of XRP">{pctLabel(t.pctOfSupply)}</td>
                 </tr>
               ))}
             </tbody>
