@@ -8,6 +8,7 @@ import richListHeader from "@/assets/icons/XRP Rich List Header.png";
 import { breadcrumbSchema, faqPageSchema, reportDatasetSchema } from "@/lib/jsonld";
 import { PercentileCalculator } from "@/components/richlist/percentile-calculator";
 import { TopAccountsTable } from "@/components/richlist/top-accounts-table";
+import { StatCards } from "@/components/richlist/stat-cards";
 import {
   DistributionChart,
   DistributionTable,
@@ -403,10 +404,10 @@ export default function XrpRichListPage() {
         <nav className="rp-toc" aria-label="On this page">
           <span className="rp-toc-label">On this page</span>
           <a href="#calculator">Calculator</a>
+          <a href="#top-accounts">Top 100</a>
           <a href="#thresholds">Thresholds</a>
           <a href="#what-it-shows">What it shows</a>
           {yc ? <a href="#working-vs-idle">Working or idle</a> : null}
-          <a href="#top-accounts">Top 100</a>
           <a href="#faq">Questions</a>
           <a href="#methodology">Method</a>
         </nav>
@@ -418,6 +419,55 @@ export default function XrpRichListPage() {
           carries its own lead in and its own note underneath. */}
 
       {/* -------------------------------------------------- thresholds */}
+      {/* ------------------------------------------------ top accounts */}
+      <section className="uni-home-content rl-section" aria-labelledby="top-accounts">
+        <p className="rp-eyebrow">Largest accounts</p>
+        <h2 id="top-accounts">Top 100 XRP wallets</h2>
+        <p className="rp-lead">
+          The 100 largest funded XRP Ledger accounts as of {snapDate}, read from
+          ledger {count(data.ledgerIndex)} and ranked on the XRP each one
+          controls.
+        </p>
+        <TopAccountsTable
+          rows={data.top}
+          snapshotDate={snapDate}
+          xrpUsd={data.xrpUsd ?? null}
+        />
+
+        <p className="rl-section-intro">
+          {labelled.length > 0
+            ? `${labelled.length} of the 100 carry a name as of ${snapDate}.`
+            : `None of the 100 is named as of ${snapDate}.`}{" "}
+          {selfDeclared.length === 0
+            ? "Not one of them publishes a domain onchain, which is the only identity an account can declare about itself, so no name here rests on that."
+            : `${selfDeclared.length} publish a domain onchain, which is the strongest evidence available.`}{" "}
+          Naming an account from how it transacts would be a guess, so this page
+          names an account only against a source it can show. An account is
+          ranked on its spendable balance plus anything it holds in onchain
+          escrow, which is why an account with a few hundred XRP spendable can
+          sit near the top.
+        </p>
+
+        <p className="rl-note">
+          {data.xrpUsd ? (
+            <>
+              Dollar values use {data.xrpUsd.toFixed(4)} US dollars per XRP as of{" "}
+              {snapDate}, read from {data.xrpUsdSource}. They move with the price
+              and the XRP amounts beside them do not.{" "}
+            </>
+          ) : null}
+          Share of supply is measured against all XRP in funded accounts as of{" "}
+          {snapDate}, and the escrow column is the part of each balance locked
+          onchain on that date rather than a figure on top of it.{" "}
+          {attribution
+            ? `Every name in the table is attributed by ${attribution} rather than established by this page, and each one links to that provider's record in the dataset export below.`
+            : "Every name in the table is a third-party attribution rather than a finding of this page."}{" "}
+          Addresses are shortened in the middle so the column keeps one width;
+          the full address is in the dataset export and appears on hover.
+        </p>
+      </section>
+
+      {/* -------------------------------------------------------- FAQ */}
       <section className="uni-home-content rl-section" aria-labelledby="thresholds">
         <p className="rp-eyebrow">Distribution</p>
         <h2 id="thresholds">XRP rich list {year}: current thresholds</h2>
@@ -443,27 +493,41 @@ export default function XrpRichListPage() {
                 <th scope="col">Percentage tier</th>
                 <th scope="col">Minimum XRP controlled</th>
                 <th scope="col">Accounts at or above</th>
-                <th scope="col">Share of XRP held</th>
+                <th scope="col">That tier alone</th>
+                <th scope="col">Cumulative share of XRP</th>
               </tr>
             </thead>
             <tbody>
-              {data.tiers.map((t) => (
-                <tr key={t.pct}>
-                  <th scope="row">Top {t.pct}%</th>
-                  <td className="rl-num" data-label="Minimum XRP">{xrpAmount(t.minXrp)}</td>
-                  <td className="rl-num" data-label="Accounts at or above">{count(t.accounts)}</td>
-                  <td className="rl-num" data-label="Share of XRP">{pctLabel(t.pctOfXrp)}</td>
-                </tr>
-              ))}
+              {data.tiers.map((t, i) => {
+                // Each row's share counts everything above it too, so the
+                // column climbs rather than summing. The marginal figure is
+                // what this tier adds on its own, which is the number a reader
+                // is looking for when they try to add the column up.
+                const prev = i === 0 ? 0 : data.tiers[i - 1].pctOfXrp;
+                const alone = Math.max(0, t.pctOfXrp - prev);
+                return (
+                  <tr key={t.pct}>
+                    <th scope="row">Top {t.pct}%</th>
+                    <td className="rl-num" data-label="Minimum XRP">{xrpAmount(t.minXrp)}</td>
+                    <td className="rl-num" data-label="Accounts at or above">{count(t.accounts)}</td>
+                    <td className="rl-num" data-label="That tier alone">{pctLabel(alone)}</td>
+                    <td className="rl-num" data-label="Cumulative share">{pctLabel(t.pctOfXrp)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
 
         <p className="rl-note">
-          Thresholds are read from a histogram of every account balance, which
-          bounds each figure at {data.method.thresholdRelativeErrorPct}% as of{" "}
-          {snapDate}. Shares of XRP are measured against all XRP in funded
-          accounts, escrowed and spendable together.
+          Every tier contains the ones above it, so the cumulative column
+          climbs down the table rather than summing to 100%: the top 1% row
+          counts the top 0.1% inside it. The column beside it is what each
+          tier adds on its own, and those do sum. Thresholds are read from a
+          histogram of every account balance, which bounds each figure at{" "}
+          {data.method.thresholdRelativeErrorPct}% as of {snapDate}. Shares are
+          measured against all XRP in funded accounts, escrowed and spendable
+          together.
         </p>
       </section>
 
@@ -682,31 +746,22 @@ export default function XrpRichListPage() {
             </p>
           ) : null}
 
-          <div className="rl-stats">
-            <div className="rl-stat">
-              <span className="rl-stat-num">{share2(data.concentration.top100PctOfXrp)}</span>
-              <span className="rl-stat-lab">
-                of all XRP held by the top 100 accounts, {snapDate}
-              </span>
-            </div>
-            <div className="rl-stat">
-              <span className="rl-stat-num">
-                {share2(data.concentration.exExchangePctOfXrp)}
-              </span>
-              <span className="rl-stat-lab">
-                held once the {data.concentration.exchangeAccounts} known exchange
-                wallets are excluded, {snapDate}
-              </span>
-            </div>
-            <div className="rl-stat">
-              <span className="rl-stat-num">
-                {xrpAmount(data.concentration.exchangeXrp)}
-              </span>
-              <span className="rl-stat-lab">
-                XRP sitting in those exchange wallets, {snapDate}
-              </span>
-            </div>
-          </div>
+          <StatCards
+            stats={[
+              {
+                value: share2(data.concentration.top100PctOfXrp),
+                label: `of all XRP held by the top 100 accounts, ${snapDate}`,
+              },
+              {
+                value: share2(data.concentration.exExchangePctOfXrp),
+                label: `held once the ${data.concentration.exchangeAccounts} known exchange wallets are excluded, ${snapDate}`,
+              },
+              {
+                value: xrpAmount(data.concentration.exchangeXrp),
+                label: `XRP sitting in those exchange wallets, ${snapDate}`,
+              },
+            ]}
+          />
 
           {data.concentration.residualPctOfXrp != null ? (
             <>
@@ -764,8 +819,8 @@ export default function XrpRichListPage() {
                 all XRP as of {snapDate}. Those are the positions this page cannot
                 attribute to anyone as of that date, and they are the part of the
                 ranking where a reader learns something a headline share does not
-                tell them. Each group can be filtered out of the ranking below, so
-                the remainder reads on its own.
+                tell them. Each group can be filtered out of the ranking
+                above, so the remainder reads on its own.
               </p>
               <p className="rl-section-intro">
                 One more distinction worth keeping. The{" "}
@@ -796,7 +851,7 @@ export default function XrpRichListPage() {
                 </>
               ) : null}{" "}
               as of {snapDate}, at rank{" "}
-              {data.concentration.largestIndividual.rank} in the list below.
+              {data.concentration.largestIndividual.rank} in the list above.
               That account is attributed to{" "}
               {data.concentration.largestIndividual.name} by{" "}
               {data.concentration.largestIndividual.attribution ?? "a third party"}{" "}
@@ -808,55 +863,6 @@ export default function XrpRichListPage() {
         </section>
       ) : null}
 
-      {/* ------------------------------------------------ top accounts */}
-      <section className="uni-home-content rl-section" aria-labelledby="top-accounts">
-        <p className="rp-eyebrow">Largest accounts</p>
-        <h2 id="top-accounts">Top 100 XRP wallets</h2>
-        <p className="rp-lead">
-          The 100 largest funded XRP Ledger accounts as of {snapDate}, read from
-          ledger {count(data.ledgerIndex)} and ranked on the XRP each one
-          controls.
-        </p>
-        <p className="rl-section-intro">
-          {labelled.length > 0
-            ? `${labelled.length} of the 100 carry a name as of ${snapDate}.`
-            : `None of the 100 is named as of ${snapDate}.`}{" "}
-          {selfDeclared.length === 0
-            ? "Not one of them publishes a domain onchain, which is the only identity an account can declare about itself, so no name here rests on that."
-            : `${selfDeclared.length} publish a domain onchain, which is the strongest evidence available.`}{" "}
-          Naming an account from how it transacts would be a guess, so this page
-          names an account only against a source it can show. An account is
-          ranked on its spendable balance plus anything it holds in onchain
-          escrow, which is why an account with a few hundred XRP spendable can
-          sit near the top.
-        </p>
-
-        <TopAccountsTable
-          rows={data.top}
-          snapshotDate={snapDate}
-          xrpUsd={data.xrpUsd ?? null}
-        />
-
-        <p className="rl-note">
-          {data.xrpUsd ? (
-            <>
-              Dollar values use {data.xrpUsd.toFixed(4)} US dollars per XRP as of{" "}
-              {snapDate}, read from {data.xrpUsdSource}. They move with the price
-              and the XRP amounts beside them do not.{" "}
-            </>
-          ) : null}
-          Share of supply is measured against all XRP in funded accounts as of{" "}
-          {snapDate}, and the escrow column is the part of each balance locked
-          onchain on that date rather than a figure on top of it.{" "}
-          {attribution
-            ? `Every name in the table is attributed by ${attribution} rather than established by this page, and each one links to that provider's record in the dataset export below.`
-            : "Every name in the table is a third-party attribution rather than a finding of this page."}{" "}
-          Addresses are shortened in the middle so the column keeps one width;
-          the full address is in the dataset export and appears on hover.
-        </p>
-      </section>
-
-      {/* -------------------------------------------------------- FAQ */}
       {/* Centred header over a narrower accordion column, questions divided by
           a hairline with a chevron that turns on open: the faq3 layout.
 
@@ -902,19 +908,70 @@ export default function XrpRichListPage() {
       </section>
 
       {/* ----------------------------------------------------- bridge */}
+      {/* Laid out as the draggable-priority-list rows: a numbered mono rail on
+          the left, title and meta in the body, bordered and rounded, lit on
+          hover. Not draggable, and deliberately so: these are four kinds of
+          venue, not a ranking a reader reorders, and a drag affordance on a
+          list that cannot be dropped anywhere is a lie about what it does. */}
       <section className="uni-home-content rl-section" aria-labelledby="bridge">
         <div className="rl-bridge">
-          <h2 id="bridge">Where an XRP balance can go to work</h2>
+          <p className="rp-eyebrow">Earning on XRP</p>
+          <h2 id="bridge">XRP yield sources: where people earn on XRP</h2>
           <p>
-            The XRP Ledger itself pays nothing for holding, so every rate on
-            XRP-denominated capital comes from somewhere else: a wrapped form of
-            XRP supplied to a lending market, a vault, a fixed-rate product or a
-            liquidity pool, mostly on Flare and Base. The XRP yield ranking
-            tracks those venues and reads every rate from the venue&rsquo;s own
-            contracts.
+            Holding XRP on the XRP Ledger pays nothing, so every rate on
+            XRP-denominated capital is earned somewhere else.{" "}
+            {yc ? (
+              <>
+                <strong>{count(yc.receiptTokenHolders)} addresses</strong> were
+                already holding a wrapped or staked XRP product onchain as of{" "}
+                {utcDate(yc.asOf ?? snap)}, across {yc.products} products on
+                Flare and Base.
+              </>
+            ) : null}{" "}
+            These are the four places that rate comes from.
           </p>
+
+          {/* An ordered list with the number drawn by a CSS counter rather
+              than written into the row. The digit is decorative ordering that
+              <ol> already conveys, and as DOM text it read to the atomicity
+              gate as four undated figures, which is a fair complaint: a bare
+              numeral in a block carrying no date is exactly what that rule
+              exists to catch. */}
+          <ol className="rl-sources">
+            {[
+              {
+                title: "Lending markets",
+                meta: "Wrapped XRP supplied as collateral, earning what borrowers pay. The rate moves with utilisation.",
+              },
+              {
+                title: "Vaults",
+                meta: "A strategy holds the position and compounds it. The rate is realised price-per-share growth rather than a quoted number.",
+              },
+              {
+                title: "Liquidity venues",
+                meta: "XRP paired against another asset, earning trading fees plus any incentive the venue pays on top.",
+              },
+              {
+                title: "Fixed-rate products",
+                meta: "A rate locked to a maturity date, priced by the market rather than floating with demand.",
+              },
+            ].map((r) => (
+              <li className="rl-source" key={r.title}>
+                <span className="rl-source-body">
+                  <span className="rl-source-title">{r.title}</span>
+                  <span className="rl-source-meta">{r.meta}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <p className="rl-source-note-line">
+            Every rate in the report is read from the venue&rsquo;s own
+            contracts rather than from an aggregator.
+          </p>
+
           <Link className="rl-bridge-cta" href="/report/xrp-yield-ranking">
-            See the XRP yield ranking
+            Open the XRP yield report
             <span aria-hidden="true">→</span>
           </Link>
         </div>
