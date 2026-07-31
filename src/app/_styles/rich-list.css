@@ -8,6 +8,12 @@
    on [aria-labelledby="*-title"]. No section on this page is named *-title. */
 
 .uni-home-test.rl-page {
+  /* 15% off the house 1320px column, so the whole page reads tighter. It is a
+     max-width, so it does nothing below 1122px and every narrow layout is
+     untouched. The H1, the header image and both grids sit inside the column,
+     so all of them narrow with it rather than needing their own rule. */
+  --uni-max: 1122px;
+
   /* The input and the button under it are one stacked pair, so they share a
      height rather than each sizing itself off its own padding and type. */
   --rl-control-h: 62px;
