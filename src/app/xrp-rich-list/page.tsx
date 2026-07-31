@@ -3,6 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { SITE_AUTHOR } from "@/lib/author";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 import { AssetIcon } from "@/components/token-icons";
 import richListHeader from "@/assets/icons/XRP Rich List Header.png";
 import { breadcrumbSchema, faqPageSchema, reportDatasetSchema } from "@/lib/jsonld";
@@ -86,6 +88,46 @@ function Check() {
   );
 }
 
+// The four largest XRP yield products by category, read from the same
+// data/xrp-yield.json the report is built from, so the two pages cannot
+// disagree about a rate. One product per category rather than the four
+// largest overall: ranked purely by size the list is two Upshift vaults and
+// something paying a negative rate, which shows the reader nothing about
+// where XRP yield comes from.
+interface YieldPick {
+  category: string;
+  platform: string;
+  asset: string;
+  chain: string;
+  apy: number;
+  tvlUsd: number;
+}
+
+function loadYieldPicks(): { picks: YieldPick[]; asOf: string } | null {
+  try {
+    const f = join(process.cwd(), "data", "xrp-yield.json");
+    if (!existsSync(f)) return null;
+    const d = JSON.parse(readFileSync(f, "utf-8")) as {
+      generatedAt: string;
+      pools: YieldPick[];
+    };
+    if (!Array.isArray(d.pools) || !d.pools.length) return null;
+    const picks: YieldPick[] = [];
+    for (const c of ["Vault", "Lending market", "Liquidity pool", "Fixed-Rate"]) {
+      const top = d.pools
+        .filter((x) => x.category === c && Number.isFinite(x.apy) && x.tvlUsd > 0)
+        .sort((a, b) => b.tvlUsd - a.tvlUsd)[0];
+      if (top) picks.push(top);
+    }
+    return picks.length === 4 ? { picks, asOf: d.generatedAt } : null;
+  } catch {
+    return null;
+  }
+}
+
+const usdShort = (n: number): string =>
+  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${Math.round(n / 1_000)}k`;
+
 function Crumbs() {
   return (
     <nav className="rp-crumbs" aria-label="Breadcrumb">
@@ -135,6 +177,7 @@ export default function XrpRichListPage() {
   const t50 = tierOf(data, 50);
 
   const yc = data.yieldComparison;
+  const yieldPicks = loadYieldPicks();
   // Two counts of different kinds of object, so the ratio is presented as a
   // comparison rather than as a share. See the pipeline comment: an XRPL
   // account and a Flare or Base address holding a wrapped-XRP receipt token
@@ -965,9 +1008,58 @@ export default function XrpRichListPage() {
             ))}
           </ol>
 
+          {yieldPicks ? (
+            <>
+              {/* One card per venue kind, the largest by deposits in each. No
+                  action inside a card: four buttons to the same destination is
+                  four chances to pick the wrong one, so the section carries a
+                  single CTA underneath instead. */}
+              <div className="rl-picks">
+                {yieldPicks.picks.map((k) => (
+                  <div className="rl-pick" key={k.category}>
+                    <div className="rl-pick-head">
+                      <span className="rl-pick-platform">{k.platform}</span>
+                      <span className="rl-pick-badge">{k.category}</span>
+                    </div>
+                    <div className="rl-pick-rate">{k.apy.toFixed(2)}%</div>
+                    <dl className="rl-pick-meta" data-lint="chrome">
+                      <div>
+                        <dt>Deposits</dt>
+                        <dd>{usdShort(k.tvlUsd)}</dd>
+                      </div>
+                      <div>
+                        <dt>Asset</dt>
+                        <dd>{k.asset}</dd>
+                      </div>
+                      <div>
+                        <dt>Network</dt>
+                        <dd>{k.chain}</dd>
+                      </div>
+                    </dl>
+                  </div>
+                ))}
+              </div>
+
+              {/* Prose twin for the four cards. A retrieval system cannot cite
+                  a figure sitting in a card without inventing the sentence
+                  around it, so each card's rate exists here as a complete
+                  dated sentence carrying its own scope. */}
+              <p className="rl-source-note-line">
+                {yieldPicks.picks
+                  .map(
+                    (k) =>
+                      `The largest XRP ${k.category.toLowerCase()} Harvest tracks was ${k.asset} on ${k.platform}, paying ${k.apy.toFixed(2)}% on ${usdShort(k.tvlUsd)} of deposits as of ${utcDate(yieldPicks.asOf)}.`,
+                  )
+                  .join(" ")}
+              </p>
+            </>
+          ) : null}
+
           <p className="rl-source-note-line">
-            Every rate in the report is read from the venue&rsquo;s own
-            contracts rather than from an aggregator.
+            No venue in Harvest&rsquo;s XRP yield ranking pays a native XRP
+            staking rate, because the XRP Ledger does not offer one. Every rate
+            in that ranking is read from the venue&rsquo;s own contracts rather
+            than from an aggregator.
           </p>
 
           <Link className="rl-bridge-cta" href="/report/xrp-yield-ranking">

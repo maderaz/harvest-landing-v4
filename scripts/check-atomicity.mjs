@@ -13,15 +13,23 @@
 // hand-written prose on the site, had no lint coverage at all. This gate
 // covers exactly those.
 //
-// Three rules, chosen because they catch mechanical, repetitive misses that a
-// human review reliably misses while doing well on judgment calls:
+// Rules, chosen because they catch mechanical, repetitive misses that a human
+// review reliably misses while doing well on judgment calls. Numbering follows
+// the writing spec so a finding can be traced back to the rule that fired.
 //
-//   1. Undated figures   - a retrieved sentence with a number and no date is
-//                          unattributable months later.
-//   2. Orphaned openers  - a sentence whose subject sits in the previous
-//                          sentence is dead the moment it is lifted.
-//   3. Entity density    - the opposite failure: naming the brand in every
-//                          sentence reads as keyword stuffing.
+//   1.  Undated figures   - a retrieved sentence with a number and no date is
+//                           unattributable months later.
+//   2.  Orphaned openers  - a sentence whose subject sits in the previous
+//                           sentence is dead the moment it is lifted.
+//   3.  Temporal deixis   - "today" and "currently" beside a figure, in a
+//                           sentence a model may retrieve months later.
+//   7.  Entity density    - the opposite failure: naming the brand in every
+//                           sentence reads as keyword stuffing.
+//   11. onchain           - house rule, one word.
+//   13. Bullet fragments  - a list item that parses as a noun phrase belongs
+//                           in a table. The parent heading supplies the
+//                           grammar and the writer stops noticing.
+//   14. Bullet density    - list items over 40% of body words reads as thin.
 //
 // Usage:
 //   node scripts/check-atomicity.mjs            lint the built pages
@@ -55,6 +63,19 @@ const PAGES = [
 ];
 
 const ENTITY_CAP = 10;
+// Spec caps 4 and 14: list items as a share of body words.
+const BULLET_SHARE_CAP = 0.4;
+
+// Spec rule 3. Fires only alongside a digit, because "currently tracked" in
+// explanatory prose is fine; "3.96% currently" is not.
+const TEMPORAL_DEIXIS =
+  /\b(today|right now|currently|recently|at present|these days)\b/i;
+
+// Spec rule 13. A finite verb is the cheap test for "is this a sentence".
+// Listing the auxiliaries and the common copulas catches the fragment shape
+// without a POS tagger; the -ed/-s endings catch most simple past and present.
+const FINITE_VERB =
+  /\b(is|are|was|were|be|been|being|has|have|had|do|does|did|can|could|will|would|shall|should|may|might|must|pays?|holds?|earns?|runs?|sits?|comes?|makes?|takes?|gives?|needs?|counts?|carries|carry|ranks?|reads?|shows?|means?|works?|goes?|lets?|puts?|keeps?|stays?|moves?|adds?|offers?|tracks?|covers?|uses?|owns?|gets?|sets?|depends?|reached?|ranged?|grew|rose|fell|stood|placed?|held)\b|\b\w+(ed|es)\b/i;
 
 // Pages held to the gate. Everything else in PAGES is reported as a warning so
 // the backlog stays visible without blocking the build. Move a page here once
@@ -98,6 +119,13 @@ function stripChrome(html) {
   // Tables rendered as divs carry data-nosnippet; the spec exempts table
   // content from the digit rule, so anything inside one is out of scope.
   h = h.replace(/<div[^>]*data-nosnippet[^>]*>[\s\S]*?<\/div>\s*<\/div>/gi, "");
+  // Interface chrome that happens to use prose tags: chart legends, stat-card
+  // value lists, key/value pairs inside a card. The spec exempts table cells
+  // and stat cards from the digit rule and exempts label lists from the
+  // fragment rule, and this is how an element declares it is one of those.
+  // It is an opt-out for non-prose, not for prose that would rather not be
+  // linted: everything marked here must have a prose twin elsewhere.
+  h = h.replace(/<(ul|ol|dl|div)[^>]*data-lint="chrome"[^>]*>[\s\S]*?<\/\1>/gi, "");
   return h;
 }
 
@@ -162,10 +190,48 @@ export function lint(html, { entityCap = ENTITY_CAP } = {}) {
       if (i === 0 && ORPHAN_OPENER.test(s) && !ORPHAN_EXEMPT.test(s)) {
         findings.push({ rule: "orphan-opener", where: b.tag, text: s });
       }
+      // Rule 3: temporal deixis. "Today" in a sentence carrying a figure is
+      // a claim that expires the moment the page is retrieved later.
+      if (/\d/.test(s) && TEMPORAL_DEIXIS.test(s)) {
+        findings.push({ rule: "temporal-deixis", where: b.tag, text: s });
+      }
     });
+
+    // Rule 13: bullet fragments. Checked on the whole item rather than per
+    // sentence, because a fragment is exactly the case with no sentence in it.
+    if (b.tag === "li" && !FINITE_VERB.test(b.text) && /[a-z]/i.test(b.text)) {
+      findings.push({ rule: "bullet-fragment", where: b.tag, text: b.text });
+    }
   }
 
-  // Rule 3: entity density.
+  // Rule 11: house spelling.
+  {
+    const body = bs.map((b) => b.text).join(" ");
+    if (/\bon-chain\b/i.test(body)) {
+      findings.push({
+        rule: "on-chain",
+        where: "page",
+        text: "\"on-chain\" appears in body prose; the house spelling is \"onchain\"",
+      });
+    }
+  }
+
+  // Rule 14: bullet density. Heavy list formatting with little connective
+  // prose reads as low-effort, and these pages are already table-dense.
+  {
+    const words = (t) => t.split(/\s+/).filter(Boolean).length;
+    const total = bs.reduce((n, b) => n + words(b.text), 0);
+    const inLists = bs.filter((b) => b.tag === "li").reduce((n, b) => n + words(b.text), 0);
+    if (total > 0 && inLists / total > BULLET_SHARE_CAP) {
+      findings.push({
+        rule: "bullet-density",
+        where: "page",
+        text: `${Math.round((inLists / total) * 100)}% of body words sit in list items, over the ${Math.round(BULLET_SHARE_CAP * 100)}% cap`,
+      });
+    }
+  }
+
+  // Rule 7: entity density.
   const body = bs.map((b) => b.text).join(" ");
   const entity = (body.match(/\bHarvest'?s?\b/g) || []).length;
   if (entity > entityCap) {

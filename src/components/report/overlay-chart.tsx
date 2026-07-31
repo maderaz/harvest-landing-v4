@@ -205,7 +205,7 @@ export function OverlayChart({
         <span>{fmtShort(minMs)}</span>
         <span>{fmtShort(maxMs)}</span>
       </div>
-      <ul className="rp-overlay-legend">
+      <ul className="rp-overlay-legend" data-lint="chrome">
         {lines.map((l) => {
           const p = valueAt(l);
           return (
