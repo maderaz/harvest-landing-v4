@@ -319,7 +319,7 @@
 }
 /* --rl-dim is ink at 82%, which is fine on white and muddy on gold. The
    secondary text inside the calculator goes to solid ink at reduced weight. */
-.uni-home-test .rl-calc .rl-calc-sub,
+.uni-home-test .rl-calc .rl-calc-h,
 .uni-home-test .rl-calc .rl-calc-label,
 .uni-home-test .rl-calc .rl-calc-idle,
 .uni-home-test .rl-calc .rl-calc-privacy,
@@ -348,16 +348,11 @@
 }
 
 .uni-home-test .rl-calc-h {
-  margin: 0 0 6px;
-  font-size: 17px;
-  line-height: 24px;
-  font-weight: 760;
-}
-.uni-home-test .rl-calc-sub {
   margin: 0 0 18px;
-  font-size: 13.5px;
-  line-height: 20px;
-  color: var(--rl-dim);
+  font-size: 16.5px;
+  line-height: 23px;
+  font-weight: 700;
+  max-width: 34ch;
 }
 
 .uni-home-test .rl-calc-label {
@@ -425,16 +420,31 @@
   color: var(--uni-gold, #ffb936);
 }
 
+/* Empty at idle, so it takes no height and draws no divider: the card ends at
+   the privacy notice until a check has something to show. :empty is exact
+   here because React renders no whitespace when the branch returns null. */
 .uni-home-test .rl-calc-out {
   margin-top: 18px;
   padding-top: 16px;
   border-top: 1px solid var(--rl-hair);
-  min-height: 108px;
 }
-.uni-home-test .rl-calc-idle {
-  margin: 0;
-  font-size: 14px;
-  color: var(--rl-dim);
+.uni-home-test .rl-calc-out:empty {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+/* Expanding rather than appearing. The result is the payoff for a three
+   second wait, and a block that pops in full-height reads as a page jump. */
+.uni-home-test .rl-calc-out:not(:empty) {
+  animation: rl-expand 0.32s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes rl-expand {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uni-home-test .rl-calc-out:not(:empty) { animation: none; }
 }
 .uni-home-test .rl-calc-rank {
   margin: 0 0 8px;
@@ -650,9 +660,145 @@
 
 .rl-tiers tbody th { font-size: 15px; }
 
+/* ---- FAQ ---------------------------------------------------------------
+   The faq3 layout: a centred header over a narrower accordion column, items
+   divided by a hairline, the question at reading size with a chevron that
+   turns on open, and the answer in muted type under it. */
+.uni-home-test .rl-faq-section { padding: 64px 0 56px; }
+.uni-home-test .rl-faq-head {
+  max-width: 48rem;
+  margin: 0 auto 44px;
+}
+@media (min-width: 768px) {
+  .uni-home-test .rl-faq-head { text-align: center; }
+}
+.uni-home-test .rl-faq-desc {
+  margin: 12px 0 0;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--uni-ink-3);
+}
+
+.uni-home-test .rl-faq {
+  width: 100%;
+  max-width: 48rem;
+  margin: 0 auto;
+}
+.uni-home-test .rl-faq-item { border-bottom: 1px solid var(--uni-line, #dddee0); }
+
+.uni-home-test .rl-faq-q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  width: 100%;
+  padding: 20px 0;
+  font-size: 17.5px;
+  line-height: 26px;
+  font-weight: 600;
+  color: var(--uni-ink);
+  cursor: pointer;
+  list-style: none;
+  transition: opacity 0.2s ease;
+}
+/* The default disclosure triangle would sit beside the chevron. */
+.uni-home-test .rl-faq-q::-webkit-details-marker { display: none; }
+.uni-home-test .rl-faq-q::marker { content: ""; }
+.uni-home-test .rl-faq-q:hover { opacity: 0.6; }
+.uni-home-test .rl-faq-chev {
+  flex: none;
+  color: var(--uni-ink-3);
+  transition: transform 0.2s ease;
+}
+.uni-home-test .rl-faq-item[open] .rl-faq-chev { transform: rotate(180deg); }
+
+.uni-home-test .rl-faq-a {
+  margin: 0;
+  padding: 0 0 22px;
+  font-size: 16.5px;
+  line-height: 1.7;
+  color: var(--uni-ink-3);
+  max-width: 72ch;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uni-home-test .rl-faq-chev,
+  .uni-home-test .rl-faq-q { transition: none; }
+}
+@media (max-width: 640px) {
+  .uni-home-test .rl-faq-section { padding: 44px 0 40px; }
+  .uni-home-test .rl-faq-head { margin-bottom: 30px; }
+  .uni-home-test .rl-faq-desc { font-size: 15px; }
+  .uni-home-test .rl-faq-q { font-size: 16px; line-height: 23px; padding: 17px 0; }
+  .uni-home-test .rl-faq-a { font-size: 15px; padding-bottom: 18px; }
+}
+
+/* ---- chart card --------------------------------------------------------
+   The shadcn chart shape: a bordered, rounded card with a header carrying the
+   title and a one-line description, the plot in the body, hairline grid, and
+   axis type small and muted. Written against --uni-* rather than pulling in
+   shadcn and recharts for one figure. */
+.uni-home-test .rl-chart-card {
+  margin: 30px 0 0;
+  border: 1px solid var(--uni-line, #dddee0);
+  border-radius: var(--uni-radius, 20px);
+  overflow: hidden;
+}
+.uni-home-test .rl-chart-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--uni-line, #dddee0);
+}
+.uni-home-test .rl-chart-card-title {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 16px;
+  line-height: 22px;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--uni-ink);
+}
+.uni-home-test .rl-chart-card-desc {
+  margin: 3px 0 0;
+  font-size: 13.5px;
+  line-height: 19px;
+  color: var(--uni-ink-3);
+}
+.uni-home-test .rl-chart-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--uni-ink-2);
+  white-space: nowrap;
+}
+.uni-home-test .rl-chart-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--uni-gold, #ffb936);
+  flex: none;
+}
+.uni-home-test .rl-chart-card-body { padding: 20px 22px 8px; }
+@media (max-width: 640px) {
+  .uni-home-test .rl-chart-card-head { padding: 14px 16px; }
+  .uni-home-test .rl-chart-card-body { padding: 14px 16px 4px; }
+}
+
+/* Hairlines, at roughly half the border colour, which is what the shadcn
+   chart container strokes its cartesian grid at. */
+.uni-home-test .rl-chart-grid {
+  stroke: color-mix(in srgb, var(--uni-line, #dddee0) 60%, transparent);
+  stroke-width: 1;
+}
+
 /* ---- chart ------------------------------------------------------------ */
 
-.rl-chart-fig { margin: 30px 0 0; }
+.rl-chart-fig { margin: 0; }
 .rl-chart { display: block; width: 100%; height: auto; }
 .rl-chart-bar { fill: var(--uni-gold, #ffb936); }
 /* Sized in viewBox units. The chart is 720 wide and renders to roughly 930px
@@ -850,12 +996,14 @@
    Every cell is one line at one size, which is the whole point. A hundred rows
    only read as a ranking if all hundred are the same height. */
 
+/* Under the table, so the spacing flips: the controls get the smaller gap to
+   what they act on and the table takes the section's own top margin. */
 .uni-home-test .rl-filters {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 10px;
-  margin: 30px 0 0;
+  margin: 18px 0 0;
 }
 .uni-home-test .rl-filters-label {
   font-size: 13px;
@@ -903,12 +1051,24 @@
   color: var(--uni-ink-2);
 }
 
+/* The table sits in a bordered, rounded, overflow-hidden box, which is the
+   shell the reference ranking uses (`overflow-hidden rounded-lg border`
+   around the table, toolbar above, status row below). The row treatment
+   inside it was already the same: border-b per row, none on the last, hover
+   tint, header divided from the body. */
+.uni-home-test .rl-rank-box {
+  margin: 30px 0 0;
+  border: 1px solid var(--uni-line, #dddee0);
+  border-radius: var(--uni-radius, 20px);
+  overflow: hidden;
+}
 .uni-home-test .rl-rank {
-  margin: 18px 0 0;
   max-height: 660px;
   overflow: auto;
-  border-top: 1px solid var(--uni-line, #dddee0);
 }
+/* Status and controls below the box, the way the reference puts its row count
+   and pager under the table. */
+.uni-home-test .rl-rank-foot { margin: 0; }
 .uni-home-test .rl-rank-head,
 .uni-home-test .rl-rank-row {
   display: grid;
@@ -926,7 +1086,7 @@
   position: sticky;
   top: 0;
   z-index: 2;
-  padding: 12px 14px;
+  padding: 12px 22px;
   background: var(--uni-bg, #fff);
   border-bottom: 1px solid var(--uni-line, #dddee0);
   font-family: var(--sans);
@@ -935,7 +1095,7 @@
   color: var(--uni-ink-2);
 }
 .uni-home-test .rl-rank-row {
-  padding: 15px 14px;
+  padding: 15px 22px;
   border-bottom: 1px solid color-mix(in srgb, var(--uni-line, #dddee0) 55%, transparent);
   transition: background-color 0.12s ease;
 }
@@ -1060,7 +1220,6 @@
   .uni-home-test .rl-keyfind { max-width: none; gap: 10px; text-align: left; }
   .uni-home-test .rl-calc,
   .uni-home-test .rl-calc-h,
-  .uni-home-test .rl-calc-sub,
   .uni-home-test .rl-calc-privacy,
   .uni-home-test .rl-calc-out { text-align: left; }
   .uni-home-test .rl-keyfind li { font-size: 15px; line-height: 23px; }
@@ -1069,7 +1228,6 @@
   .uni-home-test .rl-calc-h { font-size: 16px; }
   .uni-home-test .rl-calc-input { font-size: 19px; }
   .uni-home-test .rl-calc-rank { font-size: 20px; line-height: 26px; }
-  .uni-home-test .rl-calc-out { min-height: 96px; }
 
   /* Stacked rows. thead goes, each row becomes a card-ish block, and each cell
      prints its own label. */

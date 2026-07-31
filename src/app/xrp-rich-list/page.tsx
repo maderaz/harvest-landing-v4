@@ -487,12 +487,32 @@ export default function XrpRichListPage() {
           share of all funded accounts on the same date.
         </p>
 
-        <div className="rl-chart-scroll">
-          <DistributionChart
-            bands={data.bands}
-            snapshotDate={snapDate}
-            totalAccounts={data.accounts}
-          />
+        {/* Card chrome in the shape shadcn gives a chart: bordered and
+            rounded, a header carrying the title and a one-line description,
+            the plot in the body below it. */}
+        <div className="rl-chart-card">
+          <div className="rl-chart-card-head">
+            <div>
+              <h3 className="rl-chart-card-title">
+                Funded accounts by balance band
+              </h3>
+              <p className="rl-chart-card-desc">
+                All {count(data.accounts)} funded XRP Ledger accounts as of{" "}
+                {snapDate}
+              </p>
+            </div>
+            <span className="rl-chart-legend">
+              <span className="rl-chart-swatch" aria-hidden="true" />
+              Accounts
+            </span>
+          </div>
+          <div className="rl-chart-card-body rl-chart-scroll">
+            <DistributionChart
+              bands={data.bands}
+              snapshotDate={snapDate}
+              totalAccounts={data.accounts}
+            />
+          </div>
         </div>
 
         <p className="rl-note">
@@ -837,17 +857,45 @@ export default function XrpRichListPage() {
       </section>
 
       {/* -------------------------------------------------------- FAQ */}
-      <section className="uni-home-content rl-section" aria-labelledby="faq">
-        <p className="rp-eyebrow">Questions</p>
-        <h2 id="faq">XRP rich list questions</h2>
-        <div className="rp-faq">
+      {/* Centred header over a narrower accordion column, questions divided by
+          a hairline with a chevron that turns on open: the faq3 layout.
+
+          Still <details> rather than an accordion component. The answers carry
+          the figures this page is cited for, and a JS accordion hides them
+          from anything that does not run scripts. `name` makes the group
+          exclusive natively, which is what the reference's type="single"
+          collapsible does, and browsers without it just allow several open. */}
+      <section className="uni-home-content rl-section rl-faq-section" aria-labelledby="faq">
+        <div className="rl-faq-head">
+          <p className="rp-eyebrow">Questions</p>
+          <h2 id="faq">XRP rich list questions</h2>
+          <p className="rl-faq-desc">
+            What people ask about XRP holder counts and thresholds, answered
+            from the {snapDate} ledger snapshot behind this page.
+          </p>
+        </div>
+        <div className="rl-faq">
           {faqs.map((f, i) => (
-            <details className="rp-faq-item" key={f.q} open={i === 0}>
-              <summary className="rp-faq-q">
+            <details className="rl-faq-item" name="rl-faq" key={f.q} open={i === 0}>
+              <summary className="rl-faq-q">
                 <span>{f.q}</span>
-                <span className="rp-faq-mark" aria-hidden="true" />
+                <svg
+                  className="rl-faq-chev"
+                  viewBox="0 0 24 24"
+                  width="16"
+                  height="16"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                  focusable="false"
+                >
+                  <path d="m6 9 6 6 6-6" />
+                </svg>
               </summary>
-              <p className="rp-faq-a">{f.a}</p>
+              <p className="rl-faq-a">{f.a}</p>
             </details>
           ))}
         </div>

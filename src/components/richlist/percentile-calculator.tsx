@@ -155,11 +155,13 @@ export function PercentileCalculator({
 
   return (
     <div className="rl-calc" id="calculator">
-      <h2 className="rl-calc-h">XRP rich list calculator</h2>
-      <p className="rl-calc-sub">
-        Enter a balance to see where it ranks among all funded XRP Ledger
-        accounts as of {snapshotDate}.
-      </p>
+      {/* Framed as the instruction rather than as a name. The card is already
+          inside a section headed "The XRP Rich List Calculator", so repeating
+          the name here spent the most-read line saying nothing. The sub that
+          used to sit under it said the same thing a third time and is gone. */}
+      <h2 className="rl-calc-h">
+        Enter XRP, then click &ldquo;Start check&rdquo; to run the calculator.
+      </h2>
 
       <label className="rl-calc-label" htmlFor="rl-balance">
         Your XRP balance
@@ -226,8 +228,12 @@ export function PercentileCalculator({
         </span>
       </p>
 
+      {/* The live region stays mounted so a result is announced when it lands,
+          but it renders nothing at idle and collapses to zero height, so there
+          is no empty panel and no divider under the button until the check has
+          something to say. */}
       <div className="rl-calc-out" role="status" aria-live="polite">
-        {phase === "checking" ? (
+        {phase === "idle" ? null : phase === "checking" ? (
           <div className="rl-check">
             <div className="rl-check-bar" aria-hidden="true">
               <span style={{ animationDuration: `${CHECK_MS}ms` }} />
@@ -275,15 +281,7 @@ export function PercentileCalculator({
               {copied ? "Copied" : "Copy result"}
             </button>
           </>
-        ) : (
-          <p className="rl-calc-idle">
-            {raw.trim() === ""
-              ? "Enter a balance, then start the check."
-              : parsed == null
-                ? "Enter a balance greater than zero."
-                : "Ready. Start the check to see where this balance ranks."}
-          </p>
-        )}
+        ) : null}
       </div>
     </div>
   );

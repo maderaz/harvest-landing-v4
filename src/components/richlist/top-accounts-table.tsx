@@ -26,6 +26,10 @@
 // third thing again, and folding them into the company's total would overstate
 // what Ripple controls. Each comes out separately.
 //
+// The controls sit under the ranking rather than over it. The table is what
+// the section is for and what a visitor scrolled to; three checkboxes above it
+// delay that for everyone, including the majority who never filter.
+//
 // All hundred rows render on the server and the filters only narrow what is
 // already there, so the unfiltered ranking is what a crawler sees. Ranks stay
 // at their position in the full list when a filter is on: a renumbered subset
@@ -138,30 +142,7 @@ export function TopAccountsTable({
 
   return (
     <>
-      <div className="rl-filters">
-        <span className="rl-filters-label">Hide</span>
-        {FILTERS.map((f) => (
-          <label key={f.key} className="rl-chip">
-            <input
-              type="checkbox"
-              checked={hidden[f.key]}
-              onChange={(e) =>
-                setHidden((h) => ({ ...h, [f.key]: e.target.checked }))
-              }
-            />
-            <span>
-              {f.label} <em>{counts[f.key]}</em>
-            </span>
-          </label>
-        ))}
-      </div>
-
-      <p className="rl-filters-read" role="status" aria-live="polite">
-        Showing <strong>{shown.length}</strong> of {rows.length} accounts,
-        holding {xrpShort(shownXrp)} XRP between them, or {shownPct.toFixed(2)}%
-        of all XRP in funded accounts as of {snapshotDate}.
-      </p>
-
+      <div className="rl-rank-box">
       <div className="rl-rank" role="table" aria-label={`Largest 100 XRP Ledger accounts as of ${snapshotDate}`} data-nosnippet="">
         <div className="rl-rank-head" role="row">
           <span role="columnheader">#</span>
@@ -208,6 +189,33 @@ export function TopAccountsTable({
             </div>
           ))}
         </div>
+      </div>
+      </div>
+
+      <div className="rl-rank-foot">
+      <div className="rl-filters">
+        <span className="rl-filters-label">Hide</span>
+        {FILTERS.map((f) => (
+          <label key={f.key} className="rl-chip">
+            <input
+              type="checkbox"
+              checked={hidden[f.key]}
+              onChange={(e) =>
+                setHidden((h) => ({ ...h, [f.key]: e.target.checked }))
+              }
+            />
+            <span>
+              {f.label} <em>{counts[f.key]}</em>
+            </span>
+          </label>
+        ))}
+      </div>
+
+      <p className="rl-filters-read" role="status" aria-live="polite">
+        Showing <strong>{shown.length}</strong> of {rows.length} accounts,
+        holding {xrpShort(shownXrp)} XRP between them, or {shownPct.toFixed(2)}%
+        of all XRP in funded accounts as of {snapshotDate}.
+      </p>
       </div>
     </>
   );
