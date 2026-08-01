@@ -172,9 +172,9 @@ export function PercentileCalculator({
           inside a section headed "The XRP Rich List Calculator", so repeating
           the name here spent the most-read line saying nothing. The sub that
           used to sit under it said the same thing a third time and is gone. */}
-      <h2 className="rl-calc-h">
+      <p className="rl-calc-h">
         Enter XRP, then click &ldquo;Start check&rdquo; to run the calculator.
-      </h2>
+      </p>
 
       <label className="rl-calc-label" htmlFor="rl-balance">
         Your XRP balance
