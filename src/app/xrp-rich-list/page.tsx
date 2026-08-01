@@ -401,9 +401,15 @@ export default function XrpRichListPage() {
             url: `${PAGE_URL}#top-accounts`,
             itemListOrder: "https://schema.org/ItemListOrderDescending",
             numberOfItems: ranked,
-            itemListElement: data.top.map((t) => ({
+            itemListElement: data.top.map((t, i) => ({
               "@type": "ListItem",
-              position: t.rank,
+              // Position is the index, not the row's `rank` field. ListItem
+              // positions have to be unique and sequential, and the snapshot
+              // currently on main carries 16 duplicate ranks and 14 ordering
+              // breaks from a checkpoint bug in the ledger walk. Reading the
+              // array order keeps the structured data valid while that is
+              // still true, and agrees with the column once it is fixed.
+              position: i + 1,
               // The name where the registry can show a source for it, the
               // address otherwise. Never a guess: an unnamed account is
               // published as its address rather than as an inference.
