@@ -74,6 +74,14 @@ function saveCheckpoint(state) {
       sumXrp: state.dist.sumXrp,
       counts: Array.from(state.dist.counts),
       exact: [...state.dist.exact],
+      // The ledger's own total_coins, read once when the walk pinned its
+      // ledger. It was not in the checkpoint and not restored on resume, so
+      // every --resume run published `totalSupplyXrp: null` and silently
+      // dropped the supply reconciliation from the artifact. The hourly job
+      // runs a resume pass after the first one, so in practice that was most
+      // snapshots. A BigInt does not survive JSON, hence the string.
+      totalSupplyDrops:
+        state.totalSupplyDrops != null ? String(state.totalSupplyDrops) : null,
       top: state.dist.topBuffer(),
     }),
   );
@@ -142,6 +150,8 @@ if (resumed) {
   closeIso = resumed.closeIso;
   startMarker = resumed.marker;
   pagesDone = resumed.pages;
+  totalSupplyDrops =
+    resumed.totalSupplyDrops != null ? BigInt(resumed.totalSupplyDrops) : null;
   console.error(
     `[richlist] resuming ledger ${ledgerIndex} at page ${pagesDone}, ${resumed.total.toLocaleString()} accounts so far`,
   );
@@ -212,7 +222,7 @@ const result = await walkAccounts({
       );
     }
     if (n % CKPT_EVERY === 0) {
-      saveCheckpoint({ ledgerIndex, closeIso, marker, pages: n, dist });
+      saveCheckpoint({ ledgerIndex, closeIso, marker, pages: n, dist, totalSupplyDrops });
     }
   },
 });
@@ -220,7 +230,14 @@ const result = await walkAccounts({
 pagesDone += result.pages;
 
 if (!result.done) {
-  saveCheckpoint({ ledgerIndex, closeIso, marker: result.marker, pages: pagesDone, dist });
+  saveCheckpoint({
+    ledgerIndex,
+    closeIso,
+    marker: result.marker,
+    pages: pagesDone,
+    dist,
+    totalSupplyDrops,
+  });
   console.error(
     `[richlist] stopped after ${pagesDone} pages with a marker outstanding; rerun with --resume`,
   );
