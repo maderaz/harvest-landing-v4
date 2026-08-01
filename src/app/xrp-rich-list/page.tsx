@@ -24,6 +24,7 @@ import {
 } from "@/components/richlist/distribution-chart";
 import {
   loadRichList,
+  accountsAtOrAbove,
   tierOf,
   xrpAmount,
   count,
@@ -57,6 +58,22 @@ const PAGE_URL = `${SITE_URL}/xrp-rich-list`;
 // brand new never accumulates that history. This is the route's first commit
 // and it does not move again.
 const PUBLISHED_ISO = "2026-07-31T00:00:00.000Z";
+
+// Chris Larsen's total net worth, which this page cannot read and therefore
+// cites. Bloomberg serves a CAPTCHA to automated fetches, so it cannot be
+// pulled at build time either; it is entered by hand with the date it was
+// read on and the profile it came from, and the section renders the comparison
+// only when `usd` is set. An undated net-worth figure with no source is the
+// one kind of claim the method on this page forbids, so leaving it null is the
+// correct state rather than a gap to paper over.
+const LARSEN_NET_WORTH: { usd: number | null; readOn: string } = {
+  usd: null,
+  readOn: "",
+};
+const LARSEN_SOURCE = {
+  name: "the Bloomberg Billionaires Index",
+  url: "https://www.bloomberg.com/billionaires/profiles/christian-a-larsen/",
+};
 
 // Locked by the build spec. No live figures: threshold values move with the
 // distribution and a title that disagrees with the page after a rebuild is
@@ -344,7 +361,7 @@ export default function XrpRichListPage() {
   const faqs = [
     {
       q: "Is there an XRP rich list?",
-      a: `Yes, and it is also written as XRP richlist in one word. The XRP Ledger is public, so every account balance can be read directly from it. This page reads all ${count(data.accounts)} funded accounts from ledger ${count(data.ledgerIndex)}, closed ${snapStamp}, and ranks them.`,
+      a: `Yes, and it is also written as XRP richlist in one word. The XRP Ledger is public, so this page reads all ${count(data.accounts)} funded accounts from ledger ${count(data.ledgerIndex)}, closed ${snapStamp}, and ranks them by the XRP each one controls. How the walk and its histogram work, including the ${data.method.thresholdRelativeErrorPct}% threshold resolution that applied on ${snapDate}, is set out in the method section further down this page.`,
     },
     {
       q: "How many XRP do you need to be in the top 1%?",
@@ -354,13 +371,9 @@ export default function XrpRichListPage() {
     },
     {
       q: "How many XRP holders have 10,000 or more?",
-      a: `${count(data.exactCounts["10000"] ?? 0)} funded XRP Ledger accounts held at least 10,000 XRP as of ${snapDate}, out of ${count(data.accounts)} funded accounts in total.`,
+      a: `${count(data.exactCounts["10000"] ?? 0)} funded XRP Ledger accounts held at least 10,000 XRP as of ${snapDate}, out of ${count(data.accounts)} funded accounts in total. At the round balances either side of it, as of ${snapDate}: ${count(data.exactCounts["1000"] ?? 0)} accounts held at least 1,000 XRP, ${count(data.exactCounts["20000"] ?? 0)} held at least 20,000 XRP, ${count(data.exactCounts["100000"] ?? 0)} held at least 100,000 XRP, and ${count(data.exactCounts["1000000"] ?? 0)} held at least 1,000,000 XRP. Every one of those counts is exact rather than read off the histogram.`,
     },
-    {
-      q: "How many people own 20,000 XRP?",
-      a: `${count(data.exactCounts["20000"] ?? 0)} funded XRP Ledger accounts held at least 20,000 XRP as of ${snapDate}. Accounts are not people: one person can control several accounts, and one account can hold balances for many people.`,
-    },
-    {
+{
       q: "How many XRP Ledger accounts are there?",
       a: `${count(data.accounts)} accounts were funded on the XRP Ledger as of ${snapDate}. An account cannot exist on the ledger without meeting the base reserve, which validators lowered to 1 XRP in December 2024, so every account in that count holds a balance.`,
     },
@@ -376,11 +389,7 @@ export default function XrpRichListPage() {
         ? `The top 1% of funded XRP Ledger accounts held ${pctLabel(t1.pctOfXrp)} of the XRP in those accounts as of ${snapDate}. The top 50% held ${pctLabel(t50.pctOfXrp)} as of ${snapDate}, which means the lower half of accounts together held the remainder.`
         : "",
     },
-    {
-      q: "How is the XRP rich list calculated?",
-      a: `Every AccountRoot object in one validated XRP Ledger is read over public JSON-RPC, and the balances are aggregated as they stream. Ledger ${count(data.ledgerIndex)} was used for the figures on this page, closed ${snapStamp}. Tier thresholds on the ${snapDate} snapshot carry a resolution of ${data.method.thresholdRelativeErrorPct}%, and the counts quoted at round balances are exact rather than interpolated.`,
-    },
-    {
+{
       q: "How much XRP does Ripple hold?",
       a: data.concentration?.rippleXrp
         ? `Ripple the company controlled ${count(data.concentration.rippleXrp)} XRP as of ${snapDate}${
@@ -392,15 +401,7 @@ export default function XrpRichListPage() {
           } Wallets belonging to Ripple's co-founders are counted separately and are not in this figure.`
         : "",
     },
-    {
-      q: "How much XRP does Chris Larsen hold?",
-      a: larsen
-        ? `Accounts attributed to Chris Larsen, a Ripple co-founder, held ${count(larsen.xrp)} XRP as of ${snapDate}${
-            data.xrpUsd ? `, worth about ${usd(larsen.xrp)}` : ""
-          }, across ${larsen.accounts} accounts in the ranking on this page. That is ${share2((larsen.xrp / data.xrpHeld) * 100)} of all XRP in funded accounts as of ${snapDate}. The figure covers ranked accounts only, so anything held further down the ledger is not counted in it.`
-        : "",
-    },
-    {
+{
       q: "Which exchange holds the most XRP?",
       a: largestExchange
         ? `${largestExchange[0]} held the most XRP of any exchange in this ranking as of ${snapDate}, with ${count(largestExchange[1].xrp)} XRP${
@@ -412,11 +413,7 @@ export default function XrpRichListPage() {
           }`
         : "",
     },
-    {
-      q: "Does holding more XRP change what a balance can do onchain?",
-      a: `A larger balance does not change the rules of the ledger, and the XRP Ledger has no native staking and pays no protocol reward for holding. Rates on wrapped and staked XRP are tracked separately in the XRP yield ranking.`,
-    },
-    {
+{
       q: "What is XRP's circulating supply?",
       a: data.totalSupplyXrp
         ? `${count(data.totalSupplyXrp)} XRP existed on the XRP Ledger as of ${snapDate}, read from the ledger's own total supply field rather than from a market tracker.${
@@ -433,6 +430,58 @@ export default function XrpRichListPage() {
         : "",
     },
     {
+      q: "Is 1,000 XRP a lot?",
+      a: `${count(data.exactCounts["1000"] ?? 0)} of the ${count(data.accounts)} funded XRP Ledger accounts held at least 1,000 XRP as of ${snapDate}, so a balance that size sat above ${pctLabel(100 - ((data.exactCounts["1000"] ?? 0) / data.accounts) * 100)} of them${
+        data.xrpUsd ? ` and was worth about ${usd(1000)} at ${data.xrpUsd.toFixed(4)} US dollars per XRP on that date` : ""
+      }. Most accounts on the ledger hold very little, which is why a balance that feels small still places well up the distribution.`,
+    },
+    {
+      q: "How many XRP would make you an XRP millionaire?",
+      a: data.xrpUsd
+        ? (() => {
+            const need = 1_000_000 / data.xrpUsd;
+            const above = Math.round(accountsAtOrAbove(data.ladder, need));
+            return `${count(need)} XRP was worth one million US dollars as of ${snapDate}, at ${data.xrpUsd.toFixed(4)} dollars per XRP. About ${count(above)} funded XRP Ledger accounts held at least that much as of ${snapDate}, which is ${pctLabel((above / data.accounts) * 100)} of all funded accounts. The XRP figure moves with the price, so the balance needed changes daily even when nobody buys or sells.`;
+          })()
+        : "",
+    },
+    {
+      q: "What is the median XRP balance?",
+      a: t50
+        ? `Half of all funded XRP Ledger accounts held ${xrpAmount(t50.minXrp)} XRP or less as of ${snapDate}, so that is the median balance. The mean sits far higher because a few accounts holding billions pull it up: ${count(data.accounts)} accounts shared ${xrpAmount(data.xrpHeld)} XRP as of ${snapDate}. When a distribution is this skewed the median describes a typical holder and the mean does not.`
+        : "",
+    },
+    {
+      q: "What share of all XRP do the top 100 wallets hold?",
+      a: data.concentration?.top100PctOfXrp
+        ? `The 100 largest XRP Ledger accounts held ${share2(data.concentration.top100PctOfXrp)} of all XRP in funded accounts as of ${snapDate}. Taking known exchange wallets out of that leaves ${share2(data.concentration.exExchangePctOfXrp)} as of the same date, which is the closer read on concentration, because an exchange wallet holds balances for many customers rather than for one owner.`
+        : "",
+    },
+    {
+      q: "How much of all XRP sits on exchanges?",
+      a: data.concentration?.exchangeXrp
+        ? `Known exchange wallets in the top 100 held ${count(data.concentration.exchangeXrp)} XRP as of ${snapDate}, which is ${share2((data.concentration.exchangeXrp / data.xrpHeld) * 100)} of all XRP in funded accounts${
+            data.xrpUsd ? ` and worth about ${usd(data.concentration.exchangeXrp)}` : ""
+          }. That covers the ${data.concentration.exchangeAccounts} accounts this page could attribute to a venue as of ${snapDate}, so it is a floor rather than a total: an exchange wallet nobody has identified is counted as unnamed.`
+        : "",
+    },
+    {
+      q: "How much XRP is locked in escrow?",
+      a: data.escrowedXrp
+        ? `${count(data.escrowedXrp)} XRP sat in onchain escrow as of ${snapDate}, which is ${share2((data.escrowedXrp / data.xrpHeld) * 100)} of all XRP in funded accounts${
+            data.escrowObjects && data.escrowAccounts
+              ? `, held in ${count(data.escrowObjects)} escrow objects across ${count(data.escrowAccounts)} accounts`
+              : ""
+          }. Escrowed XRP cannot be spent until the release date written into the ledger, and this page counts it toward the balance of the account that owns it, because that is what the account controls.`
+        : "",
+    },
+    {
+      q: "How many XRP holders earn yield on their XRP?",
+      a: yc
+        ? `${count(yc.receiptTokenHolders)} addresses held a wrapped or staked XRP product across ${yc.products} tracked venues as of ${utcDate(yc.asOf ?? snap)}, against ${count(data.accounts)} funded XRP Ledger accounts as of ${snapDate}. The two count different objects, so the comparison is a ratio rather than a share, and as of ${snapDate} it works out at ${pctLabel(yieldRatioPct ?? 0)}. The XRP Ledger pays no protocol reward for holding a balance and has no validator staking, so a balance that sits there earns nothing by design.`
+        : "",
+    },
+    {
       // "XRP whale" is asked constantly and the word appeared nowhere on a
       // page that holds the only figures which can answer it. Answered with
       // the bands rather than with a definition, because there is no official
@@ -446,11 +495,7 @@ export default function XrpRichListPage() {
         return `There is no official threshold, so the honest answer is a distribution rather than a number. ${count(both)} of the ${count(data.accounts)} funded XRP Ledger accounts held 1,000,000 XRP or more as of ${snapDate}, which is ${pctLabel(m1.pctOfAccounts + m10.pctOfAccounts)} of them, and those accounts controlled ${pctLabel(m1.pctOfXrp + m10.pctOfXrp)} of all XRP on that date. Above them, ${count(m10.accounts)} accounts held 10,000,000 XRP or more as of ${snapDate}. For a threshold that moves with the ledger rather than a round number, the top 1% of accounts started at ${t1 ? xrpAmount(t1.minXrp) : "the figure in the table above"} XRP as of ${snapDate}.`;
       })(),
     },
-    {
-      q: "Can I see my own wallet's rank?",
-      a: `Enter a balance in the calculator on this page and it returns the position that balance holds among all ${count(data.accounts)} funded accounts as of ${snapDate}. The page never asks for a wallet address, and the calculation runs in the browser rather than on a server.`,
-    },
-  ].filter((f) => f.a);
+].filter((f) => f.a);
 
   const crumbs = [
     { name: "Home", url: SITE_URL },
@@ -720,6 +765,7 @@ export default function XrpRichListPage() {
           <a href="#calculator">Calculator</a>
           <a href="#top-accounts">Top {count(ranked)}</a>
           <a href="#thresholds">Thresholds</a>
+          <a href="#larsen">Chris Larsen</a>
           <a href="#supply">Supply</a>
           <a href="#what-it-shows">What it shows</a>
           {yc ? <a href="#working-vs-idle">Working or idle</a> : null}
@@ -1200,6 +1246,52 @@ export default function XrpRichListPage() {
           ) : null}
 
           <p className="rl-note">{data.concentration.basis}</p>
+        </section>
+      ) : null}
+
+      {/* ------------------------------------------------------ larsen */}
+      {larsen ? (
+        <section className="uni-home-content rl-section" aria-labelledby="larsen">
+          <p className="rp-eyebrow">Named holder</p>
+          <h2 id="larsen">How much XRP does Chris Larsen hold?</h2>
+          <p className="rp-lead">
+            Accounts attributed to Chris Larsen, Ripple&rsquo;s co-founder and
+            executive chairman, held{" "}
+            <strong>{count(larsen.xrp)} XRP</strong> as of {snapDate}
+            {data.xrpUsd ? <>, worth about {usd(larsen.xrp)}</> : null}, across{" "}
+            {larsen.accounts} accounts in the ranking above.
+          </p>
+          <p className="rl-section-intro">
+            Larsen&rsquo;s ranked accounts held{" "}
+            {share2((larsen.xrp / data.xrpHeld) * 100)} of all XRP in funded
+            accounts as of {snapDate}. The figure covers ranked accounts
+            only, so any balance held further down the ledger is not in it, and
+            the attribution comes from the label registry rather than from a
+            claim this page makes about who controls a key.
+          </p>
+          {LARSEN_NET_WORTH.usd ? (
+            <p className="rl-section-intro">
+              {LARSEN_SOURCE.name} put his total net worth at{" "}
+              ${count(LARSEN_NET_WORTH.usd)} as of {LARSEN_NET_WORTH.readOn},
+              which puts the XRP above at{" "}
+              {pctLabel(
+                ((larsen.xrp * (data.xrpUsd ?? 0)) / LARSEN_NET_WORTH.usd) * 100,
+              )}{" "}
+              of it. That total is cited rather than measured: this page reads
+              the ledger and nothing else, so everything outside it comes from{" "}
+              <a href={LARSEN_SOURCE.url} rel="nofollow noopener">
+                the source named here
+              </a>
+              .
+            </p>
+          ) : (
+            <p className="rl-note">
+              Only the onchain figure is stated here. Estimates of his total net
+              worth are published elsewhere and are not read from the ledger, so
+              this page does not repeat one without naming its source and the
+              date it was read.
+            </p>
+          )}
         </section>
       ) : null}
 
