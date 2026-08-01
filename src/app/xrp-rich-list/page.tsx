@@ -474,27 +474,22 @@ export default function XrpRichListPage() {
 
         <h2 className="rl-summary-h">Summary</h2>
         <ul className="rl-keyfind">
-          {data.concentration?.largestIndividual ? (
+          {/* The hook, and the one line most visitors came for. It used to
+              open on the largest holding attributed to a person, which is the
+              more careful claim but buries the plain fact under two
+              qualifications before reaching a number. The careful version
+              still exists in full in the concentration section. */}
+          {data.top[0] ? (
             <li>
-              The largest holding attributed to an individual rather than to a
-              company or a trading venue was{" "}
-              <strong>
-                {count(data.concentration.largestIndividual.xrp)} XRP
-              </strong>{" "}
-              as of {snapDate}
+              The richest XRP wallet holds{" "}
+              <strong>{count(data.top[0].xrp)} XRP</strong>
               {data.xrpUsd ? (
                 <>
-                  , worth about{" "}
-                  <strong>
-                    $
-                    {count(
-                      data.concentration.largestIndividual.xrp * data.xrpUsd,
-                    )}
-                  </strong>{" "}
-                  at {data.xrpUsd.toFixed(4)} US dollars per XRP on that date
+                  , worth{" "}
+                  <strong>${count(data.top[0].xrp * data.xrpUsd)}</strong>
                 </>
-              ) : null}
-              .
+              ) : null}{" "}
+              as of {snapDate}.
             </li>
           ) : null}
           <li>
