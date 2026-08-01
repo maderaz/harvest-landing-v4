@@ -291,6 +291,12 @@
    The layout is what was worth taking; it is reproduced exactly. */
 
 .uni-home-test .rl-feature { padding: 7px 0 5px; }
+/* The air around the calculator is set by its neighbours, not by itself: the
+   section above ends on 44px of padding and the one below opens on 40px, so
+   .rl-feature's own padding was twelve of the eighty-four pixels above the
+   card. Halved where it actually comes from. */
+.uni-home-test.rl-page section:has(+ .rl-feature) { padding-bottom: 4px; }
+.uni-home-test.rl-page .rl-feature + section { padding-top: 4px; }
 
 .uni-home-test .rl-feature-card {
   display: grid;
