@@ -88,8 +88,11 @@ export function DistributionChart({
 
   const axisY = PAD_T + plotH;
 
+  // "chart" leads the accessible name because it is the word people search
+  // for and the SVG's aria-label was the only place it could go without
+  // padding the visible copy.
   const caption =
-    `Funded XRP Ledger accounts by balance band as of ${snapshotDate}. ` +
+    `XRP rich list chart: funded XRP Ledger accounts by balance band as of ${snapshotDate}. ` +
     rows
       .map((b) => `${bandName(b)} XRP: ${compact(b.accounts)} accounts`)
       .join(". ") +
