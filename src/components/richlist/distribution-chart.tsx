@@ -190,13 +190,9 @@ export function DistributionChart({
           second line under each band: its share of all funded accounts
         </text>
       </svg>
-      <figcaption className="rl-chart-cap">
-        Each bar is one balance band, and the number above it is how many funded
-        XRP Ledger accounts held an amount inside that band as of {snapshotDate}.
-        Every one of the {totalAccounts.toLocaleString("en-US")} funded accounts
-        sits in exactly one band. Bar heights use a square-root scale so the
-        smallest bands stay visible next to the largest.
-      </figcaption>
+      {/* The caption used to live here, inside the figure. It reads as part
+          of the same thought as the scale note under the card, so it sits with
+          it in the page rather than boxed off from it. */}
     </figure>
   );
 }

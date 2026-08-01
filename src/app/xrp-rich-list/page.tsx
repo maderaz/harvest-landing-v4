@@ -11,6 +11,8 @@ import { breadcrumbSchema, faqPageSchema, reportDatasetSchema } from "@/lib/json
 import { PercentileCalculator } from "@/components/richlist/percentile-calculator";
 import { TopAccountsTable } from "@/components/richlist/top-accounts-table";
 import { StatCards } from "@/components/richlist/stat-cards";
+import { holderAvatar } from "@/components/richlist/holder-avatars";
+import { AvatarStack } from "@/components/richlist/avatar-stack";
 import {
   DistributionChart,
   DistributionTable,
@@ -130,6 +132,54 @@ function loadYieldPicks(): { picks: YieldPick[]; asOf: string } | null {
   }
 }
 
+// The wrapped/staked XRP holder count, read from data/xrp-yield.json at build
+// time rather than from the copy frozen into the rich-list snapshot.
+//
+// The snapshot carries a `yieldComparison` block, but it is stamped when the
+// ledger walk runs and the yield pipeline runs on a different clock. The walk
+// finished at 04:38 and the yield data refreshed at 16:09 the same day, so the
+// page was quoting a figure eight days older than the file sitting next to it.
+// The bridge section already reads this file directly; so does this now, and
+// the two can no longer disagree.
+interface YieldComparison {
+  receiptTokenHolders: number;
+  products: number;
+  asOf: string;
+  oldestAsOf: string;
+  basis: string;
+}
+
+function loadYieldComparison(): YieldComparison | null {
+  try {
+    const f = join(process.cwd(), "data", "xrp-yield.json");
+    if (!existsSync(f)) return null;
+    const d = JSON.parse(readFileSync(f, "utf-8")) as {
+      pools: { holders?: { count: number; asOf?: string } | null }[];
+    };
+    const rows = (d.pools ?? []).filter((p) => (p.holders?.count ?? 0) > 0);
+    if (!rows.length) return null;
+    const stamps = rows
+      .map((p) => p.holders?.asOf)
+      .filter((x): x is string => !!x)
+      .sort();
+    if (!stamps.length) return null;
+    return {
+      receiptTokenHolders: rows.reduce((a, p) => a + (p.holders?.count ?? 0), 0),
+      products: rows.length,
+      // Newest for the headline date, oldest kept so the note can state the
+      // window the counts were actually read across. Every product is read on
+      // its own schedule, so a single "as of" is the newest of them and the
+      // note has to say the rest.
+      asOf: stamps[stamps.length - 1],
+      oldestAsOf: stamps[0],
+      basis:
+        "sum of per-product receipt-token holder counts on Flare and Base, not deduplicated across products",
+    };
+  } catch {
+    return null;
+  }
+}
+
 const usdShort = (n: number): string =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${Math.round(n / 1_000)}k`;
 
@@ -181,7 +231,11 @@ export default function XrpRichListPage() {
   const t10 = tierOf(data, 10);
   const t50 = tierOf(data, 50);
 
-  const yc = data.yieldComparison;
+  // Live file first, the snapshot's frozen copy as a fallback. Held apart so
+  // the read-window note can key on the live shape without widening the type
+  // of everything downstream.
+  const ycLive = loadYieldComparison();
+  const yc = ycLive ?? data.yieldComparison;
   const yieldPicks = loadYieldPicks();
   // Two counts of different kinds of object, so the ratio is presented as a
   // comparison rather than as a share. See the pipeline comment: an XRPL
@@ -217,6 +271,19 @@ export default function XrpRichListPage() {
     cur.accounts += 1;
     holderTotals.set(t.label.name, cur);
   }
+  // The distinct marks behind each breakdown group, ordered by how much the
+  // holder behind them controls, so the first face in a stack is the one that
+  // dominates the row. Derived from the same rows the row's figures are, so a
+  // group can never show a logo for a holder it does not contain.
+  const rankedRows = data.top;
+  const groupMarks = (match: (t: (typeof rankedRows)[number]) => boolean) =>
+    [...new Map(
+      rankedRows
+        .filter((t) => t.label?.name && match(t))
+        .sort((a, b) => b.xrp - a.xrp)
+        .map((t) => [t.label!.name, t.label!.name]),
+    ).keys()].filter((n) => holderAvatar(n));
+
   const largestExchange = [...holderTotals.entries()]
     .filter(([, v]) => v.type === "exchange")
     .sort((a, b) => b[1].xrp - a[1].xrp)[0];
@@ -437,6 +504,29 @@ export default function XrpRichListPage() {
                     )}
                   </strong>{" "}
                   at {data.xrpUsd.toFixed(4)} US dollars per XRP on that date
+                </>
+              ) : null}
+              .
+            </li>
+          ) : null}
+          {largestExchange ? (
+            <li>
+              The largest exchange holding XRP is{" "}
+              <strong>{largestExchange[0]}</strong>, with{" "}
+              <strong>{count(largestExchange[1].xrp)} XRP</strong> across{" "}
+              {largestExchange[1].accounts} accounts as of {snapDate}
+              {data.xrpUsd ? <>, worth {usd(largestExchange[1].xrp)}</> : null}.
+            </li>
+          ) : null}
+          {larsen ? (
+            <li>
+              Chris Larsen, Ripple&rsquo;s co-founder and executive chairman,
+              holds <strong>{count(larsen.xrp)} XRP</strong> across{" "}
+              {larsen.accounts} ranked accounts as of {snapDate}
+              {data.xrpUsd ? (
+                <>
+                  , worth <strong>{usd(larsen.xrp)}</strong>{" "}
+                  at that date&rsquo;s rate
                 </>
               ) : null}
               .
@@ -704,6 +794,12 @@ export default function XrpRichListPage() {
         </div>
 
         <p className="rl-note">
+          The chart draws one bar per balance band, and the figure above a bar
+          is how many funded XRP Ledger accounts held an amount inside that
+          band as of {snapDate}. All {count(data.accounts)} funded accounts sit
+          in exactly one band each as of {snapDate}.
+        </p>
+        <p className="rl-note">
           Bar heights use a square-root scale as of {snapDate}, so a band holding
           a few hundred accounts stays visible beside one holding three million.
           Reading heights against each other therefore understates the gap
@@ -824,6 +920,14 @@ export default function XrpRichListPage() {
               with a balance doing anything at all is small next to the number
               of accounts that simply hold.
             </p>
+            {ycLive && ycLive.oldestAsOf !== ycLive.asOf ? (
+              <p>
+                Every product in the XRP yield ranking is read on its own
+                schedule, so the total is a sum of counts taken between{" "}
+                {utcDate(ycLive.oldestAsOf)} and {utcDate(ycLive.asOf)} rather
+                than all at one moment.
+              </p>
+            ) : null}
             <p>
               The XRP Ledger pays no protocol reward for holding a balance, and
               it has no validator staking, so a balance that sits on the ledger
@@ -901,6 +1005,7 @@ export default function XrpRichListPage() {
                   {
                     k: "ripple",
                     name: "Ripple-controlled",
+                    marks: groupMarks((t) => t.label?.affiliation === "ripple"),
                     n: data.concentration.rippleAccounts ?? 0,
                     x: data.concentration.rippleXrp ?? 0,
                     p: data.concentration.ripplePctOfXrp ?? 0,
@@ -908,6 +1013,7 @@ export default function XrpRichListPage() {
                   {
                     k: "exchange",
                     name: "Known exchanges",
+                    marks: groupMarks((t) => t.label?.type === "exchange"),
                     n: data.concentration.exchangeAccounts,
                     x: data.concentration.exchangeXrp,
                     p:
@@ -917,6 +1023,7 @@ export default function XrpRichListPage() {
                   {
                     k: "founder",
                     name: "Ripple founders",
+                    marks: groupMarks((t) => t.label?.affiliation === "ripple-founder"),
                     n: data.concentration.founderAccounts ?? 0,
                     x: data.concentration.founderXrp ?? 0,
                     p: data.concentration.founderPctOfXrp ?? 0,
@@ -924,13 +1031,17 @@ export default function XrpRichListPage() {
                   {
                     k: "residual",
                     name: "Unnamed accounts",
+                    marks: [] as string[],
                     n: data.concentration.residualAccounts ?? 0,
                     x: data.concentration.residualXrp ?? 0,
                     p: data.concentration.residualPctOfXrp ?? 0,
                   },
                 ].map((g) => (
                   <div className="rl-breakdown-row" role="row" key={g.k}>
-                    <span role="cell">{g.name}</span>
+                    <span role="cell" className="rl-breakdown-group">
+                      {g.name}
+                      <AvatarStack names={g.marks} />
+                    </span>
                     <span role="cell" className="rl-rank-n">{g.n}</span>
                     <span role="cell" className="rl-rank-n">{xrpAmount(g.x)}</span>
                     <span role="cell" className="rl-rank-n">{share2(g.p)}</span>
@@ -1089,14 +1200,23 @@ export default function XrpRichListPage() {
                   a figure sitting in a card without inventing the sentence
                   around it, so each card's rate exists here as a complete
                   dated sentence carrying its own scope. */}
-              <p className="rl-source-note-line">
-                {yieldPicks.picks
-                  .map(
-                    (k) =>
-                      `The largest XRP ${k.category.toLowerCase()} Harvest tracks was ${k.asset} on ${k.platform}, paying ${k.apy.toFixed(2)}% on ${usdShort(k.tvlUsd)} of deposits held by ${k.holders?.count ? count(k.holders.count) : "an undisclosed number of"} wallets as of ${utcDate(yieldPicks.asOf)}.`,
-                  )
-                  .join(" ")}
-              </p>
+              {/* One sentence, for the venue most people actually use. Four
+                  of these, one per card, restated the whole grid in prose and
+                  read as arithmetic rather than as a finding. */}
+              {(() => {
+                const top = [...yieldPicks.picks].sort(
+                  (a, b) => (b.holders?.count ?? 0) - (a.holders?.count ?? 0),
+                )[0];
+                if (!top?.holders?.count) return null;
+                return (
+                  <p className="rl-source-note-line">
+                    The most used of these was {top.asset} on {top.platform},
+                    where {count(top.holders.count)} wallets held{" "}
+                    {usdShort(top.tvlUsd)} at {top.apy.toFixed(2)}% as of{" "}
+                    {utcDate(yieldPicks.asOf)}.
+                  </p>
+                );
+              })()}
             </>
           ) : null}
 

@@ -1605,6 +1605,47 @@
   color: var(--uni-ink);
 }
 
+/* ---- overlapping marks beside a breakdown group ------------------------
+   row-reverse so the first mark in the list paints on top without giving
+   every item its own z-index, which is the version that breaks the moment
+   somebody adds one. */
+.uni-home-test .rl-breakdown-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.uni-home-test .rl-avstack {
+  display: inline-flex;
+  flex-direction: row-reverse;
+  align-items: center;
+  flex: none;
+}
+.uni-home-test .rl-avstack-img {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--uni-bg, #fff);
+  /* The ring is what separates one mark from the one it covers. */
+  box-shadow: 0 0 0 1.5px var(--uni-bg, #fff);
+}
+/* Every mark except the last in the DOM, which is the leftmost on screen,
+   slides under its neighbour by about a fifth of its width. */
+.uni-home-test .rl-avstack-img:not(:last-child) { margin-left: -3px; }
+.uni-home-test .rl-avstack-more {
+  order: -1;
+  margin-left: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--uni-ink-3);
+}
+@media (max-width: 720px) {
+  /* The group cell shares a narrow row with two numeric columns, so the
+     stack gives up its width before the label does. */
+  .uni-home-test .rl-avstack { display: none; }
+}
+
 /* ---- holder avatars -----------------------------------------------------
    A square logo rendered as a circle inside the pill. The badge is an
    inline-block of text, so it becomes a flex row to put the mark on the
