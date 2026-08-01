@@ -80,9 +80,32 @@ export async function xrplRpc(method, params = {}, { tries = 4, timeoutMs = 180_
   throw lastErr ?? new Error(`xrpl ${method} failed`);
 }
 
-/** The newest ledger the cluster considers validated, with its close time. */
+// How far behind the validated tip to pin a walk.
+//
+// xrpl.ws advertises `complete_ledgers: 32570-<tip>` and then answers
+// lgrNotFound for that same tip: it fronts a pool of Clio instances and the
+// advertised range runs ahead of what the instance answering any one request
+// actually serves. A walk pinned to the tip therefore died partway through
+// with lgrNotFound, after the first pages had already succeeded against a
+// node that did have it.
+//
+// Fifty ledgers is roughly three minutes. Measured against all three
+// endpoints: the tip failed on xrpl.ws and fifty back succeeded everywhere.
+// A daily snapshot loses nothing by being three minutes older, and the close
+// time this reports is the pinned ledger's own, so the page still states
+// exactly what it read.
+const TIP_LOOKBACK = 50;
+
+/**
+ * A recent validated ledger, with its close time.
+ *
+ * Deliberately not the newest one. See TIP_LOOKBACK.
+ */
 export async function validatedLedger() {
-  const res = await xrplRpc("ledger", { ledger_index: "validated", accounts: false, transactions: false });
+  const tip = await xrplRpc("ledger", { ledger_index: "validated", accounts: false, transactions: false });
+  const tipIndex = Number(tip.ledger_index ?? tip.ledger?.ledger_index);
+  const target = Number.isFinite(tipIndex) ? tipIndex - TIP_LOOKBACK : "validated";
+  const res = await xrplRpc("ledger", { ledger_index: target, accounts: false, transactions: false });
   const l = res.ledger ?? {};
   // close_time is seconds since the Ripple epoch (2000-01-01T00:00:00Z), not
   // the Unix epoch. Getting this wrong dates every snapshot 30 years early.

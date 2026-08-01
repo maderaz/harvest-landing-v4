@@ -290,7 +290,7 @@
    maintaining a second set of colour tokens beside --uni-*, for one section.
    The layout is what was worth taking; it is reproduced exactly. */
 
-.uni-home-test .rl-feature { padding: 14px 0 10px; }
+.uni-home-test .rl-feature { padding: 7px 0 5px; }
 
 .uni-home-test .rl-feature-card {
   display: grid;
@@ -307,14 +307,12 @@
   background-image: radial-gradient(circle, rgba(25, 23, 23, 0.025) 1px, transparent 1.3px);
   background-size: 12px 12px;
 }
+/* The card stacks: pitch on top, calculator full width underneath. Beside
+   each other the form was a column of a sidebar, and the two-column split it
+   really wants is inside the calculator rather than around it. */
 @media (min-width: 1024px) {
-  /* The form takes three quarters of the width it had, which is enough for a
-     number field and gives the copy beside it room to breathe. */
-  .uni-home-test .rl-feature-card {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.72fr);
-    gap: 36px;
-  }
-  .uni-home-test .rl-calc { padding: 20px 20px 18px; }
+  .uni-home-test .rl-feature-card { gap: 26px; }
+  .uni-home-test .rl-calc { padding: 26px; }
   .uni-home-test .rl-calc-input { font-size: 19px; }
   .uni-home-test.rl-page { --rl-control-h: 54px; }
   .uni-home-test .rl-calc-rank { font-size: 21px; line-height: 27px; }
@@ -330,9 +328,7 @@
 .uni-home-test .rl-feature-copy {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  gap: 26px;
-  min-height: 100%;
+  gap: 20px;
 }
 .uni-home-test .rl-feature-head {
   display: flex;
@@ -386,8 +382,13 @@
   display: grid;
   gap: 22px;
 }
-@media (min-width: 640px) and (max-width: 1023px) {
-  .uni-home-test .rl-checklist { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; }
+/* Full width now, so the checklist runs across instead of down a column. */
+@media (min-width: 640px) {
+  .uni-home-test .rl-checklist {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 18px 32px;
+  }
 }
 .uni-home-test .rl-checklist li {
   display: flex;
@@ -414,6 +415,45 @@
 }
 
 /* ---- calculator ------------------------------------------------------- */
+
+/* Input on the left, result on the right. Stacked, a result pushed the whole
+   card taller and the field it came from scrolled off the top, so the number
+   a visitor asked for arrived where they were no longer looking. */
+.uni-home-test .rl-calc-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 22px;
+}
+/* A grid item will not shrink below its min-content width by default, and the
+   number field carries a browser default around 20 characters. That put the
+   input pane 10px past the viewport on a 390px screen. */
+.uni-home-test .rl-calc-panes > * { min-width: 0; }
+.uni-home-test .rl-calc-input { min-width: 0; }
+@media (min-width: 900px) {
+  .uni-home-test .rl-calc-panes {
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 34px;
+    align-items: start;
+  }
+  .uni-home-test .rl-calc-res {
+    border-left: 1px solid rgba(25, 23, 23, 0.16);
+    padding-left: 34px;
+    min-height: 168px;
+  }
+}
+/* The resting line holds the right pane open so a result lands in a place the
+   eye already knows. It has no job in the stacked layout, where an empty
+   panel is just a gap. */
+.uni-home-test .rl-calc-rest {
+  display: none;
+  margin: 0;
+  font-size: 14px;
+  line-height: 21px;
+  color: color-mix(in srgb, var(--uni-ink) 62%, transparent);
+}
+@media (min-width: 900px) {
+  .uni-home-test .rl-calc-rest { display: block; }
+}
 
 /* The same three layers as .uni-home-hero (home.css:71): a warm radial glow
    in the top right, the ink dot raster, and the flat gold under both. The
@@ -792,6 +832,15 @@
   white-space: nowrap;
 }
 .rl-dtable thead th:not(:first-child) { text-align: right; }
+/* The headers were right-aligned and the figures under them were not, so
+   every column read as two columns. Guarded above the phone breakpoint,
+   where the table stops being a grid and becomes label-and-value rows. */
+@media (min-width: 641px) {
+  .uni-home-test .rl-dtable tbody td {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+}
 
 .uni-home-test .rl-addr {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
@@ -1141,19 +1190,26 @@
 }
 .rl-bridge h2 { margin: 0 0 10px; font-size: 22px; line-height: 28px; }
 .rl-bridge p { margin: 0 0 16px; max-width: 68ch; }
-.uni-home-test .rl-bridge-cta {
+.uni-home-test .uni-home-content a.rl-bridge-cta,
+.uni-home-test a.rl-bridge-cta {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--uni-ink);
-  color: var(--uni-bg, #fff);
+  background: var(--uni-gold, #ffb936);
+  color: var(--uni-ink);
+  border: 1px solid #e0a018;
   border-radius: var(--uni-radius-pill, 999px);
-  padding: 11px 20px;
-  font-size: 14.5px;
-  font-weight: 700;
+  padding: 13px 24px;
+  font-size: 15px;
+  font-weight: 750;
   text-decoration: none;
+  box-shadow: 0 1px 2px rgba(25, 23, 23, 0.1);
 }
-.rl-bridge-cta:hover { opacity: 0.88; }
+.uni-home-test .uni-home-content a.rl-bridge-cta:hover { background: #ffc44d; }
+.rl-bridge-cta:active { transform: translateY(1px); }
+/* The first one sits under the opening paragraph, where a reader who is
+   already sold does not have to read four venue types first. */
+.uni-home-test .rl-bridge-cta-top { margin: 0 0 20px; }
 
 /* ---- methodology ------------------------------------------------------ */
 
@@ -1260,12 +1316,16 @@
 
 /* The one sentence on this page most likely to be quoted, so it reads as a
    pulled statement rather than as another paragraph. */
+/* A gold fill behind a left rule is the shape every generated page uses for
+   "here is an interesting fact", and this is a sourced finding rather than a
+   callout. It takes the frame the tables on this page already use, so it
+   reads as another piece of the same report. */
 .uni-home-test .rl-highlight {
   margin: 26px 0 0;
-  padding: 20px 22px;
-  border-left: 3px solid var(--uni-gold, #ffb936);
-  background: var(--uni-gold-bg, #fff5d9);
-  border-radius: 0 var(--uni-radius-sm, 14px) var(--uni-radius-sm, 14px) 0;
+  padding: 22px 24px;
+  border: 1px solid var(--uni-line, #dddee0);
+  background: var(--uni-bg, #fff);
+  border-radius: var(--uni-radius, 20px);
 }
 
 /* ---- who-holds-what breakdown ------------------------------------------
@@ -1487,11 +1547,11 @@
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  padding: 2px 8px;
+  padding: 1px 7px;
   border-radius: var(--uni-radius-pill, 999px);
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 600;
-  line-height: 16px;
+  line-height: 15px;
   white-space: nowrap;
   border: 1px solid transparent;
   vertical-align: middle;
