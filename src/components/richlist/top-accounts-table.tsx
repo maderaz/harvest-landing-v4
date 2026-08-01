@@ -37,6 +37,8 @@
 // twelfth, and that sentence would be false.
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { holderAvatar } from "./holder-avatars";
 
 export interface TopRow {
   rank: number;
@@ -185,9 +187,32 @@ export function TopAccountsTable({
               </span>
               <span className="rl-rank-name" role="cell">
                 {t.label ? (
-                  <span className={`rl-badge rl-badge-${t.label.type ?? "unknown"}`}>
-                    {t.label.name}
-                  </span>
+                  (() => {
+                    // The mark sits inside the pill, sized to its line box, so
+                    // the badge keeps its height and only the left padding
+                    // tightens to sit flush around a circle. Same shape as the
+                    // eyebrow badge on the calculator.
+                    const avatar = holderAvatar(t.label.name);
+                    return (
+                      <span
+                        className={`rl-badge rl-badge-${t.label.type ?? "unknown"}${
+                          avatar ? " has-avatar" : ""
+                        }`}
+                      >
+                        {avatar ? (
+                          <Image
+                            className="rl-badge-avatar"
+                            src={avatar}
+                            alt=""
+                            width={15}
+                            height={15}
+                            aria-hidden="true"
+                          />
+                        ) : null}
+                        {t.label.name}
+                      </span>
+                    );
+                  })()
                 ) : t.domain ? (
                   <span className="rl-badge rl-badge-domain">{t.domain}</span>
                 ) : (

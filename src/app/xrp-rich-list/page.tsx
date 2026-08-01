@@ -199,6 +199,31 @@ export default function XrpRichListPage() {
   // wrong on a page whose whole pitch is that its figures are checkable.
   const ranked = data.top.length;
 
+  // Named holders can hold across several accounts, so a question about one
+  // of them is a sum over the ranking rather than a single row. Derived here
+  // rather than written down, so the answers cannot drift from the table.
+  const holderTotals = new Map<
+    string,
+    { xrp: number; accounts: number; type: string | null }
+  >();
+  for (const t of data.top) {
+    if (!t.label?.name) continue;
+    const cur = holderTotals.get(t.label.name) ?? {
+      xrp: 0,
+      accounts: 0,
+      type: t.label.type ?? null,
+    };
+    cur.xrp += t.xrp;
+    cur.accounts += 1;
+    holderTotals.set(t.label.name, cur);
+  }
+  const largestExchange = [...holderTotals.entries()]
+    .filter(([, v]) => v.type === "exchange")
+    .sort((a, b) => b[1].xrp - a[1].xrp)[0];
+  const larsen = holderTotals.get("chrislarsen") ?? null;
+  const usd = (xrp: number) =>
+    data.xrpUsd ? `$${count(xrp * data.xrpUsd)}` : null;
+
   const labelled = data.top.filter((t) => t.label);
   const selfDeclared = data.top.filter((t) => t.domain);
   // The naming research covers the first hundred rows. The snapshot now runs
@@ -263,6 +288,38 @@ export default function XrpRichListPage() {
     {
       q: "How is the XRP rich list calculated?",
       a: `Every AccountRoot object in one validated XRP Ledger is read over public JSON-RPC, and the balances are aggregated as they stream. Ledger ${count(data.ledgerIndex)} was used for the figures on this page, closed ${snapStamp}. Tier thresholds on the ${snapDate} snapshot carry a resolution of ${data.method.thresholdRelativeErrorPct}%, and the counts quoted at round balances are exact rather than interpolated.`,
+    },
+    {
+      q: "How much XRP does Ripple hold?",
+      a: data.concentration?.rippleXrp
+        ? `Ripple the company controlled ${count(data.concentration.rippleXrp)} XRP as of ${snapDate}${
+            data.xrpUsd ? `, worth about ${usd(data.concentration.rippleXrp)}` : ""
+          }, across ${data.concentration.rippleAccounts} accounts in the ranking on this page. That is ${share2((data.concentration.rippleXrp / data.xrpHeld) * 100)} of all XRP in funded accounts as of ${snapDate}.${
+            data.concentration.rippleEscrowedXrp
+              ? ` Most of it cannot move: ${count(data.concentration.rippleEscrowedXrp)} XRP of that total sat in onchain escrow as of ${snapDate}, released on a schedule set in the ledger rather than held as a spendable balance.`
+              : ""
+          } Wallets belonging to Ripple's co-founders are counted separately and are not in this figure.`
+        : "",
+    },
+    {
+      q: "How much XRP does Chris Larsen hold?",
+      a: larsen
+        ? `Accounts attributed to Chris Larsen, a Ripple co-founder, held ${count(larsen.xrp)} XRP as of ${snapDate}${
+            data.xrpUsd ? `, worth about ${usd(larsen.xrp)}` : ""
+          }, across ${larsen.accounts} accounts in the ranking on this page. That is ${share2((larsen.xrp / data.xrpHeld) * 100)} of all XRP in funded accounts as of ${snapDate}. The figure covers ranked accounts only, so anything held further down the ledger is not counted in it.`
+        : "",
+    },
+    {
+      q: "Which exchange holds the most XRP?",
+      a: largestExchange
+        ? `${largestExchange[0]} held the most XRP of any exchange in this ranking as of ${snapDate}, with ${count(largestExchange[1].xrp)} XRP${
+            data.xrpUsd ? ` worth about ${usd(largestExchange[1].xrp)}` : ""
+          } across ${largestExchange[1].accounts} accounts. An exchange wallet holds balances for many customers at once, so a figure like this describes a venue's deposits rather than one owner's fortune.${
+            data.concentration?.exchangeXrp
+              ? ` Known exchange wallets held ${count(data.concentration.exchangeXrp)} XRP between them as of ${snapDate}, across ${data.concentration.exchangeAccounts} of the ranked accounts.`
+              : ""
+          }`
+        : "",
     },
     {
       q: "Does holding more XRP change what a balance can do onchain?",
@@ -430,7 +487,7 @@ export default function XrpRichListPage() {
               </p>
             </div>
 
-            <ul className="rl-checklist">
+            <ul className="rl-checklist" data-lint="chrome">
               <li>
                 <Check />
                 <div>
@@ -443,8 +500,7 @@ export default function XrpRichListPage() {
                 <div>
                   <p>Measured against over 8M XRP accounts</p>
                   <p className="rl-checklist-sub">
-                    Checked against all {count(data.accounts)} funded XRP
-                    accounts as of {snapDate}.
+                    Checked against {count(data.accounts)} XRP accounts.
                   </p>
                 </div>
               </li>
@@ -725,21 +781,22 @@ export default function XrpRichListPage() {
               walk has accumulated a second observation, so the first snapshot
               after launch does not print a comparison against itself. */}
           {hist && histFirst && t10 ? (
-            <p>
-              The top 10% threshold has moved from{" "}
-              <strong>{xrpAmount(histFirst.tiers["10"])} XRP</strong> on{" "}
-              {utcDate(`${histFirst.d}T00:00:00Z`)} to{" "}
-              <strong>{xrpAmount(t10.minXrp)} XRP</strong> as of {snapDate}.
+            <ul className="rl-keyfind">
+              <li>
+                The top 10% threshold has moved from{" "}
+                <strong>{xrpAmount(histFirst.tiers["10"])} XRP</strong> on{" "}
+                {utcDate(`${histFirst.d}T00:00:00Z`)} to{" "}
+                <strong>{xrpAmount(t10.minXrp)} XRP</strong> as of {snapDate}.
+              </li>
               {histFirst.tiers["1"] && t1 ? (
-                <>
-                  {" "}
+                <li>
                   The top 1% threshold has moved from{" "}
                   <strong>{xrpAmount(histFirst.tiers["1"])} XRP</strong> on{" "}
                   {utcDate(`${histFirst.d}T00:00:00Z`)} to{" "}
                   <strong>{xrpAmount(t1.minXrp)} XRP</strong> as of {snapDate}.
-                </>
+                </li>
               ) : null}
-            </p>
+            </ul>
           ) : null}
         </div>
       </section>
@@ -920,10 +977,6 @@ export default function XrpRichListPage() {
               ) : null}{" "}
               as of {snapDate}, at rank{" "}
               {data.concentration.largestIndividual.rank} in the list above.
-              That account is attributed to{" "}
-              {data.concentration.largestIndividual.name} by{" "}
-              {data.concentration.largestIndividual.attribution ?? "a third party"}{" "}
-              rather than by this page.
             </p>
           ) : null}
 

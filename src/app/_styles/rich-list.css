@@ -582,10 +582,19 @@
   font-variant-numeric: tabular-nums;
 }
 .uni-home-test .rl-calc-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   font-size: 14px;
   font-weight: 700;
   color: var(--rl-dim);
   flex: none;
+}
+.uni-home-test .rl-calc-unit img,
+.uni-home-test .rl-calc-unit svg {
+  flex: none;
+  border-radius: 50%;
+  display: block;
 }
 
 /* The privacy notice is the single most load-bearing sentence in the form: a
@@ -1201,7 +1210,9 @@
 /* ---- bridge ----------------------------------------------------------- */
 
 .uni-home-test .rl-bridge {
-  background: var(--uni-card, #f1f5f4);
+  /* No fill. The grey made a long section read as one big inert block, and
+     the frame alone is enough to say where it starts and stops. */
+  background: none;
   border: 1px solid var(--rl-hair);
   border-radius: var(--uni-radius, 20px);
   padding: 26px 28px;
@@ -1566,27 +1577,64 @@
   border: 1px solid transparent;
   vertical-align: middle;
 }
+/* White fill, darker edge. The tinted fills read as four different kinds of
+   object stacked down one column, which is loud in a hundred-row table and
+   louder still now that most badges carry a logo. The type still separates
+   on the edge and the text, which is enough to tell them apart without the
+   column turning into a colour chart. */
 .uni-home-test .rl-badge-exchange {
-  background: #eaf1fb;
-  border-color: #c8daf4;
+  background: #fff;
+  border-color: #9cbbe6;
   color: #1d4e89;
 }
 .uni-home-test .rl-badge-company {
-  background: var(--uni-gold-bg, #fff5d9);
-  border-color: #f3d489;
+  background: #fff;
+  border-color: #e0b458;
   color: #7a5205;
 }
 .uni-home-test .rl-badge-individual {
-  background: #eaf7ef;
-  border-color: #bfe4cd;
+  background: #fff;
+  border-color: #83c7a0;
   color: #1c6b3f;
 }
 .uni-home-test .rl-badge-protocol,
 .uni-home-test .rl-badge-domain,
 .uni-home-test .rl-badge-unknown {
-  background: var(--uni-card, #f1f5f4);
-  border-color: var(--rl-hair);
+  background: #fff;
+  border-color: #bcbec3;
   color: var(--uni-ink);
+}
+
+/* ---- holder avatars -----------------------------------------------------
+   A square logo rendered as a circle inside the pill. The badge is an
+   inline-block of text, so it becomes a flex row to put the mark on the
+   text's centre line rather than its baseline, and the left padding tightens
+   so the circle sits flush inside the rounded end. */
+.uni-home-test .rl-badge.has-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding-left: 2px;
+}
+.uni-home-test .rl-badge-avatar {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  /* The uploads are square and some run to the edge, so the circle is a crop
+     rather than a fit: letterboxing a logo inside a 15px disc leaves it
+     smaller than the text beside it. */
+  object-fit: cover;
+  /* A white logo on a white pill would otherwise have no edge of its own. */
+  box-shadow: 0 0 0 1px rgba(25, 23, 23, 0.08);
+  background: #fff;
+}
+/* The name has to keep truncating: it is the cell that decides whether all
+   hundred rows stay the same height. */
+.uni-home-test .rl-badge.has-avatar > :not(.rl-badge-avatar) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Escrow is the first column to go when the track no longer fits: it is a
