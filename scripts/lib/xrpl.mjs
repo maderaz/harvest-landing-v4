@@ -54,7 +54,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * treated as retryable. A `marker`-bearing walk must never silently skip a
  * page, so this throws rather than returning partial data.
  */
-export async function xrplRpc(method, params = {}, { tries = 4, timeoutMs = 180_000 } = {}) {
+export async function xrplRpc(method, params = {}, { tries = 9, timeoutMs = 180_000 } = {}) {
   let lastErr;
   for (let attempt = 0; attempt < tries; attempt++) {
     const url = XRPL_ENDPOINTS[attempt % XRPL_ENDPOINTS.length];
@@ -74,7 +74,18 @@ export async function xrplRpc(method, params = {}, { tries = 4, timeoutMs = 180_
       return res;
     } catch (e) {
       lastErr = e;
-      await sleep(400 * 2 ** attempt);
+      // Capped, because the walk is thirteen minutes of these and an
+      // uncapped doubling reaches half an hour on the last attempt. Nine
+      // tries at this shape is about a minute of retrying, three full passes
+      // over the endpoint list.
+      //
+      // lgrNotFound is in scope for this deliberately. It reads as permanent
+      // and is not: a walk pinned to one ledger got it eight minutes in, from
+      // all three endpoints, on a ledger every one of them served correctly
+      // when probed directly a minute later. It is a Clio instance mid-reload
+      // behind a load balancer, and the only wrong response to it is to give
+      // up on a walk that is two thirds done.
+      await sleep(Math.min(8_000, 400 * 2 ** attempt));
     }
   }
   throw lastErr ?? new Error(`xrpl ${method} failed`);
