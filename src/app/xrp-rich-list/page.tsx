@@ -367,6 +367,10 @@ export default function XrpRichListPage() {
       a: `Yes, and it is also written as XRP richlist in one word. The XRP Ledger is public, so this page reads all ${count(data.accounts)} funded accounts from ledger ${count(data.ledgerIndex)}, closed ${snapStamp}, and ranks them by the XRP each one controls. How the walk and its histogram work, including the ${data.method.thresholdRelativeErrorPct}% threshold resolution that applied on ${snapDate}, is set out in the method section further down this page.`,
     },
     {
+      q: "How often is this XRP rich list updated?",
+      a: `Four times a day. The figures on this page come from ledger ${count(data.ledgerIndex)}, which closed ${snapStamp}, and the next walk replaces every number here with a reading from a later ledger. Nothing is averaged or carried over between runs: each update is one pass over every account in a single validated ledger, so the page always describes a state that existed rather than a blend of several.`,
+    },
+    {
       q: "How many XRP do you need to be in the top 1%?",
       a: t1
         ? `A balance of ${xrpAmount(t1.minXrp)} XRP put an account in the top 1% of funded XRP Ledger accounts as of ${snapDate}. That tier held ${pctLabel(t1.pctOfXrp)} of all XRP in funded accounts as of ${snapDate}.`
@@ -730,10 +734,12 @@ export default function XrpRichListPage() {
                 <AssetIcon asset="XRP" size={16} decorative />
                 Calculator
               </span>
+              {/* One element, no <br>. The break split the heading in two
+                  for anything that strips tags, which is how it came out of an
+                  extractor as "## The XRP" followed by "## Rich List
+                  Calculator". */}
               <h2 id="calculator-title" className="rl-calc-title">
-                The XRP{" "}
-                <br />
-                Rich List Calculator
+                XRP Rich List Calculator
               </h2>
               <p className="rl-calc-pitch-sub">
                 Enter your XRP balance to see where you rank on the rich list.
@@ -959,7 +965,8 @@ export default function XrpRichListPage() {
         </div>
 
         <p className="rl-note">
-          The chart draws one bar per balance band, and the figure above a bar
+          The XRP rich list chart above draws one bar per balance band, and the
+          figure above a bar
           is how many funded XRP Ledger accounts held an amount inside that
           band as of {snapDate}. All {count(data.accounts)} funded accounts sit
           in exactly one band each as of {snapDate}.
