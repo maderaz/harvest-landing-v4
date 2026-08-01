@@ -48,6 +48,14 @@ import "../_styles/rich-list.css";
 
 const PAGE_URL = `${SITE_URL}/xrp-rich-list`;
 
+// First publication, fixed. It was wired to the ledger close alongside
+// dateModified, so the two were always identical and the page looked freshly
+// published on every snapshot. The gap between those fields is how a crawler
+// tells a maintained page from a republished one, and a page that always looks
+// brand new never accumulates that history. This is the route's first commit
+// and it does not move again.
+const PUBLISHED_ISO = "2026-07-31T00:00:00.000Z";
+
 // Locked by the build spec. No live figures: threshold values move with the
 // distribution and a title that disagrees with the page after a rebuild is
 // worse than a title with no number. Percentage tier names are fixed labels
@@ -60,23 +68,22 @@ const DESCRIPTION =
   "Live XRP rich list calculator and holder distribution. See the top 1%, 10% and 25% thresholds and find where your balance ranks, read from the XRP Ledger.";
 
 export async function generateMetadata(): Promise<Metadata> {
-  // The ledger close, not the build time. An article whose modified time moves
-  // on every deploy teaches a crawler that the timestamp means nothing.
-  const modified = loadRichList()?.ledgerCloseIso;
   return {
     title: { absolute: `${TITLE} | ${SITE_NAME}` },
     description: DESCRIPTION,
     alternates: { canonical: PAGE_URL },
     openGraph: {
-      // article rather than website: the page carries a dateline and its whole
-      // value is that the figures are current, so the freshness fields are the
-      // ones worth filling in.
-      type: "article",
+      // website, not article. This page is a tool, and on this SERP the tools
+      // take the traffic while the high-authority articles above them take
+      // none, so there is no reason to signal being an article. Freshness
+      // moves to where it belongs and is better expressed anyway:
+      // datePublished and dateModified on the WebPage and Dataset nodes, plus
+      // a visible line above the fold.
+      type: "website",
       url: PAGE_URL,
       title: TITLE,
       description: DESCRIPTION,
       siteName: SITE_NAME,
-      ...(modified ? { modifiedTime: modified, publishedTime: modified } : {}),
     },
     twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
   };
@@ -245,7 +252,7 @@ export default function XrpRichListPage() {
   const faqs = [
     {
       q: "Is there an XRP rich list?",
-      a: `Yes. The XRP Ledger is public, so every account balance can be read directly from it. This page reads all ${count(data.accounts)} funded accounts from ledger ${count(data.ledgerIndex)}, closed ${snapStamp}, and ranks them.`,
+      a: `Yes, and it is also written as XRP richlist in one word. The XRP Ledger is public, so every account balance can be read directly from it. This page reads all ${count(data.accounts)} funded accounts from ledger ${count(data.ledgerIndex)}, closed ${snapStamp}, and ranks them.`,
     },
     {
       q: "How many XRP do you need to be in the top 1%?",
@@ -284,6 +291,22 @@ export default function XrpRichListPage() {
     {
       q: "Does holding more XRP change what a balance can do onchain?",
       a: `A larger balance does not change the rules of the ledger, and the XRP Ledger has no native staking and pays no protocol reward for holding. Rates on wrapped and staked XRP are tracked separately in the XRP yield ranking.`,
+    },
+    {
+      q: "What is XRP's circulating supply?",
+      a: data.totalSupplyXrp
+        ? `${count(data.totalSupplyXrp)} XRP existed on the XRP Ledger as of ${snapDate}, read from the ledger's own total supply field rather than from a market tracker.${
+            data.escrowedXrp != null
+              ? ` Market listings usually quote a circulating supply that excludes XRP locked in onchain escrow, which was ${count(data.escrowedXrp)} XRP on that date, leaving ${count(data.totalSupplyXrp - data.escrowedXrp)} XRP circulating under that definition as of ${snapDate}.`
+              : ""
+          }`
+        : "",
+    },
+    {
+      q: "How much XRP has been burned?",
+      a: data.totalSupplyXrp
+        ? `${count(1e11 - data.totalSupplyXrp)} XRP had been destroyed by transaction fees as of ${snapDate}, measured as the gap between the 100,000,000,000 XRP created at launch and the ${count(data.totalSupplyXrp)} XRP the ledger reported on that date. Every XRP Ledger transaction destroys a small fee and no mechanism creates new XRP, so the total only falls. That is the amount gone since launch rather than a burn rate: a rate needs two measurements at different times, and this page reads one ledger.`
+        : "",
     },
     {
       // "XRP whale" is asked constantly and the word appeared nowhere on a
@@ -380,6 +403,7 @@ export default function XrpRichListPage() {
               name: "XRP Rich List",
               url: PAGE_URL,
               description: DESCRIPTION,
+              datePublished: PUBLISHED_ISO,
               dateModified: snap,
             }),
           ),
@@ -426,7 +450,10 @@ export default function XrpRichListPage() {
           the fold without making them read a paragraph to reach them. */}
       <section className="rl-intro">
         <h1 className="uni-home-h1 rl-h1">XRP Rich List &amp; Calculator</h1>
-        <p className="rl-dateline">Updated {snapStamp}</p>
+        <p className="rl-dateline">
+          Live from the XRP Ledger, refreshed four times a day. Latest
+          snapshot: {snapStamp}.
+        </p>
         {/* Featured image. Static import, so Next emits the intrinsic size and
             the slot reserves its own height before the file loads. `priority`
             because it is the largest element above the fold and is what LCP
@@ -552,6 +579,7 @@ export default function XrpRichListPage() {
           <a href="#calculator">Calculator</a>
           <a href="#top-accounts">Top {count(ranked)}</a>
           <a href="#thresholds">Thresholds</a>
+          <a href="#supply">Supply</a>
           <a href="#what-it-shows">What it shows</a>
           {yc ? <a href="#working-vs-idle">Working or idle</a> : null}
           <a href="#faq">Questions</a>
@@ -568,7 +596,7 @@ export default function XrpRichListPage() {
       {/* ------------------------------------------------ top accounts */}
       <section className="uni-home-content rl-section" aria-labelledby="top-accounts">
         <p className="rp-eyebrow">Largest accounts</p>
-        <h2 id="top-accounts">Top {count(ranked)} XRP wallets</h2>
+        <h2 id="top-accounts">XRP top holders: the {count(ranked)} largest wallets</h2>
         <p className="rp-lead">
           The {count(ranked)} largest funded XRP Ledger accounts as of{" "}
           {snapDate}, read from ledger {count(data.ledgerIndex)} and ranked on
@@ -711,7 +739,7 @@ export default function XrpRichListPage() {
           <div className="rl-chart-card-head">
             <div>
               <h3 className="rl-chart-card-title">
-                Funded accounts by balance band
+                XRP rich list chart: funded accounts by balance band
               </h3>
               <p className="rl-chart-card-desc">
                 All {count(data.accounts)} funded XRP Ledger accounts as of{" "}
@@ -1013,6 +1041,116 @@ export default function XrpRichListPage() {
           ) : null}
 
           <p className="rl-note">{data.concentration.basis}</p>
+        </section>
+      ) : null}
+
+      {/* ----------------------------------------------------- supply */}
+      {/* The denominator. Every share on this page is a fraction of the XRP
+          that exists, and until now the page printed the numerators and never
+          named the denominator in the words people use for it. The ledger's
+          own total_coins field is read on the same walk, so this is a
+          first-party figure rather than one quoted from a market tracker. */}
+      {data.totalSupplyXrp ? (
+        <section className="uni-home-content rl-section" aria-labelledby="supply">
+          <p className="rp-eyebrow">The denominator</p>
+          <h2 id="supply">XRP supply: circulating, escrowed and burned</h2>
+          <p className="rp-lead">
+            {count(data.totalSupplyXrp)} XRP existed on the XRP Ledger as of{" "}
+            {snapDate}, read from the ledger&rsquo;s own total supply field at
+            ledger {count(data.ledgerIndex)} rather than from a market tracker.
+          </p>
+          <p className="rl-section-intro">
+            Market listings usually quote a circulating supply that leaves out
+            the XRP locked in onchain escrow, because escrowed XRP cannot be
+            sold until it is released. Both figures are below, along with the
+            escrow they differ by, so the number a reader arrives with can be
+            matched to a definition rather than guessed at.
+          </p>
+
+          <div className="rl-dtable-wrap" data-nosnippet="">
+            <table className="rl-dtable">
+              <caption className="rl-dtable-cap">
+                XRP supply on the XRP Ledger, as of {snapDate}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Measure</th>
+                  <th scope="col">XRP</th>
+                  <th scope="col">Share of total</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Total supply on the ledger</th>
+                  <td data-label="XRP">{count(data.totalSupplyXrp)}</td>
+                  <td data-label="Share of total">100%</td>
+                </tr>
+                {data.escrowedXrp != null ? (
+                  <tr>
+                    <th scope="row">Locked in onchain escrow</th>
+                    <td data-label="XRP">{count(data.escrowedXrp)}</td>
+                    <td data-label="Share of total">
+                      {share2((data.escrowedXrp / data.totalSupplyXrp) * 100)}
+                    </td>
+                  </tr>
+                ) : null}
+                {data.escrowedXrp != null ? (
+                  <tr>
+                    <th scope="row">Circulating, escrow excluded</th>
+                    <td data-label="XRP">
+                      {count(data.totalSupplyXrp - data.escrowedXrp)}
+                    </td>
+                    <td data-label="Share of total">
+                      {share2(
+                        ((data.totalSupplyXrp - data.escrowedXrp) /
+                          data.totalSupplyXrp) *
+                          100,
+                      )}
+                    </td>
+                  </tr>
+                ) : null}
+                <tr>
+                  <th scope="row">Destroyed by fees since launch</th>
+                  <td data-label="XRP">{count(1e11 - data.totalSupplyXrp)}</td>
+                  <td data-label="Share of total">
+                    {share2(((1e11 - data.totalSupplyXrp) / 1e11) * 100)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p className="rl-note">
+            XRP was created once, at launch, with 100,000,000,000 units and no
+            way to make more. Every transaction destroys a small fee, so the
+            total only falls, which is why the total on the ledger as of{" "}
+            {snapDate} is {count(1e11 - data.totalSupplyXrp)} XRP below the
+            amount that was created.
+          </p>
+          <p className="rl-note">
+            That figure is the total destroyed since launch and not a rate. A
+            burn rate needs two measurements taken at different times, and this
+            page reads one ledger, so it can state the amount gone and not how
+            fast it is going.
+          </p>
+          {data.escrowAccounts != null && data.escrowObjects != null ? (
+            <p className="rl-note">
+              The escrowed XRP sat in {count(data.escrowObjects)} escrow objects
+              held by {count(data.escrowAccounts)} accounts as of {snapDate},
+              each with its own release date set onchain.
+            </p>
+          ) : null}
+          {data.supplyReconciliation ? (
+            <p className="rl-note">
+              Summing every account balance read in the walk gives{" "}
+              {count(data.supplyReconciliation.walkedXrp)} XRP against the
+              ledger&rsquo;s own total of{" "}
+              {count(data.supplyReconciliation.ledgerTotalCoinsXrp)} XRP as of{" "}
+              {snapDate}, a gap of{" "}
+              {data.supplyReconciliation.differencePct.toFixed(4)}% that comes
+              from XRP held in ledger objects other than accounts.
+            </p>
+          ) : null}
         </section>
       ) : null}
 
