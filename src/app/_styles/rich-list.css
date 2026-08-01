@@ -79,22 +79,35 @@
    overhang it, so on this page it must not. They are capped against the
    viewport, so nothing can cause a horizontal scrollbar. */
 /* ---- palette ------------------------------------------------------------
-   report.css flips --rp-heading, --rp-body and --rp-link to near-white under
-   prefers-color-scheme: dark, and home.css does the same to --uni-ink. This
-   page pins its surfaces light: the calculator and the header image are gold,
-   the cards and the input are white, the table frames are white. So under a
-   dark system preference it was painting #f1f2f7 headings and #eef0f6 links
-   onto white, which is what "the links are almost white" is.
+   This page used to pin itself light in both directions, which fixed one bug
+   and created another: report.css and home.css flip their tokens to near-white
+   under a dark preference, and every surface here is light by construction, so
+   a dark-preference visitor was reading #f1f2f7 headings on white. Pinning
+   stopped that, and also made the site's own theme toggle do nothing here.
 
-   Both palettes are pinned here rather than half-converting the page. Every
-   surface on it is light by construction; the text has to be too. */
-.uni-home-test.rl-page,
-:root[data-theme="dark"] .uni-home-test.rl-page {
+   So it follows the house pattern instead, the one report.css already uses:
+   the media query is the pre-hydration default and [data-theme] is
+   authoritative in both directions. A blocking script in layout.tsx stamps
+   data-theme from the OS preference before first paint, so the attribute is
+   always present and the light override below always wins when it should.
+
+   The surfaces themselves are tokenised further down rather than hardcoded, so
+   the frames, cards and badges follow the theme instead of staying white. */
+.uni-home-test.rl-page {
+  --rl-surface: #ffffff;
+  --rl-surface-2: #f1f5f4;
+  --rl-badge-bg: #ffffff;
+  --rl-avatar-ring: #ffffff;
+}
+:root[data-theme="light"] .uni-home-test.rl-page {
   --rp-heading: #191717;
   --rp-body: #4b4944;
   --rp-link: #191717;
   --rp-link-underline: rgba(25, 23, 23, 0.32);
   --rp-eyebrow: #b07d10;
+  --rp-toc-top: #191717;
+  --rp-toc-sub: #4b4944;
+  --rp-toc-rail: rgba(10, 10, 17, 0.08);
   --uni-ink: #191717;
   --uni-ink-2: #262521;
   --uni-ink-3: #4b4944;
@@ -102,33 +115,58 @@
   --uni-bg: #ffffff;
   --uni-card: #f1f5f4;
   --uni-card-2: #ffffff;
-  /* The jump nav reads its own token rather than --rp-link, so pinning the
-     link colour left it out. report.css sets --rp-toc-top to #4f4f57 in
-     light and flips it to #c3c1bb under a dark system preference, and this
-     page's surfaces are white either way, so on a phone set to dark the
-     quick links were near-white on white. Near-black here, like every other
-     link on the page. */
-  --rp-toc-top: #191717;
-  --rp-toc-sub: #4b4944;
-  --rp-toc-rail: rgba(10, 10, 17, 0.08);
+  --rl-surface: #ffffff;
+  --rl-surface-2: #f1f5f4;
+  --rl-badge-bg: #ffffff;
+  --rl-avatar-ring: #ffffff;
+}
+/* Dark. Warm rather than blue-grey, to sit under the gold the calculator and
+   the header image bring with them. */
+:root[data-theme="dark"] .uni-home-test.rl-page,
+:root[data-theme="dark"] .uni-home-test.rl-page.rp-page {
+  --rp-heading: #f4f2ee;
+  --rp-body: #c3c0b8;
+  --rp-link: #f4f2ee;
+  --rp-link-underline: rgba(244, 242, 238, 0.34);
+  --rp-eyebrow: #ffb936;
+  --rp-toc-top: #f4f2ee;
+  --rp-toc-sub: #c3c0b8;
+  --rp-toc-rail: rgba(255, 255, 255, 0.1);
+  --uni-ink: #f4f2ee;
+  --uni-ink-2: #e2dfd8;
+  --uni-ink-3: #c3c0b8;
+  --uni-line: #35332f;
+  --uni-bg: #131211;
+  --uni-card: #1c1a18;
+  --uni-card-2: #1c1a18;
+  --rl-hair: #35332f;
+  --rl-surface: #1a1816;
+  --rl-surface-2: #221f1c;
+  --rl-badge-bg: #201d1a;
+  --rl-avatar-ring: #201d1a;
 }
 @media (prefers-color-scheme: dark) {
   .uni-home-test.rl-page {
-    --rp-heading: #191717;
-    --rp-body: #4b4944;
-    --rp-link: #191717;
-    --rp-link-underline: rgba(25, 23, 23, 0.32);
-    --rp-eyebrow: #b07d10;
-    --uni-ink: #191717;
-    --uni-ink-2: #262521;
-    --uni-ink-3: #4b4944;
-    --uni-line: #dddee0;
-    --uni-bg: #ffffff;
-    --uni-card: #f1f5f4;
-    --uni-card-2: #ffffff;
-    --rp-toc-top: #191717;
-    --rp-toc-sub: #4b4944;
-    --rp-toc-rail: rgba(10, 10, 17, 0.08);
+    --rp-heading: #f4f2ee;
+    --rp-body: #c3c0b8;
+    --rp-link: #f4f2ee;
+    --rp-link-underline: rgba(244, 242, 238, 0.34);
+    --rp-eyebrow: #ffb936;
+    --rp-toc-top: #f4f2ee;
+    --rp-toc-sub: #c3c0b8;
+    --rp-toc-rail: rgba(255, 255, 255, 0.1);
+    --uni-ink: #f4f2ee;
+    --uni-ink-2: #e2dfd8;
+    --uni-ink-3: #c3c0b8;
+    --uni-line: #35332f;
+    --uni-bg: #131211;
+    --uni-card: #1c1a18;
+    --uni-card-2: #1c1a18;
+    --rl-hair: #35332f;
+    --rl-surface: #1a1816;
+    --rl-surface-2: #221f1c;
+    --rl-badge-bg: #201d1a;
+    --rl-avatar-ring: #201d1a;
   }
 }
 
@@ -1583,27 +1621,87 @@
    on the edge and the text, which is enough to tell them apart without the
    column turning into a colour chart. */
 .uni-home-test .rl-badge-exchange {
-  background: #fff;
+  background: var(--rl-badge-bg, #fff);
   border-color: #9cbbe6;
   color: #1d4e89;
 }
 .uni-home-test .rl-badge-company {
-  background: #fff;
+  background: var(--rl-badge-bg, #fff);
   border-color: #e0b458;
   color: #7a5205;
 }
 .uni-home-test .rl-badge-individual {
-  background: #fff;
+  background: var(--rl-badge-bg, #fff);
   border-color: #83c7a0;
   color: #1c6b3f;
 }
 .uni-home-test .rl-badge-protocol,
 .uni-home-test .rl-badge-domain,
 .uni-home-test .rl-badge-unknown {
-  background: #fff;
+  background: var(--rl-badge-bg, #fff);
   border-color: #bcbec3;
   color: var(--uni-ink);
 }
+
+/* The calculator's surface is gold in both themes, so its contents must stay
+   dark ink in both. Without this the dark palette handed it near-white text on
+   a gold card, which measured 2.4:1. Redefining the ink tokens on the card
+   itself covers everything inside it, including anything added later. */
+:root[data-theme="dark"] .uni-home-test .rl-calc,
+:root[data-theme="dark"] .uni-home-test .rl-feature-card .rl-eyebrow-badge {
+  --uni-ink: #191717;
+  --uni-ink-2: #262521;
+  --uni-ink-3: #4b4944;
+  /* The controls inside read --uni-bg: the field paints with it and the
+     button uses it for its label against an ink fill. Left on the page's dark
+     value it gave a black field on a gold card and a button whose text was
+     the same colour as its own background. */
+  --uni-bg: #ffffff;
+  --uni-card: #ffffff;
+  --uni-card-2: #ffffff;
+  --rl-dim: color-mix(in srgb, #191717 82%, transparent);
+  color: #191717;
+}
+@media (prefers-color-scheme: dark) {
+  .uni-home-test .rl-calc,
+  .uni-home-test .rl-feature-card .rl-eyebrow-badge {
+    --uni-ink: #191717;
+    --uni-ink-2: #262521;
+    --uni-ink-3: #4b4944;
+    --uni-bg: #ffffff;
+    --uni-card: #ffffff;
+    --uni-card-2: #ffffff;
+    --rl-dim: color-mix(in srgb, #191717 82%, transparent);
+    color: #191717;
+  }
+}
+
+/* Badge text in dark. The light hues are mid-tone by design, which is right on
+   white and 2.4:1 on a dark pill, so each type gets a lifted version of its
+   own colour rather than all of them collapsing to one grey. */
+:root[data-theme="dark"] .uni-home-test .rl-badge-exchange { color: #9dc3f2; border-color: #3a5a80; }
+:root[data-theme="dark"] .uni-home-test .rl-badge-company { color: #f0c069; border-color: #7a5a1c; }
+:root[data-theme="dark"] .uni-home-test .rl-badge-individual { color: #8fd7ae; border-color: #2f6a48; }
+:root[data-theme="dark"] .uni-home-test .rl-badge-protocol,
+:root[data-theme="dark"] .uni-home-test .rl-badge-domain,
+:root[data-theme="dark"] .uni-home-test .rl-badge-unknown { color: var(--uni-ink); border-color: #4a4742; }
+@media (prefers-color-scheme: dark) {
+  .uni-home-test .rl-badge-exchange { color: #9dc3f2; border-color: #3a5a80; }
+  .uni-home-test .rl-badge-company { color: #f0c069; border-color: #7a5a1c; }
+  .uni-home-test .rl-badge-individual { color: #8fd7ae; border-color: #2f6a48; }
+  .uni-home-test .rl-badge-protocol,
+  .uni-home-test .rl-badge-domain,
+  .uni-home-test .rl-badge-unknown { color: var(--uni-ink); border-color: #4a4742; }
+}
+/* …and back to the light hues whenever the toggle says light, which has to
+   outrank the media query above. */
+:root[data-theme="light"] .uni-home-test .rl-badge-exchange { color: #1d4e89; border-color: #9cbbe6; }
+:root[data-theme="light"] .uni-home-test .rl-badge-company { color: #7a5205; border-color: #e0b458; }
+:root[data-theme="light"] .uni-home-test .rl-badge-individual { color: #1c6b3f; border-color: #83c7a0; }
+:root[data-theme="light"] .uni-home-test .rl-badge-protocol,
+:root[data-theme="light"] .uni-home-test .rl-badge-domain,
+:root[data-theme="light"] .uni-home-test .rl-badge-unknown { color: var(--uni-ink); border-color: #bcbec3; }
+:root[data-theme="light"] .uni-home-test .rl-calc { color: #191717; }
 
 /* ---- overlapping marks beside a breakdown group ------------------------
    row-reverse so the first mark in the list paints on top without giving
@@ -1626,9 +1724,9 @@
   height: 16px;
   border-radius: 50%;
   object-fit: cover;
-  background: var(--uni-bg, #fff);
+  background: var(--rl-avatar-ring, #fff);
   /* The ring is what separates one mark from the one it covers. */
-  box-shadow: 0 0 0 1.5px var(--uni-bg, #fff);
+  box-shadow: 0 0 0 1.5px var(--rl-avatar-ring, #fff);
 }
 /* Every mark except the last in the DOM, which is the leftmost on screen,
    slides under its neighbour by about a fifth of its width. */
@@ -1666,9 +1764,10 @@
      rather than a fit: letterboxing a logo inside a 15px disc leaves it
      smaller than the text beside it. */
   object-fit: cover;
-  /* A white logo on a white pill would otherwise have no edge of its own. */
-  box-shadow: 0 0 0 1px rgba(25, 23, 23, 0.08);
-  background: #fff;
+  /* A logo the same colour as the pill behind it would otherwise have no
+     edge of its own, in either theme. */
+  box-shadow: 0 0 0 1px var(--rl-hair, rgba(25, 23, 23, 0.08));
+  background: var(--rl-avatar-ring, #fff);
 }
 /* The name has to keep truncating: it is the cell that decides whether all
    hundred rows stay the same height. */
