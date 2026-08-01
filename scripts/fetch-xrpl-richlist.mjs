@@ -74,7 +74,7 @@ function saveCheckpoint(state) {
       sumXrp: state.dist.sumXrp,
       counts: Array.from(state.dist.counts),
       exact: [...state.dist.exact],
-      top: state.dist.topAccounts(),
+      top: state.dist.topBuffer(),
     }),
   );
 }

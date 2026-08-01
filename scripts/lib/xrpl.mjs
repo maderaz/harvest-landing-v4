@@ -54,7 +54,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
  * treated as retryable. A `marker`-bearing walk must never silently skip a
  * page, so this throws rather than returning partial data.
  */
-export async function xrplRpc(method, params = {}, { tries = 4, timeoutMs = 180_000 } = {}) {
+export async function xrplRpc(method, params = {}, { tries = 9, timeoutMs = 180_000 } = {}) {
   let lastErr;
   for (let attempt = 0; attempt < tries; attempt++) {
     const url = XRPL_ENDPOINTS[attempt % XRPL_ENDPOINTS.length];
@@ -74,15 +74,49 @@ export async function xrplRpc(method, params = {}, { tries = 4, timeoutMs = 180_
       return res;
     } catch (e) {
       lastErr = e;
-      await sleep(400 * 2 ** attempt);
+      // Capped, because the walk is thirteen minutes of these and an
+      // uncapped doubling reaches half an hour on the last attempt. Nine
+      // tries at this shape is about a minute of retrying, three full passes
+      // over the endpoint list.
+      //
+      // lgrNotFound is in scope for this deliberately. It reads as permanent
+      // and is not: a walk pinned to one ledger got it eight minutes in, from
+      // all three endpoints, on a ledger every one of them served correctly
+      // when probed directly a minute later. It is a Clio instance mid-reload
+      // behind a load balancer, and the only wrong response to it is to give
+      // up on a walk that is two thirds done.
+      await sleep(Math.min(8_000, 400 * 2 ** attempt));
     }
   }
   throw lastErr ?? new Error(`xrpl ${method} failed`);
 }
 
-/** The newest ledger the cluster considers validated, with its close time. */
+// How far behind the validated tip to pin a walk.
+//
+// xrpl.ws advertises `complete_ledgers: 32570-<tip>` and then answers
+// lgrNotFound for that same tip: it fronts a pool of Clio instances and the
+// advertised range runs ahead of what the instance answering any one request
+// actually serves. A walk pinned to the tip therefore died partway through
+// with lgrNotFound, after the first pages had already succeeded against a
+// node that did have it.
+//
+// Fifty ledgers is roughly three minutes. Measured against all three
+// endpoints: the tip failed on xrpl.ws and fifty back succeeded everywhere.
+// A daily snapshot loses nothing by being three minutes older, and the close
+// time this reports is the pinned ledger's own, so the page still states
+// exactly what it read.
+const TIP_LOOKBACK = 50;
+
+/**
+ * A recent validated ledger, with its close time.
+ *
+ * Deliberately not the newest one. See TIP_LOOKBACK.
+ */
 export async function validatedLedger() {
-  const res = await xrplRpc("ledger", { ledger_index: "validated", accounts: false, transactions: false });
+  const tip = await xrplRpc("ledger", { ledger_index: "validated", accounts: false, transactions: false });
+  const tipIndex = Number(tip.ledger_index ?? tip.ledger?.ledger_index);
+  const target = Number.isFinite(tipIndex) ? tipIndex - TIP_LOOKBACK : "validated";
+  const res = await xrplRpc("ledger", { ledger_index: target, accounts: false, transactions: false });
   const l = res.ledger ?? {};
   // close_time is seconds since the Ripple epoch (2000-01-01T00:00:00Z), not
   // the Unix epoch. Getting this wrong dates every snapshot 30 years early.

@@ -181,9 +181,30 @@ export class Distribution {
     });
   }
 
+  /**
+   * The ranked accounts, deepest first.
+   *
+   * `rank` is written after the spread, not before it. A resumed run restores
+   * `top` from a checkpoint whose entries were themselves produced by this
+   * method, so they arrive carrying a rank from the partial walk. Spread last,
+   * that stale number overwrote the positional one and the shipped snapshot
+   * had two rank 1s and rank 8 above rank 7. Position in the sorted array is
+   * the only thing that defines a rank, so it wins here unconditionally.
+   */
   topAccounts() {
     this.#trimTop();
-    return this.top.slice(0, this.topN).map((a, i) => ({ rank: i + 1, ...a, xrp: Math.round(a.xrp) }));
+    return this.top.slice(0, this.topN).map((a, i) => ({ ...a, rank: i + 1, xrp: Math.round(a.xrp) }));
+  }
+
+  /**
+   * The raw top buffer, for a checkpoint to persist. Derived fields do not go
+   * into a checkpoint: a rank read off a partial walk is wrong by definition,
+   * and rounding the balances on the way in loses precision the final sort
+   * still needs.
+   */
+  topBuffer() {
+    this.#trimTop();
+    return this.top.map((a) => ({ ...a }));
   }
 
   exactCounts() {
