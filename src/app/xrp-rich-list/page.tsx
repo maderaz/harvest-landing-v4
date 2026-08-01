@@ -60,19 +60,22 @@ const PAGE_URL = `${SITE_URL}/xrp-rich-list`;
 const PUBLISHED_ISO = "2026-07-31T00:00:00.000Z";
 
 // Chris Larsen's total net worth, which this page cannot read and therefore
-// cites. Bloomberg serves a CAPTCHA to automated fetches, so it cannot be
-// pulled at build time either; it is entered by hand with the date it was
-// read on and the profile it came from, and the section renders the comparison
-// only when `usd` is set. An undated net-worth figure with no source is the
-// one kind of claim the method on this page forbids, so leaving it null is the
-// correct state rather than a gap to paper over.
+// cites. Forbes and Bloomberg both serve a CAPTCHA to automated fetches, so it
+// cannot be pulled at build time; it is entered by hand with the date it was
+// read on and the profile it came from. Forbes calls this a real-time figure,
+// so it moves with the market and the read date is the load-bearing part
+// rather than a formality.
+//
+// The section renders the comparison only when `usd` is set. An undated
+// net-worth figure with no source is the one kind of claim the method on this
+// page forbids, so null is a correct state rather than a gap.
 const LARSEN_NET_WORTH: { usd: number | null; readOn: string } = {
-  usd: null,
-  readOn: "",
+  usd: 11_500_000_000,
+  readOn: "August 1, 2026",
 };
 const LARSEN_SOURCE = {
-  name: "the Bloomberg Billionaires Index",
-  url: "https://www.bloomberg.com/billionaires/profiles/christian-a-larsen/",
+  name: "Forbes",
+  url: "https://www.forbes.com/profile/chris-larsen/",
 };
 
 // Locked by the build spec. No live figures: threshold values move with the
@@ -640,6 +643,14 @@ export default function XrpRichListPage() {
           sizes="100vw"
           priority
         />
+        {/* Image credit. The header is a composite of portraits this page did
+            not take, and a page that insists on a source for every name owes
+            one for every face too. Kept to a caption because it is provenance
+            rather than something a reader came for. */}
+        <p className="rl-figure-credit">
+          Header image: portrait of Chris Larsen courtesy of RippleWorks;
+          portrait of Brad Garlinghouse and the remaining portraits from X.
+        </p>
 
         <h2 className="rl-summary-h">Summary</h2>
         <ul className="rl-keyfind">
@@ -1272,17 +1283,22 @@ export default function XrpRichListPage() {
           {LARSEN_NET_WORTH.usd ? (
             <p className="rl-section-intro">
               {LARSEN_SOURCE.name} put his total net worth at{" "}
-              ${count(LARSEN_NET_WORTH.usd)} as of {LARSEN_NET_WORTH.readOn},
-              which puts the XRP above at{" "}
-              {pctLabel(
-                ((larsen.xrp * (data.xrpUsd ?? 0)) / LARSEN_NET_WORTH.usd) * 100,
-              )}{" "}
-              of it. That total is cited rather than measured: this page reads
-              the ledger and nothing else, so everything outside it comes from{" "}
+              <strong>${count(LARSEN_NET_WORTH.usd)}</strong> as of{" "}
+              {LARSEN_NET_WORTH.readOn}, which puts the XRP above at{" "}
+              <strong>
+                {pctLabel(
+                  ((larsen.xrp * (data.xrpUsd ?? 0)) / LARSEN_NET_WORTH.usd) *
+                    100,
+                )}
+              </strong>{" "}
+              of it as of {snapDate}. That total is cited rather than measured.
+              This page reads the XRP Ledger and nothing else, so the holding
+              is ours and the net worth belongs to{" "}
               <a href={LARSEN_SOURCE.url} rel="nofollow noopener">
-                the source named here
+                {LARSEN_SOURCE.name}
               </a>
-              .
+              , who describe it as a real-time figure that moves with the
+              market.
             </p>
           ) : (
             <p className="rl-note">

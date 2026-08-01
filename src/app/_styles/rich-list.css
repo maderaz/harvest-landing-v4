@@ -274,6 +274,17 @@
 /* The featured image. Aspect ratio matches the file's own 1200x671 so the
    reserved box is exactly what the image fills, which means no letterboxing
    and no crop, and nothing under it moves when the file finishes loading. */
+/* Provenance for the header composite. Smaller and quieter than a note: it
+   is there to be findable rather than read, and it must not compete with the
+   summary directly under it. */
+.uni-home-test.rp-page.rl-page .rl-figure-credit {
+  margin: 8px 0 0;
+  max-width: none;
+  font-size: 11.5px;
+  line-height: 16px;
+  color: color-mix(in srgb, var(--uni-ink) 52%, transparent);
+}
+
 .uni-home-test .rl-figure {
   display: block;
   width: 100%;
