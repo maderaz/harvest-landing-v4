@@ -74,6 +74,11 @@ const SECTIONS: Section[] = [
         href: "/control-room/report-clicks",
         icon: "click",
       },
+      {
+        label: "Rich List Calculator",
+        href: "/control-room/calculator",
+        icon: "sliders",
+      },
     ],
   },
   {
