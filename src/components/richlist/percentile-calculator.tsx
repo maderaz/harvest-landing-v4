@@ -19,6 +19,7 @@
 // they expect, and that surprise is what gets shared.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { trackCalculator, calculatorTier } from "@/lib/richlist-tracking";
 
 export interface LadderPoint {
   xrp: number;
@@ -141,13 +142,25 @@ export function PercentileCalculator({
     }
     timers.current.forEach(clearTimeout);
     timers.current = [];
+    trackCalculator({ event: "start" });
     setPhase("checking");
     setStage(0);
     const step = CHECK_MS / STAGES.length;
     for (let i = 1; i < STAGES.length; i++) {
       timers.current.push(setTimeout(() => setStage(i), step * i));
     }
-    timers.current.push(setTimeout(() => setPhase("done"), CHECK_MS));
+    // Fired with the result rather than on a timer of its own, so
+    // start -> result is a real completion rate and not two clocks that can
+    // disagree. `result` here is the value the panel is about to render.
+    timers.current.push(
+      setTimeout(() => {
+        setPhase("done");
+        trackCalculator({
+          event: "result",
+          tier: result ? calculatorTier(result.topPct) : null,
+        });
+      }, CHECK_MS),
+    );
   };
 
   return (
@@ -220,10 +233,16 @@ export function PercentileCalculator({
           />
           <rect x="3" y="7" width="10" height="7" rx="1.6" fill="currentColor" />
         </svg>
+        {/* The last clause used to read "and nothing you type is sent
+            anywhere". It is gone because the page now records that a check
+            ran and which percentile band it landed in. What is left is still
+            exactly true: the lookup is a binary search over a build-time
+            ladder and runs entirely in the browser, and the balance itself is
+            never part of any payload. */}
         <span>
           No wallet connection. No address. Just a number, and an approximation
-          is fine. The calculation runs in your browser against XRP Ledger data
-          and nothing you type is sent anywhere.
+          is fine. The calculation runs in your browser against XRP Ledger
+          data.
         </span>
       </p>
 
@@ -279,10 +298,30 @@ export function PercentileCalculator({
             {/* Two ways on from a result: the ranking the balance was measured
                 against, and the thing to do about it. */}
             <div className="rl-calc-cta">
-              <a className="rl-calc-cta-a" href="#top-accounts">
+              <a
+                className="rl-calc-cta-a"
+                href="#top-accounts"
+                onClick={() =>
+                  trackCalculator({
+                    event: "cta",
+                    cta: "top-accounts",
+                    targetUrl: "#top-accounts",
+                  })
+                }
+              >
                 View top {ranked}
               </a>
-              <a className="rl-calc-cta-b" href="#bridge">
+              <a
+                className="rl-calc-cta-b"
+                href="#bridge"
+                onClick={() =>
+                  trackCalculator({
+                    event: "cta",
+                    cta: "earn-on-xrp",
+                    targetUrl: "#bridge",
+                  })
+                }
+              >
                 Earn on XRP
               </a>
             </div>
