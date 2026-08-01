@@ -109,7 +109,17 @@ export function DistributionChart({
         aria-label={caption}
         preserveAspectRatio="xMidYMid meet"
       >
-        <title>Funded XRP Ledger accounts by balance band, {snapshotDate}</title>
+        {/* No <title>. React 19 treats it as document metadata and hoists
+            it out of the SVG, which left `<title></title>` sitting in the
+            markup: an empty title wins the accessible-name calculation over
+            aria-label, so the chart was announcing itself as nothing. It has
+            been shipping that way. The name comes from aria-label on the svg
+            and the detail from desc, and neither is hoisted.
+
+            With aria-hidden on every label, a screen reader gets one coherent
+            sentence rather than thirty-three numbers run together, and the
+            exact figures stay in the table below. */}
+        <desc>{caption}</desc>
         {/* Grid first, so the bars sit over it. Hairlines at low contrast,
             following the shadcn chart container, which strokes its cartesian
             grid at half the border colour. */}
@@ -124,7 +134,7 @@ export function DistributionChart({
                 y2={y + 0.5}
                 className="rl-chart-grid"
               />
-              <text
+              <text aria-hidden="true"
                 x={PAD_L - 8}
                 y={y + 4}
                 textAnchor="end"
@@ -149,7 +159,7 @@ export function DistributionChart({
                 rx={3}
                 className="rl-chart-bar"
               />
-              <text
+              <text aria-hidden="true"
                 x={x + barW / 2}
                 y={y - 5}
                 textAnchor="middle"
@@ -157,7 +167,7 @@ export function DistributionChart({
               >
                 {compact(b.accounts)}
               </text>
-              <text
+              <text aria-hidden="true"
                 x={x + barW / 2}
                 y={axisY + 20}
                 textAnchor="middle"
@@ -165,7 +175,7 @@ export function DistributionChart({
               >
                 {bandName(b)}
               </text>
-              <text
+              <text aria-hidden="true"
                 x={x + barW / 2}
                 y={axisY + 36}
                 textAnchor="middle"
@@ -186,10 +196,10 @@ export function DistributionChart({
         {/* Axis titles. Without them the two rows of numbers under each bar are
             unlabelled, and a reader has to guess whether "1-10" is a count, a
             rank or a balance. */}
-        <text x={W / 2} y={axisY + 64} textAnchor="middle" className="rl-chart-axis-title">
+        <text aria-hidden="true" x={W / 2} y={axisY + 64} textAnchor="middle" className="rl-chart-axis-title">
           XRP held in wallet
         </text>
-        <text x={W / 2} y={axisY + 79} textAnchor="middle" className="rl-chart-axis-sub">
+        <text aria-hidden="true" x={W / 2} y={axisY + 79} textAnchor="middle" className="rl-chart-axis-sub">
           second line under each band: its share of all funded accounts
         </text>
       </svg>
