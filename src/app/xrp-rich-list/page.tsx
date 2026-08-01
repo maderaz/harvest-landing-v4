@@ -955,6 +955,11 @@ export default function XrpRichListPage() {
             These are the four places that rate comes from.
           </p>
 
+          <Link className="rl-bridge-cta rl-bridge-cta-top" href="/report/xrp-yield-ranking">
+            Open the XRP yield report
+            <span aria-hidden="true">&rarr;</span>
+          </Link>
+
           {/* Plain bullets rather than a numbered rail. The rank implied an
               order these four do not have: a vault is not the second-best
               kind of venue, it is a different kind. */}

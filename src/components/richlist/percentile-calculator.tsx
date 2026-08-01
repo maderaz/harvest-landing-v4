@@ -152,6 +152,8 @@ export function PercentileCalculator({
 
   return (
     <div className="rl-calc" id="calculator">
+      <div className="rl-calc-panes">
+      <div className="rl-calc-in">
       {/* Framed as the instruction rather than as a name. The card is already
           inside a section headed "The XRP Rich List Calculator", so repeating
           the name here spent the most-read line saying nothing. The sub that
@@ -225,6 +227,18 @@ export function PercentileCalculator({
         </span>
       </p>
 
+      </div>
+
+      <div className="rl-calc-res">
+      {/* A resting line rather than an empty half. Desktop only: stacked, the
+          right pane sits under the button and a placeholder there is a gap
+          with words in it. */}
+      {phase === "idle" ? (
+        <p className="rl-calc-rest">
+          Your position on the rich list appears here once the check runs.
+        </p>
+      ) : null}
+
       {/* The live region stays mounted so a result is announced when it lands,
           but it renders nothing at idle and collapses to zero height, so there
           is no empty panel and no divider under the button until the check has
@@ -274,6 +288,8 @@ export function PercentileCalculator({
             </div>
           </>
         ) : null}
+      </div>
+      </div>
       </div>
     </div>
   );
