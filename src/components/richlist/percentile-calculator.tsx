@@ -19,6 +19,7 @@
 // they expect, and that surprise is what gets shared.
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AssetIcon } from "@/components/token-icons";
 import { trackCalculator, calculatorTier } from "@/lib/richlist-tracking";
 
 export interface LadderPoint {
@@ -197,7 +198,11 @@ export function PercentileCalculator({
           }}
           aria-describedby="rl-calc-privacy"
         />
+        {/* The mark sits with the unit rather than replacing it: "XRP" is
+            what tells a first-time visitor what the field wants, and a logo
+            alone would make them guess. */}
         <span className="rl-calc-unit" aria-hidden="true">
+          <AssetIcon asset="XRP" size={16} decorative />
           XRP
         </span>
       </div>
