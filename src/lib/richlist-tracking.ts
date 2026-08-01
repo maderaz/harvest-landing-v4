@@ -28,9 +28,16 @@
 // person, and is the only shape of that answer an operator can act on anyway.
 //
 // SCHEMA. Create before deploying, or PostgREST rejects every insert and the
-// events are silently lost:
+// events are silently lost.
 //
-//   create table richlist_calculator_events (
+// The policies are not optional. This project writes with the publishable key
+// (the `anon` role, INSERT-only) and reads in the control room with a
+// logged-in admin's JWT (`authenticated`) — see the note in lib/supabase.ts.
+// Leaving RLS off would make every row world-readable with the key that ships
+// in the page; enabling it without policies fails every insert, which looks
+// exactly like no traffic. Both halves below.
+//
+//   create table public.richlist_calculator_events (
 //     id           bigint generated always as identity primary key,
 //     created_at   timestamptz not null default now(),
 //     session_id   text,
@@ -48,6 +55,19 @@
 //     user_agent   text,
 //     is_bot       boolean
 //   );
+//
+//   alter table public.richlist_calculator_events enable row level security;
+//
+//   create policy "anon inserts calculator events"
+//     on public.richlist_calculator_events
+//     for insert to anon with check (true);
+//
+//   create policy "authenticated reads calculator events"
+//     on public.richlist_calculator_events
+//     for select to authenticated using (true);
+//
+//   create index on public.richlist_calculator_events (created_at desc);
+//   create index on public.richlist_calculator_events (event);
 //
 // Best-effort and consent-gated, exactly like the other two trackers: it never
 // blocks the interaction, no-ops on /control-room, and no-ops until the table
