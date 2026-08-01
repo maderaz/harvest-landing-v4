@@ -102,6 +102,15 @@
   --uni-bg: #ffffff;
   --uni-card: #f1f5f4;
   --uni-card-2: #ffffff;
+  /* The jump nav reads its own token rather than --rp-link, so pinning the
+     link colour left it out. report.css sets --rp-toc-top to #4f4f57 in
+     light and flips it to #c3c1bb under a dark system preference, and this
+     page's surfaces are white either way, so on a phone set to dark the
+     quick links were near-white on white. Near-black here, like every other
+     link on the page. */
+  --rp-toc-top: #191717;
+  --rp-toc-sub: #4b4944;
+  --rp-toc-rail: rgba(10, 10, 17, 0.08);
 }
 @media (prefers-color-scheme: dark) {
   .uni-home-test.rl-page {
@@ -117,6 +126,9 @@
     --uni-bg: #ffffff;
     --uni-card: #f1f5f4;
     --uni-card-2: #ffffff;
+    --rp-toc-top: #191717;
+    --rp-toc-sub: #4b4944;
+    --rp-toc-rail: rgba(10, 10, 17, 0.08);
   }
 }
 
