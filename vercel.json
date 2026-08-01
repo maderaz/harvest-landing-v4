@@ -4,20 +4,37 @@
   "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] && exit 1 || exit 0",
   "headers": [
     {
-      "comment": "Preview deploys must never be indexable. Every preview is served from a *.vercel.app host and production is served from the apex, so the host condition separates them without a build-time flag; `output: \"export\"` rules out middleware, and a blanket header here would noindex production too. Three AI-channel sessions have already arrived from a preview URL, which means they were reachable to something that crawls.",
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": ".*\\.vercel\\.app" }],
+      "has": [
+        {
+          "type": "host",
+          "value": ".*\\.vercel\\.app"
+        }
+      ],
       "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow, noarchive" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow, noarchive"
+        }
       ]
     },
     {
       "source": "/(.*)opengraph-image",
-      "headers": [{ "key": "Content-Type", "value": "image/png" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "image/png"
+        }
+      ]
     },
     {
       "source": "/(.*)twitter-image",
-      "headers": [{ "key": "Content-Type", "value": "image/png" }]
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "image/png"
+        }
+      ]
     }
   ]
 }

@@ -22,6 +22,47 @@ const ROOT = process.cwd();
 const PUBLIC_DIR = join(ROOT, "public");
 const CONSTANTS_FILE = join(ROOT, "src", "lib", "constants.ts");
 
+// ---------------------------------------------------------- vercel.json
+//
+// Indexing policy that cannot live in robots.txt, checked here because this
+// script already owns robots.txt and nothing else validates vercel.json.
+//
+// WHY THE HOST RULE EXISTS: preview deploys were indexable. Three sessions
+// from the AI channel arrived from a *.vercel.app URL, so something was
+// crawling them. Production is the apex and every preview is *.vercel.app,
+// so a `has` condition on host separates them; `output: "export"` rules out
+// middleware, and an unconditional header would have noindexed the live site.
+// That reasoning cannot sit in the file itself, because vercel.json is strict
+// JSON with no comments.
+//
+// WHY THIS CHECK EXISTS: a `comment` key was added to a header rule to hold
+// the paragraph above. `npm run build` does not read vercel.json, so it
+// passed locally and failed at deploy with "headers[0] should NOT have
+// additional property comment". Anything that only Vercel validates is worth
+// validating here, where the failure costs a second instead of a deploy.
+const VERCEL_HEADER_KEYS = new Set(["source", "has", "missing", "headers"]);
+
+function checkVercelJson() {
+  const f = join(ROOT, "vercel.json");
+  if (!existsSync(f)) return;
+  let doc;
+  try {
+    doc = JSON.parse(readFileSync(f, "utf-8"));
+  } catch (e) {
+    throw new Error(`vercel.json is not valid JSON: ${e.message}`);
+  }
+  for (const [i, rule] of (doc.headers ?? []).entries()) {
+    for (const k of Object.keys(rule)) {
+      if (!VERCEL_HEADER_KEYS.has(k)) {
+        throw new Error(
+          `vercel.json headers[${i}] has unsupported key "${k}". Vercel rejects the whole deploy for this. Allowed: ${[...VERCEL_HEADER_KEYS].join(", ")}.`,
+        );
+      }
+    }
+  }
+  console.error(`[seo-static] vercel.json ok (${(doc.headers ?? []).length} header rule(s))`);
+}
+
 // Single source of truth for the canonical origin: read SITE_URL straight
 // out of constants.ts so robots/llms never drift from canonical links,
 // sitemap and JSON-LD (and from any future www/non-www switch).
@@ -121,6 +162,7 @@ All Harvest yield data is licensed CC-BY-4.0 (https://creativecommons.org/licens
 - [Terms](${SITE_URL}/terms) · [Privacy](${SITE_URL}/privacy)
 `;
 
+checkVercelJson();
 writeFileSync(join(PUBLIC_DIR, "robots.txt"), robots, "utf-8");
 writeFileSync(join(PUBLIC_DIR, "llms.txt"), llms, "utf-8");
 
