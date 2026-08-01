@@ -7,7 +7,12 @@ import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { AssetIcon } from "@/components/token-icons";
 import richListHeader from "@/assets/icons/XRP Rich List Header.png";
-import { breadcrumbSchema, faqPageSchema, reportDatasetSchema } from "@/lib/jsonld";
+import {
+  breadcrumbSchema,
+  faqPageSchema,
+  reportDatasetSchema,
+  reportWebPageSchema,
+} from "@/lib/jsonld";
 import { PercentileCalculator } from "@/components/richlist/percentile-calculator";
 import { TopAccountsTable } from "@/components/richlist/top-accounts-table";
 import { StatCards } from "@/components/richlist/stat-cards";
@@ -48,22 +53,34 @@ const PAGE_URL = `${SITE_URL}/xrp-rich-list`;
 // worse than a title with no number. Percentage tier names are fixed labels
 // and are safe. No year anywhere in metadata, so nothing goes stale in January.
 const TITLE = "XRP Rich List: Top Holders and Your Rank";
+// "Updated hourly" used to close this line and was not true: the walk runs on
+// `20 */6 * * *`, four times a day. A cadence claim in a snippet is checkable
+// against the dateline on the page, so it has to match the cron.
 const DESCRIPTION =
-  "Live XRP rich list calculator and holder distribution. See the current top 1%, 10% and 25% thresholds and find where your balance ranks. Updated hourly.";
+  "Live XRP rich list calculator and holder distribution. See the top 1%, 10% and 25% thresholds and find where your balance ranks, read from the XRP Ledger.";
 
-export const metadata: Metadata = {
-  title: { absolute: `${TITLE} | ${SITE_NAME}` },
-  description: DESCRIPTION,
-  alternates: { canonical: PAGE_URL },
-  openGraph: {
-    type: "website",
-    url: PAGE_URL,
-    title: TITLE,
+export async function generateMetadata(): Promise<Metadata> {
+  // The ledger close, not the build time. An article whose modified time moves
+  // on every deploy teaches a crawler that the timestamp means nothing.
+  const modified = loadRichList()?.ledgerCloseIso;
+  return {
+    title: { absolute: `${TITLE} | ${SITE_NAME}` },
     description: DESCRIPTION,
-    siteName: SITE_NAME,
-  },
-  twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
-};
+    alternates: { canonical: PAGE_URL },
+    openGraph: {
+      // article rather than website: the page carries a dateline and its whole
+      // value is that the figures are current, so the freshness fields are the
+      // ones worth filling in.
+      type: "article",
+      url: PAGE_URL,
+      title: TITLE,
+      description: DESCRIPTION,
+      siteName: SITE_NAME,
+      ...(modified ? { modifiedTime: modified, publishedTime: modified } : {}),
+    },
+    twitter: { card: "summary_large_image", title: TITLE, description: DESCRIPTION },
+  };
+}
 
 /** Lucide's `check` glyph, inlined. See the note on the calculator section:
  *  one icon does not justify a runtime dependency, and this is that icon's
@@ -269,6 +286,20 @@ export default function XrpRichListPage() {
       a: `A larger balance does not change the rules of the ledger, and the XRP Ledger has no native staking and pays no protocol reward for holding. Rates on wrapped and staked XRP are tracked separately in the XRP yield ranking.`,
     },
     {
+      // "XRP whale" is asked constantly and the word appeared nowhere on a
+      // page that holds the only figures which can answer it. Answered with
+      // the bands rather than with a definition, because there is no official
+      // threshold and inventing one would be the wrong kind of confidence.
+      q: "What counts as an XRP whale?",
+      a: (() => {
+        const m1 = data.bands.find((b) => b.min === 1_000_000);
+        const m10 = data.bands.find((b) => b.min === 10_000_000);
+        if (!m1 || !m10) return "";
+        const both = m1.accounts + m10.accounts;
+        return `There is no official threshold, so the honest answer is a distribution rather than a number. ${count(both)} of the ${count(data.accounts)} funded XRP Ledger accounts held 1,000,000 XRP or more as of ${snapDate}, which is ${pctLabel(m1.pctOfAccounts + m10.pctOfAccounts)} of them, and those accounts controlled ${pctLabel(m1.pctOfXrp + m10.pctOfXrp)} of all XRP on that date. Above them, ${count(m10.accounts)} accounts held 10,000,000 XRP or more as of ${snapDate}. For a threshold that moves with the ledger rather than a round number, the top 1% of accounts started at ${t1 ? xrpAmount(t1.minXrp) : "the figure in the table above"} XRP as of ${snapDate}.`;
+      })(),
+    },
+    {
       q: "Can I see my own wallet's rank?",
       a: `Enter a balance in the calculator on this page and it returns the position that balance holds among all ${count(data.accounts)} funded accounts as of ${snapDate}. The page never asks for a wallet address, and the calculation runs in the browser rather than on a server.`,
     },
@@ -306,9 +337,14 @@ export default function XrpRichListPage() {
               // The ledger itself. There is no aggregator in the path and
               // nothing here credits one.
               sources: ["https://xrpl.org"],
+              // Every file build-richlist-export.mjs writes. Two of the four
+              // were missing, so the thresholds and the ranked accounts were
+              // downloadable and undeclared.
               distribution: [
                 { format: "application/json", url: `${SITE_URL}/data/xrp-rich-list/index.json` },
                 { format: "text/csv", url: `${SITE_URL}/data/xrp-rich-list/distribution.csv` },
+                { format: "text/csv", url: `${SITE_URL}/data/xrp-rich-list/thresholds.csv` },
+                { format: "text/csv", url: `${SITE_URL}/data/xrp-rich-list/top-accounts.csv` },
               ],
             }),
           ),
@@ -330,6 +366,49 @@ export default function XrpRichListPage() {
             isAccessibleForFree: true,
             offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
             author: { "@type": "Organization", name: SITE_AUTHOR.name, url: SITE_AUTHOR.url },
+          }),
+        }}
+      />
+      {/* The page carries a dateline and its value is that the figures are
+          current, so it declares a dateModified that a crawler can trust: the
+          pinned ledger's close, never the build time. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            reportWebPageSchema({
+              name: "XRP Rich List",
+              url: PAGE_URL,
+              description: DESCRIPTION,
+              dateModified: snap,
+            }),
+          ),
+        }}
+      />
+      {/* The ranking as a list, because a ranked list is what the query asks
+          for and the table alone does not say so in a form a crawler reads.
+          Every ranked account is here rather than a sample, so numberOfItems
+          describes the list it is attached to. Positions come from the
+          snapshot, so this cannot disagree with the table above it. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "ItemList",
+            name: `Largest XRP Ledger accounts as of ${snapDate}`,
+            description: `The ${count(ranked)} XRP Ledger accounts holding the most XRP, spendable and escrowed together, read from ledger ${count(data.ledgerIndex)}.`,
+            url: `${PAGE_URL}#top-accounts`,
+            itemListOrder: "https://schema.org/ItemListOrderDescending",
+            numberOfItems: ranked,
+            itemListElement: data.top.map((t) => ({
+              "@type": "ListItem",
+              position: t.rank,
+              // The name where the registry can show a source for it, the
+              // address otherwise. Never a guess: an unnamed account is
+              // published as its address rather than as an inference.
+              name: t.label?.name ?? t.address,
+            })),
           }),
         }}
       />
@@ -421,7 +500,7 @@ export default function XrpRichListPage() {
                 Calculator
               </span>
               <h2 id="calculator-title" className="rl-calc-title">
-                The XRP
+                The XRP{" "}
                 <br />
                 Rich List Calculator
               </h2>
