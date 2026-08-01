@@ -63,7 +63,7 @@ import "../../_styles/stablecoin-report.css";
 
 const PAGE_URL = `${SITE_URL}/report/stablecoin-yield-ranking`;
 const DATE_PUBLISHED = "2026-07-26";
-const TITLE = "Best Stablecoin Yields 2026: USDC, USDT, DAI & USDS Compared";
+const TITLE = "Best Stablecoin Yields 2026: APY & Interest Rates Compared";
 const H1 = "Best Stablecoin Yields, 2026";
 
 interface Tradfi {
@@ -73,9 +73,23 @@ interface Tradfi {
   mmfHighPct: number;
   asOf: string;
 }
-function getTradfi(): Tradfi {
+// Anything time-sensitive about the law lives in config, never in the JSX, and
+// renders with explicit as-of language. Legislative status moves faster than a
+// static page rebuilds, and a confidently stale claim about regulation is worse
+// than no claim. The durable mechanism (an issuer keeps its reserve interest)
+// is settled and is written as prose.
+interface Regulation {
+  asOf: string;
+  issuerActName: string;
+  issuerActEffect: string;
+  pendingActName: string;
+  pendingQuestionOpen: boolean;
+  pendingQuestion: string;
+  sourceUrl: string;
+}
+function getConfig(): { tradfi: Tradfi; regulation: Regulation } {
   const cfg = JSON.parse(readFileSync(join(process.cwd(), "data", "stablecoin-report-config.json"), "utf-8"));
-  return cfg.tradfi as Tradfi;
+  return { tradfi: cfg.tradfi as Tradfi, regulation: cfg.regulation as Regulation };
 }
 
 const pct = (v: number | null | undefined) => (v == null ? "n/a" : `${v.toFixed(2)}%`);
@@ -219,13 +233,18 @@ function ProductNotes({ rows }: { rows: StablecoinRow[] }) {
         const harvest = harvestSentence(r);
         return (
           <article className="sc-note" key={r.slug} id={`note-${r.slug}`}>
-            <h4 className="sc-note-title">
-              <span className="sc-note-rank">{i + 1}</span>
-              <AssetIcon asset={r.payoutAsset} size={18} />
-              {r.name}
-              {r.operator === "harvest" ? <span className="sc-badge-harvest">Harvest</span> : null}
+            {/* The separators are load-bearing for the heading's TEXT, not its
+                layout: without them the accessible name and the outline both
+                read "1aHYPER Looping VaultMonad". A whitespace-only sequence
+                between flex items is not rendered as an anonymous flex item,
+                so the card looks exactly the same. */}
+            <h3 className="sc-note-title">
+              <span className="sc-note-rank">{i + 1}.</span>{" "}
+              <AssetIcon asset={r.payoutAsset} size={18} />{" "}
+              {r.name}{" "}
+              {r.operator === "harvest" ? <span className="sc-badge-harvest">Harvest</span> : null}{" "}
               <span className="sc-note-plat">{r.network}</span>
-            </h4>
+            </h3>
             <p className="sc-note-struct">{structureSentence(r)}</p>
             <p className="sc-note-figures">
               <span>
@@ -266,7 +285,7 @@ function ProductNotes({ rows }: { rows: StablecoinRow[] }) {
 export default async function StablecoinReportPage() {
   const report = getStablecoinReport();
   const pendle = getPendleReport();
-  const tradfi = getTradfi();
+  const { tradfi, regulation } = getConfig();
 
   if (!report) {
     return (
@@ -330,6 +349,22 @@ export default async function StablecoinReportPage() {
       a: "Not by holding one. A stablecoin in a wallet pays nothing, because the issuer keeps the interest earned on the reserves backing it. Yield starts when the coin is supplied somewhere that lends it out or routes it into a strategy, which is what every product on this page does, at very different risk levels.",
     },
     {
+      q: "Do stablecoins pay interest?",
+      a: `The coin itself does not. ${regulation.issuerActName === "GENIUS Act" ? "US law" : regulation.issuerActName} ${regulation.issuerActEffect}, and even without that rule the reserve interest is how issuers make money. Interest reaches a holder only through a venue: a lending market, a yield-bearing wrapper, or a fixed-rate market. All ${stats.products} products measured here are one of those three.`,
+    },
+    {
+      q: "Which stablecoins are yield bearing?",
+      a: `A yield-bearing stablecoin is a wrapper whose redemption value rises rather than a coin whose balance grows. The tokens in the steady table here are the main examples, currently a ${pct(stats.stable.median)} median measured from their own share-price growth. The plain payment coins, USDC and USDT, are not yield bearing by design: their whole promise is redeeming one for one, which is why they are the coins these wrappers are built on top of.`,
+    },
+    {
+      q: "Why is USDC interest so high?",
+      a: `Two separate reasons, and only one is about USDC. First, the rate is not paid by USDC at all, it is paid by whatever venue the coin was supplied to, so "USDC interest" is really the borrow demand or strategy revenue at that venue. Second, USDC is the settlement coin most North American capital recognizes and is willing to hold, so venues competing for that capital quote in it and pay up for it, which pulls USDC rates above what the same strategy pays in a less recognized coin. ${bestRow?.payoutAsset === "USDC" ? `The highest rate measured here, ${pct(best?.apy ?? null)}, is USDC-paying for exactly that reason.` : ""} A high rate is a measure of what someone will pay to borrow, never a property of the coin.`,
+    },
+    {
+      q: "What is the return rate for stablecoins?",
+      a: `There is no single figure, which is the reason this page exists. Measured over their stated windows, the ${stats.stable.count} steadiest products here sit at a ${pct(stats.stable.median)} median while the ${stats.highYield.count} higher-paying ones sit at ${pct(stats.highYield.median)}, and the top of that second table reaches ${pct(stats.bestOverall?.apy ?? null)}. The spread between those numbers is risk, not opportunity, and every one of them is a measurement of the past rather than a rate anyone is promising.`,
+    },
+    {
       q: "How to earn passive income with stablecoins?",
       a: `Three routes, in rising order of complexity. Supply to a lending market and take the floating rate. Hold a yield-bearing wrapper such as the ones in the steady table, which appreciate against the underlying without any action. Or lock a fixed rate to a maturity through a yield-trading market${pendle ? `, currently up to ${pct(pendle.stats.bestFixed)}` : ""}. None of it is passive in the sense of being risk-free: the rates here are compensation for smart-contract, counterparty and depeg risk.`,
     },
@@ -365,18 +400,31 @@ export default async function StablecoinReportPage() {
     },
   ];
 
+  // The TOC is also the anchor surface Google draws SERP sitelinks from, so the
+  // H3s are listed rather than only their parent H2s: a competitor at DR 54
+  // ranking below us for this term pulls three sitelinks straight from its own
+  // section anchors. Every H2 on the page appears here, including harvest-block,
+  // which had been silently missing.
   const tocItems = [
-    { id: "high-yield-ranking", label: "Highest paying" },
+    { id: "high-yield-ranking", label: "Highest yield now" },
     { id: "high-yield-notes", label: "What drives them", level: 1 },
-    { id: "stable-ranking", label: "Steadiest measured rates" },
+    { id: "stable-ranking", label: "Steadiest rates" },
     { id: "stable-notes", label: "Holders and stability", level: 1 },
     ...(charted.length ? [{ id: "rate-history", label: "Rate history" }] : []),
     ...(pendle?.markets?.length ? [{ id: "fixed-rate", label: "Fixed-rate trading" }] : []),
     { id: "savings-comparison", label: "Versus savings" },
     { id: "yield-sources", label: "Where yield comes from" },
+    { id: "leveraged-looping", label: "Leveraged looping", level: 1 },
+    { id: "delta-neutral", label: "Delta-neutral and basis", level: 1 },
+    { id: "tokenized-treasuries", label: "Tokenized treasuries", level: 1 },
     { id: "earn-interest", label: "How to earn interest" },
+    { id: "yield-bearing-stablecoins", label: "Yield-bearing stablecoins", level: 1 },
+    { id: "lock-a-fixed-rate", label: "Locking a fixed rate", level: 1 },
+    { id: "issuer-interest", label: "Why issuers pay nothing" },
     { id: "risk-section", label: "Risks" },
+    { id: "stablecoin-depeg", label: "Depeg risk", level: 1 },
     { id: "how-we-measure", label: "How we measure" },
+    { id: "harvest-block", label: "Through Harvest" },
     { id: "faq", label: "FAQ" },
     { id: "dataset", label: "Dataset" },
   ];
@@ -429,7 +477,7 @@ export default async function StablecoinReportPage() {
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             ...reportItemListSchema(highItems, `${PAGE_URL}#high-yield-ranking`),
-            name: "Highest paying stablecoin products",
+            name: "Highest stablecoin yields by measured rate",
           }),
         }}
       />
@@ -507,7 +555,7 @@ export default async function StablecoinReportPage() {
           <div className="rp-doc-main">
             <section className="uni-home-content" aria-labelledby="high-yield-ranking">
               <p className="rp-eyebrow">Live rates</p>
-              <h2 id="high-yield-ranking">Highest paying stablecoin opportunities right now</h2>
+              <h2 id="high-yield-ranking">Highest stablecoin yield right now, by measured rate</h2>
               {/* Findings first, one claim per line. Each bullet is a complete,
                   self-contained statement so an answer engine can lift any one
                   of them without needing the sentence before it. */}
@@ -516,7 +564,7 @@ export default async function StablecoinReportPage() {
                   <li key={i}>{b}</li>
                 ))}
               </ul>
-              <RankTable rows={high} label="Highest paying stablecoin products" />
+              <RankTable rows={high} label="Highest stablecoin yields by measured rate" />
               <p className="rp-lead rp-trade-sublead">
                 A rate at the top of this table is compensation for something: leverage that amplifies losses as
                 readily as gains, a named counterparty rather than collateral, or a strategy that takes the other
@@ -532,7 +580,7 @@ export default async function StablecoinReportPage() {
 
             <section className="uni-home-content" aria-labelledby="stable-ranking">
               <p className="rp-eyebrow">Rate stability</p>
-              <h2 id="stable-ranking">Stablecoin products whose rate moved least</h2>
+              <h2 id="stable-ranking">Steadiest stablecoin interest rates, by measured volatility</h2>
               <p className="rp-lead">
                 {steadiestSentence(report) ??
                   "This table ranks by how little the measured rate moved over the window, not by rate."}{" "}
@@ -679,30 +727,66 @@ export default async function StablecoinReportPage() {
             <section className="uni-home-content" aria-labelledby="yield-sources">
               <p className="rp-eyebrow">Mechanics</p>
               <h2 id="yield-sources">How stablecoin yield is actually generated</h2>
+              <p className="rp-lead">
+                Six mechanisms account for every rate in both tables. Which one a product uses decides how its rate
+                behaves and what has to go wrong for the money not to come back, so the mechanism matters more than
+                the number beside it.
+              </p>
               <div className="rp-article">
+                <h3 id="lending-markets">Lending markets and the borrow rate</h3>
                 <p>
-                  <strong>Lending.</strong> Suppliers put stablecoins into a market, borrowers post collateral and pay
-                  interest, and the spread flows back. The rate follows utilization, so an idle pool pays close to
-                  nothing whatever its size.
+                  Suppliers put stablecoins into a market, borrowers post collateral and pay interest, and the spread
+                  flows back. The supply rate is the borrow rate multiplied by utilization, less the reserve factor,
+                  which is why an idle pool pays close to nothing whatever its size and why the same market can pay
+                  2% one week and 9% the next without anything having changed but demand.
                 </p>
+
+                <h3 id="leveraged-looping">Leveraged looping</h3>
                 <p>
-                  <strong>Leveraged looping.</strong> A vault borrows against yield-bearing collateral and redeploys,
-                  multiplying a thin spread into a headline rate. It multiplies the downside identically: when the
-                  spread inverts, losses arrive at the same leverage factor.
+                  A vault borrows against yield-bearing collateral and redeploys the proceeds into the same position,
+                  repeating until the spread between what it earns and what it pays is multiplied several times over.
+                  It multiplies the downside identically: when the spread inverts, losses arrive at the same factor,
+                  and a collateral price move can force an unwind at the worst moment.
                 </p>
+
+                <h3 id="delta-neutral">Delta-neutral strategies and the basis trade</h3>
                 <p>
-                  <strong>Undercollateralized credit.</strong> A named firm borrows against its reputation and balance
-                  sheet rather than posted collateral. The rate is higher because recovery depends on the borrower,
-                  not on liquidating something.
+                  A delta-neutral position holds an asset and shorts the same amount of it, so the price exposure
+                  cancels and what remains is the funding paid between the two legs. The classic version is the basis
+                  trade: hold spot, short the perpetual, collect funding while it is positive. It pays well in a
+                  market that is long and leveraged, pays nothing when funding flattens, and pays negatively when the
+                  market flips short. Nothing about it is stable except the dollar denomination.
                 </p>
+
+                <h3 id="undercollateralized-credit">Undercollateralized credit</h3>
                 <p>
-                  <strong>Protocol revenue.</strong> Savings rates distribute fees the protocol already earns. No
-                  borrower sits opposite an individual holder, which is why these rates are the steadiest here and
-                  why they move by governance rather than by market.
+                  A named firm borrows against its reputation and balance sheet rather than posted collateral. The
+                  rate is higher because there is nothing to liquidate: recovery depends on the borrower paying, and
+                  on whatever the loan documents allow if it does not.
                 </p>
+
+                <h3 id="protocol-revenue">Protocol revenue and savings rates</h3>
                 <p>
-                  <strong>Taking the other side.</strong> A counterparty vault earns trading fees by standing opposite
-                  every trade on a venue, which pays well until traders win.
+                  Savings rates distribute fees the protocol already earns. No borrower sits opposite an individual
+                  holder, which is why these rates are the steadiest measured here and why they move by governance
+                  vote rather than by market. The tradeoff is that a vote can move them at any time, in either
+                  direction, with no market signal beforehand.
+                </p>
+
+                <h3 id="tokenized-treasuries">Tokenized treasuries and real-world assets</h3>
+                <p>
+                  Tokenized money-market and treasury funds, and private-credit protocols such as Centrifuge, pass
+                  through the yield of assets held off chain. The rate tracks short-term rates rather than crypto
+                  demand, which makes it the least correlated source here, but the token is a claim on an
+                  off-chain structure and inherits that structure&apos;s transfer restrictions and settlement times.
+                  None of the products ranked above are of this type; it is included because it is where a growing
+                  share of stablecoin yield now originates.
+                </p>
+
+                <h3 id="taking-the-other-side">Taking the other side of the trade</h3>
+                <p>
+                  A counterparty vault earns trading fees by standing opposite every trade on a venue. It pays well
+                  until traders win, at which point the vault pays them out of its own value.
                 </p>
               </div>
             </section>
@@ -717,24 +801,30 @@ export default async function StablecoinReportPage() {
                   the large issuers make money. Interest reaches a holder only once the coin is
                   put somewhere that puts it to work, and there are three ways to do that.
                 </p>
+                <h3 id="supply-to-a-lending-market">Supply it to a lending market</h3>
                 <p>
-                  <strong>Supply it to a lending market.</strong> The simplest route: the coin
-                  is lent to borrowers who post collateral, and the interest they pay flows
-                  back. The rate floats with how much of the pool is borrowed. Both tables
-                  above contain lending markets, and they are the most transparent products
-                  here because the mechanism is visible onchain.
+                  The simplest route: the coin is lent to borrowers who post collateral, and the
+                  interest they pay flows back. The rate floats with how much of the pool is
+                  borrowed. Both tables above contain lending markets, and they are the most
+                  transparent products here because the mechanism is visible onchain. Curated
+                  markets such as those built on Morpho sit a layer above this, where a curator
+                  picks which collateral the money is lent against.
                 </p>
+
+                <h3 id="yield-bearing-stablecoins">Hold a yield-bearing stablecoin</h3>
                 <p>
-                  <strong>Hold a yield-bearing wrapper.</strong> Products such as the ones in
-                  the steady table convert the coin into a token that appreciates against it,
-                  so interest accrues without any further action and without a claim to
-                  manage. This is the closest thing to a savings-account experience onchain,
-                  and it is where the steadiest rates in this report sit, currently a{" "}
-                  {pct(stats.stable.median)} median.
+                  Yield-bearing stablecoins convert the coin into a token that appreciates
+                  against it, so interest accrues without any further action and without a
+                  claim to manage. This is the closest thing to a savings-account experience
+                  onchain, and it is where the steadiest rates in this report sit, currently a{" "}
+                  {pct(stats.stable.median)} median. The coin in your wallet does not change
+                  number; what changes is what each unit redeems for.
                 </p>
+
+                <h3 id="lock-a-fixed-rate">Lock a fixed rate to a maturity</h3>
                 <p>
-                  <strong>Lock a fixed rate.</strong> Yield-trading markets let a holder fix a
-                  rate to a maturity date instead of floating with the market
+                  Yield-trading markets let a holder fix a rate to a maturity date instead of
+                  floating with the market
                   {pendle ? `, currently up to ${pct(pendle.stats.bestFixed)} across ${pendle.stats.markets} stablecoin maturities` : ""}.
                   That removes the upside as well as the downside, and the position has to be
                   held to maturity or sold at whatever the market pays for it.
@@ -748,15 +838,69 @@ export default async function StablecoinReportPage() {
               </div>
             </section>
 
+            {/* Why the yield has to come from somewhere else. The mechanism is
+                settled and stated as prose; every time-sensitive claim renders
+                from data/stablecoin-report-config.json with an as-of date. */}
+            <section className="uni-home-content" aria-labelledby="issuer-interest">
+              <p className="rp-eyebrow">Regulation</p>
+              <h2 id="issuer-interest">Why a stablecoin issuer will not pay you interest</h2>
+              <div className="rp-article">
+                <p>
+                  A stablecoin is backed by reserves, and those reserves earn the short-term rate like any other
+                  cash. The holder of the coin sees none of it. That is not an oversight, it is the business: reserve
+                  interest is how the large issuers make most of their money, and paying it out would remove the
+                  reason to issue a coin at all.
+                </p>
+                <p>
+                  In the United States it is also the law. The {regulation.issuerActName}{" "}
+                  {regulation.issuerActEffect}. A dollar of USDC is a claim on a dollar, not a claim on what that
+                  dollar earns. This is the single fact that explains the whole page: every rate in both tables above
+                  exists because the coin was moved somewhere that puts it to work, and each of those places charges
+                  for the privilege in risk.
+                </p>
+                {regulation.pendingQuestionOpen ? (
+                  <p>
+                    As of {regulation.asOf} the open question is {regulation.pendingQuestion}, which is what the
+                    debate around the {regulation.pendingActName} turns on. A restriction written broadly would reach
+                    the centralized platforms that advertise a stablecoin rate to retail customers. It would not
+                    reach the products measured here, because none of them is an issuer or a custodian paying a rate
+                    on someone else&apos;s balance: they are contracts a holder supplies directly, and the yield is
+                    borrower interest or protocol revenue rather than passed-through reserve income.
+                  </p>
+                ) : null}
+                <p>
+                  Legislative status changes faster than this page rebuilds, so the dated statements above are
+                  maintained by hand and carry their as-of month. None of this is legal advice, and the primary
+                  sources are at <a href={regulation.sourceUrl}>congress.gov</a>.
+                </p>
+              </div>
+            </section>
+
             <section className="uni-home-content" aria-labelledby="risk-section">
               <p className="rp-eyebrow">Risk</p>
               <h2 id="risk-section">Risks of earning yield on stablecoins</h2>
               <div className="rp-article">
+                <h3 id="smart-contract-risk">Smart-contract and oracle risk</h3>
                 <p>
-                  Every row carries smart-contract risk on the venue, oracle risk on the prices its contracts trust,
-                  and depeg risk on the stablecoin itself. Looped products add liquidation and unwind risk, credit
-                  markets add counterparty risk, curated vaults add curator risk, and savings rates add governance
-                  risk. None of it is insured. This page ranks by measured rate and does not score these per product;
+                  Every row carries smart-contract risk on the venue and oracle risk on the prices its contracts
+                  trust. A vault&apos;s rules are its code, and a mispriced oracle can liquidate a healthy position or
+                  fail to liquidate an unhealthy one. Neither risk is visible in an APY figure, and neither is
+                  insured.
+                </p>
+
+                <h3 id="stablecoin-depeg">Depeg risk on the coin itself</h3>
+                <p>
+                  A stablecoin depeg costs more than the yield it was earning. A coin at 95 cents has wiped out more
+                  than a year of typical rates in a single move, and depegs happen precisely when liquidity is worst,
+                  so exiting at the quoted price is not a given. This risk sits with the issuer and its reserves, and
+                  it is separate from whatever venue the coin was supplied to.
+                </p>
+
+                <h3 id="strategy-specific-risk">Risks each mechanism adds on top</h3>
+                <p>
+                  Looped products add liquidation and unwind risk, credit markets add counterparty risk, curated
+                  vaults add curator risk, delta-neutral strategies add funding and exchange risk, and savings rates
+                  add governance risk. This page ranks by measured rate and does not score these per product;
                   the categories are documented in the <Link href="/risk-framework">risk framework</Link>.
                 </p>
               </div>

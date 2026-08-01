@@ -465,7 +465,16 @@ const main = async () => {
     rows,
   };
 
-  if (prev && prev.generatedAt != null && sameIgnoringStamps(prev, out, ["generatedAt"])) {
+  // BOTH wall-clock stamps have to be stripped before comparing, not just
+  // generatedAt. The output carries two: generatedAt and dataModifiedIso.
+  // Passing only the first meant dataModifiedIso survived the strip, differed
+  // by at least a second on every run, and made this comparison unconditionally
+  // false. The early return was unreachable, so the file was rewritten,
+  // committed and redeployed every hour on completely unchanged data, and all
+  // three schema dateModified nodes advanced with it. A page that claims to
+  // have changed hourly when it has not is exactly the freshness signal we do
+  // not want to be sending.
+  if (prev && prev.generatedAt != null && sameIgnoringStamps(prev, out, ["generatedAt", "dataModifiedIso"])) {
     console.log("[stablecoin] no material change; leaving data/stablecoin-yield.json untouched.");
     return;
   }
