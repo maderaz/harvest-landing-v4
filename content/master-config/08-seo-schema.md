@@ -8,7 +8,7 @@
 - `name` = `productName`; `url`; `inLanguage: "en"`; `category`; `feesAndCommissionsSpecification: "N/A"`.
 - `description` = `${vault.description} Historical onchain yield analytics for ${productName} on ${chain}, indexed by Harvest. Informational data tool, not financial advice.`
 - `provider` **and** `brand` = Harvest (the operator publishing the page); `seller` = the underlying venue (`getProtocolLabel(vault)`, e.g. Aave / Morpho / Aerodrome). *Splitting provider from seller stops Google reading the venue as the owner of the index page.*
-- `interestRate` = `QuantitativeValue { value: apy30d/100 (4dp), unitText: "PERCENT" }` — only when `apy30d > 0`.
+- `interestRate` = `QuantitativeValue { value: apy30d (2dp), unitText: "PERCENT" }` — only when `apy30d > 0`. *`unitText: "PERCENT"` means the value is the percentage itself: 11.24, not 0.1124. Both emitters go through `interestRateValue()` in `src/lib/jsonld.ts` so they cannot drift.*
 
 ### `Dataset` (only if `apyHistory ≥ 30` or `tvlHistory ≥ 30` points)
 - `name` = `"{productName} historical APY, TVL and share-price data"`.

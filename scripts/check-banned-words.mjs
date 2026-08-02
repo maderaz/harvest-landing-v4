@@ -77,6 +77,14 @@ const PHRASE_ALLOWLIST = [
 const POLYGON_VENUES_JSON = path.join(ROOT, "data", "polygon-venues.json");
 const EXTERNAL_PRODUCTS_JSON = path.join(ROOT, "data", "external-products.json");
 
+// Asset hubs whose prose is hand-written rather than template-generated, and
+// so belongs in the same editorial register as a product page. /usdc joined
+// when it was rebuilt around an answer sentence, four key findings, a venue
+// block and a 13-question FAQ: that is the newest and least-reviewed prose on
+// the site, and it was the only page carrying it that no word gate covered.
+// /eth, /btc and /usdt still render the shared template body and stay out.
+const ASSET_HUB_SLUGS = ["usdc"];
+
 // /polygon and /polygon/[venue] are a second editorial surface (the mixed
 // third-party + Harvest ranking, see methodology.tsx#inclusion) that predates
 // this gate's scope by definition ("single product pages"). Its prose is new
@@ -115,6 +123,7 @@ async function loadProductSlugs() {
       .filter((s) => typeof s === "string" && s.length > 0),
     ...(await loadPolygonSlugs()),
     ...(await loadExternalProductSlugs()),
+    ...ASSET_HUB_SLUGS,
   ]);
 }
 

@@ -80,7 +80,7 @@ const FINITE_VERB =
 // Pages held to the gate. Everything else in PAGES is reported as a warning so
 // the backlog stays visible without blocking the build. Move a page here once
 // its prose has been brought up to spec.
-const ENFORCED = new Set(["report/xrp-yield-ranking", "xrp-rich-list"]);
+const ENFORCED = new Set(["report/xrp-yield-ranking", "xrp-rich-list", "usdc"]);
 
 // A date token is "as of", a month name, or a four-digit year.
 const DATE_TOKEN =

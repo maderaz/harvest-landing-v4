@@ -79,14 +79,24 @@ export function financialProductSchema(vault: YieldVault): object {
   };
 
   if (vault.apy30d > 0) {
-    schema.interestRate = {
-      "@type": "QuantitativeValue",
-      value: (vault.apy30d / 100).toFixed(4),
-      unitText: "PERCENT",
-    };
+    schema.interestRate = interestRateValue(vault.apy30d);
   }
 
   return schema;
+}
+
+// unitText "PERCENT" means the value IS the percentage: a 11.24% rate is
+// 11.24, not 0.1124. We previously divided by 100 while keeping the unit,
+// so every rate on the site was declared a hundred times too small in the
+// layer answer engines read most readily - the top USDC strategy published
+// as paying 0.11%. Single helper so the two emitters below cannot drift
+// apart again.
+function interestRateValue(apyPercent: number): object {
+  return {
+    "@type": "QuantitativeValue",
+    value: apyPercent.toFixed(2),
+    unitText: "PERCENT",
+  };
 }
 
 export function itemListSchema(vaults: YieldVault[], hubUrl: string): object {
@@ -102,15 +112,7 @@ export function itemListSchema(vaults: YieldVault[], hubUrl: string): object {
         name: v.productName,
         url: `${SITE_URL}/${v.slug}`,
         provider: { "@type": "Organization", name: v.protocol.name },
-        ...(v.apy30d > 0
-          ? {
-              interestRate: {
-                "@type": "QuantitativeValue",
-                value: (v.apy30d / 100).toFixed(4),
-                unitText: "PERCENT",
-              },
-            }
-          : {}),
+        ...(v.apy30d > 0 ? { interestRate: interestRateValue(v.apy30d) } : {}),
       },
     })),
   };
