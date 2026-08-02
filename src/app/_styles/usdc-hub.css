@@ -146,6 +146,8 @@
    sentence. */
 .uni-hub-test.uh-page .uh-block > p > a,
 .uni-hub-test.uh-page .uh-venues > li > a,
+.uni-hub-test.uh-page .uh-risks > li > a,
+.uni-hub-test.uh-page .uh-cols > dd > a,
 .uni-hub-test.uh-page .uh-faq-a > a {
   color: var(--uni-ink);
   font-weight: 500;
@@ -156,6 +158,8 @@
 }
 .uni-hub-test.uh-page .uh-block > p > a:hover,
 .uni-hub-test.uh-page .uh-venues > li > a:hover,
+.uni-hub-test.uh-page .uh-risks > li > a:hover,
+.uni-hub-test.uh-page .uh-cols > dd > a:hover,
 .uni-hub-test.uh-page .uh-faq-a > a:hover {
   background: linear-gradient(transparent 0, rgba(255, 185, 54, 0.55) 0);
 }
@@ -185,6 +189,72 @@
   height: 5px;
   border-radius: 50%;
   background: var(--uni-ink-3);
+}
+
+/* Risk surfaces. One item per exposure, separated by a rule rather than a
+   bullet: these are seven distinct things that fail independently, and a
+   dotted list makes them read as a checklist of equivalent items. The
+   separator gives each one room without numbering them, since they are not
+   ranked. */
+.uni-hub-test.uh-page .uh-risks {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+  max-width: none;
+}
+.uni-hub-test.uh-page .uh-risks > li {
+  padding: 15px 0;
+  font-size: 16.5px;
+  line-height: 1.72;
+  color: var(--uni-ink-2);
+  border-top: 1px solid var(--uni-line);
+}
+.uni-hub-test.uh-page .uh-risks > li:first-child { border-top: none; padding-top: 4px; }
+.uni-hub-test.uh-page .uh-risks > li:last-child { padding-bottom: 4px; }
+.uni-hub-test.uh-page .uh-risks strong {
+  font-weight: 600;
+  color: var(--uni-ink);
+}
+
+/* Column guide. A definition list because that is what it is: the term is the
+   column header exactly as the table prints it, so a reader can match the two
+   without translating. */
+.uni-hub-test.uh-page .uh-cols {
+  margin: 0 0 20px;
+  display: grid;
+  gap: 0;
+}
+.uni-hub-test.uh-page .uh-cols > dt {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--uni-ink);
+  padding: 16px 0 5px;
+  border-top: 1px solid var(--uni-line);
+}
+.uni-hub-test.uh-page .uh-cols > dt:first-child { border-top: none; padding-top: 2px; }
+.uni-hub-test.uh-page .uh-cols > dd {
+  margin: 0;
+  font-size: 16.5px;
+  line-height: 1.72;
+  color: var(--uni-ink-2);
+}
+@media (min-width: 820px) {
+  /* Term in a fixed left rail so the definitions align into one column and the
+     list scans as a table without being one. */
+  .uni-hub-test.uh-page .uh-cols {
+    grid-template-columns: 168px minmax(0, 1fr);
+    column-gap: 26px;
+  }
+  .uni-hub-test.uh-page .uh-cols > dt { padding: 17px 0 0; }
+  .uni-hub-test.uh-page .uh-cols > dd {
+    padding: 16px 0;
+    border-top: 1px solid var(--uni-line);
+  }
+  .uni-hub-test.uh-page .uh-cols > dd:first-of-type { border-top: none; padding-top: 0; }
 }
 
 /* Caveat line under the top-ten table. Smaller and muted so it reads as a
@@ -292,10 +362,18 @@
     gap: 34px;
     align-items: start;
   }
+  /* Centred inside the pane rather than pinned to the top. The results pane
+     holds nothing but the placeholder until the reader calculates, and a line
+     of muted text hanging off the top of a 210px column beside a full input
+     form reads as a rendering fault. Once results exist they overflow the
+     min-height, so the centring stops applying on its own. */
   .uni-hub-test.uh-page .uh-calc-res {
     border-left: 1px solid var(--uni-line);
     padding-left: 34px;
     min-height: 210px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
   }
 }
 
@@ -386,6 +464,7 @@
   margin: 0 !important;
   font-size: 14px !important;
   color: var(--uni-ink-3) !important;
+  text-align: center;
 }
 @media (min-width: 900px) {
   .uni-hub-test.uh-page .uh-calc-rest { display: block; }

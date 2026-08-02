@@ -110,10 +110,11 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
     {
       q: "What is the best USDC yield right now?",
       a:
-        `The highest 24-hour APY on a strategy holding at least ${tvl(c.fundedFloor)} was ` +
-        `${apy(c.best.apy24h)} on ${proseName(c.best)} as of ${c.asOf}, across the ${c.count} ` +
-        `USDC strategies Harvest tracks. Smaller vaults in the index can print higher figures on ` +
-        `very little liquidity, so the ranking table shows TVL beside every rate.`,
+        `${apy(c.best.apy24h)} APY, on ${proseName(c.best)}, as of ${c.asOf}. That is the highest ` +
+        `24-hour rate among the ${c.count} USDC strategies Harvest tracks once a ` +
+        `${tvl(c.fundedFloor)} liquidity floor is applied. The floor is there because smaller ` +
+        `vaults print higher figures on a few hundred dollars, so the unfiltered top of the ` +
+        `ranking is usually not a rate anyone is earning at size.`,
     },
     {
       q: "What is the current USDC interest rate?",
@@ -433,8 +434,9 @@ export async function UsdcHubBody() {
         <p>
           Someone is on the other side of every rate here, and on a money market that someone is a
           borrower posting collateral worth more than the loan. Most of them are taking leverage:
-          borrowing dollars against ETH or BTC to hold a larger position than they could pay for
-          outright. That demand rises and falls with the market, which is why a supply rate is
+          borrowing dollars against <Link href="/eth">ETH</Link> or BTC to hold a larger position
+          than they could pay for outright. That demand rises and falls with the market, which is
+          why a supply rate is
           cyclical rather than fixed, and why a double-digit rate on a lending market usually means
           leverage is expensive at that moment rather than that the venue is generous.
         </p>
@@ -542,10 +544,29 @@ export async function UsdcHubBody() {
           ))}
         </ul>
         <p>
-          Money-market rates track borrower demand directly, so they cluster together and move
-          slowly. Curated vault rates blend that same borrower demand with reward emissions and
-          with whatever market parameters the curator has set, which is what opens the spread
-          between the bottom and the top of the list above.
+          What separates these families is the shape of the market underneath, not the brand on
+          the row. <Link href="/aave">Aave</Link> and Compound run pooled markets: every supplier
+          of USDC lends into one shared pool, every borrower draws from it, and a single
+          utilisation curve sets one rate for everybody. That design is why their rates cluster
+          within a point or two of each other and move slowly, and it is also why a pooled market
+          can absorb size without the rate collapsing.
+        </p>
+        <p>
+          Isolated markets work the other way. <Link href="/morpho">Morpho</Link> runs one market
+          per collateral asset, each with its own loan-to-value ratio, its own oracle and its own
+          interest curve, so a lender picks the exact exposure instead of inheriting the average
+          of a pool. Isolation contains a bad collateral asset to the one market that accepted it,
+          and it fragments liquidity, which is why isolated-market rates spread so much wider than
+          pooled ones across the list above.
+        </p>
+        <p>
+          A curated vault sits on top of those isolated markets and spreads one balance across
+          several of them. The curator chooses which markets, at what weights, under what caps,
+          and rebalances as rates move. That is where the spread between the bottom and the top of
+          this list mostly comes from: two vaults on the same protocol, holding the same asset,
+          can pay very differently because two different firms picked different markets. It also
+          means the name on the row is the curator, not the venue, and the parameter set can
+          change while a position is open.
         </p>
       </Block>
 
@@ -598,9 +619,12 @@ export async function UsdcHubBody() {
         <p>{`Full breakdown as of ${c.asOf}: ${networkBlock(c)}.`}</p>
         <p>
           USDC liquidity concentrates on Ethereum and on the rollups with the deepest stablecoin
-          markets, which is where the larger strategies sit. Networks come and go from this list as
-          products ship and retire. Any network pill at the foot of the page cuts the same ranking
-          down to one chain.
+          markets, which is where the larger strategies sit. Rollups matter here for a specific
+          reason: settling on a chain where a transaction costs cents rather than dollars makes
+          frequent harvesting economic, so the same autocompounding design pays more on{" "}
+          <Link href="/base">Base</Link> than it can on mainnet at the same underlying rate.
+          Networks come and go from this list as products ship and retire, and any network pill at
+          the foot of the page cuts the same ranking down to one chain.
         </p>
       </Block>
 
@@ -620,56 +644,93 @@ export async function UsdcHubBody() {
       </Block>
 
       <Block
-        id="reading-columns"
-        eyebrow="How to read this"
-        title="How to read the columns"
-        lead="The 24-hour APY on this page is the most recent daily rate annualised, and the 30-day APY is the trailing mean of the daily readings across the last month."
-      >
-        <p>
-          {`A gap between the two columns is the useful signal: a 24-hour figure above the 30-day mean ` +
-            `means the strategy is paying more than it has been, and one below it means the opposite. ` +
-            `TVL is the dollar value of USDC held in the vault contract, and the ${c.count} strategies ` +
-            `on this page held ${tvl(c.totalTvl)} between them as of ${c.asOf}. Higher TVL usually ` +
-            `means a strategy has been live longer and absorbed more without breaking. Lower TVL is ` +
-            `either young, niche, or paying too little for the risk it carries.`}
-        </p>
-      </Block>
-
-      <Block
         id="risk-surfaces"
         eyebrow="Risk"
         title="Risk surfaces on every USDC strategy"
-        lead="Every rate on this page is compensation for a specific set of exposures, and the four that apply to all of them are contract, oracle, peg and governance risk."
+        lead="Every rate on this page is compensation for a specific set of exposures, and seven of them apply across the index: contract, layered contract, collateral, curator, oracle, liquidity and peg risk."
       >
+        {/* One item per surface rather than four running paragraphs. A reader
+            scanning for the exposure that worries them was previously made to
+            read all of it, and the surfaces genuinely are separable: they fail
+            independently and a given row carries a different subset of them. */}
+        <ul className="uh-risks">
+          <li>
+            <strong>Smart-contract risk</strong> sits on the vault contract and on the protocol
+            contract underneath it. Either can hold a bug that no audit caught, and a position is
+            exposed to both for as long as it stays open.
+          </li>
+          <li>
+            {`Layered contract risk compounds that. A position in a curated vault passes through ` +
+              `the vault itself, the curator's parameter set, the underlying market it lends into ` +
+              `and the collateral backing that market: four surfaces, any one of which can fail ` +
+              `alone, with one published rate compensating for all of them at once. The rows ` +
+              `carrying the fewest layers are the plain money markets, where the position lends ` +
+              `directly.`}
+          </li>
+          <li>
+            {`Collateral risk decides what a lending position is really exposed to. ` +
+              `${morphoCount} of the ${c.count} strategies tracked here lend into Morpho, where ` +
+              `USDC is supplied against a named collateral asset rather than into a general pool. ` +
+              `Where this page tracks a market directly, the collateral is in the row name: ` +
+              `${listOf(morphoMarketCollateral)} on Base, which are wrapped `}
+            <Link href="/btc">BTC</Link>
+            {` and staked-ether forms rather than the plain assets. Where the row is a curated ` +
+              `vault, the collateral is a ` +
+              `basket the curator picks and can change, so the exposure moves with their decisions ` +
+              `rather than staying fixed at the point a position opens.`}
+          </li>
+          <li>
+            Curator risk follows from that, and curators are not interchangeable. A row reading
+            Gauntlet, Steakhouse or Clearstar names the firm setting the loan-to-value ratios, the
+            oracle choices and the collateral list for that vault, not the protocol underneath, so
+            two vaults on the same protocol can carry very different exposure because two
+            different firms set them up.
+          </li>
+          <li>
+            Oracle risk sits on the price feeds those contracts trust. A liquidation only fires if
+            the feed reports the collateral falling, and a feed that lags, freezes or is
+            manipulated turns an over-collateralised loan into bad debt without anyone touching
+            the vault.
+          </li>
+          <li>
+            {`Liquidity risk is the one a supplier feels first, and it does not need the vault to ` +
+              `fail. Lending markets keep only the unborrowed share available to withdraw, so when ` +
+              `borrowing spikes toward the ceiling the exit closes for everyone at once. The `}
+            <a
+              href="https://www.coindesk.com/markets/2026/04/20/defi-tvl-drops-more-than-usd13-billion-in-two-days-following-kelp-dao-hack"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              KelpDAO exploit of April 18, 2026
+            </a>
+            {` showed the full sequence: a bridge flaw let an attacker mint rsETH with nothing ` +
+              `behind it, that unbacked token was supplied as collateral on `}
+            <Link href="/aave">Aave</Link>
+            {` to borrow real assets against it, and the resulting bad debt ran to roughly $200M ` +
+              `to $246M. Money left the protocol fast enough to take billions off its tracked ` +
+              `value inside two days, stablecoin pools including USDC ran near full utilisation, ` +
+              `and ordinary suppliers could not withdraw. An emergency coalition `}
+            <a
+              href="https://finance.yahoo.com/markets/crypto/articles/aave-leads-defi-united-push-112433744.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              raised more than $300M to restore the backing
+            </a>
+            {`, and Aave tightened its collateral standards afterwards. Nothing in that chain ` +
+              `required the USDC side to break.`}
+          </li>
+          <li>
+            Depeg risk sits on USDC itself in tail scenarios, and governance risk sits on every
+            parameter an operator can change after a position is open. Both are outside the
+            strategy and neither is visible in a rate.
+          </li>
+        </ul>
         <p>
-          Smart-contract risk sits on the vault and on the protocol underneath it. Oracle risk sits
-          on the price feeds those contracts trust. Depeg risk sits on USDC itself in tail
-          scenarios. Governance risk sits on every parameter an operator can change after a
-          position is open.
-        </p>
-        <p>
-          {`Contract risk is rarely one contract. A position in a curated vault passes through the ` +
-            `vault itself, the curator's parameter set, the underlying market it lends into, and the ` +
-            `collateral backing that market. Four surfaces, any one of which can fail on its own, ` +
-            `and the published rate compensates for all of them at once. Rows carrying the fewest ` +
-            `layers are the plain money markets, where the position lends directly.`}
-        </p>
-        <p>
-          {`What backs a market matters as much as who runs it. ${morphoCount} of the ${c.count} ` +
-            `strategies tracked here as of ${c.asOf} lend into Morpho, where USDC is supplied ` +
-            `against a specific collateral asset rather than into a general pool. Where this page ` +
-            `tracks a market directly, the collateral is in the row name: ` +
-            `${listOf(morphoMarketCollateral)} on Base. Where it tracks a curated vault, the ` +
-            `collateral is a basket the curator selects and can change, so the exposure moves with ` +
-            `their decisions rather than staying fixed at the point a position opens.`}
-        </p>
-        <p>
-          Curators are not interchangeable. A row reading Gauntlet, Steakhouse or Clearstar names
-          the firm setting the loan-to-value ratios, the oracle choices and the collateral list for
-          that vault, not the protocol underneath, and two vaults on the same protocol can carry
-          very different exposure because two different firms set them up. Liquidity, bridge,
-          operator and economic risk each get their own treatment, alongside the tiers and the
-          exclusions, on the <Link href="/risk-framework">risk framework page</Link>.
+          Bridge, operator and economic risk get their own treatment, alongside the tiers and the
+          exclusions, on the <Link href="/risk-framework">risk framework page</Link>. Which of
+          these surfaces a given row carries depends on how many layers it has, and the vault page
+          for any row names the contracts a position touches.
         </p>
       </Block>
 
@@ -707,6 +768,84 @@ export async function UsdcHubBody() {
         <HubTable vaults={c.all} sparklines={sparklines} scopeLabel="USDC strategies" />
       </Block>
 
+      {/* Sits under the full table rather than above the top ten, which is
+          where it used to be. A column guide read before the reader has seen a
+          column is instruction with nothing to point at; read after both
+          tables, every term in it is on screen directly above. */}
+      <Block
+        id="reading-columns"
+        eyebrow="How to read this"
+        title="How to read every column in the tables"
+        lead="Both tables carry the same seven columns, and the useful judgements come from reading them against one another rather than from the rate alone."
+      >
+        <dl className="uh-cols">
+          <dt>#</dt>
+          <dd>
+            Gives the row&rsquo;s position once the table is sorted, which is by 24-hour APY
+            descending until the header is clicked. Position is not a ranking of quality and it
+            applies no liquidity floor, so row one is whatever printed the highest daily rate.
+          </dd>
+
+          <dt>Vault</dt>
+          <dd>
+            Names the product with its network in brackets. The bracket is the part that makes a
+            row unique: the same product name runs on several networks at different rates, and
+            without it four rows read identically.
+          </dd>
+
+          <dt>24h APY</dt>
+          <dd>
+            Takes the most recent daily rate and annualises it. One day of yield projected across
+            a year, which makes it the most current figure on the page and the one most easily
+            distorted by a single unusual day.
+          </dd>
+
+          <dt>Strategy</dt>
+          <dd>
+            Names the venue the position lends into, such as Aave, Morpho or Compound. On a
+            curated vault this reads as the curator rather than the protocol, so the parameters
+            behind the rate belong to that firm.
+          </dd>
+
+          <dt>Network</dt>
+          <dd>
+            Shows the chain the vault contract is deployed on, as an icon. The same strategy on a
+            different network is a different contract with different liquidity and usually a
+            different rate.
+          </dd>
+
+          <dt>30d APY trend</dt>
+          <dd>
+            {`Plots the daily rate across the last month as a sparkline, and it is the column that ` +
+              `tells you whether the 24-hour figure means anything. A flat line means the strategy ` +
+              `has been paying roughly that rate all month. A line with one spike means the ` +
+              `headline is a moment, not a level. Rising or falling shape says the rate is moving, ` +
+              `and the direction is what the 24-hour figure alone cannot show. Exact daily ` +
+              `readings and the 30-day mean sit on the vault page for each row.`}
+          </dd>
+
+          <dt>Link</dt>
+          <dd>
+            Opens the strategy in the Harvest app in a new tab, on the top-ten table only. Row
+            names everywhere link through to the vault page instead, which carries the tracked
+            value, the fee position, the contract addresses and the full rate history.
+          </dd>
+        </dl>
+        <p>
+          {`Tracked value is deliberately not a column here, and it is the reading that decides ` +
+            `whether a rate is real. The ${c.count} strategies on this page held ${tvl(c.totalTvl)} ` +
+            `between them and only ${c.fundedCount} cleared ${tvl(c.fundedFloor)}, so a rate at the ` +
+            `top of an unfiltered sort can be sitting on a few hundred dollars, where the ` +
+            `arithmetic still works and nobody is earning it at size. Open any row to see what it ` +
+            `holds before reading its rate as an opportunity.`}
+        </p>
+        <p>
+          The network and protocol filters above each table narrow rows that are already rendered
+          on the page rather than fetching new ones, so nothing enters or leaves the underlying
+          index when a filter is applied.
+        </p>
+      </Block>
+
       <Block
         id="scope"
         eyebrow="Scope"
@@ -725,21 +864,20 @@ export async function UsdcHubBody() {
             {`Scale is part of that scope. The ${c.count} strategies here held ${tvl(c.totalTvl)} ` +
               `between them as of ${c.asOf}, and ${c.fundedCount} cleared ${tvl(c.fundedFloor)}. For ` +
               `comparison, ${c.benchmark.largestName} held ${tvl(c.benchmark.largestTvl)} at ` +
-              `${apy(c.benchmark.largestApy)} as of ${c.asOf}, measured the same way in our `}
-            <Link href="/report/stablecoin-yield-ranking">stablecoin rate comparison</Link>
-            {`. A larger position is usually better served by a deeper market at a lower rate than ` +
-              `by the top of this table, and this index is most useful for finding strategies rather ` +
-              `than for sizing into them.`}
+              `${apy(c.benchmark.largestApy)}, measured from its own onchain share-price history on ` +
+              `the same date. A larger position is usually better served by a deeper market at a ` +
+              `lower rate than by the top of this table, and this index is most useful for finding ` +
+              `strategies rather than for sizing into them.`}
           </p>
         ) : null}
       </Block>
 
+      {/* The stablecoin rate comparison used to be linked from here and from
+          the scope block. Both links are gone: the report is not published on
+          the deployment this page ships to, so the link would 404 there. The
+          Aave benchmark figure it supplied stays in the scope block, because
+          that is our own onchain measurement rather than a claim about a page. */}
       <section className="uni-hub-cta-row">
-        <p className="uni-hub-cta-meta">
-          Comparing against venues we do not operate? The{" "}
-          <Link href="/report/stablecoin-yield-ranking">stablecoin rate comparison</Link> measures
-          the leading products across the market from their own onchain share-price history.
-        </p>
         <p className="uni-hub-cta-meta">
           Looking for a specific chain? Network ranking pages cut the same data by network.
         </p>
