@@ -546,3 +546,26 @@
 :root[data-theme="dark"] .hub-table--links .hub-open:hover {
   border-color: rgba(255, 255, 255, 0.5);
 }
+
+/* Freshness stamp under the answer sentence. Small and muted: it substantiates
+   the hourly-update claim the footer already makes, without competing with the
+   claim above it. */
+.uni-hub-test.uh-page .uh-updated {
+  margin: 10px 0 0;
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  color: var(--uni-ink-3);
+}
+
+/* Second note in the calculator carries the fee position. Same register as the
+   first, with the link readable against it. */
+.uni-hub-test.uh-page .uh-calc-note + .uh-calc-note {
+  margin-top: 10px !important;
+}
+.uni-hub-test.uh-page .uh-calc-note a {
+  color: var(--uni-ink-2);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.uni-hub-test.uh-page .uh-calc-note a:hover { color: var(--uni-ink); }

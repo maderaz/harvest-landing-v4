@@ -15,7 +15,12 @@ import { getLiveVaults, getAllSparklines, loadHistoryFile } from "@/lib/data";
 import { AssetIcon, ChainIcon } from "@/components/token-icons";
 import { SITE_URL } from "@/lib/constants";
 import { assetHubH1, assetHubCrumbs } from "@/lib/seo";
-import { breadcrumbSchema, itemListSchema, faqPageSchema } from "@/lib/jsonld";
+import {
+  breadcrumbSchema,
+  itemListSchema,
+  faqPageSchema,
+  reportDatasetSchema,
+} from "@/lib/jsonld";
 import { HubTable } from "@/components/hub-table";
 import { HomeCrumb } from "@/components/home-crumb";
 import { RankingDataNote } from "@/components/ranking-data-note";
@@ -295,6 +300,44 @@ export async function UsdcHubBody() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPageSchema(faqs)) }}
       />
+      {/* Dataset. The page publishes a real measured dataset and, until now,
+          never declared one: the per-vault JSON has been exported to
+          public/data/<slug>.json by build-data-json.mjs all along, with
+          index.json listing every file, and nothing pointed a crawler at it.
+          The report pages have carried this node for a while; the hubs did
+          not. numberOfItems is deliberately omitted because the helper renders
+          it as "N venues", and these are strategies. */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(
+            reportDatasetSchema({
+              name: "USDC yield strategies tracked by Harvest",
+              description:
+                `Live 24-hour APY, 30-day mean APY and tracked value for the ${c.count} USDC ` +
+                `yield strategies Harvest indexes across ${c.chainCount} networks, measured from ` +
+                `first-party vault contract readings and refreshed hourly. The linked index is ` +
+                `machine-readable and lists a per-strategy JSON file for every product tracked ` +
+                `on the site, USDC included.`,
+              url: HUB_URL,
+              dateModified: c.asOfIso,
+              keywords: [
+                "USDC",
+                "stablecoin",
+                "yield",
+                "APY",
+                "TVL",
+                "DeFi",
+                "lending",
+              ],
+              sources: [`${SITE_URL}/methodology`],
+              distribution: [
+                { format: "application/json", url: `${SITE_URL}/data/index.json` },
+              ],
+            }),
+          ),
+        }}
+      />
 
       <nav className="uni-hub-crumbs" aria-label="Breadcrumb">
         <HomeCrumb />
@@ -329,6 +372,13 @@ export async function UsdcHubBody() {
         </div>
 
         <p className="uh-answer">{answerSentence(c)}</p>
+        {/* The footer and the meta description both claim hourly updates and
+            the page body never showed a timestamp, so the claim had nothing
+            substantiating it above the fold. Reads from the newest observation
+            in the cohort, the same value that drives dateModified in the
+            schema, so the visible stamp and the machine-readable one cannot
+            disagree. */}
+        <p className="uh-updated">Rates last recorded {c.asOf}, and refreshed hourly.</p>
       </div>
 
       <section className="uh-summary" aria-labelledby="summary">
