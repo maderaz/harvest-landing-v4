@@ -117,6 +117,28 @@ export function venueOf(vault: YieldVault): string {
 // the sentence that applies it rather than filtering silently.
 const FUNDED_FLOOR = LOW_LIQUIDITY_TVL_THRESHOLD;
 
+// Networks this ranking does not cover.
+//
+// zkSync is legacy dust. Across the whole index it holds $1,027 spread over 11
+// vaults, and its entire USDC presence is one Aave market holding $352. That
+// single row sorted first at 42.55% and became the top of the ranking, the
+// network breakdown's "top APY" for zkSync, and the outer bound of the venue
+// range for Aave: one dead $352 position shaping three separate claims on the
+// page.
+//
+// Excluded here rather than in data/hidden.json because that file is
+// sitewide and would move /eth, /btc and /usdt, which are the control group
+// for measuring this rebuild. Revisit as a sitewide hide once the measurement
+// window closes.
+const EXCLUDED_CHAINS = new Set(["zkSync"]);
+
+// A rate below a hundredth of a percent formats as "0.00%", which asserts a
+// measured zero for what is really no measurable rate. Same dust cutoff the
+// prose generators elsewhere use.
+export function apyFloorLabel(v: number): string {
+  return v > 0 && v < 0.005 ? "under 0.01%" : formatAPY(v);
+}
+
 const utcLongDate = (iso: string): string =>
   new Date(iso).toLocaleDateString("en-US", {
     month: "long",
@@ -130,6 +152,7 @@ export function buildUsdcCohort(
   history: Record<string, FullVaultHistory> | null,
 ): UsdcCohort {
   const all = usdcVaults
+    .filter((v) => !EXCLUDED_CHAINS.has(v.chain))
     .map((v) => ({ ...v, productName: usdcDisplayName(v) }))
     .sort((a, b) => b.apy24h - a.apy24h);
 
@@ -258,14 +281,19 @@ export function keyFindings(c: UsdcCohort): string[] {
       `${apy(c.medianApy)} as of ${c.asOf}, and the average weighted by TVL was ` +
       `${apy(c.tvlWeightedApy)}.`,
   ];
-  // The spread claim is made over the funded cohort and the raw top is given
-  // its size in the same breath, because the two figures otherwise look like a
-  // contradiction to anyone reading the table underneath.
+  // The spread claim is made over the funded cohort. When the raw top of the
+  // ranking is a different, thinner vault it gets named with its size in the
+  // same breath, because the two figures otherwise look like a contradiction
+  // to anyone reading the table underneath. When the two coincide the clause
+  // is dropped rather than restating the first bullet.
+  const rawDiffers = c.bestRaw.slug !== c.best.slug;
   out.push(
     `Rates on the ${c.fundedCount} strategies holding at least ${tvl(c.fundedFloor)} ran from ` +
-      `${apy(c.fundedMinApy)} to ${apy(c.fundedMaxApy)} as of ${c.asOf}, while the highest rate ` +
-      `anywhere in the index was ${apy(c.bestRaw.apy24h)} on ${c.bestRaw.productName}, which ` +
-      `held ${tvl(c.bestRaw.tvl)}.`,
+      `${apy(c.fundedMinApy)} to ${apy(c.fundedMaxApy)} as of ${c.asOf}` +
+      (rawDiffers
+        ? `, while the highest rate anywhere in the index was ${apy(c.bestRaw.apy24h)} on ` +
+          `${c.bestRaw.productName}, which held ${tvl(c.bestRaw.tvl)}.`
+        : `, across ${listOf([...new Set(c.funded.map((v) => v.chain))])}.`),
   );
   if (first) {
     out.push(
@@ -302,7 +330,7 @@ export function venueLines(c: UsdcCohort, families: string[]): string[] {
         `${v.venue} USDC paid a median of ${apy(v.medianApy)} across ${v.count} markets ` +
         `${where} as of ${c.asOf}`;
       if (v.minApy.toFixed(2) === v.maxApy.toFixed(2)) return `${head}.`;
-      return `${head}, within a range of ${apy(v.minApy)} to ${apy(v.maxApy)}.`;
+      return `${head}, within a range of ${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}.`;
     });
 }
 
