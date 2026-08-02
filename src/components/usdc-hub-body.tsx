@@ -28,6 +28,11 @@ import {
   venueLines,
   networkBlock,
   protocolBlock,
+  venueOf,
+  proseName,
+  payoutLead,
+  stabilityLead,
+  tokenBlock,
   listOf,
   plural,
   apy,
@@ -101,7 +106,7 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
       q: "What is the best USDC yield right now?",
       a:
         `The highest 24-hour APY on a strategy holding at least ${tvl(c.fundedFloor)} was ` +
-        `${apy(c.best.apy24h)} on ${c.best.productName} as of ${c.asOf}, across the ${c.count} ` +
+        `${apy(c.best.apy24h)} on ${proseName(c.best)} as of ${c.asOf}, across the ${c.count} ` +
         `USDC strategies Harvest tracks. Smaller vaults in the index can print higher figures on ` +
         `very little liquidity, so the ranking table shows TVL beside every rate.`,
     },
@@ -165,22 +170,36 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
         `leg to capture funding rather than borrower demand.`,
     },
     {
+      q: "Is the APY paid in USDC or in reward tokens?",
+      a:
+        `Some pay in dollars and some pay in a token. ${c.payout.inUsdc.length} of the ${c.count} tracked ` +
+        `strategies paid their yield in USDC as of ${c.asOf} and ${c.payout.inToken.length} paid ` +
+        `it in a reward token such as ${c.payout.tokens[0]?.symbol ?? "MORPHO"}, which is worth ` +
+        `whatever it sells for when claimed. Our data records the payout token rather than a ` +
+        `split between base interest and emissions, so this page reports what a rate is paid in ` +
+        `instead of inventing a decomposition it cannot measure.`,
+    },
+    {
+      q: "How does this compare to Aave and the wider USDC market?",
+      a: c.benchmark
+        ? `The median here was ${apy(c.medianApy)} across ${c.count} strategies holding ` +
+          `${tvl(c.totalTvl)} as of ${c.asOf}, against ${apy(c.benchmark.largestApy)} on ` +
+          `${c.benchmark.largestName}, which held ${tvl(c.benchmark.largestTvl)} on the same date. ` +
+          `A deeper market usually pays less and absorbs far more, so the top of this ranking is ` +
+          `the more useful figure for finding a strategy and the wider market is the more useful ` +
+          `one for sizing a large position.`
+        : "",
+    },
+    {
       q: "Is USDC yield safe?",
       a:
         `No USDC yield is risk-free. Every strategy ranked here carries smart-contract exposure ` +
         `on the vault and on the protocol underneath it, oracle exposure on the price feeds those ` +
-        `contracts trust, and depeg exposure on USDC itself in tail scenarios. Size is a further ` +
-        `signal: ${smallCount} of the ${c.count} strategies tracked held under ` +
-        `${tvl(c.fundedFloor)} as of ${c.asOf}, so their published rates have not been tested by ` +
-        `much liquidity.`,
-    },
-    {
-      q: "Can you lose money holding USDC?",
-      a:
-        `Yes. USDC is fully reserved by Circle and has held its dollar peg in normal conditions, ` +
-        `though it traded as low as $0.87 in March 2023 when part of the reserve sat at Silicon ` +
-        `Valley Bank. Holding USDC inside a yield strategy adds that strategy's contract exposure ` +
-        `on top of the peg question.`,
+        `contracts trust, and depeg exposure on USDC itself in tail scenarios. USDC has held its ` +
+        `dollar peg in normal conditions, though it traded as low as $0.87 in March 2023 when part ` +
+        `of the reserve sat at Silicon Valley Bank. Size is a further signal: ${smallCount} of the ` +
+        `${c.count} strategies tracked held under ${tvl(c.fundedFloor)} as of ${c.asOf}, so their ` +
+        `published rates have not been tested by much liquidity.`,
     },
     {
       q: "Why is USDC yield variable?",
@@ -188,13 +207,6 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
         `Lending APY follows borrower demand and utilisation. Reward APY follows incentive ` +
         `programs that switch on and off. Both move daily, which is why this page carries a ` +
         `24-hour rate and a 30-day mean side by side.`,
-    },
-    {
-      q: "Do these numbers include rewards?",
-      a:
-        `Yes, when the underlying protocol bakes them into the rate it reports. The vault detail ` +
-        `page splits the figure into base and rewards wherever the upstream publishes that ` +
-        `breakdown.`,
     },
     {
       q: "Are there USDC yield strategies not listed here?",
@@ -223,6 +235,19 @@ export async function UsdcHubBody() {
   // cohort excludes points at a ranking with none of these rows in it.
   const visibleChains = [...c.chains].sort();
   const topVenues = c.byVenue.slice(0, 3);
+
+  // Morpho exposure, for the collateral paragraph in the risk section. Both
+  // reviews called out that over half the index lends into Morpho and the page
+  // never said what backs those markets. Only the direct markets expose their
+  // collateral (it is the product name); curated vaults hold a basket the
+  // curator sets, which the copy says rather than guessing.
+  const morphoCount = c.all.filter((v) => venueOf(v).startsWith("Morpho")).length;
+  const morphoMarketCollateral = c.all
+    .filter((v) => venueOf(v) === "Morpho Market")
+    .map((v) => v.productName.replace(/^USDC\s+/, "").replace(/\s*\(.*\)$/, ""))
+    .filter((x, i, a) => a.indexOf(x) === i)
+    .sort();
+
 
   // Every tracked strategy is selectable, not just the visible top ten: the
   // calculator is a tool, and a reader who scrolled past row 10 to reach it
@@ -355,12 +380,86 @@ export async function UsdcHubBody() {
         lead="USDC lending yield is the interest borrowers pay when USDC is supplied to a money market such as Aave or Compound."
       >
         <p>
-          Autocompounding strategies do the same thing and add a contract that harvests the reward
-          emissions on top, which is why their published rate blends two sources and moves more
-          than a plain lending rate does. A smaller group runs delta-neutral, pairing a USDC
-          position against a short leg so the yield comes from funding rather than from borrower
-          demand. Each pattern buys either a higher or a smoother rate by adding smart-contract
-          surface, and the vault page for any row spells out which contracts a position touches.
+          Someone is on the other side of every rate here, and on a money market that someone is a
+          borrower posting collateral worth more than the loan. Most of them are taking leverage:
+          borrowing dollars against ETH or BTC to hold a larger position than they could pay for
+          outright. That demand rises and falls with the market, which is why a supply rate is
+          cyclical rather than fixed, and why a double-digit rate on a lending market usually means
+          leverage is expensive at that moment rather than that the venue is generous.
+        </p>
+        <p>
+          Because the loan is over-collateralised, the lender is protected by liquidation rather
+          than by the borrower&rsquo;s promise. If the collateral falls far enough, a liquidator
+          repays the loan and takes the collateral at a discount. The rate compensates for the
+          possibility that this fails to happen fast enough, which is where bad debt comes from and
+          why what backs a market matters as much as who runs it.
+        </p>
+        <p>
+          Autocompounding strategies sit one layer above that. A contract harvests the reward
+          emissions, sells them, and puts the proceeds back into the position on a schedule, which
+          is why their published rate moves more than a plain supply rate and why part of it
+          depends on the price of a token rather than on interest. A smaller group runs
+          delta-neutral, holding USDC against a short leg so the yield comes from funding rather
+          than from borrower demand. A few rows are real-world-asset credit, where the yield
+          traces back to short-dated government paper rather than to anyone onchain, and those
+          rates move with policy rather than with crypto leverage.
+        </p>
+        <p>
+          Every one of those patterns buys either a higher or a steadier rate by adding
+          smart-contract surface, and the vault page for any row spells out which contracts a
+          position touches.
+        </p>
+      </Block>
+
+      <Block
+        id="paid-in"
+        eyebrow="Composition"
+        title="What these rates are actually paid in"
+        lead={payoutLead(c)}
+      >
+        <p>
+          {`A rate paid in USDC is already dollars. A rate paid in a reward token is worth whatever ` +
+            `that token sells for on the day it is claimed, which is a different proposition at the ` +
+            `same headline number. The reward tokens behind this index as of ${c.asOf} were ` +
+            `${tokenBlock(c)} strategies. Median rates were close: ${apy(c.payout.usdcMedian)} for ` +
+            `the dollar-paying group and ${apy(c.payout.tokenMedian)} for the token-paying one as of ` +
+            `${c.asOf}, so the emission is rarely what makes a strategy pay more.`}
+        </p>
+        <p>
+          Our data records the token a strategy pays in, not a split between base interest and
+          emissions. Where a published rate blends the two, the upstream feed reports one figure
+          and this page reports that figure rather than inventing a decomposition it cannot
+          measure. One consequence is worth knowing: an autocompounder that harvests a reward
+          token and swaps it to USDC is recorded as paying in USDC, correctly, because dollars are
+          what reach the position.
+        </p>
+      </Block>
+
+      <Block
+        id="rate-stability"
+        eyebrow="Stability"
+        title="How steady each rate has been"
+        lead={stabilityLead(c)}
+      >
+        {c.stability.mostVolatile && c.stability.steadiest ? (
+          <p>
+            {`Among the strategies holding at least ${tvl(c.fundedFloor)}, the steadiest over the 30 ` +
+              `days to ${c.asOf} was ${c.stability.steadiest.name}, which held a standard deviation of ` +
+              `${c.stability.steadiest.stdev.toFixed(2)} points around a mean of ` +
+              `${apy(c.stability.steadiest.mean)}. The widest was ${c.stability.mostVolatile.name}, ` +
+              `which ranged from ${apy(c.stability.mostVolatile.min)} to ` +
+              `${apy(c.stability.mostVolatile.max)} over the same 30 days to ${c.asOf}, a standard ` +
+              `deviation of ${c.stability.mostVolatile.stdev.toFixed(2)} points.`}
+          </p>
+        ) : null}
+        <p>
+          Deviation is the figure that tells you whether a headline rate is a rate or a spike. A
+          strategy paying more than its own monthly mean on the day you read it has usually just
+          received an emission or seen a jump in borrowing, and neither lasts. A strategy whose
+          deviation is a fraction of a point has been paying roughly the same thing all month,
+          which is the more useful property if the position is meant to sit. Standard deviation
+          describes what a rate did over the window measured. It is not a forecast, and it says
+          nothing about the contract, oracle or peg exposures set out below.
         </p>
       </Block>
 
@@ -397,7 +496,7 @@ export async function UsdcHubBody() {
         title="Best USDC staking rates right now"
         lead={
           `The best USDC rate on a strategy holding at least ${tvl(c.fundedFloor)} was ` +
-          `${apy(c.best.apy24h)} on ${c.best.productName} as of ${c.asOf}, against a median of ` +
+          `${apy(c.best.apy24h)} on ${proseName(c.best)} as of ${c.asOf}, against a median of ` +
           `${apy(c.medianApy)} across all ${c.count} strategies tracked here.`
         }
       >
@@ -487,8 +586,31 @@ export async function UsdcHubBody() {
           Smart-contract risk sits on the vault and on the protocol underneath it. Oracle risk sits
           on the price feeds those contracts trust. Depeg risk sits on USDC itself in tail
           scenarios. Governance risk sits on every parameter an operator can change after a
-          position is open. The tiers, and what falls outside them, are on the{" "}
-          <Link href="/risk-framework">risk framework page</Link>.
+          position is open.
+        </p>
+        <p>
+          {`Contract risk is rarely one contract. A position in a curated vault passes through the ` +
+            `vault itself, the curator's parameter set, the underlying market it lends into, and the ` +
+            `collateral backing that market. Four surfaces, any one of which can fail on its own, ` +
+            `and the published rate compensates for all of them at once. Rows carrying the fewest ` +
+            `layers are the plain money markets, where the position lends directly.`}
+        </p>
+        <p>
+          {`What backs a market matters as much as who runs it. ${morphoCount} of the ${c.count} ` +
+            `strategies tracked here as of ${c.asOf} lend into Morpho, where USDC is supplied ` +
+            `against a specific collateral asset rather than into a general pool. Where this page ` +
+            `tracks a market directly, the collateral is in the row name: ` +
+            `${listOf(morphoMarketCollateral)} on Base. Where it tracks a curated vault, the ` +
+            `collateral is a basket the curator selects and can change, so the exposure moves with ` +
+            `their decisions rather than staying fixed at the point a position opens.`}
+        </p>
+        <p>
+          Curators are not interchangeable. A row reading Gauntlet, Steakhouse or Clearstar names
+          the firm setting the loan-to-value ratios, the oracle choices and the collateral list for
+          that vault, not the protocol underneath, and two vaults on the same protocol can carry
+          very different exposure because two different firms set them up. Liquidity, bridge,
+          operator and economic risk each get their own treatment, alongside the tiers and the
+          exclusions, on the <Link href="/risk-framework">risk framework page</Link>.
         </p>
       </Block>
 
@@ -539,6 +661,18 @@ export async function UsdcHubBody() {
           <Link href="/methodology">methodology page</Link>. Plenty of USDC yield exists outside
           it.
         </p>
+        {c.benchmark ? (
+          <p>
+            {`Scale is part of that scope. The ${c.count} strategies here held ${tvl(c.totalTvl)} ` +
+              `between them as of ${c.asOf}, and ${c.fundedCount} cleared ${tvl(c.fundedFloor)}. For ` +
+              `comparison, ${c.benchmark.largestName} held ${tvl(c.benchmark.largestTvl)} at ` +
+              `${apy(c.benchmark.largestApy)} as of ${c.asOf}, measured the same way in our `}
+            <Link href="/report/stablecoin-yield-ranking">stablecoin rate comparison</Link>
+            {`. A larger position is usually better served by a deeper market at a lower rate than ` +
+              `by the top of this table, and this index is most useful for finding strategies rather ` +
+              `than for sizing into them.`}
+          </p>
+        ) : null}
       </Block>
 
       <section className="uni-hub-cta-row">
