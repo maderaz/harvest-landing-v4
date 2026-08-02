@@ -19,6 +19,8 @@ import { breadcrumbSchema, itemListSchema, faqPageSchema } from "@/lib/jsonld";
 import { HubTable } from "@/components/hub-table";
 import { HomeCrumb } from "@/components/home-crumb";
 import { RankingDataNote } from "@/components/ranking-data-note";
+import { UsdcCalculator, type CalcProduct } from "@/components/usdc-calculator";
+import { harvestAppUrl } from "@/lib/harvest-app";
 import {
   buildUsdcCohort,
   answerSentence,
@@ -222,6 +224,17 @@ export async function UsdcHubBody() {
   const visibleChains = [...c.chains].sort();
   const topVenues = c.byVenue.slice(0, 3);
 
+  // Every tracked strategy is selectable, not just the visible top ten: the
+  // calculator is a tool, and a reader who scrolled past row 10 to reach it
+  // is the one most likely to want a row further down.
+  const calcProducts: CalcProduct[] = c.all.map((v) => ({
+    slug: v.slug,
+    name: v.productName,
+    apy: v.apy24h,
+    chain: v.chain,
+    appUrl: harvestAppUrl(v.chain, v.contractAddress),
+  }));
+
   if (!c.best) {
     return (
       <div className="uni-hub-test">
@@ -264,53 +277,30 @@ export async function UsdcHubBody() {
         <span className="uni-hub-crumbs-current">USDC Ranking</span>
       </nav>
 
-      {/* Hero. The answer sentence and the four findings sit above the first
-          table so that the opening retrieval chunk of the document carries the
-          heading, the answer and four liftable facts. That ordering is the
-          single change this rebuild exists to make.
+      {/* Hero: heading, then the answer, and nothing between them.
 
-          A <div> rather than the <header> the shared hub body uses. Boilerplate
-          classifiers drop <header> as chrome, and this repo's own atomicity gate
-          strips it before linting, so the page's primary claim would have sat in
-          the one element most likely to be discarded before extraction. */}
+          The Best APY / Median APY stat tiles used to sit here and are gone on
+          purpose. In extracted text they rendered as "Best APY 11.23% Median
+          APY 4.34%" ahead of the answer sentence: bare label-value pairs with
+          no subject, no scope and no date, which is the exact shape this page
+          exists to stop publishing. Their scope and date lived in a
+          data-tooltip attribute, which no text extractor reads. They were also
+          invisible to the atomicity gate, whose blocks() matches only
+          p/li/dd/summary, so they were the one place on the page exempt from
+          the undated-figure rule. Both figures already appear, scoped and
+          dated, in the sentence below, so nothing was lost by deleting them.
+
+          A <div> rather than the <header> the shared hub body uses.
+          Boilerplate classifiers drop <header> as chrome, and this repo's own
+          atomicity gate strips it before linting, so the page's primary claim
+          would have sat in the one element most likely to be discarded before
+          extraction. */}
       <div className="uni-hub-hero uh-hero">
-        {/* Flat children so the grid can reorder them per breakpoint: on
-            desktop the stats sit top-right beside the title, on a phone they
-            drop below the answer sentence. */}
         <div className="uh-titlerow">
           <span className="uni-hub-hero-icon" aria-hidden="true">
             <AssetIcon asset="USDC" size={44} priority />
           </span>
           <h1 className="uni-hub-h1">{assetHubH1("USDC")}</h1>
-        </div>
-
-        {/* --duo opts out of the admin 1-column fallback that asset-hub.css
-            forces on .uni-hub-stats below 540px with !important. It exists for
-            exactly this case: two short labels that should stay side by side
-            at every width. */}
-        <div
-          className="uni-hub-stats uni-hub-stats--duo"
-          role="group"
-          aria-label="USDC index headline stats"
-        >
-          <div className="uni-hub-stat">
-            <div
-              className="uni-hub-stat-label"
-              data-tooltip={`Highest 24-hour APY among indexed USDC strategies holding at least ${tvl(c.fundedFloor)}, as of ${c.asOf}. The full ranking below is unfiltered.`}
-            >
-              Best APY
-            </div>
-            <div className="uni-hub-stat-value">{apy(c.best.apy24h)}</div>
-          </div>
-          <div className="uni-hub-stat">
-            <div
-              className="uni-hub-stat-label"
-              data-tooltip={`Median 24-hour APY across the indexed USDC strategies as of ${c.asOf}.`}
-            >
-              Median APY
-            </div>
-            <div className="uni-hub-stat-value">{apy(c.medianApy)}</div>
-          </div>
         </div>
 
         <p className="uh-answer">{answerSentence(c)}</p>
@@ -337,13 +327,25 @@ export async function UsdcHubBody() {
           `${listOf([...new Set(c.top10.map((v) => v.chain))])}.`
         }
       >
-        <HubTable vaults={c.top10} sparklines={sparklines} scopeLabel="USDC strategies" />
+        <HubTable vaults={c.top10} sparklines={sparklines} scopeLabel="USDC strategies" openLinks />
         <p className="uh-note">
           {`Sorted on the 24-hour rate with no floor applied: a rate at the top of this table can ` +
             `sit on a few hundred dollars of liquidity. The headline figure above uses a ` +
             `${tvl(c.fundedFloor)} floor for that reason, and ${c.fundedCount} of the ${c.count} ` +
             `strategies cleared it as of ${c.asOf}. Open any row for its TVL and history.`}
         </p>
+      </Block>
+
+      <Block
+        id="calculator"
+        eyebrow="Calculator"
+        title="USDC Earnings Calculator"
+        lead={
+          `Pick an amount and any of the ${c.count} tracked USDC strategies, and the calculator ` +
+          `below works out a year of earnings from the rate recorded as of ${c.asOf}.`
+        }
+      >
+        <UsdcCalculator products={calcProducts} asOf={c.asOf} />
       </Block>
 
       <Block

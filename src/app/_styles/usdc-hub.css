@@ -12,19 +12,15 @@
    which are the control group for this change. */
 
 /* === Hero ==========================================================
-   Icon and H1 on one line, stats to the right, answer sentence full width
-   underneath. The shared hub hero puts the subhead beside the icon, which
-   buries the page's primary claim in a narrow column. */
+   Icon and H1 on one line, then the answer at full width. Nothing sits
+   between the heading and the claim: the two stat tiles that used to live
+   here published an undated, unscoped figure ahead of the sentence that
+   qualifies it, so they were removed rather than restyled. */
 .uni-hub-test.uh-page .uh-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 28px;
-  align-items: center;
+  display: block;
   padding: 8px 0 28px;
 }
 .uni-hub-test.uh-page .uh-titlerow {
-  grid-column: 1;
-  grid-row: 1;
   display: flex;
   align-items: center;
   gap: 14px;
@@ -32,15 +28,6 @@
 }
 .uni-hub-test.uh-page .uh-titlerow .uni-hub-h1 {
   margin: 0;
-}
-.uni-hub-test.uh-page .uni-hub-stats {
-  grid-column: 2;
-  grid-row: 1;
-  justify-self: end;
-}
-.uni-hub-test.uh-page .uh-answer {
-  grid-column: 1 / -1;
-  grid-row: 2;
 }
 
 /* The answer sentence. Body prose rather than a stat card on purpose: an
@@ -54,37 +41,6 @@
   max-width: none;
 }
 
-/* === Stat tiles ====================================================
-   No fill and no outline: a soft shadow lifts the box off the page just
-   enough to read as a box. Sized to their content on desktop, and the label
-   carries the house gold. */
-.uni-hub-test.uh-page .uni-hub-stats {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.uni-hub-test.uh-page .uni-hub-stat {
-  background: var(--uni-bg, #fff);
-  border: 0;
-  border-radius: 12px;
-  box-shadow:
-    0 0 0 1px rgba(16, 18, 22, 0.05),
-    0 1px 2px rgba(16, 18, 22, 0.05),
-    0 4px 12px rgba(16, 18, 22, 0.06);
-  padding: 10px 16px;
-  gap: 2px;
-  min-width: 0;
-  flex: 0 0 auto;
-}
-.uni-hub-test.uh-page .uni-hub-stat-label {
-  color: var(--hub-gold, #ffb936);
-  font-weight: 600;
-  font-size: 12px;
-  white-space: nowrap;
-}
-.uni-hub-test.uh-page .uni-hub-stat-value {
-  font-size: 20px;
-}
 
 /* === Summary =======================================================
    Gold panel, black type. The block most likely to be read on its own and
@@ -301,40 +257,292 @@
   .uni-hub-test.uh-page .uh-faq-q { font-size: 16px; line-height: 23px; padding: 16px 0; }
   .uni-hub-test.uh-page .uh-faq-a { font-size: 15.5px; padding-bottom: 18px; }
 
-  /* Phone: one column, and the tiles drop below the answer sentence rather
-     than crowding the title. Full width, split 50/50. */
-  .uni-hub-test.uh-page .uh-hero {
-    grid-template-columns: minmax(0, 1fr);
-    row-gap: 0;
-  }
-  .uni-hub-test.uh-page .uh-titlerow { grid-column: 1; grid-row: 1; }
-  .uni-hub-test.uh-page .uh-answer { grid-column: 1; grid-row: 2; }
-  .uni-hub-test.uh-page .uni-hub-stats {
-    grid-column: 1;
-    grid-row: 3;
-    justify-self: stretch;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-top: 20px;
-  }
-  .uni-hub-test.uh-page .uni-hub-stat {
-    flex: 1 1 auto;
-    padding: 12px 14px;
-  }
-  .uni-hub-test.uh-page .uni-hub-stat-value { font-size: 19px; }
 }
 
 /* Dark mode. The gold summary panel keeps black type in both themes: it is a
    solid accent surface, not a tinted one, so it does not invert. */
-/* Dark mode needs a lighter hairline plus a deeper drop, since a soft shadow
-   alone is invisible against a dark surface. */
-:root[data-theme="dark"] .uni-hub-test.uh-page .uni-hub-stat {
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.09),
-    0 2px 10px rgba(0, 0, 0, 0.4);
-}
 :root[data-theme="dark"] .uni-hub-test.uh-page .uh-block h2 {
   color: var(--uni-ink);
+}
+
+/* === Earnings calculator ===========================================
+   Two panes: inputs left, results right, stacking below 900px. Same shape
+   as the /xrp-rich-list calculator so the two tools read as one family,
+   but on a neutral card rather than the gold panel, because the Summary
+   above already owns the gold on this page. */
+.uni-hub-test.uh-page .uh-calc {
+  margin: 4px 0 0;
+  padding: 26px 28px 28px;
+  border: 1px solid var(--uni-line);
+  border-radius: var(--uni-radius, 20px);
+  background: var(--uni-card, transparent);
+}
+.uni-hub-test.uh-page .uh-calc-panes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+/* A grid item will not shrink below its min-content width, and a text input
+   carries a browser default around 20 characters. Without this the input pane
+   pushes past the viewport on a narrow phone. */
+.uni-hub-test.uh-page .uh-calc-panes > * { min-width: 0; }
+@media (min-width: 900px) {
+  .uni-hub-test.uh-page .uh-calc-panes {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 34px;
+    align-items: start;
+  }
+  .uni-hub-test.uh-page .uh-calc-res {
+    border-left: 1px solid var(--uni-line);
+    padding-left: 34px;
+    min-height: 210px;
+  }
+}
+
+.uni-hub-test.uh-page .uh-calc-h {
+  margin: 0 0 18px !important;
+  font-size: 15px !important;
+  line-height: 1.5 !important;
+  color: var(--uni-ink) !important;
+  font-weight: 600;
+}
+.uni-hub-test.uh-page .uh-calc-label {
+  display: block;
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--uni-ink-2);
+  margin: 0 0 7px;
+}
+.uni-hub-test.uh-page .uh-calc-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--uni-bg, #fff);
+  border: 1px solid var(--uni-line);
+  border-radius: 12px;
+  padding: 0 14px;
+  margin: 0 0 16px;
+}
+.uni-hub-test.uh-page .uh-calc-field:focus-within {
+  border-color: var(--uni-ink);
+}
+.uni-hub-test.uh-page .uh-calc-input,
+.uni-hub-test.uh-page .uh-calc-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  padding: 13px 0;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--uni-ink);
+  font-feature-settings: "tnum";
+}
+.uni-hub-test.uh-page .uh-calc-field--select { padding-right: 8px; }
+.uni-hub-test.uh-page .uh-calc-select {
+  appearance: none;
+  cursor: pointer;
+  padding-right: 22px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 8px center, right 3px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+}
+.uni-hub-test.uh-page .uh-calc-unit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--uni-ink-2);
+}
+.uni-hub-test.uh-page .uh-calc-go {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  padding: 13px 18px;
+  background: var(--uni-ink);
+  color: var(--uni-bg, #fff);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.uni-hub-test.uh-page .uh-calc-go:hover { opacity: 0.85; }
+.uni-hub-test.uh-page .uh-calc-note {
+  margin: 16px 0 0 !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  color: var(--uni-ink-3) !important;
+}
+
+.uni-hub-test.uh-page .uh-calc-rest {
+  display: none;
+  margin: 0 !important;
+  font-size: 14px !important;
+  color: var(--uni-ink-3) !important;
+}
+@media (min-width: 900px) {
+  .uni-hub-test.uh-page .uh-calc-rest { display: block; }
+}
+.uni-hub-test.uh-page .uh-calc-headline {
+  margin: 0 0 6px !important;
+  font-family: var(--display);
+  font-size: 19px !important;
+  line-height: 1.35 !important;
+  color: var(--uni-ink) !important;
+  font-feature-settings: "tnum";
+}
+.uni-hub-test.uh-page .uh-calc-headline strong { font-weight: 650; }
+.uni-hub-test.uh-page .uh-calc-detail {
+  margin: 0 0 16px !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: var(--uni-ink-3) !important;
+}
+.uni-hub-test.uh-page .uh-calc-facts {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 11px;
+}
+.uni-hub-test.uh-page .uh-calc-facts li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.uni-hub-test.uh-page .uh-calc-facts li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.66em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--hub-gold, #ffb936);
+}
+.uni-hub-test.uh-page .uh-calc-facts strong {
+  color: var(--uni-ink);
+  font-weight: 650;
+  font-feature-settings: "tnum";
+}
+.uni-hub-test.uh-page .uh-calc-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 12px;
+  padding: 12px 18px;
+  background: var(--hub-gold, #ffb936);
+  color: #1a1a1a !important;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  background-image: none !important;
+  transition: opacity 0.15s ease;
+}
+.uni-hub-test.uh-page .uh-calc-cta:hover {
+  opacity: 0.88;
+  background-image: none !important;
+}
+
+@media (max-width: 800px) {
+  .uni-hub-test.uh-page .uh-calc { padding: 20px 18px 22px; }
+  .uni-hub-test.uh-page .uh-calc-headline { font-size: 17px !important; }
+  .uni-hub-test.uh-page .uh-calc-facts li { font-size: 14.5px; }
+}
+
+:root[data-theme="dark"] .uni-hub-test.uh-page .uh-calc-field {
+  background: rgba(255, 255, 255, 0.04);
+}
+:root[data-theme="dark"] .uni-hub-test.uh-page .uh-calc-go {
+  background: var(--uni-ink);
+  color: #12141a;
+}
+
+/* === Top-ten "Link" column =========================================
+   A seventh track carrying an Open button per row. Only /usdc's top-ten
+   table opts in (openLinks on HubTable), so the six-column grid every
+   other call site uses is untouched.
+
+   The existing responsive rules in globals.css already hide Strategy at
+   1100, Network at 800 and the trend at 540 by nth-child, and those apply
+   here too. Each breakpoint below just restates the track list with one
+   fewer column plus the Link track, which stays visible at every width:
+   it is the row's reason for existing on a phone. */
+.hub-table--links .hub-thead,
+.hub-table--links .hub-row {
+  grid-template-columns: 50px minmax(190px, 2fr) 1fr 1fr 0.5fr 130px 78px;
+}
+.hub-table--links .hub-row { position: relative; }
+/* Stretched link: the whole row navigates to the product page, while the
+   Open anchor keeps its own click because it sits above this layer. */
+.hub-table--links .hub-rowlink {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.hub-table--links .hub-cell { position: relative; z-index: 1; pointer-events: none; }
+.hub-table--links .hub-linkcell {
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: auto;
+}
+.hub-table--links .hub-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 62px;
+  padding: 6px 14px;
+  border: 1px solid var(--hub-line, #e6e7e4);
+  border-radius: 999px;
+  background: #fff;
+  color: #1a1a1a;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.hub-table--links .hub-open:hover {
+  border-color: #1a1a1a;
+  box-shadow: 0 1px 4px rgba(16, 18, 22, 0.12);
+}
+@media (max-width: 1100px) {
+  .hub-table--links .hub-thead,
+  .hub-table--links .hub-row {
+    grid-template-columns: 40px minmax(140px, 1.6fr) 100px 48px 110px 74px;
+  }
+}
+@media (max-width: 800px) {
+  .hub-table--links .hub-thead,
+  .hub-table--links .hub-row {
+    grid-template-columns: 32px minmax(110px, 1.6fr) 90px 100px 70px;
+  }
+}
+@media (max-width: 540px) {
+  .hub-table--links .hub-thead,
+  .hub-table--links .hub-row {
+    grid-template-columns: 22px minmax(0, 1fr) 60px 66px;
+  }
+  .hub-table--links .hub-open {
+    min-width: 0;
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+}
+:root[data-theme="dark"] .hub-table--links .hub-open {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #f3f4f6;
+}
+:root[data-theme="dark"] .hub-table--links .hub-open:hover {
+  border-color: rgba(255, 255, 255, 0.5);
 }
