@@ -216,7 +216,10 @@ export async function UsdcHubBody() {
   const faqs = buildFaqs(c);
   const findings = keyFindings(c);
   const venues = venueLines(c, VENUE_FAMILIES);
-  const visibleChains = [...new Set(allVaults.map((v) => v.chain))].sort();
+  // The networks this page actually covers, not every network on the site.
+  // The rail offers to "cut the same data by network", so listing a chain the
+  // cohort excludes points at a ranking with none of these rows in it.
+  const visibleChains = [...c.chains].sort();
   const topVenues = c.byVenue.slice(0, 3);
 
   if (!c.best) {
