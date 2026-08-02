@@ -19,6 +19,8 @@ import { breadcrumbSchema, itemListSchema, faqPageSchema } from "@/lib/jsonld";
 import { HubTable } from "@/components/hub-table";
 import { HomeCrumb } from "@/components/home-crumb";
 import { RankingDataNote } from "@/components/ranking-data-note";
+import { UsdcCalculator, type CalcProduct } from "@/components/usdc-calculator";
+import { harvestAppUrl } from "@/lib/harvest-app";
 import {
   buildUsdcCohort,
   answerSentence,
@@ -222,6 +224,17 @@ export async function UsdcHubBody() {
   const visibleChains = [...c.chains].sort();
   const topVenues = c.byVenue.slice(0, 3);
 
+  // Every tracked strategy is selectable, not just the visible top ten: the
+  // calculator is a tool, and a reader who scrolled past row 10 to reach it
+  // is the one most likely to want a row further down.
+  const calcProducts: CalcProduct[] = c.all.map((v) => ({
+    slug: v.slug,
+    name: v.productName,
+    apy: v.apy24h,
+    chain: v.chain,
+    appUrl: harvestAppUrl(v.chain, v.contractAddress),
+  }));
+
   if (!c.best) {
     return (
       <div className="uni-hub-test">
@@ -314,13 +327,25 @@ export async function UsdcHubBody() {
           `${listOf([...new Set(c.top10.map((v) => v.chain))])}.`
         }
       >
-        <HubTable vaults={c.top10} sparklines={sparklines} scopeLabel="USDC strategies" />
+        <HubTable vaults={c.top10} sparklines={sparklines} scopeLabel="USDC strategies" openLinks />
         <p className="uh-note">
           {`Sorted on the 24-hour rate with no floor applied: a rate at the top of this table can ` +
             `sit on a few hundred dollars of liquidity. The headline figure above uses a ` +
             `${tvl(c.fundedFloor)} floor for that reason, and ${c.fundedCount} of the ${c.count} ` +
             `strategies cleared it as of ${c.asOf}. Open any row for its TVL and history.`}
         </p>
+      </Block>
+
+      <Block
+        id="calculator"
+        eyebrow="Calculator"
+        title="USDC Earnings Calculator"
+        lead={
+          `Pick an amount and any of the ${c.count} tracked USDC strategies, and the calculator ` +
+          `below works out a year of earnings from the rate recorded as of ${c.asOf}.`
+        }
+      >
+        <UsdcCalculator products={calcProducts} asOf={c.asOf} />
       </Block>
 
       <Block
