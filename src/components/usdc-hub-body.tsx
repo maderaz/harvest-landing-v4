@@ -1,12 +1,12 @@
 // Dedicated body for /usdc.
 //
-// Every other asset hub renders through asset-hub-body.tsx. This one does not,
-// for two reasons. First, /eth, /btc and /usdt are the control group this
-// rebuild is measured against, so a shared component would make a structural
-// effect indistinguishable from a sitewide one. Second, the page needs a
-// seven-column top-ten table, and .hub-table's grid in globals.css is a
-// six-column layout with three breakpoints that hide columns by nth-child
-// index, shared with eight other call sites.
+// Every other asset hub renders through asset-hub-body.tsx. This one does not:
+// /eth, /btc and /usdt are the control group this rebuild is measured against,
+// so putting the new structure in the shared body would make a structural
+// effect indistinguishable from a sitewide one.
+//
+// The ranking itself is the shared HubTable, unchanged and identical to every
+// other asset page. What differs is everything around it.
 //
 // /polygon set the precedent (polygon-hub-body.tsx) for a hub that outgrew the
 // shared body.
@@ -29,6 +29,7 @@ import {
   listOf,
   plural,
   apy,
+  apyFloorLabel,
   tvl,
   type UsdcCohort,
 } from "@/lib/usdc-hub";
@@ -106,7 +107,7 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
       q: "What is the current USDC interest rate?",
       a:
         `The median USDC interest rate across the ${c.count} strategies in this index was ` +
-        `${apy(c.medianApy)} as of ${c.asOf}, within a range of ${apy(c.minApy)} to ` +
+        `${apy(c.medianApy)} as of ${c.asOf}, within a range of ${apyFloorLabel(c.minApy)} to ` +
         `${apy(c.maxApy)}. A money-market interest rate such as Aave or Compound tracks what ` +
         `borrowers pay for USDC liquidity, which is why it usually sits nearer the middle of ` +
         `that range than the top.`,
@@ -270,18 +271,25 @@ export async function UsdcHubBody() {
           strips it before linting, so the page's primary claim would have sat in
           the one element most likely to be discarded before extraction. */}
       <div className="uni-hub-hero uh-hero">
-        {/* Icon and H1 share one line; the answer sentence sits underneath at
-            full width rather than beside the icon, so the first thing read is
-            the title and the second is the claim. */}
-        <div className="uh-hero-top">
-          <div className="uh-titlerow">
-            <span className="uni-hub-hero-icon" aria-hidden="true">
-              <AssetIcon asset="USDC" size={44} priority />
-            </span>
-            <h1 className="uni-hub-h1">{assetHubH1("USDC")}</h1>
-          </div>
+        {/* Flat children so the grid can reorder them per breakpoint: on
+            desktop the stats sit top-right beside the title, on a phone they
+            drop below the answer sentence. */}
+        <div className="uh-titlerow">
+          <span className="uni-hub-hero-icon" aria-hidden="true">
+            <AssetIcon asset="USDC" size={44} priority />
+          </span>
+          <h1 className="uni-hub-h1">{assetHubH1("USDC")}</h1>
+        </div>
 
-          <div className="uni-hub-stats" role="group" aria-label="USDC index headline stats">
+        {/* --duo opts out of the admin 1-column fallback that asset-hub.css
+            forces on .uni-hub-stats below 540px with !important. It exists for
+            exactly this case: two short labels that should stay side by side
+            at every width. */}
+        <div
+          className="uni-hub-stats uni-hub-stats--duo"
+          role="group"
+          aria-label="USDC index headline stats"
+        >
           <div className="uni-hub-stat">
             <div
               className="uni-hub-stat-label"
@@ -299,7 +307,6 @@ export async function UsdcHubBody() {
               Median APY
             </div>
             <div className="uni-hub-stat-value">{apy(c.medianApy)}</div>
-            </div>
           </div>
         </div>
 
