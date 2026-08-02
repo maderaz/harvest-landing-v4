@@ -13,14 +13,12 @@
 import Link from "next/link";
 import { getLiveVaults, getAllSparklines, loadHistoryFile } from "@/lib/data";
 import { AssetIcon, ChainIcon } from "@/components/token-icons";
-import { formatAPY, formatTVL } from "@/lib/format";
 import { SITE_URL } from "@/lib/constants";
 import { assetHubH1, assetHubCrumbs } from "@/lib/seo";
 import { breadcrumbSchema, itemListSchema, faqPageSchema } from "@/lib/jsonld";
 import { HubTable } from "@/components/hub-table";
 import { HomeCrumb } from "@/components/home-crumb";
 import { RankingDataNote } from "@/components/ranking-data-note";
-import type { YieldVault } from "@/lib/types";
 import {
   buildUsdcCohort,
   answerSentence,
@@ -28,7 +26,6 @@ import {
   venueLines,
   networkBlock,
   protocolBlock,
-  venueOf,
   listOf,
   plural,
   apy,
@@ -43,57 +40,11 @@ const HUB_URL = `${SITE_URL}/usdc`;
 // drops out loses its bullet rather than printing a stale rate.
 const VENUE_FAMILIES = ["Aave", "Compound V3", "Morpho", "Fluid", "Euler"];
 
-// Table 1. Ten rows, sorted by 24-hour APY, rendered server-side with no
-// client boundary. A real readable 30d figure sits beside the 24h one because
-// a sparkline is not extractable, and every number on this page has to exist
-// as text somewhere.
-function TopTen({ rows }: { rows: YieldVault[] }) {
-  if (rows.length === 0) {
-    return <div className="uni-hub-empty">No USDC strategies indexed yet.</div>;
-  }
-  return (
-    // data-nosnippet for the same reason every ranking table on the site
-    // carries it: Google was lifting mashed cell text into the SERP snippet
-    // over the meta description. On this page the prose above is the snippet
-    // surface, which is the whole point of the rebuild.
-    <div className="hub-table-wrap uh-top10" data-nosnippet="">
-      <div className="hub-table" role="table" aria-label="Top 10 USDC yields by 24-hour APY">
-        <div className="hub-thead" role="row">
-          <span className="hub-th hub-th-rank">#</span>
-          <span className="hub-th">Vault</span>
-          <span className="hub-th hub-th-num">24h APY</span>
-          <span className="hub-th hub-th-num">30d APY</span>
-          <span className="hub-th">Strategy</span>
-          <span className="hub-th">Network</span>
-          <span className="hub-th hub-th-num">TVL</span>
-        </div>
-        <div className="hub-tbody" role="rowgroup">
-          {rows.map((v, i) => (
-            <Link key={v.id} href={`/${v.slug}`} className="hub-row" role="row">
-              <span className="hub-cell hub-rank">{i + 1}</span>
-              <span className="hub-cell hub-vault">
-                <AssetIcon asset={v.asset} size={26} />
-                <span className="hub-vault-name">{v.productName}</span>
-              </span>
-              <span className="hub-cell hub-num hub-apy">{formatAPY(v.apy24h)}</span>
-              <span className="hub-cell hub-num uh-apy30">{formatAPY(v.apy30d)}</span>
-              <span className="hub-cell uh-cell-text">{venueOf(v)}</span>
-              <span className="hub-cell uh-cell-net">
-                <ChainIcon chain={v.chain} size={16} />
-                <span>{v.chain}</span>
-              </span>
-              <span className="hub-cell hub-num">{formatTVL(v.tvl)}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// One section: eyebrow, H2, then prose. The atomic opening sentence of each
-// block is passed as `lead` so it renders in its own paragraph and can be
-// lifted whole.
+// Section shell: sentence-case eyebrow, H2, then prose. Deliberately the same
+// shape and the same class names the XRP report uses (rp-eyebrow + h2, see
+// report/xrp-yield-ranking/page.tsx), so the two long-form pages read as one
+// house style rather than two. The atomic opening sentence is passed as `lead`
+// so it renders in its own paragraph and can be lifted whole.
 function Block({
   id,
   eyebrow,
@@ -109,11 +60,31 @@ function Block({
 }) {
   return (
     <section className="uh-block" aria-labelledby={id}>
-      <p className="uh-eyebrow">{eyebrow}</p>
+      <p className="rp-eyebrow">{eyebrow}</p>
       <h2 id={id}>{title}</h2>
       {lead && <p className="uh-lead">{lead}</p>}
       {children}
     </section>
+  );
+}
+
+function Chevron() {
+  return (
+    <svg
+      className="uh-faq-chev"
+      viewBox="0 0 24 24"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      focusable="false"
+    >
+      <path d="m6 9 6 6 6-6" />
+    </svg>
   );
 }
 
@@ -299,17 +270,18 @@ export async function UsdcHubBody() {
           strips it before linting, so the page's primary claim would have sat in
           the one element most likely to be discarded before extraction. */}
       <div className="uni-hub-hero uh-hero">
-        <div className="uni-hub-hero-headline">
-          <span className="uni-hub-hero-icon" aria-hidden="true">
-            <AssetIcon asset="USDC" size={54} priority />
-          </span>
-          <div>
+        {/* Icon and H1 share one line; the answer sentence sits underneath at
+            full width rather than beside the icon, so the first thing read is
+            the title and the second is the claim. */}
+        <div className="uh-hero-top">
+          <div className="uh-titlerow">
+            <span className="uni-hub-hero-icon" aria-hidden="true">
+              <AssetIcon asset="USDC" size={44} priority />
+            </span>
             <h1 className="uni-hub-h1">{assetHubH1("USDC")}</h1>
-            <p className="uh-answer">{answerSentence(c)}</p>
           </div>
-        </div>
 
-        <div className="uni-hub-stats" role="group" aria-label="USDC index headline stats">
+          <div className="uni-hub-stats" role="group" aria-label="USDC index headline stats">
           <div className="uni-hub-stat">
             <div
               className="uni-hub-stat-label"
@@ -327,11 +299,17 @@ export async function UsdcHubBody() {
               Median APY
             </div>
             <div className="uni-hub-stat-value">{apy(c.medianApy)}</div>
+            </div>
           </div>
         </div>
+
+        <p className="uh-answer">{answerSentence(c)}</p>
       </div>
 
-      <section className="uh-findings-wrap" aria-label="Key findings">
+      <section className="uh-summary" aria-labelledby="summary">
+        <h2 className="uh-summary-h" id="summary">
+          Summary
+        </h2>
         <ul className="uh-findings">
           {findings.map((f) => (
             <li key={f}>{f}</li>
@@ -349,12 +327,12 @@ export async function UsdcHubBody() {
           `${listOf([...new Set(c.top10.map((v) => v.chain))])}.`
         }
       >
-        <TopTen rows={c.top10} />
+        <HubTable vaults={c.top10} sparklines={sparklines} scopeLabel="USDC strategies" />
         <p className="uh-note">
-          {`Sorted on the 24-hour rate with no floor applied, so the TVL column matters: a rate at ` +
-            `the top of this table can sit on a few hundred dollars. The headline figure above uses ` +
-            `a ${tvl(c.fundedFloor)} floor for that reason, and ${c.fundedCount} of the ${c.count} ` +
-            `strategies cleared it as of ${c.asOf}.`}
+          {`Sorted on the 24-hour rate with no floor applied: a rate at the top of this table can ` +
+            `sit on a few hundred dollars of liquidity. The headline figure above uses a ` +
+            `${tvl(c.fundedFloor)} floor for that reason, and ${c.fundedCount} of the ${c.count} ` +
+            `strategies cleared it as of ${c.asOf}. Open any row for its TVL and history.`}
         </p>
       </Block>
 
@@ -507,14 +485,21 @@ export async function UsdcHubBody() {
         eyebrow="Questions"
         title="USDC yield questions, answered"
       >
-        <dl className="uni-hub-faq uh-faq">
-          {faqs.map((f) => (
-            <div key={f.q}>
-              <dt>{f.q}</dt>
-              <dd>{f.a}</dd>
-            </div>
+        {/* <details> rather than an accordion component, and every answer stays
+            in the raw HTML whether or not it is open. The spec's "nothing behind
+            a click" rule is about rows that do not exist until JavaScript runs;
+            this hides nothing from a parser. Same pattern as /xrp-rich-list. */}
+        <div className="uh-faq">
+          {faqs.map((f, i) => (
+            <details className="uh-faq-item" name="uh-faq" key={f.q} open={i === 0}>
+              <summary className="uh-faq-q">
+                <span>{f.q}</span>
+                <Chevron />
+              </summary>
+              <p className="uh-faq-a">{f.a}</p>
+            </details>
           ))}
-        </dl>
+        </div>
       </Block>
 
       <Block
