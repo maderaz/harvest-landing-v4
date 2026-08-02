@@ -3,6 +3,7 @@ import type { FullVaultHistory } from "./data";
 import { formatAPY, formatTVL, stripChainSuffix } from "./format";
 import { freshness } from "./freshness";
 import { LOW_LIQUIDITY_TVL_THRESHOLD } from "./admin-rules";
+import { getStablecoinReport } from "./stablecoin-yield";
 
 // Single source for every figure on /usdc.
 //
@@ -65,6 +66,55 @@ export interface UsdcCohort {
   totalTvl: number;
   byNetwork: UsdcNetwork[];
   byVenue: UsdcVenue[];
+  /** What the yield is actually paid in. See payoutOf. */
+  payout: UsdcPayout;
+  /** 30-day rate stability, per strategy and cohort-level. */
+  stability: UsdcStability;
+  /**
+   * The wider USDC market, measured by our own stablecoin report. Null when
+   * that dataset is absent, and every consumer must then render nothing.
+   */
+  benchmark: UsdcBenchmark | null;
+}
+
+export interface UsdcPayout {
+  /** Strategies whose yield accrues in USDC itself. */
+  inUsdc: YieldVault[];
+  /** Strategies whose yield accrues in a reward token that has to be sold. */
+  inToken: YieldVault[];
+  usdcMedian: number;
+  tokenMedian: number;
+  /** Distinct reward-token symbols, most common first. */
+  tokens: { symbol: string; count: number }[];
+}
+
+export interface UsdcStabilityRow {
+  slug: string;
+  name: string;
+  /** Standard deviation of the last 30 daily APY readings, in points. */
+  stdev: number;
+  mean: number;
+  min: number;
+  max: number;
+}
+
+export interface UsdcStability {
+  rows: UsdcStabilityRow[];
+  steadiest: UsdcStabilityRow | null;
+  mostVolatile: UsdcStabilityRow | null;
+  /** Strategies whose 30-day deviation is under one percentage point. */
+  steadyCount: number;
+  measuredCount: number;
+}
+
+export interface UsdcBenchmark {
+  /** Largest external USDC product by tracked value. */
+  largestName: string;
+  largestApy: number;
+  largestTvl: number;
+  /** Median rate across external products carrying a measured rate. */
+  externalMedian: number;
+  externalCount: number;
 }
 
 // True median. The shared asset-hub body takes sortedApys[floor(len / 2)],
@@ -97,6 +147,21 @@ export function usdcDisplayName(vault: YieldVault): string {
 
 export function venueOf(vault: YieldVault): string {
   return stripChainSuffix(vault.category, vault.chain) || "Other";
+}
+
+// The same product, written for a sentence instead of a table cell.
+//
+// "USDC 40 Acres (Base)" is a good tabular label and a bad clause: a reader
+// meeting it mid-sentence has to infer that the parenthetical is a network,
+// and a parser has no reason to. Tables and the ItemList keep the compact
+// form, where the column header supplies the context. Prose spells it out.
+export function proseName(vault: YieldVault, withNetworkWord = false): string {
+  const bare = vault.productName
+    .replace(new RegExp(`\\s*\\(${vault.chain}\\)\\s*$`), "")
+    .trim();
+  return withNetworkWord
+    ? `${bare}, which runs on the ${vault.chain} network`
+    : `${bare} on ${vault.chain}`;
 }
 
 // Which row is allowed to be called "the highest USDC yield".
@@ -138,6 +203,39 @@ const EXCLUDED_CHAINS = new Set(["zkSync"]);
 export function apyFloorLabel(v: number): string {
   return v > 0 && v < 0.005 ? "under 0.01%" : formatAPY(v);
 }
+
+// The token a strategy's yield accrues in.
+//
+// Two independent reviews asked for the rate to be split into base interest
+// and reward emissions. That split does not exist in our data: apyBreakdown
+// carries exactly one entry per vault and its apy equals apy24h on every row,
+// so any percentage decomposition would be invented here rather than measured.
+//
+// What the field does carry is the payout token, and that answers the question
+// the reviewers were really asking. A rate paid in MORPHO or ARB is only worth
+// what the token sells for; a rate paid in USDC is already dollars. The page
+// reports that distinction and says plainly that it is not a base/reward split.
+//
+// Note the limit: an autocompounder that harvests MORPHO and swaps it to USDC
+// also reports USDC, correctly, because that is what reaches the position.
+export function payoutOf(vault: YieldVault): string {
+  return vault.apyBreakdown?.[0]?.source || vault.asset;
+}
+
+export const isPaidInUsdc = (v: YieldVault): boolean => payoutOf(v) === "USDC";
+
+/** Population standard deviation, in the same units as the input. */
+function stdev(xs: number[]): number {
+  if (xs.length < 2) return 0;
+  const m = xs.reduce((a, b) => a + b, 0) / xs.length;
+  return Math.sqrt(xs.reduce((s, x) => s + (x - m) ** 2, 0) / xs.length);
+}
+
+// Minimum daily readings before a deviation is worth publishing. Matches the
+// floor isBrokenLowTvlVault already uses for "enough history to judge".
+const STABILITY_MIN_POINTS = 14;
+/** Below this 30-day deviation a rate is described as steady. */
+const STEADY_STDEV = 1;
 
 const utcLongDate = (iso: string): string =>
   new Date(iso).toLocaleDateString("en-US", {
@@ -210,6 +308,66 @@ export function buildUsdcCohort(
   const funded = all.filter((v) => v.tvl >= FUNDED_FLOOR);
   const fundedApysAsc = funded.map((v) => v.apy24h).sort((a, b) => a - b);
 
+  const inUsdc = all.filter(isPaidInUsdc);
+  const inToken = all.filter((v) => !isPaidInUsdc(v));
+  const tokenCounts = inToken.reduce<Record<string, number>>((acc, v) => {
+    const t = payoutOf(v);
+    acc[t] = (acc[t] ?? 0) + 1;
+    return acc;
+  }, {});
+  const payout: UsdcPayout = {
+    inUsdc,
+    inToken,
+    usdcMedian: median(inUsdc.map((v) => v.apy24h).sort((a, b) => a - b)),
+    tokenMedian: median(inToken.map((v) => v.apy24h).sort((a, b) => a - b)),
+    tokens: Object.entries(tokenCounts)
+      .map(([symbol, count]) => ({ symbol, count }))
+      .sort((a, b) => b.count - a.count || a.symbol.localeCompare(b.symbol)),
+  };
+
+  // Rate stability. The reviewers wanted per-strategy risk quantified rather
+  // than four prose headings; this is the part that is measured rather than
+  // scored, so it is the part that ships. A composite safety score would mean
+  // choosing weights ourselves and publishing them as a rating.
+  const stabilityRows: UsdcStabilityRow[] = [];
+  if (history) {
+    for (const v of all) {
+      const h = history[v.contractAddress] ?? history[v.contractAddress.toLowerCase()];
+      const pts = (h?.apyHistory ?? [])
+        .filter((p) => p.apy >= 0)
+        .sort((a, b) => a.timestamp - b.timestamp)
+        .slice(-30)
+        .map((p) => p.apy);
+      if (pts.length < STABILITY_MIN_POINTS) continue;
+      stabilityRows.push({
+        slug: v.slug,
+        name: proseName(v),
+        stdev: stdev(pts),
+        mean: pts.reduce((a, b) => a + b, 0) / pts.length,
+        min: Math.min(...pts),
+        max: Math.max(...pts),
+      });
+    }
+  }
+  // Named steadiest and most volatile are picked from the funded cohort only.
+  // Over the whole set the steadiest row is whatever pays closest to nothing:
+  // a 0.07% rate that barely moves is arithmetically the least volatile and
+  // useless as a recommendation. Same floor the headline uses, so the two
+  // superlatives on the page are drawn from the same population.
+  const fundedSlugs = new Set(funded.map((v) => v.slug));
+  const fundedStdev = stabilityRows
+    .filter((r) => fundedSlugs.has(r.slug))
+    .sort((a, b) => a.stdev - b.stdev);
+  const stability: UsdcStability = {
+    rows: stabilityRows,
+    // A zero deviation is a flat feed rather than a steady rate, so the
+    // "steadiest" claim skips it instead of crowning a stalled series.
+    steadiest: fundedStdev.find((r) => r.stdev > 0) ?? null,
+    mostVolatile: fundedStdev[fundedStdev.length - 1] ?? null,
+    steadyCount: stabilityRows.filter((r) => r.stdev < STEADY_STDEV).length,
+    measuredCount: stabilityRows.length,
+  };
+
   return {
     all,
     top10: all.slice(0, 10),
@@ -233,6 +391,38 @@ export function buildUsdcCohort(
     totalTvl,
     byNetwork,
     byVenue,
+    payout,
+    stability,
+    benchmark: buildBenchmark(),
+  };
+}
+
+// The wider USDC market, from the report we already publish.
+//
+// Both reviews said the page gives a reader no way to tell whether its top
+// rate is an outlier, and no sense of how small $5.2M is next to the real
+// market. We already measure the answer: data/stablecoin-yield.json carries
+// external products read from their own onchain share-price history, so the
+// comparison is first-party rather than scraped from an aggregator.
+//
+// Returns null when that file is absent (getStablecoinReport does the
+// existsSync check), and the page then renders nothing rather than a gap.
+function buildBenchmark(): UsdcBenchmark | null {
+  const report = getStablecoinReport();
+  if (!report) return null;
+  const external = report.rows.filter(
+    (r) => r.operator !== "harvest" && r.apy != null && (r.payoutAsset ?? "") === "USDC",
+  );
+  if (!external.length) return null;
+  const largest = external.reduce((a, b) => ((b.tvlUsd ?? 0) > (a.tvlUsd ?? 0) ? b : a));
+  return {
+    largestName: largest.name,
+    largestApy: largest.apy as number,
+    largestTvl: largest.tvlUsd ?? 0,
+    externalMedian: median(
+      external.map((r) => r.apy as number).sort((a, b) => a - b),
+    ),
+    externalCount: external.length,
   };
 }
 
@@ -279,7 +469,7 @@ export function answerSentence(c: UsdcCohort): string {
   if (!c.best) return "";
   return (
     `The best USDC yield in Harvest's index is ${apy(c.best.apy24h)} APY, paid by ` +
-    `${c.best.productName}, as of ${c.asOf}. That is the highest rate among strategies ` +
+    `${proseName(c.best, true)}, as of ${c.asOf}. That is the highest rate among strategies ` +
     `holding at least ${tvl(c.fundedFloor)} as of ${c.asOf}, against a median of ` +
     `${apy(c.medianApy)} across all ${c.count} USDC strategies tracked on ${c.chainCount} ` +
     `${plural(c.chainCount, "network", "networks")}.`
@@ -314,7 +504,7 @@ export function keyFindings(c: UsdcCohort): string[] {
       `${apy(c.fundedMinApy)} to ${apy(c.fundedMaxApy)} as of ${c.asOf}` +
       (rawDiffers
         ? `, while the highest rate anywhere in the index was ${apy(c.bestRaw.apy24h)} on ` +
-          `${c.bestRaw.productName}, which held ${tvl(c.bestRaw.tvl)}.`
+          `${proseName(c.bestRaw)}, which held ${tvl(c.bestRaw.tvl)}.`
         : `, across ${listOf([...new Set(c.funded.map((v) => v.chain))])}.`),
   );
   if (first) {
@@ -354,6 +544,34 @@ export function venueLines(c: UsdcCohort, families: string[]): string[] {
       if (v.minApy.toFixed(2) === v.maxApy.toFixed(2)) return `${head}.`;
       return `${head}, within a range of ${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}.`;
     });
+}
+
+/** "MORPHO on 24, ARB on 6 and COMP on 3" */
+export function tokenBlock(c: UsdcCohort, limit = 4): string {
+  return listOf(
+    c.payout.tokens
+      .slice(0, limit)
+      .map((t) => `${t.symbol} on ${t.count}`),
+  );
+}
+
+export function payoutLead(c: UsdcCohort): string {
+  const p = c.payout;
+  return (
+    `Of the ${c.count} USDC strategies tracked here, ${p.inUsdc.length} paid their yield in ` +
+    `USDC and ${p.inToken.length} paid it in a reward token that has to be sold before it ` +
+    `becomes dollars, as of ${c.asOf}.`
+  );
+}
+
+export function stabilityLead(c: UsdcCohort): string {
+  const s = c.stability;
+  if (!s.mostVolatile || !s.steadiest) return "";
+  return (
+    `Across the ${s.measuredCount} USDC strategies with a month of readings behind them, ` +
+    `${s.steadyCount} moved by less than a percentage point over the 30 days to ${c.asOf}, ` +
+    `and the rest moved more.`
+  );
 }
 
 /** "Base (19 strategies, top APY 11.24%), Ethereum (17, top 10.17%)" */

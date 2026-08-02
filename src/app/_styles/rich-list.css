@@ -2038,3 +2038,55 @@
     padding: 0;
   }
 }
+
+/* ---- "Download as image" under the band table --------------------------
+   The band-table format circulates on X constantly and the versions that go
+   around carry no ledger number and no date. The generated PNG stamps both,
+   plus the domain, so a shared screenshot stays attributable and checkable.
+   This is the action only: the table above it is the crawlable twin and there
+   is exactly one of those. */
+.uni-home-test .rl-share {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 18px 0 0;
+}
+.uni-home-test .rl-share-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--uni-line, #dddee0);
+  border-radius: 999px;
+  background: var(--uni-bg, #fff);
+  color: var(--uni-ink);
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 9px 16px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.uni-home-test .rl-share-btn:hover:not(:disabled) {
+  border-color: var(--uni-ink);
+  box-shadow: 0 1px 5px rgba(16, 18, 22, 0.1);
+}
+.uni-home-test .rl-share-btn:disabled { opacity: 0.6; cursor: default; }
+.uni-home-test .rl-share-btn svg { flex: none; }
+.uni-home-test .rl-share-hint {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--uni-ink-3);
+  max-width: 46ch;
+}
+@media (max-width: 640px) {
+  .uni-home-test .rl-share { gap: 10px; }
+  .uni-home-test .rl-share-hint { font-size: 12.5px; max-width: none; }
+}
+:root[data-theme="dark"] .uni-home-test .rl-share-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+:root[data-theme="dark"] .uni-home-test .rl-share-btn:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.5);
+}

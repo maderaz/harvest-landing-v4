@@ -22,6 +22,7 @@ import {
   DistributionChart,
   DistributionTable,
 } from "@/components/richlist/distribution-chart";
+import { DistributionShareCard } from "@/components/richlist/distribution-share-card";
 import {
   loadRichList,
   accountsAtOrAbove,
@@ -997,10 +998,18 @@ export default function XrpRichListPage() {
 
         <DistributionTable bands={data.bands} snapshotDate={snapDate} />
 
+        <DistributionShareCard
+          bands={data.bands}
+          snapshotDate={snapDate}
+          ledgerIndex={data.ledgerIndex}
+          totalAccounts={data.accounts}
+          totalXrp={data.xrpHeld}
+        />
+
         <p className="rl-note">
-          Bands are decade-wide and read as at least the lower bound and below
-          the upper one. Amounts count escrowed XRP alongside spendable
-          balances, measured as of {snapDate}.
+          Bands read as at least the lower bound and below the upper one.
+          Amounts count escrowed XRP alongside spendable balances, measured as
+          of {snapDate}.
         </p>
       </section>
 
