@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-02T04:42:57.695Z",
-  "dataModifiedIso": "2026-08-02T04:27:27.000Z",
+  "generatedAt": "2026-08-02T07:59:16.688Z",
+  "dataModifiedIso": "2026-08-02T07:35:11.000Z",
   "source": "Share-price growth per product. History and holder distribution from the Portals API (Ethereum, Base); Monad read directly onchain. Current share price verified onchain for every ERC-4626 product.",
   "stats": {
     "products": 13,
@@ -13,8 +13,8 @@
     ],
     "highYield": {
       "count": 9,
-      "best": 36.34,
-      "median": 8.87
+      "best": 36.21,
+      "median": 8.9
     },
     "stable": {
       "count": 4,
@@ -22,7 +22,7 @@
       "median": 3.28
     },
     "bestOverall": {
-      "apy": 36.34,
+      "apy": 36.21,
       "name": "aHYPER Looping Vault",
       "platform": "Accountable",
       "network": "Monad",
@@ -32,11 +32,11 @@
       "slug": "avantis-usdc-base",
       "name": "Avantis USDC Vault",
       "platform": "Avantis",
-      "stdev": 1.719,
-      "min": 3.39,
-      "max": 13.75
+      "stdev": 1.594,
+      "min": 5.59,
+      "max": 13.72
     },
-    "totalTvlUsd": 9542764206,
+    "totalTvlUsd": 9544804329,
     "totalHolders": 0
   },
   "rows": [
@@ -56,92 +56,92 @@
       "description": "An auto-looping vault for aHYPER, the Hyperithm delta-neutral vault, giving leveraged exposure to the underlying strategy. It inherits aHYPER's risks (delta-neutral execution, funding-fee volatility, counterparty, smart contract) and adds those of an isolated lending market: onchain lending risk, oracle or market misconfiguration, and collateral liquidation. The rate is driven by the spread between aHYPER's yield and the USDC borrowing cost, multiplied by the leverage factor, so a negative spread amplifies losses just as a positive one amplifies gains. Unwinding depends on USDC liquidity in the relevant Morpho market and on aHYPER redemption liquidity.",
       "pendleName": null,
       "rateNa": false,
-      "apy": 36.34,
+      "apy": 36.21,
       "rateWindow": "8d",
       "rateBasis": "Realized over the trailing 8d, from share-price growth. Current share price verified onchain.",
-      "tvlUsd": 7590159,
+      "tvlUsd": 7589758,
       "tvlBasis": "shares outstanding times what one share redeems for",
       "idleAssets": 55668,
       "deployedRatio": 136.3,
-      "sharePrice": 1.040683,
-      "sharePriceApi": 1.040683,
+      "sharePrice": 1.040628,
+      "sharePriceApi": 1.040628,
       "sharePriceGapPct": 0,
       "holders": null,
       "metrics": {
         "days": 9,
-        "apyMedian": 37.63,
-        "apyMin": 29.46,
-        "apyMax": 42.88,
-        "apyStdev": 3.823,
+        "apyMedian": 38.98,
+        "apyMin": 27.46,
+        "apyMax": 45.01,
+        "apyStdev": 6.551,
         "apySamples": 8,
-        "tvlStart": 7537504,
-        "tvlEnd": 7590159,
+        "tvlStart": 7538767,
+        "tvlEnd": 7589758,
         "tvlChangePct": 0.7,
         "launchedInWindow": false,
-        "worstDailyMovePct": 0.0708
+        "worstDailyMovePct": 0.0665
       },
       "history": [
         {
           "d": "2026-07-25",
-          "sharePrice": 1.033636,
+          "sharePrice": 1.033603,
           "apy": null,
-          "tvlUsd": 7537504,
+          "tvlUsd": 7538767,
           "supply": null
         },
         {
           "d": "2026-07-26",
-          "sharePrice": 1.034548,
+          "sharePrice": 1.034656,
           "apy": null,
-          "tvlUsd": 7545660,
+          "tvlUsd": 7546447,
           "supply": null
         },
         {
           "d": "2026-07-27",
-          "sharePrice": 1.03528,
+          "sharePrice": 1.03549,
           "apy": null,
-          "tvlUsd": 7551000,
+          "tvlUsd": 7552531,
           "supply": null
         },
         {
           "d": "2026-07-28",
-          "sharePrice": 1.036122,
+          "sharePrice": 1.036229,
           "apy": null,
-          "tvlUsd": 7556894,
+          "tvlUsd": 7557675,
           "supply": null
         },
         {
           "d": "2026-07-29",
-          "sharePrice": 1.037029,
+          "sharePrice": 1.036918,
           "apy": null,
-          "tvlUsd": 7563509,
+          "tvlUsd": 7562700,
           "supply": null
         },
         {
           "d": "2026-07-30",
-          "sharePrice": 1.037837,
+          "sharePrice": 1.037655,
           "apy": null,
-          "tvlUsd": 7569402,
+          "tvlUsd": 7568075,
           "supply": null
         },
         {
           "d": "2026-07-31",
-          "sharePrice": 1.038729,
+          "sharePrice": 1.038663,
           "apy": null,
-          "tvlUsd": 7575908,
+          "tvlUsd": 7575427,
           "supply": null
         },
         {
           "d": "2026-08-01",
-          "sharePrice": 1.039666,
+          "sharePrice": 1.0396,
           "apy": null,
-          "tvlUsd": 7582742,
+          "tvlUsd": 7582261,
           "supply": null
         },
         {
           "d": "2026-08-02",
-          "sharePrice": 1.040683,
+          "sharePrice": 1.040628,
           "apy": null,
-          "tvlUsd": 7590159,
+          "tvlUsd": 7589758,
           "supply": null
         }
       ]
@@ -162,27 +162,27 @@
       "description": "Supplies USDC to the 40 Acres lending vault, earning USDC interest. At every harvest the earned rewards are converted into more USDC.",
       "pendleName": null,
       "rateNa": false,
-      "apy": 13.06,
+      "apy": 13.11,
       "rateWindow": "30d",
       "rateBasis": "Realized over the trailing 30d, from share-price growth. Current share price verified onchain.",
-      "tvlUsd": 1877127,
+      "tvlUsd": 1875944,
       "tvlBasis": "shares outstanding times what one share redeems for",
-      "idleAssets": 1877127,
+      "idleAssets": 1875945,
       "deployedRatio": 1,
-      "sharePrice": 1.127203,
-      "sharePriceApi": 1.127203,
-      "sharePriceGapPct": 0,
+      "sharePrice": 1.127246,
+      "sharePriceApi": 1.127245,
+      "sharePriceGapPct": 0.0001,
       "holders": null,
       "metrics": {
         "days": 91,
-        "apyMedian": 11.67,
+        "apyMedian": 12.94,
         "apyMin": 1.9,
-        "apyMax": 39.82,
-        "apyStdev": 8.136,
+        "apyMax": 35.15,
+        "apyStdev": 7.778,
         "apySamples": 75,
         "tvlStart": 1974435,
-        "tvlEnd": 1877127,
-        "tvlChangePct": -4.9,
+        "tvlEnd": 1875943,
+        "tvlChangePct": -5,
         "launchedInWindow": false,
         "worstDailyMovePct": 0
       },
@@ -210,9 +210,9 @@
         },
         {
           "d": "2026-05-07",
-          "sharePrice": 1.097838,
+          "sharePrice": 1.097862,
           "apy": null,
-          "tvlUsd": 1974878,
+          "tvlUsd": 1974922,
           "supply": null
         },
         {
@@ -254,14 +254,14 @@
           "d": "2026-05-13",
           "sharePrice": 1.099679,
           "apy": null,
-          "tvlUsd": 1972484,
+          "tvlUsd": 1972447,
           "supply": null
         },
         {
           "d": "2026-05-14",
-          "sharePrice": 1.099976,
+          "sharePrice": 1.100062,
           "apy": null,
-          "tvlUsd": 1968498,
+          "tvlUsd": 1969314,
           "supply": null
         },
         {
@@ -282,7 +282,7 @@
           "d": "2026-05-17",
           "sharePrice": 1.101076,
           "apy": null,
-          "tvlUsd": 1970468,
+          "tvlUsd": 1970467,
           "supply": null
         },
         {
@@ -296,7 +296,7 @@
           "d": "2026-05-19",
           "sharePrice": 1.101666,
           "apy": null,
-          "tvlUsd": 1971569,
+          "tvlUsd": 1971523,
           "supply": null
         },
         {
@@ -308,23 +308,23 @@
         },
         {
           "d": "2026-05-21",
-          "sharePrice": 1.102427,
+          "sharePrice": 1.1025,
           "apy": null,
-          "tvlUsd": 1917695,
+          "tvlUsd": 1896874,
           "supply": null
         },
         {
           "d": "2026-05-22",
           "sharePrice": 1.102613,
           "apy": null,
-          "tvlUsd": 1897070,
+          "tvlUsd": 1897069,
           "supply": null
         },
         {
           "d": "2026-05-23",
-          "sharePrice": 1.102919,
+          "sharePrice": 1.10298,
           "apy": null,
-          "tvlUsd": 1897723,
+          "tvlUsd": 1897828,
           "supply": null
         },
         {
@@ -394,7 +394,7 @@
           "d": "2026-06-02",
           "sharePrice": 1.105589,
           "apy": null,
-          "tvlUsd": 1900524,
+          "tvlUsd": 1900673,
           "supply": null
         },
         {
@@ -406,16 +406,16 @@
         },
         {
           "d": "2026-06-04",
-          "sharePrice": 1.106172,
+          "sharePrice": 1.106188,
           "apy": null,
-          "tvlUsd": 1899898,
+          "tvlUsd": 1887696,
           "supply": null
         },
         {
           "d": "2026-06-05",
           "sharePrice": 1.106338,
           "apy": null,
-          "tvlUsd": 1887952,
+          "tvlUsd": 1887953,
           "supply": null
         },
         {
@@ -441,9 +441,9 @@
         },
         {
           "d": "2026-06-09",
-          "sharePrice": 1.107198,
+          "sharePrice": 1.107235,
           "apy": null,
-          "tvlUsd": 1863559,
+          "tvlUsd": 1863622,
           "supply": null
         },
         {
@@ -455,51 +455,51 @@
         },
         {
           "d": "2026-06-11",
-          "sharePrice": 1.107475,
+          "sharePrice": 1.107617,
           "apy": null,
-          "tvlUsd": 1864026,
+          "tvlUsd": 1849203,
           "supply": null
         },
         {
           "d": "2026-06-12",
           "sharePrice": 1.108001,
           "apy": null,
-          "tvlUsd": 1849798,
+          "tvlUsd": 1849642,
           "supply": null
         },
         {
           "d": "2026-06-13",
-          "sharePrice": 1.108439,
+          "sharePrice": 1.10846,
           "apy": null,
-          "tvlUsd": 1850005,
+          "tvlUsd": 1847047,
           "supply": null
         },
         {
           "d": "2026-06-14",
-          "sharePrice": 1.108815,
+          "sharePrice": 1.108895,
           "apy": null,
-          "tvlUsd": 1847639,
+          "tvlUsd": 1847772,
           "supply": null
         },
         {
           "d": "2026-06-15",
-          "sharePrice": 1.10924,
+          "sharePrice": 1.109326,
           "apy": null,
-          "tvlUsd": 1848351,
+          "tvlUsd": 1848494,
           "supply": null
         },
         {
           "d": "2026-06-16",
-          "sharePrice": 1.109703,
+          "sharePrice": 1.109747,
           "apy": null,
-          "tvlUsd": 1849121,
+          "tvlUsd": 1849194,
           "supply": null
         },
         {
           "d": "2026-06-17",
           "sharePrice": 1.110009,
           "apy": null,
-          "tvlUsd": 1849630,
+          "tvlUsd": 1849631,
           "supply": null
         },
         {
@@ -518,9 +518,9 @@
         },
         {
           "d": "2026-06-20",
-          "sharePrice": 1.111204,
+          "sharePrice": 1.111406,
           "apy": null,
-          "tvlUsd": 1850871,
+          "tvlUsd": 1851201,
           "supply": null
         },
         {
@@ -534,7 +534,7 @@
           "d": "2026-06-22",
           "sharePrice": 1.111607,
           "apy": null,
-          "tvlUsd": 1851556,
+          "tvlUsd": 1851558,
           "supply": null
         },
         {
@@ -546,23 +546,23 @@
         },
         {
           "d": "2026-06-24",
-          "sharePrice": 1.112412,
+          "sharePrice": 1.113118,
           "apy": null,
-          "tvlUsd": 1852876,
+          "tvlUsd": 1854052,
           "supply": null
         },
         {
           "d": "2026-06-25",
-          "sharePrice": 1.113434,
+          "sharePrice": 1.113507,
           "apy": null,
-          "tvlUsd": 1854468,
+          "tvlUsd": 1854589,
           "supply": null
         },
         {
           "d": "2026-06-26",
           "sharePrice": 1.113743,
           "apy": null,
-          "tvlUsd": 1861798,
+          "tvlUsd": 1855116,
           "supply": null
         },
         {
@@ -574,9 +574,9 @@
         },
         {
           "d": "2026-06-28",
-          "sharePrice": 1.114449,
+          "sharePrice": 1.114529,
           "apy": null,
-          "tvlUsd": 1856160,
+          "tvlUsd": 1856293,
           "supply": null
         },
         {
@@ -588,16 +588,16 @@
         },
         {
           "d": "2026-06-30",
-          "sharePrice": 1.114529,
+          "sharePrice": 1.115164,
           "apy": null,
-          "tvlUsd": 1856295,
+          "tvlUsd": 1857495,
           "supply": null
         },
         {
           "d": "2026-07-01",
           "sharePrice": 1.115164,
           "apy": null,
-          "tvlUsd": 1859009,
+          "tvlUsd": 1857359,
           "supply": null
         },
         {
@@ -616,9 +616,9 @@
         },
         {
           "d": "2026-07-04",
-          "sharePrice": 1.11589,
+          "sharePrice": 1.116604,
           "apy": null,
-          "tvlUsd": 1858565,
+          "tvlUsd": 1859754,
           "supply": null
         },
         {
@@ -639,7 +639,7 @@
           "d": "2026-07-07",
           "sharePrice": 1.117529,
           "apy": null,
-          "tvlUsd": 1861613,
+          "tvlUsd": 1861280,
           "supply": null
         },
         {
@@ -653,21 +653,21 @@
           "d": "2026-07-09",
           "sharePrice": 1.118308,
           "apy": null,
-          "tvlUsd": 1862573,
+          "tvlUsd": 1862574,
           "supply": null
         },
         {
           "d": "2026-07-10",
-          "sharePrice": 1.118308,
+          "sharePrice": 1.118845,
           "apy": null,
-          "tvlUsd": 1862573,
+          "tvlUsd": 1863467,
           "supply": null
         },
         {
           "d": "2026-07-11",
           "sharePrice": 1.118916,
           "apy": null,
-          "tvlUsd": 1863586,
+          "tvlUsd": 1863585,
           "supply": null
         },
         {
@@ -681,21 +681,21 @@
           "d": "2026-07-13",
           "sharePrice": 1.119578,
           "apy": null,
-          "tvlUsd": 1864689,
+          "tvlUsd": 1864688,
           "supply": null
         },
         {
           "d": "2026-07-14",
           "sharePrice": 1.120164,
           "apy": null,
-          "tvlUsd": 1885223,
+          "tvlUsd": 1867357,
           "supply": null
         },
         {
           "d": "2026-07-15",
           "sharePrice": 1.120483,
           "apy": null,
-          "tvlUsd": 1883219,
+          "tvlUsd": 1866913,
           "supply": null
         },
         {
@@ -709,7 +709,7 @@
           "d": "2026-07-17",
           "sharePrice": 1.121274,
           "apy": null,
-          "tvlUsd": 1867515,
+          "tvlUsd": 1867569,
           "supply": null
         },
         {
@@ -749,86 +749,86 @@
         },
         {
           "d": "2026-07-23",
-          "sharePrice": 1.123853,
+          "sharePrice": 1.123897,
           "apy": null,
-          "tvlUsd": 1871208,
+          "tvlUsd": 1871281,
           "supply": null
         },
         {
           "d": "2026-07-24",
-          "sharePrice": 1.12419,
+          "sharePrice": 1.124234,
           "apy": null,
-          "tvlUsd": 1871769,
+          "tvlUsd": 1871842,
           "supply": null
         },
         {
           "d": "2026-07-25",
-          "sharePrice": 1.124528,
+          "sharePrice": 1.124572,
           "apy": null,
-          "tvlUsd": 1872331,
+          "tvlUsd": 1872405,
           "supply": null
         },
         {
           "d": "2026-07-26",
-          "sharePrice": 1.124865,
+          "sharePrice": 1.124909,
           "apy": null,
-          "tvlUsd": 1872893,
+          "tvlUsd": 1872966,
           "supply": null
         },
         {
           "d": "2026-07-27",
-          "sharePrice": 1.125203,
+          "sharePrice": 1.125247,
           "apy": null,
-          "tvlUsd": 1873455,
+          "tvlUsd": 1873529,
           "supply": null
         },
         {
           "d": "2026-07-28",
-          "sharePrice": 1.125541,
+          "sharePrice": 1.125585,
           "apy": null,
-          "tvlUsd": 1874018,
+          "tvlUsd": 1874091,
           "supply": null
         },
         {
           "d": "2026-07-29",
-          "sharePrice": 1.125879,
+          "sharePrice": 1.125923,
           "apy": null,
-          "tvlUsd": 1874581,
+          "tvlUsd": 1874654,
           "supply": null
         },
         {
           "d": "2026-07-30",
-          "sharePrice": 1.126215,
+          "sharePrice": 1.126257,
           "apy": null,
-          "tvlUsd": 1875139,
+          "tvlUsd": 1875209,
           "supply": null
         },
         {
           "d": "2026-07-31",
-          "sharePrice": 1.126545,
+          "sharePrice": 1.126588,
           "apy": null,
-          "tvlUsd": 1875382,
+          "tvlUsd": 1875453,
           "supply": null
         },
         {
           "d": "2026-08-01",
-          "sharePrice": 1.126874,
+          "sharePrice": 1.126917,
           "apy": null,
-          "tvlUsd": 1874009,
+          "tvlUsd": 1874080,
           "supply": null
         },
         {
           "d": "2026-08-02",
-          "sharePrice": 1.127203,
+          "sharePrice": 1.127245,
           "apy": null,
-          "tvlUsd": 1877127,
+          "tvlUsd": 1875943,
           "supply": null
         }
       ],
       "harvestSlug": "usdc-40-acres-base",
       "harvestApy24h": 11.23,
-      "harvestApy30d": 14.52,
-      "harvestTvlUsd": 1876726,
+      "harvestApy30d": 14.48,
+      "harvestTvlUsd": 1874476,
       "harvestVaultType": "Autocompounder",
       "harvestCategory": "40 Acres - Base"
     },
@@ -848,26 +848,26 @@
       "description": "Supplies USDC to Arcadia Lend, earning USDC interest. At every harvest the earned rewards are converted into more USDC.",
       "pendleName": null,
       "rateNa": false,
-      "apy": 6.33,
+      "apy": 6.36,
       "rateWindow": "30d",
       "rateBasis": "Realized over the trailing 30d, from share-price growth. Current share price verified onchain.",
-      "tvlUsd": 121495,
+      "tvlUsd": 120498,
       "tvlBasis": "shares outstanding times what one share redeems for",
-      "idleAssets": 121495,
+      "idleAssets": 120498,
       "deployedRatio": 1,
-      "sharePrice": 1.090811,
-      "sharePriceApi": 1.090811,
+      "sharePrice": 1.090838,
+      "sharePriceApi": 1.090838,
       "sharePriceGapPct": 0,
       "holders": null,
       "metrics": {
         "days": 91,
-        "apyMedian": 5.64,
+        "apyMedian": 5.66,
         "apyMin": 2.8,
-        "apyMax": 29.93,
-        "apyStdev": 3.397,
+        "apyMax": 38.53,
+        "apyStdev": 4.097,
         "apySamples": 90,
-        "tvlStart": 78921,
-        "tvlEnd": 121495,
+        "tvlStart": 136810,
+        "tvlEnd": 120498,
         "tvlChangePct": null,
         "launchedInWindow": false,
         "worstDailyMovePct": 0.0076
@@ -875,44 +875,44 @@
       "history": [
         {
           "d": "2026-05-04",
-          "sharePrice": 1.074993,
+          "sharePrice": 1.075029,
           "apy": null,
-          "tvlUsd": 78921,
+          "tvlUsd": 136810,
           "supply": null
         },
         {
           "d": "2026-05-05",
-          "sharePrice": 1.075275,
+          "sharePrice": 1.075309,
           "apy": null,
-          "tvlUsd": 123362,
+          "tvlUsd": 112985,
           "supply": null
         },
         {
           "d": "2026-05-06",
-          "sharePrice": 1.0755,
+          "sharePrice": 1.075516,
           "apy": null,
-          "tvlUsd": 164949,
+          "tvlUsd": 68998,
           "supply": null
         },
         {
           "d": "2026-05-07",
-          "sharePrice": 1.075722,
+          "sharePrice": 1.075741,
           "apy": null,
-          "tvlUsd": 55905,
+          "tvlUsd": 90786,
           "supply": null
         },
         {
           "d": "2026-05-08",
-          "sharePrice": 1.075938,
+          "sharePrice": 1.075951,
           "apy": null,
-          "tvlUsd": 93991,
+          "tvlUsd": 93992,
           "supply": null
         },
         {
           "d": "2026-05-09",
-          "sharePrice": 1.076158,
+          "sharePrice": 1.076221,
           "apy": null,
-          "tvlUsd": 130204,
+          "tvlUsd": 93825,
           "supply": null
         },
         {
@@ -924,58 +924,58 @@
         },
         {
           "d": "2026-05-11",
-          "sharePrice": 1.076736,
+          "sharePrice": 1.076757,
           "apy": null,
-          "tvlUsd": 167676,
+          "tvlUsd": 131290,
           "supply": null
         },
         {
           "d": "2026-05-12",
-          "sharePrice": 1.077025,
+          "sharePrice": 1.077066,
           "apy": null,
-          "tvlUsd": 155169,
+          "tvlUsd": 88667,
           "supply": null
         },
         {
           "d": "2026-05-13",
-          "sharePrice": 1.077262,
+          "sharePrice": 1.077313,
           "apy": null,
-          "tvlUsd": 88668,
+          "tvlUsd": 88672,
           "supply": null
         },
         {
           "d": "2026-05-14",
-          "sharePrice": 1.077534,
+          "sharePrice": 1.077556,
           "apy": null,
-          "tvlUsd": 88601,
+          "tvlUsd": 88603,
           "supply": null
         },
         {
           "d": "2026-05-15",
-          "sharePrice": 1.077708,
+          "sharePrice": 1.077755,
           "apy": null,
-          "tvlUsd": 116462,
+          "tvlUsd": 116467,
           "supply": null
         },
         {
           "d": "2026-05-16",
-          "sharePrice": 1.077893,
+          "sharePrice": 1.07794,
           "apy": null,
-          "tvlUsd": 115953,
+          "tvlUsd": 115958,
           "supply": null
         },
         {
           "d": "2026-05-17",
-          "sharePrice": 1.078121,
+          "sharePrice": 1.078141,
           "apy": null,
-          "tvlUsd": 115687,
+          "tvlUsd": 115257,
           "supply": null
         },
         {
           "d": "2026-05-18",
-          "sharePrice": 1.078317,
+          "sharePrice": 1.078337,
           "apy": null,
-          "tvlUsd": 115281,
+          "tvlUsd": 115269,
           "supply": null
         },
         {
@@ -987,30 +987,30 @@
         },
         {
           "d": "2026-05-20",
-          "sharePrice": 1.078666,
+          "sharePrice": 1.078692,
           "apy": null,
-          "tvlUsd": 115319,
+          "tvlUsd": 115322,
           "supply": null
         },
         {
           "d": "2026-05-21",
-          "sharePrice": 1.078809,
+          "sharePrice": 1.078847,
           "apy": null,
-          "tvlUsd": 114208,
+          "tvlUsd": 114213,
           "supply": null
         },
         {
           "d": "2026-05-22",
-          "sharePrice": 1.079003,
+          "sharePrice": 1.079012,
           "apy": null,
-          "tvlUsd": 22822,
+          "tvlUsd": 114352,
           "supply": null
         },
         {
           "d": "2026-05-23",
-          "sharePrice": 1.079094,
+          "sharePrice": 1.079155,
           "apy": null,
-          "tvlUsd": 21821,
+          "tvlUsd": 113365,
           "supply": null
         },
         {
@@ -1029,58 +1029,58 @@
         },
         {
           "d": "2026-05-26",
-          "sharePrice": 1.079554,
+          "sharePrice": 1.079589,
           "apy": null,
-          "tvlUsd": 113425,
+          "tvlUsd": 113429,
           "supply": null
         },
         {
           "d": "2026-05-27",
-          "sharePrice": 1.079713,
+          "sharePrice": 1.079755,
           "apy": null,
-          "tvlUsd": 113530,
+          "tvlUsd": 113535,
           "supply": null
         },
         {
           "d": "2026-05-28",
-          "sharePrice": 1.079956,
+          "sharePrice": 1.079987,
           "apy": null,
-          "tvlUsd": 21858,
+          "tvlUsd": 114448,
           "supply": null
         },
         {
           "d": "2026-05-29",
-          "sharePrice": 1.080138,
+          "sharePrice": 1.080155,
           "apy": null,
-          "tvlUsd": 113544,
+          "tvlUsd": 21862,
           "supply": null
         },
         {
           "d": "2026-05-30",
-          "sharePrice": 1.080301,
+          "sharePrice": 1.080318,
           "apy": null,
-          "tvlUsd": 114595,
+          "tvlUsd": 21888,
           "supply": null
         },
         {
           "d": "2026-05-31",
-          "sharePrice": 1.080457,
+          "sharePrice": 1.080499,
           "apy": null,
-          "tvlUsd": 21890,
+          "tvlUsd": 21891,
           "supply": null
         },
         {
           "d": "2026-06-01",
-          "sharePrice": 1.080632,
+          "sharePrice": 1.080664,
           "apy": null,
-          "tvlUsd": 21894,
+          "tvlUsd": 21895,
           "supply": null
         },
         {
           "d": "2026-06-02",
-          "sharePrice": 1.080803,
+          "sharePrice": 1.080819,
           "apy": null,
-          "tvlUsd": 115099,
+          "tvlUsd": 21898,
           "supply": null
         },
         {
@@ -1106,16 +1106,16 @@
         },
         {
           "d": "2026-06-06",
-          "sharePrice": 1.082031,
+          "sharePrice": 1.082221,
           "apy": null,
-          "tvlUsd": 21946,
+          "tvlUsd": 21950,
           "supply": null
         },
         {
           "d": "2026-06-07",
-          "sharePrice": 1.082288,
+          "sharePrice": 1.08231,
           "apy": null,
-          "tvlUsd": 21951,
+          "tvlUsd": 21952,
           "supply": null
         },
         {
@@ -1127,23 +1127,23 @@
         },
         {
           "d": "2026-06-09",
-          "sharePrice": 1.082499,
+          "sharePrice": 1.082524,
           "apy": null,
-          "tvlUsd": 21955,
+          "tvlUsd": 21956,
           "supply": null
         },
         {
           "d": "2026-06-10",
-          "sharePrice": 1.082597,
+          "sharePrice": 1.082621,
           "apy": null,
-          "tvlUsd": 21957,
+          "tvlUsd": 21958,
           "supply": null
         },
         {
           "d": "2026-06-11",
-          "sharePrice": 1.082875,
+          "sharePrice": 1.082899,
           "apy": null,
-          "tvlUsd": 21963,
+          "tvlUsd": 21964,
           "supply": null
         },
         {
@@ -1162,21 +1162,21 @@
         },
         {
           "d": "2026-06-14",
-          "sharePrice": 1.083198,
+          "sharePrice": 1.083223,
           "apy": null,
           "tvlUsd": 21970,
           "supply": null
         },
         {
           "d": "2026-06-15",
-          "sharePrice": 1.083301,
+          "sharePrice": 1.083327,
           "apy": null,
           "tvlUsd": 21972,
           "supply": null
         },
         {
           "d": "2026-06-16",
-          "sharePrice": 1.083405,
+          "sharePrice": 1.083431,
           "apy": null,
           "tvlUsd": 21974,
           "supply": null
@@ -1232,9 +1232,9 @@
         },
         {
           "d": "2026-06-24",
-          "sharePrice": 1.084265,
+          "sharePrice": 1.08432,
           "apy": null,
-          "tvlUsd": 15696,
+          "tvlUsd": 15697,
           "supply": null
         },
         {
@@ -1260,23 +1260,23 @@
         },
         {
           "d": "2026-06-28",
-          "sharePrice": 1.084723,
+          "sharePrice": 1.084777,
           "apy": null,
-          "tvlUsd": 15703,
+          "tvlUsd": 15704,
           "supply": null
         },
         {
           "d": "2026-06-29",
-          "sharePrice": 1.084858,
+          "sharePrice": 1.084886,
           "apy": null,
           "tvlUsd": 15705,
           "supply": null
         },
         {
           "d": "2026-06-30",
-          "sharePrice": 1.08494,
+          "sharePrice": 1.084995,
           "apy": null,
-          "tvlUsd": 15706,
+          "tvlUsd": 15707,
           "supply": null
         },
         {
@@ -1309,7 +1309,7 @@
         },
         {
           "d": "2026-07-05",
-          "sharePrice": 1.085546,
+          "sharePrice": 1.085579,
           "apy": null,
           "tvlUsd": 15715,
           "supply": null
@@ -1330,23 +1330,23 @@
         },
         {
           "d": "2026-07-08",
-          "sharePrice": 1.085933,
-          "apy": null,
-          "tvlUsd": 15695,
-          "supply": null
-        },
-        {
-          "d": "2026-07-09",
-          "sharePrice": 1.086047,
+          "sharePrice": 1.08599,
           "apy": null,
           "tvlUsd": 15696,
           "supply": null
         },
         {
-          "d": "2026-07-10",
-          "sharePrice": 1.08616,
+          "d": "2026-07-09",
+          "sharePrice": 1.086104,
           "apy": null,
-          "tvlUsd": 15698,
+          "tvlUsd": 15697,
+          "supply": null
+        },
+        {
+          "d": "2026-07-10",
+          "sharePrice": 1.086217,
+          "apy": null,
+          "tvlUsd": 15699,
           "supply": null
         },
         {
@@ -1365,9 +1365,9 @@
         },
         {
           "d": "2026-07-13",
-          "sharePrice": 1.086581,
+          "sharePrice": 1.086613,
           "apy": null,
-          "tvlUsd": 15704,
+          "tvlUsd": 15705,
           "supply": null
         },
         {
@@ -1379,7 +1379,7 @@
         },
         {
           "d": "2026-07-15",
-          "sharePrice": 1.086842,
+          "sharePrice": 1.086876,
           "apy": null,
           "tvlUsd": 15708,
           "supply": null
@@ -1407,9 +1407,9 @@
         },
         {
           "d": "2026-07-19",
-          "sharePrice": 1.087467,
+          "sharePrice": 1.087517,
           "apy": null,
-          "tvlUsd": 110398,
+          "tvlUsd": 110401,
           "supply": null
         },
         {
@@ -1428,30 +1428,30 @@
         },
         {
           "d": "2026-07-22",
-          "sharePrice": 1.088043,
+          "sharePrice": 1.088084,
           "apy": null,
-          "tvlUsd": 14710,
+          "tvlUsd": 109427,
           "supply": null
         },
         {
           "d": "2026-07-23",
-          "sharePrice": 1.088248,
+          "sharePrice": 1.088297,
           "apy": null,
-          "tvlUsd": 109424,
+          "tvlUsd": 109429,
           "supply": null
         },
         {
           "d": "2026-07-24",
-          "sharePrice": 1.088475,
+          "sharePrice": 1.088532,
           "apy": null,
-          "tvlUsd": 14716,
+          "tvlUsd": 14717,
           "supply": null
         },
         {
           "d": "2026-07-25",
-          "sharePrice": 1.088733,
+          "sharePrice": 1.088773,
           "apy": null,
-          "tvlUsd": 109951,
+          "tvlUsd": 109955,
           "supply": null
         },
         {
@@ -1470,51 +1470,51 @@
         },
         {
           "d": "2026-07-28",
-          "sharePrice": 1.089543,
+          "sharePrice": 1.089574,
           "apy": null,
-          "tvlUsd": 107952,
+          "tvlUsd": 14731,
           "supply": null
         },
         {
           "d": "2026-07-29",
-          "sharePrice": 1.089739,
+          "sharePrice": 1.089789,
           "apy": null,
-          "tvlUsd": 14733,
+          "tvlUsd": 14734,
           "supply": null
         },
         {
           "d": "2026-07-30",
-          "sharePrice": 1.08997,
+          "sharePrice": 1.090032,
           "apy": null,
-          "tvlUsd": 14736,
+          "tvlUsd": 14737,
           "supply": null
         },
         {
           "d": "2026-07-31",
-          "sharePrice": 1.090221,
+          "sharePrice": 1.090282,
           "apy": null,
-          "tvlUsd": 14740,
+          "tvlUsd": 14741,
           "supply": null
         },
         {
           "d": "2026-08-01",
-          "sharePrice": 1.090497,
+          "sharePrice": 1.090539,
           "apy": null,
-          "tvlUsd": 107421,
+          "tvlUsd": 107320,
           "supply": null
         },
         {
           "d": "2026-08-02",
-          "sharePrice": 1.090811,
+          "sharePrice": 1.090838,
           "apy": null,
-          "tvlUsd": 121495,
+          "tvlUsd": 120498,
           "supply": null
         }
       ],
       "harvestSlug": "usdc-arcadia-lend-base",
-      "harvestApy24h": 8.67,
-      "harvestApy30d": 7.4,
-      "harvestTvlUsd": 121473,
+      "harvestApy24h": 8.65,
+      "harvestApy30d": 7.42,
+      "harvestTvlUsd": 121469,
       "harvestVaultType": "Autocompounder",
       "harvestCategory": "Arcadia - Base"
     },
@@ -1621,7 +1621,7 @@
       "apy": 8.5,
       "rateWindow": "fixed",
       "rateBasis": "Effective lender APR published by the market itself, not a measured onchain rate.",
-      "tvlUsd": 75901387,
+      "tvlUsd": 75873761,
       "tvlBasis": "lender claims outstanding (rebasing 1:1 market token supply)",
       "idleAssets": 686668,
       "deployedRatio": 110.5,
@@ -1661,11 +1661,11 @@
       "apy": null,
       "rateWindow": null,
       "rateBasis": "Realized rate not available yet: not enough share-price history for this product.",
-      "tvlUsd": 39653256,
+      "tvlUsd": 40843596,
       "tvlBasis": "shares outstanding times what one share redeems for",
-      "idleAssets": 39653257,
+      "idleAssets": 40843607,
       "deployedRatio": 1,
-      "sharePrice": 1.036866,
+      "sharePrice": 1.036894,
       "sharePriceApi": null,
       "sharePriceGapPct": null,
       "holders": null,
@@ -1737,666 +1737,666 @@
       "description": "The avUSDC vault is the counterparty to every trade on Avantis, so lenders earn a share of platform trading fees and, by construction, take the other side of trader profit and loss. Withdrawal fees are dynamic and rise when excess liquidity in the vault is low. Subject to drawdowns.",
       "pendleName": null,
       "rateNa": false,
-      "apy": 8.87,
+      "apy": 8.9,
       "rateWindow": "30d",
       "rateBasis": "Realized over the trailing 30d, from share-price growth. Current share price verified onchain.",
-      "tvlUsd": 21123532,
+      "tvlUsd": 21124268,
       "tvlBasis": "shares outstanding times what one share redeems for",
-      "idleAssets": 21123546,
+      "idleAssets": 21124280,
       "deployedRatio": 1,
-      "sharePrice": 1.351438,
-      "sharePriceApi": 1.351438,
+      "sharePrice": 1.351497,
+      "sharePriceApi": 1.351497,
       "sharePriceGapPct": 0,
       "holders": null,
       "metrics": {
         "days": 91,
-        "apyMedian": 9.7,
-        "apyMin": 3.39,
-        "apyMax": 13.75,
-        "apyStdev": 1.719,
-        "apySamples": 84,
-        "tvlStart": 48426642,
-        "tvlEnd": 21124703,
+        "apyMedian": 9.72,
+        "apyMin": 5.59,
+        "apyMax": 13.72,
+        "apyStdev": 1.594,
+        "apySamples": 83,
+        "tvlStart": 48419800,
+        "tvlEnd": 21124268,
         "tvlChangePct": -56.4,
         "launchedInWindow": false,
-        "worstDailyMovePct": -0.9898
+        "worstDailyMovePct": -0.9125
       },
       "history": [
         {
           "d": "2026-05-04",
-          "sharePrice": 1.340265,
+          "sharePrice": 1.340305,
           "apy": null,
-          "tvlUsd": 48426642,
+          "tvlUsd": 48419800,
           "supply": null
         },
         {
           "d": "2026-05-05",
-          "sharePrice": 1.340591,
+          "sharePrice": 1.340635,
           "apy": null,
-          "tvlUsd": 47926011,
+          "tvlUsd": 47919187,
           "supply": null
         },
         {
           "d": "2026-05-06",
-          "sharePrice": 1.340933,
+          "sharePrice": 1.340979,
           "apy": null,
-          "tvlUsd": 47825864,
+          "tvlUsd": 47827578,
           "supply": null
         },
         {
           "d": "2026-05-07",
-          "sharePrice": 1.341273,
+          "sharePrice": 1.34132,
           "apy": null,
-          "tvlUsd": 47701147,
+          "tvlUsd": 47704244,
           "supply": null
         },
         {
           "d": "2026-05-08",
-          "sharePrice": 1.34163,
+          "sharePrice": 1.341677,
           "apy": null,
-          "tvlUsd": 47579525,
+          "tvlUsd": 47579668,
           "supply": null
         },
         {
           "d": "2026-05-09",
-          "sharePrice": 1.341988,
+          "sharePrice": 1.342034,
           "apy": null,
-          "tvlUsd": 47216508,
+          "tvlUsd": 47212400,
           "supply": null
         },
         {
           "d": "2026-05-10",
-          "sharePrice": 1.342348,
+          "sharePrice": 1.342395,
           "apy": null,
-          "tvlUsd": 46139529,
+          "tvlUsd": 46141515,
           "supply": null
         },
         {
           "d": "2026-05-11",
-          "sharePrice": 1.342707,
+          "sharePrice": 1.342755,
           "apy": null,
-          "tvlUsd": 46014342,
+          "tvlUsd": 46014239,
           "supply": null
         },
         {
           "d": "2026-05-12",
-          "sharePrice": 1.343084,
+          "sharePrice": 1.34313,
           "apy": null,
-          "tvlUsd": 46021455,
+          "tvlUsd": 46022857,
           "supply": null
         },
         {
           "d": "2026-05-13",
-          "sharePrice": 1.343459,
+          "sharePrice": 1.343511,
           "apy": null,
-          "tvlUsd": 46028610,
+          "tvlUsd": 46010688,
           "supply": null
         },
         {
           "d": "2026-05-14",
-          "sharePrice": 1.343865,
+          "sharePrice": 1.34392,
           "apy": null,
-          "tvlUsd": 44372293,
+          "tvlUsd": 44374043,
           "supply": null
         },
         {
           "d": "2026-05-15",
-          "sharePrice": 1.344288,
+          "sharePrice": 1.344344,
           "apy": null,
-          "tvlUsd": 45764878,
+          "tvlUsd": 45766944,
           "supply": null
         },
         {
           "d": "2026-05-16",
-          "sharePrice": 1.344713,
+          "sharePrice": 1.344768,
           "apy": null,
-          "tvlUsd": 45779089,
+          "tvlUsd": 45775519,
           "supply": null
         },
         {
           "d": "2026-05-17",
-          "sharePrice": 1.345148,
+          "sharePrice": 1.345183,
           "apy": null,
-          "tvlUsd": 45766418,
+          "tvlUsd": 45766955,
           "supply": null
         },
         {
           "d": "2026-05-18",
-          "sharePrice": 1.345557,
+          "sharePrice": 1.345609,
           "apy": null,
-          "tvlUsd": 45777325,
+          "tvlUsd": 45603265,
           "supply": null
         },
         {
           "d": "2026-05-19",
-          "sharePrice": 1.345964,
+          "sharePrice": 1.346017,
           "apy": null,
-          "tvlUsd": 45352952,
+          "tvlUsd": 45290771,
           "supply": null
         },
         {
           "d": "2026-05-20",
-          "sharePrice": 1.346384,
+          "sharePrice": 1.346436,
           "apy": null,
-          "tvlUsd": 45282820,
+          "tvlUsd": 45283919,
           "supply": null
         },
         {
           "d": "2026-05-21",
-          "sharePrice": 1.346764,
+          "sharePrice": 1.346816,
           "apy": null,
-          "tvlUsd": 45249796,
+          "tvlUsd": 45242345,
           "supply": null
         },
         {
           "d": "2026-05-22",
-          "sharePrice": 1.347164,
+          "sharePrice": 1.347216,
           "apy": null,
-          "tvlUsd": 45026695,
+          "tvlUsd": 45029008,
           "supply": null
         },
         {
           "d": "2026-05-23",
-          "sharePrice": 1.347527,
+          "sharePrice": 1.34758,
           "apy": null,
-          "tvlUsd": 44999933,
+          "tvlUsd": 45014172,
           "supply": null
         },
         {
           "d": "2026-05-24",
-          "sharePrice": 1.347925,
+          "sharePrice": 1.347976,
           "apy": null,
-          "tvlUsd": 45024966,
+          "tvlUsd": 45024651,
           "supply": null
         },
         {
           "d": "2026-05-25",
-          "sharePrice": 1.348311,
+          "sharePrice": 1.348362,
           "apy": null,
-          "tvlUsd": 45013666,
+          "tvlUsd": 45014777,
           "supply": null
         },
         {
           "d": "2026-05-26",
-          "sharePrice": 1.348695,
+          "sharePrice": 1.348745,
           "apy": null,
-          "tvlUsd": 45005253,
+          "tvlUsd": 44996668,
           "supply": null
         },
         {
           "d": "2026-05-27",
-          "sharePrice": 1.349079,
+          "sharePrice": 1.349129,
           "apy": null,
-          "tvlUsd": 44863954,
+          "tvlUsd": 44827182,
           "supply": null
         },
         {
           "d": "2026-05-28",
-          "sharePrice": 1.349465,
+          "sharePrice": 1.349517,
           "apy": null,
-          "tvlUsd": 44551231,
+          "tvlUsd": 44334872,
           "supply": null
         },
         {
           "d": "2026-05-29",
-          "sharePrice": 1.349008,
+          "sharePrice": 1.349054,
           "apy": null,
-          "tvlUsd": 44125903,
+          "tvlUsd": 44127477,
           "supply": null
         },
         {
           "d": "2026-05-30",
-          "sharePrice": 1.347742,
+          "sharePrice": 1.347775,
           "apy": null,
-          "tvlUsd": 44049732,
+          "tvlUsd": 44050807,
           "supply": null
         },
         {
           "d": "2026-05-31",
-          "sharePrice": 1.347455,
+          "sharePrice": 1.347487,
           "apy": null,
-          "tvlUsd": 43999963,
+          "tvlUsd": 43981828,
           "supply": null
         },
         {
           "d": "2026-06-01",
-          "sharePrice": 1.347578,
+          "sharePrice": 1.346568,
           "apy": null,
-          "tvlUsd": 43966252,
+          "tvlUsd": 43933674,
           "supply": null
         },
         {
           "d": "2026-06-02",
-          "sharePrice": 1.334239,
+          "sharePrice": 1.33428,
           "apy": null,
-          "tvlUsd": 42132406,
+          "tvlUsd": 42125637,
           "supply": null
         },
         {
           "d": "2026-06-03",
-          "sharePrice": 1.334454,
+          "sharePrice": 1.334479,
           "apy": null,
-          "tvlUsd": 41309324,
+          "tvlUsd": 41310296,
           "supply": null
         },
         {
           "d": "2026-06-04",
-          "sharePrice": 1.334306,
+          "sharePrice": 1.334335,
           "apy": null,
-          "tvlUsd": 40818259,
+          "tvlUsd": 40805663,
           "supply": null
         },
         {
           "d": "2026-06-05",
-          "sharePrice": 1.334546,
+          "sharePrice": 1.33458,
           "apy": null,
-          "tvlUsd": 38838457,
+          "tvlUsd": 38829379,
           "supply": null
         },
         {
           "d": "2026-06-06",
-          "sharePrice": 1.334836,
+          "sharePrice": 1.334876,
           "apy": null,
-          "tvlUsd": 37242083,
+          "tvlUsd": 37237521,
           "supply": null
         },
         {
           "d": "2026-06-07",
-          "sharePrice": 1.335146,
+          "sharePrice": 1.335187,
           "apy": null,
-          "tvlUsd": 36806321,
+          "tvlUsd": 36689381,
           "supply": null
         },
         {
           "d": "2026-06-08",
-          "sharePrice": 1.335454,
+          "sharePrice": 1.335493,
           "apy": null,
-          "tvlUsd": 36745591,
+          "tvlUsd": 36744948,
           "supply": null
         },
         {
           "d": "2026-06-09",
-          "sharePrice": 1.335756,
+          "sharePrice": 1.335796,
           "apy": null,
-          "tvlUsd": 36695321,
+          "tvlUsd": 36688185,
           "supply": null
         },
         {
           "d": "2026-06-10",
-          "sharePrice": 1.334071,
+          "sharePrice": 1.334112,
           "apy": null,
-          "tvlUsd": 36413456,
+          "tvlUsd": 36385525,
           "supply": null
         },
         {
           "d": "2026-06-11",
-          "sharePrice": 1.334408,
+          "sharePrice": 1.334451,
           "apy": null,
-          "tvlUsd": 35923457,
+          "tvlUsd": 35746378,
           "supply": null
         },
         {
           "d": "2026-06-12",
-          "sharePrice": 1.334744,
+          "sharePrice": 1.334787,
           "apy": null,
-          "tvlUsd": 35000739,
+          "tvlUsd": 34904953,
           "supply": null
         },
         {
           "d": "2026-06-13",
-          "sharePrice": 1.335081,
+          "sharePrice": 1.335124,
           "apy": null,
-          "tvlUsd": 34779239,
+          "tvlUsd": 34724654,
           "supply": null
         },
         {
           "d": "2026-06-14",
-          "sharePrice": 1.335415,
+          "sharePrice": 1.335458,
           "apy": null,
-          "tvlUsd": 34492664,
+          "tvlUsd": 34484895,
           "supply": null
         },
         {
           "d": "2026-06-15",
-          "sharePrice": 1.335759,
+          "sharePrice": 1.335802,
           "apy": null,
-          "tvlUsd": 34228892,
+          "tvlUsd": 34219250,
           "supply": null
         },
         {
           "d": "2026-06-16",
-          "sharePrice": 1.336106,
+          "sharePrice": 1.33615,
           "apy": null,
-          "tvlUsd": 33931604,
+          "tvlUsd": 33839199,
           "supply": null
         },
         {
           "d": "2026-06-17",
-          "sharePrice": 1.336445,
+          "sharePrice": 1.336489,
           "apy": null,
-          "tvlUsd": 33659930,
+          "tvlUsd": 33511789,
           "supply": null
         },
         {
           "d": "2026-06-18",
-          "sharePrice": 1.336797,
+          "sharePrice": 1.336841,
           "apy": null,
-          "tvlUsd": 33485668,
+          "tvlUsd": 33471142,
           "supply": null
         },
         {
           "d": "2026-06-19",
-          "sharePrice": 1.337145,
+          "sharePrice": 1.337192,
           "apy": null,
-          "tvlUsd": 32768885,
+          "tvlUsd": 32763142,
           "supply": null
         },
         {
           "d": "2026-06-20",
-          "sharePrice": 1.337514,
+          "sharePrice": 1.33756,
           "apy": null,
-          "tvlUsd": 32648073,
+          "tvlUsd": 32648934,
           "supply": null
         },
         {
           "d": "2026-06-21",
-          "sharePrice": 1.33786,
+          "sharePrice": 1.337905,
           "apy": null,
-          "tvlUsd": 32547084,
+          "tvlUsd": 32547656,
           "supply": null
         },
         {
           "d": "2026-06-22",
-          "sharePrice": 1.3382,
+          "sharePrice": 1.338244,
           "apy": null,
-          "tvlUsd": 32478002,
+          "tvlUsd": 32479021,
           "supply": null
         },
         {
           "d": "2026-06-23",
-          "sharePrice": 1.338537,
+          "sharePrice": 1.338581,
           "apy": null,
-          "tvlUsd": 32346430,
+          "tvlUsd": 32347385,
           "supply": null
         },
         {
           "d": "2026-06-24",
-          "sharePrice": 1.338875,
+          "sharePrice": 1.338921,
           "apy": null,
-          "tvlUsd": 32261299,
+          "tvlUsd": 32262508,
           "supply": null
         },
         {
           "d": "2026-06-25",
-          "sharePrice": 1.339213,
+          "sharePrice": 1.33926,
           "apy": null,
-          "tvlUsd": 31853048,
+          "tvlUsd": 31854417,
           "supply": null
         },
         {
           "d": "2026-06-26",
-          "sharePrice": 1.33953,
+          "sharePrice": 1.339579,
           "apy": null,
-          "tvlUsd": 31700932,
+          "tvlUsd": 31702130,
           "supply": null
         },
         {
           "d": "2026-06-27",
-          "sharePrice": 1.339908,
+          "sharePrice": 1.339958,
           "apy": null,
-          "tvlUsd": 31138361,
+          "tvlUsd": 31129508,
           "supply": null
         },
         {
           "d": "2026-06-28",
-          "sharePrice": 1.340305,
+          "sharePrice": 1.340354,
           "apy": null,
-          "tvlUsd": 31126225,
+          "tvlUsd": 31127406,
           "supply": null
         },
         {
           "d": "2026-06-29",
-          "sharePrice": 1.340694,
+          "sharePrice": 1.340727,
           "apy": null,
-          "tvlUsd": 30775697,
+          "tvlUsd": 30775448,
           "supply": null
         },
         {
           "d": "2026-06-30",
-          "sharePrice": 1.341067,
+          "sharePrice": 1.341115,
           "apy": null,
-          "tvlUsd": 30609886,
+          "tvlUsd": 30600932,
           "supply": null
         },
         {
           "d": "2026-07-01",
-          "sharePrice": 1.341438,
+          "sharePrice": 1.341487,
           "apy": null,
-          "tvlUsd": 30464152,
+          "tvlUsd": 30444559,
           "supply": null
         },
         {
           "d": "2026-07-02",
-          "sharePrice": 1.341756,
+          "sharePrice": 1.34179,
           "apy": null,
-          "tvlUsd": 30432959,
+          "tvlUsd": 30433587,
           "supply": null
         },
         {
           "d": "2026-07-03",
-          "sharePrice": 1.342027,
+          "sharePrice": 1.342063,
           "apy": null,
-          "tvlUsd": 30408650,
+          "tvlUsd": 30409459,
           "supply": null
         },
         {
           "d": "2026-07-04",
-          "sharePrice": 1.342308,
+          "sharePrice": 1.342346,
           "apy": null,
-          "tvlUsd": 30141197,
+          "tvlUsd": 30142338,
           "supply": null
         },
         {
           "d": "2026-07-05",
-          "sharePrice": 1.342605,
+          "sharePrice": 1.342642,
           "apy": null,
-          "tvlUsd": 30146943,
+          "tvlUsd": 30147692,
           "supply": null
         },
         {
           "d": "2026-07-06",
-          "sharePrice": 1.342885,
+          "sharePrice": 1.342922,
           "apy": null,
-          "tvlUsd": 30062547,
+          "tvlUsd": 30063466,
           "supply": null
         },
         {
           "d": "2026-07-07",
-          "sharePrice": 1.343166,
+          "sharePrice": 1.343203,
           "apy": null,
-          "tvlUsd": 30061641,
+          "tvlUsd": 30060949,
           "supply": null
         },
         {
           "d": "2026-07-08",
-          "sharePrice": 1.343453,
+          "sharePrice": 1.343491,
           "apy": null,
-          "tvlUsd": 30058268,
+          "tvlUsd": 30059112,
           "supply": null
         },
         {
           "d": "2026-07-09",
-          "sharePrice": 1.343744,
+          "sharePrice": 1.343783,
           "apy": null,
-          "tvlUsd": 30039601,
+          "tvlUsd": 29644112,
           "supply": null
         },
         {
           "d": "2026-07-10",
-          "sharePrice": 1.344055,
+          "sharePrice": 1.344093,
           "apy": null,
-          "tvlUsd": 29443921,
+          "tvlUsd": 29387031,
           "supply": null
         },
         {
           "d": "2026-07-11",
-          "sharePrice": 1.344366,
+          "sharePrice": 1.344405,
           "apy": null,
-          "tvlUsd": 29262647,
+          "tvlUsd": 29204474,
           "supply": null
         },
         {
           "d": "2026-07-12",
-          "sharePrice": 1.344672,
+          "sharePrice": 1.34471,
           "apy": null,
-          "tvlUsd": 29189892,
+          "tvlUsd": 29190531,
           "supply": null
         },
         {
           "d": "2026-07-13",
-          "sharePrice": 1.34496,
+          "sharePrice": 1.344997,
           "apy": null,
-          "tvlUsd": 29130588,
+          "tvlUsd": 29121305,
           "supply": null
         },
         {
           "d": "2026-07-14",
-          "sharePrice": 1.345248,
+          "sharePrice": 1.345286,
           "apy": null,
-          "tvlUsd": 29074007,
+          "tvlUsd": 29075025,
           "supply": null
         },
         {
           "d": "2026-07-15",
-          "sharePrice": 1.345533,
+          "sharePrice": 1.345572,
           "apy": null,
-          "tvlUsd": 29074298,
+          "tvlUsd": 29075128,
           "supply": null
         },
         {
           "d": "2026-07-16",
-          "sharePrice": 1.345839,
+          "sharePrice": 1.345879,
           "apy": null,
-          "tvlUsd": 28898214,
+          "tvlUsd": 28890744,
           "supply": null
         },
         {
           "d": "2026-07-17",
-          "sharePrice": 1.346143,
+          "sharePrice": 1.346173,
           "apy": null,
-          "tvlUsd": 21747340,
+          "tvlUsd": 21722668,
           "supply": null
         },
         {
           "d": "2026-07-18",
-          "sharePrice": 1.346381,
+          "sharePrice": 1.346413,
           "apy": null,
-          "tvlUsd": 21716385,
+          "tvlUsd": 21633652,
           "supply": null
         },
         {
           "d": "2026-07-19",
-          "sharePrice": 1.346626,
+          "sharePrice": 1.346658,
           "apy": null,
-          "tvlUsd": 21588232,
+          "tvlUsd": 21589986,
           "supply": null
         },
         {
           "d": "2026-07-20",
-          "sharePrice": 1.34687,
+          "sharePrice": 1.346902,
           "apy": null,
-          "tvlUsd": 21586951,
+          "tvlUsd": 21587596,
           "supply": null
         },
         {
           "d": "2026-07-21",
-          "sharePrice": 1.347122,
+          "sharePrice": 1.347144,
           "apy": null,
-          "tvlUsd": 21585561,
+          "tvlUsd": 21585925,
           "supply": null
         },
         {
           "d": "2026-07-22",
-          "sharePrice": 1.347365,
+          "sharePrice": 1.347401,
           "apy": null,
-          "tvlUsd": 21482660,
+          "tvlUsd": 21490017,
           "supply": null
         },
         {
           "d": "2026-07-23",
-          "sharePrice": 1.347648,
+          "sharePrice": 1.347689,
           "apy": null,
-          "tvlUsd": 21474891,
+          "tvlUsd": 21470924,
           "supply": null
         },
         {
           "d": "2026-07-24",
-          "sharePrice": 1.347979,
+          "sharePrice": 1.348009,
           "apy": null,
-          "tvlUsd": 20963824,
+          "tvlUsd": 20964290,
           "supply": null
         },
         {
           "d": "2026-07-25",
-          "sharePrice": 1.348266,
+          "sharePrice": 1.348312,
           "apy": null,
-          "tvlUsd": 20989332,
+          "tvlUsd": 20990048,
           "supply": null
         },
         {
           "d": "2026-07-26",
-          "sharePrice": 1.348592,
+          "sharePrice": 1.348624,
           "apy": null,
-          "tvlUsd": 20814855,
+          "tvlUsd": 20814483,
           "supply": null
         },
         {
           "d": "2026-07-27",
-          "sharePrice": 1.348923,
+          "sharePrice": 1.348974,
           "apy": null,
-          "tvlUsd": 20787827,
+          "tvlUsd": 20787535,
           "supply": null
         },
         {
           "d": "2026-07-28",
-          "sharePrice": 1.349323,
+          "sharePrice": 1.349377,
           "apy": null,
-          "tvlUsd": 20785968,
+          "tvlUsd": 20787800,
           "supply": null
         },
         {
           "d": "2026-07-29",
-          "sharePrice": 1.349741,
+          "sharePrice": 1.349797,
           "apy": null,
-          "tvlUsd": 20788848,
+          "tvlUsd": 20789710,
           "supply": null
         },
         {
           "d": "2026-07-30",
-          "sharePrice": 1.350165,
+          "sharePrice": 1.350222,
           "apy": null,
-          "tvlUsd": 20778994,
+          "tvlUsd": 20779084,
           "supply": null
         },
         {
           "d": "2026-07-31",
-          "sharePrice": 1.350581,
+          "sharePrice": 1.3506,
           "apy": null,
-          "tvlUsd": 20721610,
+          "tvlUsd": 20721898,
           "supply": null
         },
         {
           "d": "2026-08-01",
-          "sharePrice": 1.350961,
+          "sharePrice": 1.351021,
           "apy": null,
-          "tvlUsd": 21123927,
+          "tvlUsd": 21124748,
           "supply": null
         },
         {
           "d": "2026-08-02",
-          "sharePrice": 1.351438,
+          "sharePrice": 1.351497,
           "apy": null,
-          "tvlUsd": 21124703,
+          "tvlUsd": 21124268,
           "supply": null
         }
       ]
@@ -2420,7 +2420,7 @@
       "apy": 3.28,
       "rateWindow": "current",
       "rateBasis": "Current supply rate, read from the Aave v3 Pool contract.",
-      "tvlUsd": 2120765323,
+      "tvlUsd": 2121494790,
       "sharePrice": null,
       "utilization": 91.5,
       "borrowApy": 3.98,
@@ -2459,11 +2459,11 @@
       "apy": null,
       "rateWindow": null,
       "rateBasis": "Realized rate not available yet: not enough share-price history for this product.",
-      "tvlUsd": 1575155106,
+      "tvlUsd": 1575127691,
       "tvlBasis": "shares outstanding times what one share redeems for",
-      "idleAssets": 1575155106,
+      "idleAssets": 1575127691,
       "deployedRatio": 1,
-      "sharePrice": 1.241687,
+      "sharePrice": 1.241705,
       "sharePriceApi": null,
       "sharePriceGapPct": null,
       "holders": null,
@@ -2501,11 +2501,11 @@
       "apy": null,
       "rateWindow": null,
       "rateBasis": "Realized rate not available yet: not enough share-price history for this product.",
-      "tvlUsd": 1066758565,
+      "tvlUsd": 1066785391,
       "tvlBasis": "shares outstanding times what one share redeems for",
-      "idleAssets": 1066759025,
+      "idleAssets": 1066785869,
       "deployedRatio": 1,
-      "sharePrice": 1.176354,
+      "sharePrice": 1.176375,
       "sharePriceApi": null,
       "sharePriceGapPct": null,
       "holders": null,
@@ -2543,11 +2543,11 @@
       "apy": null,
       "rateWindow": null,
       "rateBasis": "Realized rate not available yet: not enough share-price history for this product.",
-      "tvlUsd": 4632744522,
+      "tvlUsd": 4632894898,
       "tvlBasis": "shares outstanding times what one share redeems for",
-      "idleAssets": 4632744522,
+      "idleAssets": 4632894898,
       "deployedRatio": 1,
-      "sharePrice": 1.104939,
+      "sharePrice": 1.104953,
       "sharePriceApi": null,
       "sharePriceGapPct": null,
       "holders": null,
