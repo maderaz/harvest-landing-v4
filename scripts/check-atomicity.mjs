@@ -18,7 +18,9 @@
 // the writing spec so a finding can be traced back to the rule that fired.
 //
 //   1.  Undated figures   - a retrieved sentence with a number and no date is
-//                           unattributable months later.
+//                           unattributable months later. Satisfied either by a
+//                           date in the sentence or by a section dateline; see
+//                           data-dateline below.
 //   2.  Orphaned openers  - a sentence whose subject sits in the previous
 //                           sentence is dead the moment it is lifted.
 //   3.  Temporal deixis   - "today" and "currently" beside a figure, in a
@@ -86,6 +88,27 @@ const ENFORCED = new Set(["report/xrp-yield-ranking", "xrp-rich-list", "usdc"]);
 const DATE_TOKEN =
   /\bas of\b|\b(January|February|March|April|May|June|July|August|September|October|November|December)\b|\b20\d{2}\b/i;
 
+// A section may carry its date once, on a dateline, instead of on every
+// sentence inside it.
+//
+// The per-sentence form of rule 1 is what makes a lifted sentence survive, and
+// it is worth keeping for the sentences that actually get lifted. Applied to a
+// whole long-form page it produces something else: /usdc reached 29 separate
+// renderings of "as of August 2, 2026" in running prose, which reads as
+// templated filler to a human and wastes embedding capacity on a chunker that
+// already carries the section's context. Two independent model reviews of the
+// live page raised it unprompted.
+//
+// So a digit-bearing sentence is satisfied by a date of its own OR by a date on
+// its enclosing section. The exemption is opt-in and self-enforcing: the
+// dateline element must print a real date, checked with the same DATE_TOKEN, so
+// marking a section dated without dating it does nothing.
+//
+// The hero sits outside any <section> and therefore keeps the per-sentence rule
+// unconditionally, which is the right way round: the answer sentence is the one
+// most likely to be quoted alone.
+const DATELINE_EL = /<([a-z]+)\b[^>]*\sdata-dateline(?:=["'][^"']*["'])?[^>]*>([\s\S]*?)<\/\1>/gi;
+
 // Digits that are not measurements: contract addresses, ratios, version
 // strings, protocol names that contain numerals, and standard token/licence
 // identifiers. Sentences matching these are exempt unless they also carry a
@@ -149,14 +172,41 @@ function sentences(t) {
     .filter(Boolean);
 }
 
+/**
+ * Split the page into section-sized chunks and say which of them are dated.
+ *
+ * Lookahead split rather than a matched <section>...</section> pair, because a
+ * backreference regex mis-terminates on nesting and these pages hold their
+ * sections as flat siblings. Chunk 0 is everything before the first <section>,
+ * which is the hero.
+ *
+ * A nested section would start its chunk early and leave the outer remainder
+ * undated, so the failure mode is a false positive that breaks the build
+ * loudly rather than a false negative that lets an undated figure through.
+ */
+function sections(html) {
+  return html.split(/(?=<section\b)/i).map((chunk) => {
+    let dated = false;
+    for (const m of chunk.matchAll(DATELINE_EL)) {
+      if (DATE_TOKEN.test(text(m[2]))) {
+        dated = true;
+        break;
+      }
+    }
+    return { html: chunk, dated };
+  });
+}
+
 function blocks(html) {
   const out = [];
-  for (const m of html.matchAll(/<(p|li|dd|summary)\b[^>]*>([\s\S]*?)<\/\1>/gi)) {
-    const inner = m[2];
-    // Skip wrappers that contain other blocks; the inner ones are matched too.
-    if (/<(p|li|dd)\b/i.test(inner)) continue;
-    const t = text(inner);
-    if (t.length > 2) out.push({ tag: m[1].toLowerCase(), text: t });
+  for (const sec of sections(html)) {
+    for (const m of sec.html.matchAll(/<(p|li|dd|summary)\b[^>]*>([\s\S]*?)<\/\1>/gi)) {
+      const inner = m[2];
+      // Skip wrappers that contain other blocks; the inner ones are matched too.
+      if (/<(p|li|dd)\b/i.test(inner)) continue;
+      const t = text(inner);
+      if (t.length > 2) out.push({ tag: m[1].toLowerCase(), text: t, sectionDated: sec.dated });
+    }
   }
   return out;
 }
@@ -178,7 +228,12 @@ export function lint(html, { entityCap = ENTITY_CAP } = {}) {
       // many XRP holders have 10,000 or more?" to carry a date would break the
       // exact match the heading exists for. The ANSWER underneath still has to
       // pass, which is where the claim actually lives.
-      if (/\d/.test(s) && !DATE_TOKEN.test(s) && !s.trimEnd().endsWith("?")) {
+      if (
+        /\d/.test(s) &&
+        !DATE_TOKEN.test(s) &&
+        !b.sectionDated &&
+        !s.trimEnd().endsWith("?")
+      ) {
         const money = /[%$]/.test(s);
         if (money || !ALLOW_DIGIT.test(s)) {
           findings.push({ rule: "undated-figure", where: b.tag, text: s });
@@ -265,6 +320,31 @@ function selfTest() {
     // beneath it is still held to the rule.
     ["<summary>How many holders have 10,000 or more?</summary>", "undated-figure", false],
     ["<p>10,000 holders qualified.</p>", "undated-figure", true],
+    // Rule 1, section-dateline form. A dated section covers its own prose,
+    // a dateline with no date in it covers nothing, and prose outside every
+    // section is never covered.
+    [
+      '<section><p data-dateline>August 2, 2026</p><p>The median was 4.13%.</p></section>',
+      "undated-figure",
+      false,
+    ],
+    [
+      '<section><p data-dateline>Composition</p><p>The median was 4.13%.</p></section>',
+      "undated-figure",
+      true,
+    ],
+    [
+      '<p>The median was 4.13%.</p><section><p data-dateline>August 2, 2026</p></section>',
+      "undated-figure",
+      true,
+    ],
+    // A dateline does not license the other rules. Deixis beside a figure is
+    // still a claim that expires on retrieval.
+    [
+      '<section><p data-dateline>August 2, 2026</p><p>The median is currently 4.13%.</p></section>',
+      "temporal-deixis",
+      true,
+    ],
   ];
   let failed = 0;
   for (const [html, rule, shouldFire] of cases) {
