@@ -1,0 +1,258 @@
+/* Additions specific to the /usdc rebuild. The page shell (hero, stats,
+   crumbs, CTA rail, FAQ dl, data note) comes from asset-hub.css; the ranking
+   table markup from globals.css. This file covers what is unique to a linear
+   answer-first document: the hero answer sentence, the key-findings block,
+   the section rhythm, and the seven-column top-ten grid.
+
+   Everything is scoped under .uh-page so it cannot reach /eth, /btc or /usdt,
+   which are the control group for this change. */
+
+/* === Hero answer sentence ==========================================
+   Replaces the one-line "Live ranking of N strategies" subhead. It is
+   body prose rather than a stat card on purpose: an answer engine lifting
+   the opening chunk should get a sentence with a subject, a scope clause
+   and a date, not a number in a box. */
+.uni-hub-test.uh-page .uh-answer {
+  font-size: 17px;
+  line-height: 1.55;
+  color: var(--uni-ink-2);
+  margin: 10px 0 0;
+  max-width: 62ch;
+}
+
+/* === Key findings ==================================================
+   Four complete sentences, above the first table. This block is the
+   primary citation surface, so it gets a visual weight closer to the
+   hero than to body copy. */
+.uni-hub-test.uh-page .uh-findings-wrap {
+  margin: 28px 0 0;
+  padding: 20px 24px;
+  border: 1px solid var(--uni-line);
+  border-radius: var(--uni-radius, 20px);
+  background: var(--uni-card, transparent);
+}
+.uni-hub-test.uh-page .uh-findings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 12px;
+}
+.uni-hub-test.uh-page .uh-findings li {
+  position: relative;
+  padding-left: 20px;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--uni-ink);
+}
+.uni-hub-test.uh-page .uh-findings li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hub-gold, #ffb936);
+}
+
+/* === Section rhythm ================================================
+   One column, eyebrow + H2 + prose. The nine-card grid the page used to
+   render could only produce H3s inside cards, and the rate-vocabulary
+   headings this rebuild adds have to be page-level H2s to carry the
+   heading match they exist for. */
+.uni-hub-test.uh-page .uh-block {
+  margin: 52px 0 0;
+}
+.uni-hub-test.uh-page .uh-eyebrow {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+  margin: 0 0 8px;
+}
+.uni-hub-test.uh-page .uh-block h2 {
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+  color: var(--uni-ink);
+  margin: 0 0 14px;
+  scroll-margin-top: 72px;
+}
+.uni-hub-test.uh-page .uh-block p {
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--uni-ink-2);
+  margin: 0 0 14px;
+  max-width: 78ch;
+}
+.uni-hub-test.uh-page .uh-block p:last-child {
+  margin-bottom: 0;
+}
+/* The atomic opening sentence of each block, set slightly larger so the
+   liftable claim reads as the claim. */
+.uni-hub-test.uh-page .uh-lead {
+  font-size: 17px !important;
+  line-height: 1.6 !important;
+  color: var(--uni-ink) !important;
+}
+.uni-hub-test.uh-page .uh-block a {
+  color: var(--uni-ink);
+  font-weight: 500;
+  background: linear-gradient(transparent 70%, rgba(255, 185, 54, 0.45) 70%);
+  padding: 0 1px;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+.uni-hub-test.uh-page .uh-block a:hover {
+  background: linear-gradient(transparent 0, rgba(255, 185, 54, 0.55) 0);
+}
+
+/* Venue lines: one dated sentence per family. */
+.uni-hub-test.uh-page .uh-venues {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+  max-width: 78ch;
+}
+.uni-hub-test.uh-page .uh-venues li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.uni-hub-test.uh-page .uh-venues li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.66em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--uni-ink-3);
+}
+
+.uni-hub-test.uh-page .uh-faq {
+  gap: 18px;
+}
+.uni-hub-test.uh-page .uh-faq dd {
+  max-width: 78ch;
+}
+
+/* === Table 1: seven columns ========================================
+   Reuses every .hub-* cell style from globals.css and overrides only the
+   grid track, the way .sc-rank and .ae-rank already do on the report
+   pages. Adding these columns to the shared .hub-table grid instead would
+   change eight call sites including the control group.
+
+   Order: # | Vault | 24h APY | 30d APY | Strategy | Network | TVL */
+.uh-top10 .hub-thead,
+.uh-top10 .hub-row {
+  grid-template-columns:
+    34px minmax(160px, 1.9fr) 86px 86px minmax(96px, 1fr) minmax(96px, 0.9fr) 84px;
+  gap: 14px;
+}
+/* The shared thead sticks under the 52px topnav. Ten rows do not need a
+   sticky header and it collides with the section heading above it. */
+.uh-top10 .hub-thead {
+  position: static;
+  top: auto;
+  backdrop-filter: none;
+}
+.uh-top10 .uh-cell-text {
+  font-size: 14px;
+  color: var(--hub-ink-2, #47463f);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.uh-top10 .uh-cell-net {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  color: var(--hub-ink-2, #47463f);
+  white-space: nowrap;
+  overflow: hidden;
+  min-width: 0;
+}
+.uh-top10 .uh-cell-net img,
+.uh-top10 .uh-cell-net svg {
+  flex: 0 0 auto;
+}
+/* 30d sits beside 24h as the reference figure, so it reads as secondary. */
+.uh-top10 .uh-apy30 {
+  color: var(--hub-ink-2, #47463f);
+  font-weight: 500;
+}
+
+/* Responsive: drop Strategy, then Network, then TVL. Mirrors the order the
+   shared table uses, and keeps both rate columns visible on a phone because
+   the 24h-versus-30d comparison is the point of the table. */
+@media (max-width: 1100px) {
+  .uh-top10 .hub-thead,
+  .uh-top10 .hub-row {
+    grid-template-columns: 30px minmax(140px, 1.7fr) 80px 80px minmax(88px, 0.9fr) 78px;
+    gap: 12px;
+  }
+  .uh-top10 .hub-thead .hub-th:nth-child(5),
+  .uh-top10 .hub-row .hub-cell:nth-child(5) {
+    display: none;
+  }
+}
+@media (max-width: 800px) {
+  .uh-top10 .hub-thead,
+  .uh-top10 .hub-row {
+    grid-template-columns: 26px minmax(120px, 1.7fr) 74px 74px 72px;
+    gap: 10px;
+  }
+  .uh-top10 .hub-thead .hub-th:nth-child(6),
+  .uh-top10 .hub-row .hub-cell:nth-child(6) {
+    display: none;
+  }
+}
+@media (max-width: 540px) {
+  .uh-top10 .hub-thead,
+  .uh-top10 .hub-row {
+    grid-template-columns: 22px minmax(0, 1fr) 62px 62px;
+    gap: 8px;
+  }
+  .uh-top10 .hub-thead .hub-th:nth-child(7),
+  .uh-top10 .hub-row .hub-cell:nth-child(7) {
+    display: none;
+  }
+}
+
+@media (max-width: 800px) {
+  .uni-hub-test.uh-page .uh-block { margin-top: 40px; }
+  .uni-hub-test.uh-page .uh-block h2 { font-size: 22px; }
+  .uni-hub-test.uh-page .uh-answer { font-size: 15.5px; }
+  .uni-hub-test.uh-page .uh-lead { font-size: 15.5px !important; }
+  .uni-hub-test.uh-page .uh-findings-wrap { padding: 16px 18px; }
+  .uni-hub-test.uh-page .uh-findings li { font-size: 14.5px; }
+  .uni-hub-test.uh-page .uh-venues li { font-size: 14.5px; }
+}
+
+/* Dark mode: the hero/section type all inherits from asset-hub.css tokens,
+   so only the findings card needs its own surface. */
+:root[data-theme="dark"] .uni-hub-test.uh-page .uh-findings-wrap {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Caveat line under table 1: the floor the headline uses, stated where the
+   unfiltered ranking is visible. Smaller and muted so it reads as a footnote
+   to the table rather than a competing claim. */
+.uni-hub-test.uh-page .uh-note {
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: var(--uni-ink-3) !important;
+  margin-top: 14px !important;
+  max-width: 78ch;
+}

@@ -400,7 +400,12 @@ function Row({
             />
           </svg>
         ) : (
-          <span className="hub-spark-empty">—</span>
+          // Hyphen, not an em dash. check-banned-words fails the build on an
+          // em dash anywhere in the scanned page text, and this placeholder is
+          // one missing history series away from rendering on /usdc, which
+          // joins that gate in this change. No hub page emits it today, so
+          // nothing visible moves.
+          <span className="hub-spark-empty">-</span>
         )}
       </span>
     </Link>
