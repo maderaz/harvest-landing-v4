@@ -66,8 +66,8 @@ export interface UsdcCohort {
   totalTvl: number;
   byNetwork: UsdcNetwork[];
   byVenue: UsdcVenue[];
-  /** What the yield is actually paid in. See payoutOf. */
-  payout: UsdcPayout;
+  /** Which strategies carry a reward token beside their rate. See rewardsOf. */
+  rewards: UsdcRewards;
   /** 30-day rate stability, per strategy and cohort-level. */
   stability: UsdcStability;
   /**
@@ -77,13 +77,13 @@ export interface UsdcCohort {
   benchmark: UsdcBenchmark | null;
 }
 
-export interface UsdcPayout {
-  /** Strategies whose yield accrues in USDC itself. */
-  inUsdc: YieldVault[];
-  /** Strategies whose yield accrues in a reward token that has to be sold. */
-  inToken: YieldVault[];
-  usdcMedian: number;
-  tokenMedian: number;
+export interface UsdcRewards {
+  /** Strategies with no live reward token beside their rate. */
+  usdcOnly: YieldVault[];
+  /** Strategies whose rate blends lending interest with a reward emission. */
+  withReward: YieldVault[];
+  usdcOnlyMedian: number;
+  withRewardMedian: number;
   /** Distinct reward-token symbols, most common first. */
   tokens: { symbol: string; count: number }[];
 }
@@ -204,25 +204,69 @@ export function apyFloorLabel(v: number): string {
   return v > 0 && v < 0.005 ? "under 0.01%" : formatAPY(v);
 }
 
-// The token a strategy's yield accrues in.
+// The reward tokens a strategy harvests alongside its lending interest.
 //
-// Two independent reviews asked for the rate to be split into base interest
-// and reward emissions. That split does not exist in our data: apyBreakdown
-// carries exactly one entry per vault and its apy equals apy24h on every row,
-// so any percentage decomposition would be invented here rather than measured.
+// This used to read apyBreakdown[0].source and call it the payout token. That
+// was wrong, and the way it was wrong matters enough to record.
 //
-// What the field does carry is the payout token, and that answers the question
-// the reviewers were really asking. A rate paid in MORPHO or ARB is only worth
-// what the token sells for; a rate paid in USDC is already dollars. The page
-// reports that distinction and says plainly that it is not a base/reward split.
+// apyBreakdown and rewardTokens are built from two different upstream arrays
+// in harvest-api.ts: the breakdown maps over estimatedApyBreakdown (the
+// values), rewardTokens maps over apyTokenSymbols (the symbols). The source
+// string is therefore apyTokenSymbols[0], which is the first ICON shown beside
+// the APY in the app, not a settlement currency. Three things follow:
 //
-// Note the limit: an autocompounder that harvests MORPHO and swaps it to USDC
-// also reports USDC, correctly, because that is what reaches the position.
-export function payoutOf(vault: YieldVault): string {
-  return vault.apyBreakdown?.[0]?.source || vault.asset;
+//   1. When upstream sends more symbols than values, the extra symbols survive
+//      only in rewardTokens. Six Morpho vaults on Arbitrum report source "ARB"
+//      while their rewardTokens list ARB and MORPHO, so one number labelled ARB
+//      covers at least two emissions plus the underlying interest.
+//   2. Five identical Aave v3 USDC supply positions carry two different labels:
+//      the Ethereum pair reports "USDC", the Base, Polygon and Arbitrum three
+//      report "AAVE", and all five sit in the same 2.3% to 3.4% band. Our own
+//      feed disagrees with itself about the same strategy.
+//   3. The "Base Rate" fallback fires on zero rows. Every source in the file is
+//      a ticker, so "USDC" is the same kind of label as "MORPHO".
+//
+// So the page cannot claim a rate is paid in a token, and it equally cannot
+// claim a split between base interest and emissions, because apyBreakdown
+// carries one entry per vault whose apy equals apy24h. What it can report is
+// the token list: which tokens a strategy harvests. Reading the whole
+// rewardTokens array rather than one label also picks up the second tokens
+// point 1 was dropping.
+//
+// Curated override of an upstream label, named here rather than buried: Aave
+// no longer issues AAVE emissions on its USDC markets. The three rows still
+// carrying the label hold about $570 between them, and two identical positions
+// on Ethereum are labelled USDC, so the label is stale metadata rather than a
+// live reward. Remove an entry here if a program restarts.
+const RETIRED_REWARD_TOKENS = new Set(["AAVE"]);
+
+/** Distinct live reward-token symbols beside a strategy's rate, excluding its own asset. */
+export function rewardsOf(vault: YieldVault): string[] {
+  const own = vault.asset.toUpperCase();
+  const seen = new Set<string>();
+  for (const t of vault.rewardTokens ?? []) {
+    const s = (t?.symbol ?? "").trim();
+    if (!s) continue;
+    const up = s.toUpperCase();
+    if (up === own || RETIRED_REWARD_TOKENS.has(up)) continue;
+    if (!seen.has(up)) seen.add(up);
+  }
+  // Preserve the feed's own casing (crvUSD, axlOP, dQUICK) rather than the
+  // uppercased dedup key, which would print CRVUSD in prose.
+  const out: string[] = [];
+  const used = new Set<string>();
+  for (const t of vault.rewardTokens ?? []) {
+    const s = (t?.symbol ?? "").trim();
+    const up = s.toUpperCase();
+    if (seen.has(up) && !used.has(up)) {
+      used.add(up);
+      out.push(s);
+    }
+  }
+  return out;
 }
 
-export const isPaidInUsdc = (v: YieldVault): boolean => payoutOf(v) === "USDC";
+export const hasRewardToken = (v: YieldVault): boolean => rewardsOf(v).length > 0;
 
 /** Population standard deviation, in the same units as the input. */
 function stdev(xs: number[]): number {
@@ -308,18 +352,19 @@ export function buildUsdcCohort(
   const funded = all.filter((v) => v.tvl >= FUNDED_FLOOR);
   const fundedApysAsc = funded.map((v) => v.apy24h).sort((a, b) => a - b);
 
-  const inUsdc = all.filter(isPaidInUsdc);
-  const inToken = all.filter((v) => !isPaidInUsdc(v));
-  const tokenCounts = inToken.reduce<Record<string, number>>((acc, v) => {
-    const t = payoutOf(v);
-    acc[t] = (acc[t] ?? 0) + 1;
+  const usdcOnly = all.filter((v) => !hasRewardToken(v));
+  const withReward = all.filter(hasRewardToken);
+  // Counted over every token on a row, not just the first, so a Morpho vault
+  // emitting both ARB and MORPHO is counted under each.
+  const tokenCounts = withReward.reduce<Record<string, number>>((acc, v) => {
+    for (const t of rewardsOf(v)) acc[t] = (acc[t] ?? 0) + 1;
     return acc;
   }, {});
-  const payout: UsdcPayout = {
-    inUsdc,
-    inToken,
-    usdcMedian: median(inUsdc.map((v) => v.apy24h).sort((a, b) => a - b)),
-    tokenMedian: median(inToken.map((v) => v.apy24h).sort((a, b) => a - b)),
+  const rewards: UsdcRewards = {
+    usdcOnly,
+    withReward,
+    usdcOnlyMedian: median(usdcOnly.map((v) => v.apy24h).sort((a, b) => a - b)),
+    withRewardMedian: median(withReward.map((v) => v.apy24h).sort((a, b) => a - b)),
     tokens: Object.entries(tokenCounts)
       .map(([symbol, count]) => ({ symbol, count }))
       .sort((a, b) => b.count - a.count || a.symbol.localeCompare(b.symbol)),
@@ -391,7 +436,7 @@ export function buildUsdcCohort(
     totalTvl,
     byNetwork,
     byVenue,
-    payout,
+    rewards,
     stability,
     benchmark: buildBenchmark(),
   };
@@ -470,7 +515,7 @@ export function answerSentence(c: UsdcCohort): string {
   return (
     `The best USDC yield in Harvest's index is ${apy(c.best.apy24h)} APY, paid by ` +
     `${proseName(c.best, true)}, as of ${c.asOf}. That is the highest rate among strategies ` +
-    `holding at least ${tvl(c.fundedFloor)} as of ${c.asOf}, against a median of ` +
+    `holding at least ${tvl(c.fundedFloor)}, against a median of ` +
     `${apy(c.medianApy)} across all ${c.count} USDC strategies tracked on ${c.chainCount} ` +
     `${plural(c.chainCount, "network", "networks")}.`
   );
@@ -487,10 +532,10 @@ export function keyFindings(c: UsdcCohort): string[] {
   // renderings of one claim inside the same retrieval chunk. The summary
   // carries the four facts the opener does not.
   const out = [
-    `The ${c.count} USDC strategies tracked here held ${tvl(c.totalTvl)} between them as of ` +
-      `${c.asOf}, across ${c.byVenue.length} venue families.`,
+    `The ${c.count} USDC strategies tracked here held ${tvl(c.totalTvl)} between them, ` +
+      `across ${c.byVenue.length} venue families.`,
     `The median USDC rate across all ${c.count} tracked strategies was ` +
-      `${apy(c.medianApy)} as of ${c.asOf}, and the average weighted by TVL was ` +
+      `${apy(c.medianApy)}, and the average weighted by TVL was ` +
       `${apy(c.tvlWeightedApy)}.`,
   ];
   // The spread claim is made over the funded cohort. When the raw top of the
@@ -501,7 +546,7 @@ export function keyFindings(c: UsdcCohort): string[] {
   const rawDiffers = c.bestRaw.slug !== c.best.slug;
   out.push(
     `Rates on the ${c.fundedCount} strategies holding at least ${tvl(c.fundedFloor)} ran from ` +
-      `${apy(c.fundedMinApy)} to ${apy(c.fundedMaxApy)} as of ${c.asOf}` +
+      `${apy(c.fundedMinApy)} to ${apy(c.fundedMaxApy)}` +
       (rawDiffers
         ? `, while the highest rate anywhere in the index was ${apy(c.bestRaw.apy24h)} on ` +
           `${proseName(c.bestRaw)}, which held ${tvl(c.bestRaw.tvl)}.`
@@ -510,7 +555,7 @@ export function keyFindings(c: UsdcCohort): string[] {
   if (first) {
     out.push(
       `${first.chain} carried more USDC strategies than any other network Harvest tracks, ` +
-        `${first.count} of ${c.count} as of ${c.asOf}, holding ${tvl(first.tvl)}` +
+        `${first.count} of ${c.count}, holding ${tvl(first.tvl)}` +
         (second
           ? `, against ${second.count} on ${second.chain} holding ${tvl(second.tvl)}`
           : "") +
@@ -536,31 +581,31 @@ export function venueLines(c: UsdcCohort, families: string[]): string[] {
       // and leading with a range hands an answer engine the top of it.
       const where = `on ${listOf(v.chains)}`;
       if (v.count === 1) {
-        return `${v.venue} USDC paid ${apy(v.medianApy)} ${where} as of ${c.asOf}.`;
+        return `${v.venue} USDC paid ${apy(v.medianApy)} ${where}.`;
       }
       const head =
         `${v.venue} USDC paid a median of ${apy(v.medianApy)} across ${v.count} markets ` +
-        `${where} as of ${c.asOf}`;
+        `${where}`;
       if (v.minApy.toFixed(2) === v.maxApy.toFixed(2)) return `${head}.`;
       return `${head}, within a range of ${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}.`;
     });
 }
 
-/** "MORPHO on 24, ARB on 6 and COMP on 3" */
+/** "MORPHO on 28, ARB on 6 and AERO on 4" */
 export function tokenBlock(c: UsdcCohort, limit = 4): string {
   return listOf(
-    c.payout.tokens
+    c.rewards.tokens
       .slice(0, limit)
       .map((t) => `${t.symbol} on ${t.count}`),
   );
 }
 
-export function payoutLead(c: UsdcCohort): string {
-  const p = c.payout;
+export function rewardsLead(c: UsdcCohort): string {
+  const r = c.rewards;
   return (
-    `Of the ${c.count} USDC strategies tracked here, ${p.inUsdc.length} paid their yield in ` +
-    `USDC and ${p.inToken.length} paid it in a reward token that has to be sold before it ` +
-    `becomes dollars, as of ${c.asOf}.`
+    `Of the ${c.count} USDC strategies tracked here, ${r.usdcOnly.length} earn lending interest ` +
+    `alone and ${r.withReward.length} earn lending interest plus a reward token the strategy ` +
+    `harvests and sells.`
   );
 }
 
