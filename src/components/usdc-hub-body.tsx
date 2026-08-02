@@ -705,17 +705,31 @@ export async function UsdcHubBody() {
         asOf={c.asOf}
         asOfIso={c.asOfIso}
         title="Risk surfaces on every USDC strategy"
-        lead="Every rate on this page is compensation for a specific set of exposures, and seven of them apply across the index: contract, layered contract, collateral, curator, oracle, liquidity and peg risk."
+        lead="Every rate on this page is compensation for a specific set of exposures, and eight of them apply across the index: contract, layered contract, collateral, curator, oracle, liquidity, peg and governance risk."
       >
-        {/* One item per surface rather than four running paragraphs. A reader
-            scanning for the exposure that worries them was previously made to
-            read all of it, and the surfaces genuinely are separable: they fail
-            independently and a given row carries a different subset of them. */}
+        {/* One item per surface rather than four running paragraphs, and each
+            one carries a precedent.
+
+            Naming the exposure is cheap and every yield page does it. What
+            makes a risk section worth reading is showing that the failure has
+            already happened somewhere, with a figure and a date attached, so
+            the reader can weigh it instead of nodding at an abstraction. Every
+            citation is a general-press or established-desk source, and several
+            of the incidents hit venues this page actually tracks. */}
         <ul className="uh-risks">
           <li>
             <strong>Smart-contract risk</strong> sits on the vault contract and on the protocol
             contract underneath it. Either can hold a bug that no audit caught, and a position is
-            exposed to both for as long as it stays open.
+            exposed to both for as long as it stays open. Euler, a venue in this index, lost{" "}
+            <a
+              href="https://cointelegraph.com/news/defi-sees-its-biggest-hack-in-2023-as-euler-loses-197m-finance-redefined"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              $197 million in March 2023
+            </a>
+            , and the uncomfortable detail is where the hole came from: a function added while
+            fixing an earlier bug.
           </li>
           <li>
             <strong>Layered contract risk</strong>
@@ -724,7 +738,15 @@ export async function UsdcHubBody() {
               `and the collateral backing that market: four surfaces, any one of which can fail ` +
               `alone, with one published rate compensating for all of them at once. The rows ` +
               `carrying the fewest layers are the plain money markets, where the position lends ` +
-              `directly.`}
+              `directly. Balancer showed how far a single layer reaches in `}
+            <a
+              href="https://finance.yahoo.com/news/tiny-rounding-error-ignited-balancer-142052252.html"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              November 2025, when a rounding error cost $128 million
+            </a>
+            {` and the same flaw drained protocols that had done nothing but reuse the code.`}
           </li>
           <li>
             <strong>Collateral risk</strong>
@@ -737,22 +759,45 @@ export async function UsdcHubBody() {
             {` and staked-ether forms rather than the plain assets. Where the row is a curated ` +
               `vault, the collateral is a ` +
               `basket the curator picks and can change, so the exposure moves with their decisions ` +
-              `rather than staying fixed at the point a position opens.`}
+              `rather than staying fixed at the point a position opens. When Stream Finance's xUSD ` +
+              `lost most of its value in November 2025, analysts traced `}
+            <a
+              href="https://cointelegraph.com/news/defi-sleuths-trace-284m-stream-finance-exposure"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              roughly $285 million of loans secured against Stream assets
+            </a>
+            {` across Euler, Morpho and Silo.`}
           </li>
           <li>
-            <strong>Curator risk</strong> follows from that, and curators are not
-            interchangeable. A row reading
-            Gauntlet, Steakhouse or Clearstar names the firm setting the loan-to-value ratios, the
-            oracle choices and the collateral list for that vault, not the protocol underneath, so
-            two vaults on the same protocol can carry very different exposure because two
-            different firms set them up.
+            {/* Explicit space: this item is the only plain-text one carrying an
+                HTML entity (&rsquo; below), and with it present the JSX text
+                node loses the leading space after </strong> at build time. */}
+            <strong>Curator risk</strong>{" "}
+            follows from that, and curators are not interchangeable.
+            A row reading Gauntlet, Steakhouse or Clearstar names the firm setting the
+            loan-to-value ratios, the oracle choices and the collateral list for that vault, not
+            the protocol underneath, so two vaults on the same protocol can carry very different
+            exposure because two different firms set them up. The same Stream episode put numbers
+            on it: one curator held $123.64 million of loans backed by Stream assets, two others
+            held $68 million and $25.42 million, and the choice of what to accept was theirs
+            rather than the protocol&rsquo;s.
           </li>
           <li>
             <strong>Oracle risk</strong> sits on the price feeds those contracts trust. A
-            liquidation only fires if
-            the feed reports the collateral falling, and a feed that lags, freezes or is
-            manipulated turns an over-collateralised loan into bad debt without anyone touching
-            the vault.
+            liquidation only fires if the feed reports the collateral falling, and a feed that
+            lags, freezes or is manipulated turns an over-collateralised loan into bad debt
+            without anyone touching the vault. Mango Markets is the textbook case:{" "}
+            <a
+              href="https://cointelegraph.com/news/how-low-liquidity-led-to-mango-markets-losing-over-116-million"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              in October 2022 a trader spent about $10 million
+            </a>
+            {" "}pushing the price of the collateral token up several times over, then borrowed
+            roughly $116 million against the inflated figure and left the protocol insolvent.
           </li>
           <li>
             <strong>Liquidity risk</strong>
@@ -784,10 +829,33 @@ export async function UsdcHubBody() {
               `required the USDC side to break.`}
           </li>
           <li>
-            <strong>Depeg risk</strong> sits on USDC itself in tail scenarios, and{" "}
-            <strong>governance risk</strong> sits on every
-            parameter an operator can change after a position is open. Both are outside the
-            strategy and neither is visible in a rate.
+            <strong>Depeg risk</strong> sits on USDC itself in tail scenarios, and it is the one
+            exposure no strategy on this page can diversify away. USDC traded as low as 87 cents
+            in March 2023 after Circle confirmed that{" "}
+            <a
+              href="https://www.coindesk.com/business/2023/03/11/circle-confirms-33b-of-usdcs-cash-reserves-stuck-at-failed-silicon-valley-bank"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              $3.3 billion of the reserves behind it, about 8% of the backing, sat at Silicon
+              Valley Bank
+            </a>
+            . The peg held once the bank was resolved, and the point stands: the risk lives with
+            the issuer and the banks it uses, not with the yield.
+          </li>
+          <li>
+            <strong>Governance risk</strong> sits on every parameter an operator can change after
+            a position is open, and the change itself can be the failure. A single-letter mistake
+            in a Compound governance upgrade{" "}
+            <a
+              href="https://cointelegraph.com/news/compound-supply-bug-mistakenly-rewarded-users-with-70m-in-tokens"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              handed out tens of millions of dollars of COMP by accident in September 2021
+            </a>
+            , and the timelock that makes governance safe also meant the fix could not ship for
+            days while the error kept running.
           </li>
         </ul>
         <p>
