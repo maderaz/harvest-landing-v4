@@ -553,6 +553,11 @@ function runSelfTest() {
 const POLYGON_VENUES_JSON = path.join(ROOT, "data", "polygon-venues.json");
 const EXTERNAL_PRODUCTS_JSON = path.join(ROOT, "data", "external-products.json");
 
+// See the matching comment in check-banned-words.mjs: /usdc now carries
+// hand-written editorial prose (answer sentence, key findings, venue block,
+// FAQ) and gets the same scan a product page does.
+const ASSET_HUB_SLUGS = ["usdc"];
+
 // See the matching comment in check-banned-words.mjs: /polygon and
 // /polygon/[venue] are a second editorial surface this gate now also covers.
 async function loadPolygonSlugs() {
@@ -586,6 +591,7 @@ async function loadProductSlugs() {
     ...vaults.map((v) => v.slug).filter((s) => typeof s === "string" && s.length > 0),
     ...(await loadPolygonSlugs()),
     ...(await loadExternalProductSlugs()),
+    ...ASSET_HUB_SLUGS,
   ];
 }
 
