@@ -255,13 +255,34 @@ export function listOf(items: string[]): string {
 export const plural = (n: number, one: string, many: string): string =>
   n === 1 ? one : many;
 
+/**
+ * The first sentence a reader and an answer engine both hit.
+ *
+ * It leads with the answer instead of the scope. The previous shape spent
+ * twenty words on qualification before reaching the figure, which buries the
+ * one thing the query asked for, and the page's job is to answer a query about
+ * the best USDC rate.
+ *
+ * Scope still precedes the figure, which is the rule that matters: the
+ * grammatical subject is "the best USDC yield in Harvest's index", not "USDC
+ * yield", so a partial lift carries the scope with it and cannot be read as a
+ * claim about the whole market. The floor, the median and the cohort size move
+ * into the second sentence, where they qualify without delaying.
+ *
+ * "yield" rather than "APY" as the head noun, with APY kept as the unit. The
+ * keyword pull behind this rebuild puts `usdc yield` at 350 US searches a
+ * month and `usdc interest rate` at another 350 at KD 16, while `usdc apy`
+ * does not register as a head term. Sentence two carries "interest rate" in
+ * the FAQ and the venue H2; this one matches the H1.
+ */
 export function answerSentence(c: UsdcCohort): string {
   if (!c.best) return "";
   return (
-    `Across the ${c.count} USDC strategies Harvest tracks on ${c.chainCount} ` +
-    `${plural(c.chainCount, "network", "networks")}, the highest 24-hour APY on a strategy ` +
-    `holding at least ${tvl(c.fundedFloor)} was ${apy(c.best.apy24h)} on ${c.best.productName} ` +
-    `as of ${c.asOf}, against a median of ${apy(c.medianApy)} across the whole index.`
+    `The best USDC yield in Harvest's index is ${apy(c.best.apy24h)} APY, paid by ` +
+    `${c.best.productName}, as of ${c.asOf}. That is the highest rate among strategies ` +
+    `holding at least ${tvl(c.fundedFloor)} as of ${c.asOf}, against a median of ` +
+    `${apy(c.medianApy)} across all ${c.count} USDC strategies tracked on ${c.chainCount} ` +
+    `${plural(c.chainCount, "network", "networks")}.`
   );
 }
 
@@ -271,12 +292,13 @@ export function keyFindings(c: UsdcCohort): string[] {
   // "USDC 40 Acres (Base), a 40 Acres strategy" is the shape to avoid: many
   // product names already carry their venue, so the clause only earns its place
   // when it adds one.
-  const bestVenue = venueOf(c.best);
-  const venueClause = c.best.productName.includes(bestVenue) ? " " : `, a ${bestVenue} strategy, `;
+  // The headline rate is deliberately absent here. It is the opening sentence's
+  // job now, and repeating it as the first bullet gave an engine two competing
+  // renderings of one claim inside the same retrieval chunk. The summary
+  // carries the four facts the opener does not.
   const out = [
-    `The highest USDC yield in Harvest's index on a strategy holding at least ` +
-      `${tvl(c.fundedFloor)} was ${apy(c.best.apy24h)} on ${c.best.productName}` +
-      `${venueClause}as of ${c.asOf}.`,
+    `The ${c.count} USDC strategies tracked here held ${tvl(c.totalTvl)} between them as of ` +
+      `${c.asOf}, across ${c.byVenue.length} venue families.`,
     `The median USDC rate across all ${c.count} tracked strategies was ` +
       `${apy(c.medianApy)} as of ${c.asOf}, and the average weighted by TVL was ` +
       `${apy(c.tvlWeightedApy)}.`,
