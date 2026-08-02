@@ -183,7 +183,7 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
       q: "How much can you earn on 10,000 USDC?",
       a:
         `At the median rate of ${apy(c.medianApy)} as of ${c.asOf}, a 10,000 USDC position would ` +
-        `earn about $${onTen(c.medianApy)} over a year before fees and before any rate change. At ` +
+        `earn about $${onTen(c.medianApy)} over a year, before any rate change. At ` +
         `the top rate of ${apy(c.best.apy24h)}, among strategies holding at least ` +
         `${tvl(c.fundedFloor)}, the same position would earn about $${onTen(c.best.apy24h)}. ` +
         `Rates move daily, so neither figure is a forecast.`,
@@ -651,7 +651,7 @@ export async function UsdcHubBody() {
           The distinction matters for what the number is exposed to. A staking reward is
           denominated in the network token, so its dollar value moves with that token's price. A
           USDC rate is denominated in dollars already, so the headline figure is what the position
-          earns in dollar terms before fees. Some strategies on this page do pay part of their
+          earns in dollar terms. Some strategies on this page do pay part of their
           yield in a reward token, and where the upstream protocol publishes that split the vault
           page shows it separately from the base rate.
         </p>
