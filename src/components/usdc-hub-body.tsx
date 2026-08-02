@@ -35,7 +35,7 @@ import {
   protocolBlock,
   venueOf,
   proseName,
-  payoutLead,
+  rewardsLead,
   stabilityLead,
   tokenBlock,
   listOf,
@@ -177,12 +177,13 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
     {
       q: "Is the APY paid in USDC or in reward tokens?",
       a:
-        `Some pay in dollars and some pay in a token. ${c.payout.inUsdc.length} of the ${c.count} tracked ` +
-        `strategies paid their yield in USDC as of ${c.asOf} and ${c.payout.inToken.length} paid ` +
-        `it in a reward token such as ${c.payout.tokens[0]?.symbol ?? "MORPHO"}, which is worth ` +
-        `whatever it sells for when claimed. Our data records the payout token rather than a ` +
-        `split between base interest and emissions, so this page reports what a rate is paid in ` +
-        `instead of inventing a decomposition it cannot measure.`,
+        `Most of these rates are a blend of both. ${c.rewards.usdcOnly.length} of the ${c.count} ` +
+        `tracked strategies earned lending interest alone as of ${c.asOf}, and ` +
+        `${c.rewards.withReward.length} earned lending interest plus a reward token such as ` +
+        `${c.rewards.tokens[0]?.symbol ?? "MORPHO"} that the strategy harvests and sells. Our feed ` +
+        `publishes one rate per strategy and the tokens beside it, not a split between the ` +
+        `interest and the emission, so this page reports which tokens a strategy earns rather ` +
+        `than inventing a decomposition it cannot measure.`,
     },
     {
       q: "How does this compare to Aave and the wider USDC market?",
@@ -462,26 +463,34 @@ export async function UsdcHubBody() {
       </Block>
 
       <Block
-        id="paid-in"
+        id="rate-composition"
         eyebrow="Composition"
-        title="What these rates are actually paid in"
-        lead={payoutLead(c)}
+        title="What these rates are made of"
+        lead={rewardsLead(c)}
       >
         <p>
-          {`A rate paid in USDC is already dollars. A rate paid in a reward token is worth whatever ` +
-            `that token sells for on the day it is claimed, which is a different proposition at the ` +
-            `same headline number. The reward tokens behind this index as of ${c.asOf} were ` +
-            `${tokenBlock(c)} strategies. Median rates were close: ${apy(c.payout.usdcMedian)} for ` +
-            `the dollar-paying group and ${apy(c.payout.tokenMedian)} for the token-paying one as of ` +
-            `${c.asOf}, so the emission is rarely what makes a strategy pay more.`}
+          {`A strategy earning lending interest alone pays in dollars, and the rate is what it ` +
+            `says. A strategy that also earns an emission is holding a token it has to sell, so ` +
+            `part of that rate is worth whatever the token fetches on the day the strategy ` +
+            `harvests it. The reward tokens across this index as of ${c.asOf} were ` +
+            `${tokenBlock(c)} strategies. Median rates sit close together: ` +
+            `${apy(c.rewards.usdcOnlyMedian)} for the interest-only group against ` +
+            `${apy(c.rewards.withRewardMedian)} for the group carrying an emission, so an emission ` +
+            `is rarely what makes one strategy pay more than another.`}
         </p>
         <p>
-          Our data records the token a strategy pays in, not a split between base interest and
-          emissions. Where a published rate blends the two, the upstream feed reports one figure
-          and this page reports that figure rather than inventing a decomposition it cannot
-          measure. One consequence is worth knowing: an autocompounder that harvests a reward
-          token and swaps it to USDC is recorded as paying in USDC, correctly, because dollars are
-          what reach the position.
+          Where the reading stops is worth stating, because the obvious next question has no
+          answer in our data. The upstream feed publishes one rate per strategy and the list of
+          tokens that rate involves, and nothing that divides the rate between interest and
+          emission. So this page reports which tokens a strategy earns and declines to publish a
+          base-versus-reward split, which would be a number invented here rather than measured
+          anywhere.
+        </p>
+        <p>
+          One label needs a caveat. Aave has stopped issuing AAVE emissions on its USDC markets,
+          and the feed has not caught up: three Aave rows still carry an AAVE token label while two
+          identical Aave positions on Ethereum carry none, and all five pay within a point of each
+          other. Those three are counted here as interest-only, which is what they are.
         </p>
       </Block>
 
