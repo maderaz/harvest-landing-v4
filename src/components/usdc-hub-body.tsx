@@ -63,17 +63,48 @@ function Block({
   eyebrow,
   title,
   lead,
+  asOf,
+  asOfIso,
   children,
 }: {
   id: string;
   eyebrow: string;
   title: string;
   lead?: string;
+  /** Long-form date. Set it on any section that states a figure; see below. */
+  asOf?: string;
+  asOfIso?: string;
   children?: React.ReactNode;
 }) {
   return (
-    <section className="uh-block" aria-labelledby={id}>
-      <p className="rp-eyebrow">{eyebrow}</p>
+    <section className="uh-block" aria-labelledby={id} data-asof={asOfIso}>
+      {/* The section dateline.
+
+          This page reached 29 separate renderings of "as of August 2, 2026" in
+          running prose, because check-atomicity required a date in every
+          sentence carrying a digit. Two independent model reviews of the live
+          page called it out unprompted: it reads as templated filler, and it
+          buys nothing from a chunker that already carries the section heading
+          with the chunk.
+
+          The gate now accepts one dateline per section instead, marked with
+          data-dateline and checked for a real date, so the prose inside can
+          state its figures once and cleanly. It rides the eyebrow row rather
+          than taking a line of its own, which costs no vertical space and puts
+          the date in a fixed position a reader learns to ignore.
+
+          Sections with no figures get no dateline. The hero sits outside every
+          section and keeps a date in its answer sentence, which is correct:
+          that is the sentence most likely to be quoted alone. */}
+      <p className="rp-eyebrow" data-dateline={asOf ? "" : undefined}>
+        {eyebrow}
+        {asOf && (
+          <>
+            <span className="uh-eyebrow-sep" aria-hidden="true"> · </span>
+            <span className="uh-eyebrow-date">{asOf}</span>
+          </>
+        )}
+      </p>
       <h2 id={id}>{title}</h2>
       {lead && <p className="uh-lead">{lead}</p>}
       {children}
@@ -153,7 +184,7 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
       a:
         `At the median rate of ${apy(c.medianApy)} as of ${c.asOf}, a 10,000 USDC position would ` +
         `earn about $${onTen(c.medianApy)} over a year before fees and before any rate change. At ` +
-        `the top rate of ${apy(c.best.apy24h)} as of ${c.asOf}, among strategies holding at least ` +
+        `the top rate of ${apy(c.best.apy24h)}, among strategies holding at least ` +
         `${tvl(c.fundedFloor)}, the same position would earn about $${onTen(c.best.apy24h)}. ` +
         `Rates move daily, so neither figure is a forecast.`,
     },
@@ -191,7 +222,7 @@ function buildFaqs(c: UsdcCohort): { q: string; a: string }[] {
       a: c.benchmark
         ? `The median here was ${apy(c.medianApy)} across ${c.count} strategies holding ` +
           `${tvl(c.totalTvl)} as of ${c.asOf}, against ${apy(c.benchmark.largestApy)} on ` +
-          `${c.benchmark.largestName}, which held ${tvl(c.benchmark.largestTvl)} on the same date. ` +
+          `${c.benchmark.largestName}, which held ${tvl(c.benchmark.largestTvl)}. ` +
           `A deeper market usually pays less and absorbs far more, so the top of this ranking is ` +
           `the more useful figure for finding a strategy and the wider market is the more useful ` +
           `one for sizing a large position.`
@@ -323,6 +354,10 @@ export async function UsdcHubBody() {
                 `on the site, USDC included.`,
               url: HUB_URL,
               dateModified: c.asOfIso,
+              // Snapshot, not a range: every rate here is one day's reading.
+              // Stated explicitly so a consumer does not read dateModified as
+              // "sometime before this" and treat the figures as a period.
+              temporalCoverage: c.asOfIso,
               keywords: [
                 "USDC",
                 "stablecoin",
@@ -380,13 +415,18 @@ export async function UsdcHubBody() {
             in the cohort, the same value that drives dateModified in the
             schema, so the visible stamp and the machine-readable one cannot
             disagree. */}
-        <p className="uh-updated">Rates last recorded {c.asOf}, and refreshed hourly.</p>
+        <p className="uh-updated" data-dateline="">
+          Rates last recorded {c.asOf}, and refreshed hourly.
+        </p>
       </div>
 
-      <section className="uh-summary" aria-labelledby="summary">
+      <section className="uh-summary" aria-labelledby="summary" data-asof={c.asOfIso}>
         <h2 className="uh-summary-h" id="summary">
           Summary
         </h2>
+        <p className="uh-summary-date" data-dateline="">
+          Every figure below was recorded {c.asOf}.
+        </p>
         <ul className="uh-findings">
           {findings.map((f) => (
             <li key={f}>{f}</li>
@@ -398,9 +438,11 @@ export async function UsdcHubBody() {
         id="top-ten"
         eyebrow="Live ranking"
         title="Top 10 USDC yields by 24-hour APY"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         lead={
           `The ten highest-paying USDC strategies in this index ran from ` +
-          `${apy(c.top10[c.top10.length - 1].apy24h)} to ${apy(c.maxApy)} as of ${c.asOf}, across ` +
+          `${apy(c.top10[c.top10.length - 1].apy24h)} to ${apy(c.maxApy)}, across ` +
           `${listOf([...new Set(c.top10.map((v) => v.chain))])}.`
         }
       >
@@ -409,7 +451,7 @@ export async function UsdcHubBody() {
           {`Sorted on the 24-hour rate with no floor applied: a rate at the top of this table can ` +
             `sit on a few hundred dollars of liquidity. The headline figure above uses a ` +
             `${tvl(c.fundedFloor)} floor for that reason, and ${c.fundedCount} of the ${c.count} ` +
-            `strategies cleared it as of ${c.asOf}. Open any row for its TVL and history.`}
+            `strategies cleared it. Open any row for its tracked value and history.`}
         </p>
       </Block>
 
@@ -417,9 +459,11 @@ export async function UsdcHubBody() {
         id="calculator"
         eyebrow="Calculator"
         title="USDC Earnings Calculator"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         lead={
           `Pick an amount and any of the ${c.count} tracked USDC strategies, and the calculator ` +
-          `below works out a year of earnings from the rate recorded as of ${c.asOf}.`
+          `below works out a year of earnings from the rate on record.`
         }
       >
         <UsdcCalculator products={calcProducts} asOf={c.asOf} />
@@ -468,13 +512,15 @@ export async function UsdcHubBody() {
         id="rate-composition"
         eyebrow="Composition"
         title="What these rates are made of"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         lead={rewardsLead(c)}
       >
         <p>
           {`A strategy earning lending interest alone pays in dollars, and the rate is what it ` +
             `says. A strategy that also earns an emission is holding a token it has to sell, so ` +
             `part of that rate is worth whatever the token fetches on the day the strategy ` +
-            `harvests it. The reward tokens across this index as of ${c.asOf} were ` +
+            `harvests it. The reward tokens across this index were ` +
             `${tokenBlock(c)} strategies. Median rates sit close together: ` +
             `${apy(c.rewards.usdcOnlyMedian)} for the interest-only group against ` +
             `${apy(c.rewards.withRewardMedian)} for the group carrying an emission, so an emission ` +
@@ -500,16 +546,18 @@ export async function UsdcHubBody() {
         id="rate-stability"
         eyebrow="Stability"
         title="How steady each rate has been"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         lead={stabilityLead(c)}
       >
         {c.stability.mostVolatile && c.stability.steadiest ? (
           <p>
-            {`Among the strategies holding at least ${tvl(c.fundedFloor)}, the steadiest over the 30 ` +
-              `days to ${c.asOf} was ${c.stability.steadiest.name}, which held a standard deviation of ` +
+            {`Among the strategies holding at least ${tvl(c.fundedFloor)}, the steadiest over the ` +
+              `trailing 30 days was ${c.stability.steadiest.name}, which held a standard deviation of ` +
               `${c.stability.steadiest.stdev.toFixed(2)} points around a mean of ` +
               `${apy(c.stability.steadiest.mean)}. The widest was ${c.stability.mostVolatile.name}, ` +
               `which ranged from ${apy(c.stability.mostVolatile.min)} to ` +
-              `${apy(c.stability.mostVolatile.max)} over the same 30 days to ${c.asOf}, a standard ` +
+              `${apy(c.stability.mostVolatile.max)} over the same window, a standard ` +
               `deviation of ${c.stability.mostVolatile.stdev.toFixed(2)} points.`}
           </p>
         ) : null}
@@ -527,6 +575,8 @@ export async function UsdcHubBody() {
       <Block
         id="venue-rates"
         eyebrow="By venue"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="USDC interest rates by venue"
         lead={
           `Among the venues in Harvest's USDC index, ${listOf(
@@ -535,7 +585,7 @@ export async function UsdcHubBody() {
                 `${v.venue} paid a median of ${apy(v.medianApy)} across ${v.count} ` +
                 `${plural(v.count, "market", "markets")}`,
             ),
-          )} as of ${c.asOf}.`
+          )}.`
         }
       >
         <ul className="uh-venues">
@@ -573,10 +623,12 @@ export async function UsdcHubBody() {
       <Block
         id="staking-rates"
         eyebrow="Rates"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="Best USDC staking rates right now"
         lead={
           `The best USDC rate on a strategy holding at least ${tvl(c.fundedFloor)} was ` +
-          `${apy(c.best.apy24h)} on ${proseName(c.best)} as of ${c.asOf}, against a median of ` +
+          `${apy(c.best.apy24h)} on ${proseName(c.best)}, against a median of ` +
           `${apy(c.medianApy)} across all ${c.count} strategies tracked here.`
         }
       >
@@ -608,15 +660,17 @@ export async function UsdcHubBody() {
       <Block
         id="by-network"
         eyebrow="Distribution"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="Where the yield lives, by network"
         lead={
-          `USDC yield in this index sat on ${c.chainCount} networks as of ${c.asOf}, led by ` +
+          `USDC yield in this index sat on ${c.chainCount} networks, led by ` +
           `${n1.chain} with ${n1.count} ${plural(n1.count, "strategy", "strategies")}` +
           (n2 ? ` and ${n2.chain} with ${n2.count}` : "") +
           `.`
         }
       >
-        <p>{`Full breakdown as of ${c.asOf}: ${networkBlock(c)}.`}</p>
+        <p>{`Full breakdown by network: ${networkBlock(c)}.`}</p>
         <p>
           USDC liquidity concentrates on Ethereum and on the rollups with the deepest stablecoin
           markets, which is where the larger strategies sit. Rollups matter here for a specific
@@ -631,8 +685,10 @@ export async function UsdcHubBody() {
       <Block
         id="protocol-families"
         eyebrow="Venues"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="Protocol families on the leaderboard"
-        lead={`The largest venue families in this index as of ${c.asOf} were ${protocolBlock(c)}.`}
+        lead={`The largest venue families in this index were ${protocolBlock(c)}.`}
       >
         <p>
           Most rows are either a single-asset money market such as Aave or Morpho, or an
@@ -646,6 +702,8 @@ export async function UsdcHubBody() {
       <Block
         id="risk-surfaces"
         eyebrow="Risk"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="Risk surfaces on every USDC strategy"
         lead="Every rate on this page is compensation for a specific set of exposures, and seven of them apply across the index: contract, layered contract, collateral, curator, oracle, liquidity and peg risk."
       >
@@ -660,7 +718,8 @@ export async function UsdcHubBody() {
             exposed to both for as long as it stays open.
           </li>
           <li>
-            {`Layered contract risk compounds that. A position in a curated vault passes through ` +
+            <strong>Layered contract risk</strong>
+            {` compounds that. A position in a curated vault passes through ` +
               `the vault itself, the curator's parameter set, the underlying market it lends into ` +
               `and the collateral backing that market: four surfaces, any one of which can fail ` +
               `alone, with one published rate compensating for all of them at once. The rows ` +
@@ -668,7 +727,8 @@ export async function UsdcHubBody() {
               `directly.`}
           </li>
           <li>
-            {`Collateral risk decides what a lending position is really exposed to. ` +
+            <strong>Collateral risk</strong>
+            {` decides what a lending position is really exposed to. ` +
               `${morphoCount} of the ${c.count} strategies tracked here lend into Morpho, where ` +
               `USDC is supplied against a named collateral asset rather than into a general pool. ` +
               `Where this page tracks a market directly, the collateral is in the row name: ` +
@@ -680,20 +740,23 @@ export async function UsdcHubBody() {
               `rather than staying fixed at the point a position opens.`}
           </li>
           <li>
-            Curator risk follows from that, and curators are not interchangeable. A row reading
+            <strong>Curator risk</strong> follows from that, and curators are not
+            interchangeable. A row reading
             Gauntlet, Steakhouse or Clearstar names the firm setting the loan-to-value ratios, the
             oracle choices and the collateral list for that vault, not the protocol underneath, so
             two vaults on the same protocol can carry very different exposure because two
             different firms set them up.
           </li>
           <li>
-            Oracle risk sits on the price feeds those contracts trust. A liquidation only fires if
+            <strong>Oracle risk</strong> sits on the price feeds those contracts trust. A
+            liquidation only fires if
             the feed reports the collateral falling, and a feed that lags, freezes or is
             manipulated turns an over-collateralised loan into bad debt without anyone touching
             the vault.
           </li>
           <li>
-            {`Liquidity risk is the one a supplier feels first, and it does not need the vault to ` +
+            <strong>Liquidity risk</strong>
+            {` is the one a supplier feels first, and it does not need the vault to ` +
               `fail. Lending markets keep only the unborrowed share available to withdraw, so when ` +
               `borrowing spikes toward the ceiling the exit closes for everyone at once. The `}
             <a
@@ -721,7 +784,8 @@ export async function UsdcHubBody() {
               `required the USDC side to break.`}
           </li>
           <li>
-            Depeg risk sits on USDC itself in tail scenarios, and governance risk sits on every
+            <strong>Depeg risk</strong> sits on USDC itself in tail scenarios, and{" "}
+            <strong>governance risk</strong> sits on every
             parameter an operator can change after a position is open. Both are outside the
             strategy and neither is visible in a rate.
           </li>
@@ -737,6 +801,8 @@ export async function UsdcHubBody() {
       <Block
         id="faq"
         eyebrow="Questions"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="USDC yield questions, answered"
       >
         {/* <details> rather than an accordion component, and every answer stays
@@ -759,10 +825,12 @@ export async function UsdcHubBody() {
       <Block
         id="full-index"
         eyebrow="Full index"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title={`Full USDC index: all ${c.count} strategies`}
         lead={
           `All ${c.count} USDC strategies tracked here are listed below, sorted by 24-hour APY as ` +
-          `of ${c.asOf}. The network and protocol filters narrow rows that are already in the page.`
+          `descending. The network and protocol filters narrow rows already in the page.`
         }
       >
         <HubTable vaults={c.all} sparklines={sparklines} scopeLabel="USDC strategies" />
@@ -775,6 +843,8 @@ export async function UsdcHubBody() {
       <Block
         id="reading-columns"
         eyebrow="How to read this"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="How to read every column in the tables"
         lead="Both tables carry the same seven columns, and the useful judgements come from reading them against one another rather than from the rate alone."
       >
@@ -849,6 +919,8 @@ export async function UsdcHubBody() {
       <Block
         id="scope"
         eyebrow="Scope"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="What this page is, and what it is not"
         lead="This page is a curated index of USDC yield strategies, not a census of the USDC yield market."
       >
@@ -862,7 +934,7 @@ export async function UsdcHubBody() {
         {c.benchmark ? (
           <p>
             {`Scale is part of that scope. The ${c.count} strategies here held ${tvl(c.totalTvl)} ` +
-              `between them as of ${c.asOf}, and ${c.fundedCount} cleared ${tvl(c.fundedFloor)}. For ` +
+              `between them, and ${c.fundedCount} cleared ${tvl(c.fundedFloor)}. For ` +
               `comparison, ${c.benchmark.largestName} held ${tvl(c.benchmark.largestTvl)} at ` +
               `${apy(c.benchmark.largestApy)}, measured from its own onchain share-price history on ` +
               `the same date. A larger position is usually better served by a deeper market at a ` +

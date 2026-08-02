@@ -62,6 +62,16 @@
   letter-spacing: -0.01em;
   color: #1a1a1a;
 }
+/* The summary's dateline. It sits on the yellow panel rather than in the
+   eyebrow row, because this section has no eyebrow, and it carries the date
+   for all five findings so none of them has to repeat it. */
+.uni-hub-test.uh-page .uh-summary-date {
+  margin: -6px 0 14px !important;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12.5px !important;
+  line-height: 1.5 !important;
+  color: rgba(26, 26, 26, 0.62) !important;
+}
 .uni-hub-test.uh-page .uh-findings {
   margin: 0;
   padding: 0;
@@ -107,6 +117,20 @@
   color: var(--hub-gold, #ffb936);
   margin: 0 0 12px;
   max-width: none;
+}
+/* The section dateline rides the eyebrow rather than taking a line of its own.
+   Muted and lighter than the label so it reads as metadata: the eye learns the
+   position after two sections and stops stopping on it, which is the whole
+   point of moving the date out of the prose. */
+.uni-hub-test.uh-page .uh-eyebrow-sep,
+.uni-hub-test.uh-page .uh-eyebrow-date {
+  color: var(--uni-ink-3);
+  font-weight: 500;
+}
+.uni-hub-test.uh-page .uh-eyebrow-date {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 13px;
+  letter-spacing: 0;
 }
 .uni-hub-test.uh-page .uh-block h2 {
   font-family: var(--display);

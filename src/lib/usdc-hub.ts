@@ -515,7 +515,7 @@ export function answerSentence(c: UsdcCohort): string {
   return (
     `The best USDC yield in Harvest's index is ${apy(c.best.apy24h)} APY, paid by ` +
     `${proseName(c.best, true)}, as of ${c.asOf}. That is the highest rate among strategies ` +
-    `holding at least ${tvl(c.fundedFloor)} as of ${c.asOf}, against a median of ` +
+    `holding at least ${tvl(c.fundedFloor)}, against a median of ` +
     `${apy(c.medianApy)} across all ${c.count} USDC strategies tracked on ${c.chainCount} ` +
     `${plural(c.chainCount, "network", "networks")}.`
   );
@@ -532,10 +532,10 @@ export function keyFindings(c: UsdcCohort): string[] {
   // renderings of one claim inside the same retrieval chunk. The summary
   // carries the four facts the opener does not.
   const out = [
-    `The ${c.count} USDC strategies tracked here held ${tvl(c.totalTvl)} between them as of ` +
-      `${c.asOf}, across ${c.byVenue.length} venue families.`,
+    `The ${c.count} USDC strategies tracked here held ${tvl(c.totalTvl)} between them, ` +
+      `across ${c.byVenue.length} venue families.`,
     `The median USDC rate across all ${c.count} tracked strategies was ` +
-      `${apy(c.medianApy)} as of ${c.asOf}, and the average weighted by TVL was ` +
+      `${apy(c.medianApy)}, and the average weighted by TVL was ` +
       `${apy(c.tvlWeightedApy)}.`,
   ];
   // The spread claim is made over the funded cohort. When the raw top of the
@@ -546,7 +546,7 @@ export function keyFindings(c: UsdcCohort): string[] {
   const rawDiffers = c.bestRaw.slug !== c.best.slug;
   out.push(
     `Rates on the ${c.fundedCount} strategies holding at least ${tvl(c.fundedFloor)} ran from ` +
-      `${apy(c.fundedMinApy)} to ${apy(c.fundedMaxApy)} as of ${c.asOf}` +
+      `${apy(c.fundedMinApy)} to ${apy(c.fundedMaxApy)}` +
       (rawDiffers
         ? `, while the highest rate anywhere in the index was ${apy(c.bestRaw.apy24h)} on ` +
           `${proseName(c.bestRaw)}, which held ${tvl(c.bestRaw.tvl)}.`
@@ -555,7 +555,7 @@ export function keyFindings(c: UsdcCohort): string[] {
   if (first) {
     out.push(
       `${first.chain} carried more USDC strategies than any other network Harvest tracks, ` +
-        `${first.count} of ${c.count} as of ${c.asOf}, holding ${tvl(first.tvl)}` +
+        `${first.count} of ${c.count}, holding ${tvl(first.tvl)}` +
         (second
           ? `, against ${second.count} on ${second.chain} holding ${tvl(second.tvl)}`
           : "") +
@@ -581,11 +581,11 @@ export function venueLines(c: UsdcCohort, families: string[]): string[] {
       // and leading with a range hands an answer engine the top of it.
       const where = `on ${listOf(v.chains)}`;
       if (v.count === 1) {
-        return `${v.venue} USDC paid ${apy(v.medianApy)} ${where} as of ${c.asOf}.`;
+        return `${v.venue} USDC paid ${apy(v.medianApy)} ${where}.`;
       }
       const head =
         `${v.venue} USDC paid a median of ${apy(v.medianApy)} across ${v.count} markets ` +
-        `${where} as of ${c.asOf}`;
+        `${where}`;
       if (v.minApy.toFixed(2) === v.maxApy.toFixed(2)) return `${head}.`;
       return `${head}, within a range of ${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}.`;
     });
