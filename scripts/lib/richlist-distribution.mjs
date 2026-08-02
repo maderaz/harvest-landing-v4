@@ -143,7 +143,23 @@ export class Distribution {
    * survive being read out loud, which the log ladder does not.
    */
   bands() {
-    const edges = [0, 1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000, Infinity];
+    // Finer than one band per decade through the range people actually ask
+    // about. The screenshot-shaped tables that circulate on X split 1k-5k from
+    // 5k-10k and 10k-25k from 25k-50k, because that is where the answer to
+    // "where do I sit" changes, and a single 1k-10k bar hides it. The cost is
+    // free: the histogram underneath is 2000 buckets per decade, so these are
+    // sums over buckets we already hold.
+    //
+    // Unlike those tables, this keeps every band below 500 XRP. They omit the
+    // long tail, which is where roughly eight in ten accounts sit, and a
+    // distribution that starts at 500 XRP overstates the typical holder by
+    // leaving most holders out.
+    const edges = [
+      0, 1, 10, 100, 500,
+      1_000, 5_000, 10_000, 25_000, 50_000, 100_000,
+      500_000, 1_000_000, 5_000_000, 10_000_000, 100_000_000, 1_000_000_000,
+      Infinity,
+    ];
     const out = [];
     for (let k = 0; k < edges.length - 1; k++) {
       const lo = edges[k];
