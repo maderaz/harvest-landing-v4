@@ -22,6 +22,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { AssetIcon } from "@/components/token-icons";
 import { trackCalculator, calculatorTier } from "@/lib/richlist-tracking";
 
+/** Top XRP rate and where it is paid, for the box under a result. */
+export interface TopYield {
+  apy: number;
+  platform: string;
+}
+
 export interface LadderPoint {
   xrp: number;
   atOrAbove: number;
@@ -82,15 +88,15 @@ const STAGES = [
 export function PercentileCalculator({
   ladder,
   accounts,
-  ranked,
   snapshotDate,
+  topYield,
 }: {
   ladder: LadderPoint[];
   accounts: number;
-  /** How many accounts the ranking below actually lists, so the button that
-   *  sends a visitor there names the same number the section heading does. */
-  ranked: number;
   snapshotDate: string;
+  /** Highest rate across the yield picks below, and where it is paid. The
+   *  box under a result does not render without it. */
+  topYield?: TopYield | null;
 }) {
   const [raw, setRaw] = useState("");
   const [phase, setPhase] = useState<"idle" | "checking" | "done">("idle");
@@ -300,36 +306,21 @@ export function PercentileCalculator({
                 accounts holding less.
               </li>
             </ul>
-            {/* Two ways on from a result: the ranking the balance was measured
-                against, and the thing to do about it. */}
-            <div className="rl-calc-cta">
-              <a
-                className="rl-calc-cta-a"
-                href="#top-accounts"
-                onClick={() =>
-                  trackCalculator({
-                    event: "cta",
-                    cta: "top-accounts",
-                    targetUrl: "#top-accounts",
-                  })
-                }
-              >
-                View top {ranked}
+            {/* One way on from a result rather than two.
+                A rank is a "so what" moment, and the two buttons split it: one
+                sent the reader back up the same page to the table they had
+                already scrolled past, the other was a bare verb. A single box
+                the width of the panel asks the question the rank raises and
+                answers it with the best rate on the page. */}
+            {topYield ? (
+              <a className="rl-calc-earn" href="#bridge">
+                <span className="rl-calc-earn-q">Where people earn on XRP?</span>
+                <span className="rl-calc-earn-a">
+                  Up to {topYield.apy.toFixed(2)}% on {topYield.platform}
+                  <span className="rl-calc-earn-arrow" aria-hidden="true">&rarr;</span>
+                </span>
               </a>
-              <a
-                className="rl-calc-cta-b"
-                href="#bridge"
-                onClick={() =>
-                  trackCalculator({
-                    event: "cta",
-                    cta: "earn-on-xrp",
-                    targetUrl: "#bridge",
-                  })
-                }
-              >
-                Earn on XRP
-              </a>
-            </div>
+            ) : null}
           </>
         ) : null}
       </div>

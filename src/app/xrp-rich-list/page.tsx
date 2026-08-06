@@ -767,11 +767,21 @@ export default function XrpRichListPage() {
             </ul>
           </div>
 
+          {/* topYield is picks[0]: loadYieldPicks sorts by rate, so this is
+              the best rate on the page and the box under a result quotes the
+              same figure the yield-sources section lists further down. */}
           <PercentileCalculator
             ladder={data.ladder}
             accounts={data.accounts}
-            ranked={ranked}
             snapshotDate={snapDate}
+            topYield={
+              yieldPicks
+                ? {
+                    apy: yieldPicks.picks[0].apy,
+                    platform: yieldPicks.picks[0].platform,
+                  }
+                : null
+            }
           />
         </div>
       </section>
