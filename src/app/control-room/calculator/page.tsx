@@ -93,6 +93,14 @@ export default function CalculatorAnalyticsPage() {
     };
   }, []);
 
+  // The window in days, resolved once. The chart bins against exactly the span
+  // the filters scope to, so a bar cannot sit outside the numbers above it.
+  const days = useMemo(() => {
+    const oldestMs =
+      rows && rows.length ? new Date(rows[rows.length - 1].created_at).getTime() : null;
+    return resolveDays(timeframe, oldestMs);
+  }, [rows, timeframe]);
+
   // Timeframe first, then country, so the country counts in the picker
   // describe the window the operator is actually looking at.
   const scoped = useMemo(() => {
@@ -169,6 +177,58 @@ export default function CalculatorAnalyticsPage() {
     [filtered],
   );
 
+  // Before/after the two buttons became one box.
+  //
+  // Deliberately computed over EVERY fetched row rather than over the selected
+  // timeframe: this compares one deploy against another, and a 7-day window
+  // would quietly empty the older era and leave a comparison table with one
+  // side blank.
+  //
+  // The boundary is inferred, not configured. The retired button only ever
+  // existed before the change, so the last click it recorded is the last
+  // moment the page definitely still had two buttons. That is a lower bound:
+  // if nobody pressed it in its final days, those days are counted as
+  // one-box. The alternative is a hardcoded deploy timestamp, which would be
+  // wrong on any deployment that shipped on a different day, and this table
+  // is read on more than one.
+  const eras = useMemo(() => {
+    if (!rows || !rows.length) return null;
+    const ms = (r: CalcEvent) => new Date(r.created_at).getTime();
+    const lastDual = rows
+      .filter((r) => r.event === "cta" && r.cta === "top-accounts")
+      .reduce((m, r) => Math.max(m, ms(r)), 0);
+    if (!lastDual) return null;
+
+    const side = (list: CalcEvent[]) => {
+      const resultSessions = new Set(
+        list.filter((r) => r.event === "result").map((r) => r.session_id),
+      );
+      const ctas = list.filter((r) => r.event === "cta");
+      const clickSessions = new Set(
+        ctas.filter((r) => resultSessions.has(r.session_id)).map((r) => r.session_id),
+      );
+      return {
+        results: resultSessions.size,
+        clicks: ctas.length,
+        earn: ctas.filter((r) => r.cta === "earn-on-xrp").length,
+        top: ctas.filter((r) => r.cta === "top-accounts").length,
+        converted: clickSessions.size,
+        // Share of the people who were shown a rank that went on to click.
+        // Sessions, not raw clicks: with two buttons one visitor could press
+        // both, and a per-click rate would score that as two conversions.
+        ctr: resultSessions.size
+          ? Math.round((clickSessions.size / resultSessions.size) * 100)
+          : null,
+      };
+    };
+
+    return {
+      boundary: new Date(lastDual),
+      before: side(rows.filter((r) => ms(r) <= lastDual)),
+      after: side(rows.filter((r) => ms(r) > lastDual)),
+    };
+  }, [rows]);
+
   return (
     <div className="uni-hub-test">
       <header className="uni-hub-hero aq-hero-slim aq-hero-fullwidth">
@@ -244,6 +304,69 @@ export default function CalculatorAnalyticsPage() {
           suffix="%"
         />
       </div>
+
+      {filtered && filtered.length > 0 && (
+        <div style={{ marginBottom: 32 }}>
+          <ChartSection events={filtered} days={days} />
+        </div>
+      )}
+
+      {eras && (
+        <section className="aq-chart-card" style={{ marginBottom: 32 }}>
+          <div className="aq-chart-bignum-label" style={{ marginBottom: 4 }}>
+            Onward clicks, two buttons against one box
+          </div>
+          <p className="uni-hub-sub" style={{ marginBottom: 12 }}>
+            Every fetched row, ignoring the timeframe filter above, because this
+            compares one deploy against another and a short window would empty
+            the older side. The split is inferred from the data rather than
+            configured: the retired second button existed only before the
+            change, so its last recorded click,{" "}
+            {eras.boundary.toLocaleString("en-GB")}, is the last moment the page
+            definitely still had two buttons. Click-through counts sessions that
+            were shown a rank and then clicked, not raw clicks, because with two
+            buttons one visitor could press both.
+          </p>
+          <table className="uni-hub-table">
+            <thead>
+              <tr>
+                <th scope="col">Layout</th>
+                <th scope="col">Sessions shown a rank</th>
+                <th scope="col">Sessions that clicked</th>
+                <th scope="col">Click-through</th>
+                <th scope="col">Clicks: yield report</th>
+                <th scope="col">Clicks: ranking</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Two buttons</td>
+                <td>{eras.before.results.toLocaleString("en-US")}</td>
+                <td>{eras.before.converted.toLocaleString("en-US")}</td>
+                <td>{eras.before.ctr == null ? "—" : `${eras.before.ctr}%`}</td>
+                <td>{eras.before.earn.toLocaleString("en-US")}</td>
+                <td>{eras.before.top.toLocaleString("en-US")}</td>
+              </tr>
+              <tr>
+                <td>One box</td>
+                <td>{eras.after.results.toLocaleString("en-US")}</td>
+                <td>{eras.after.converted.toLocaleString("en-US")}</td>
+                <td>{eras.after.ctr == null ? "—" : `${eras.after.ctr}%`}</td>
+                <td>{eras.after.earn.toLocaleString("en-US")}</td>
+                <td>{eras.after.top.toLocaleString("en-US")}</td>
+              </tr>
+            </tbody>
+          </table>
+          {eras.after.results < 30 && (
+            <p className="uni-hub-sub" style={{ marginTop: 10 }}>
+              The one-box side has {eras.after.results.toLocaleString("en-US")}{" "}
+              {eras.after.results === 1 ? "session" : "sessions"} behind it so
+              far. Read the difference as a direction, not as a result, until
+              that number is into the hundreds.
+            </p>
+          )}
+        </section>
+      )}
 
       {tiers.length > 0 && (
         <section className="aq-chart-card" style={{ marginBottom: 32 }}>
@@ -322,6 +445,295 @@ export default function CalculatorAnalyticsPage() {
           </table>
         )}
       </section>
+    </div>
+  );
+}
+
+// The three funnel stages, in the order they happen. Fixed order and fixed
+// colours, not derived from the data: a stage keeps its colour when a
+// timeframe contains none of it, which is the case a shifting palette gets
+// wrong exactly when an operator is looking for a missing stage.
+const STAGES = [
+  { key: "start", label: "Started", color: "#4E79A7" },
+  { key: "result", label: "Result shown", color: "#59A14F" },
+  { key: "cta", label: "Onward click", color: "#F28E2B" },
+] as const;
+
+function labelForDaysAgo(d: number): string {
+  if (d === 0) return "today";
+  if (d === 1) return "yesterday";
+  return `${d} days ago`;
+}
+
+/**
+ * Calculator events per day, the same bar chart the SEO summary draws.
+ *
+ * "All" counts every event, which reads as raw usage. "Breakdown" stacks the
+ * three stages, which is where the funnel becomes visible: a day whose bar is
+ * mostly the Started colour is a day people gave up during the check, and a
+ * bar with no Onward click segment is a day nobody left the page.
+ */
+function ChartSection({
+  events,
+  days,
+}: {
+  events: CalcEvent[];
+  days: number;
+}) {
+  const [mode, setMode] = useState<"all" | "breakdown">("breakdown");
+  const [hidden, setHidden] = useState<Set<string>>(new Set());
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+
+  const visible = STAGES.filter((s) => mode === "all" || !hidden.has(s.key));
+
+  const bins = useMemo(() => {
+    const now = Date.now();
+    const dayMs = 86_400_000;
+    const out: { daysAgo: number; byStage: Record<string, number> }[] = [];
+    for (let i = 0; i < days; i++) out.push({ daysAgo: days - 1 - i, byStage: {} });
+    for (const e of events) {
+      const daysAgo = Math.floor((now - new Date(e.created_at).getTime()) / dayMs);
+      if (daysAgo < 0 || daysAgo >= days) continue;
+      const k = e.event ?? "unknown";
+      const bin = out[days - 1 - daysAgo];
+      bin.byStage[k] = (bin.byStage[k] || 0) + 1;
+    }
+    return out;
+  }, [events, days]);
+
+  const countOf = (b: (typeof bins)[number]) =>
+    visible.reduce((s, st) => s + (b.byStage[st.key] || 0), 0);
+
+  const counts = bins.map(countOf);
+  const max = Math.max(1, ...counts);
+  const total = counts.reduce((s, v) => s + v, 0);
+  const latest = counts[counts.length - 1] ?? 0;
+
+  const hoveredBin = hoverIdx != null ? bins[hoverIdx] : null;
+  const hoveredCount = hoveredBin ? countOf(hoveredBin) : 0;
+  const displayValue = hoveredBin ? hoveredCount : total;
+  const displayLabel = hoveredBin
+    ? `calculator events ${labelForDaysAgo(hoveredBin.daysAgo)}`
+    : `calculator events across the trailing ${days} days`;
+
+  const toggle = (k: string) =>
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+
+  return (
+    <section className="uni-hub-section" style={{ marginTop: 0 }}>
+      <header className="uni-hub-section-head">
+        <div className="aq-section-head-left">
+          <h2 className="uni-hub-section-title">
+            Calculator events, last {days} days
+          </h2>
+          <span className="uni-hub-section-meta">
+            today {latest.toLocaleString("en-US")} · peak{" "}
+            {max.toLocaleString("en-US")}/day
+          </span>
+        </div>
+        <div className="aq-timeframe" role="tablist" aria-label="Chart breakdown mode">
+          {(["all", "breakdown"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="tab"
+              aria-selected={mode === m}
+              className={`aq-timeframe-tab${mode === m ? " active" : ""}`}
+              onClick={() => setMode(m)}
+            >
+              {m === "all" ? "All" : "Breakdown"}
+            </button>
+          ))}
+        </div>
+      </header>
+
+      <div className="aq-chart-card">
+        <div className="aq-chart-bignum">{displayValue.toLocaleString("en-US")}</div>
+        <div className="aq-chart-bignum-label">{displayLabel}</div>
+
+        <div className="aq-chart">
+          <div className="aq-chart-bars" style={{ position: "relative" }}>
+            {bins.map((b, i) => {
+              const v = countOf(b);
+              const heightPct = Math.max((v / max) * 100, v > 0 ? 4 : 0);
+              return (
+                <div
+                  key={i}
+                  className="aq-bar-col"
+                  onMouseEnter={() => setHoverIdx(i)}
+                  onMouseLeave={() => setHoverIdx(null)}
+                >
+                  {mode === "all" || v === 0 ? (
+                    <div className="aq-bar" style={{ height: `${heightPct}%` }} />
+                  ) : (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: `${heightPct}%`,
+                        minHeight: 4,
+                        display: "flex",
+                        flexDirection: "column",
+                        borderRadius: "5px 5px 0 0",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {visible
+                        .filter((s) => b.byStage[s.key])
+                        .map((s) => (
+                          <div
+                            key={s.key}
+                            style={{
+                              height: `${((b.byStage[s.key] || 0) / v) * 100}%`,
+                              background: s.color,
+                            }}
+                          />
+                        ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {hoveredBin && hoveredCount > 0 && (
+              <ChartTooltip
+                bin={hoveredBin}
+                count={hoveredCount}
+                stages={visible}
+                idx={hoverIdx as number}
+                days={days}
+              />
+            )}
+          </div>
+          <div className="aq-chart-axis">
+            <span>{days}d ago</span>
+            <span>{Math.floor(days / 2)}d ago</span>
+            <span>today</span>
+          </div>
+        </div>
+
+        {mode === "breakdown" && (
+          <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
+            {STAGES.map((s) => {
+              const off = hidden.has(s.key);
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => toggle(s.key)}
+                  aria-pressed={!off}
+                  title={off ? `Show ${s.label}` : `Hide ${s.label}`}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    background: "none",
+                    border: "none",
+                    padding: 0,
+                    cursor: "pointer",
+                    font: "inherit",
+                    fontSize: 12.5,
+                    opacity: off ? 0.4 : 1,
+                    color: "var(--uni-ink-2, inherit)",
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 2,
+                      background: s.color,
+                      flex: "0 0 auto",
+                    }}
+                  />
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
+function ChartTooltip({
+  bin,
+  count,
+  stages,
+  idx,
+  days,
+}: {
+  bin: { daysAgo: number; byStage: Record<string, number> };
+  count: number;
+  stages: readonly { key: string; label: string; color: string }[];
+  idx: number;
+  days: number;
+}) {
+  const rows = stages
+    .filter((s) => bin.byStage[s.key])
+    .map((s) => ({ ...s, n: bin.byStage[s.key] || 0 }));
+  const leftPct = ((idx + 0.5) / days) * 100;
+  // Keep the card on-screen: anchored left near the start, right near the end.
+  const tx = leftPct < 18 ? "0%" : leftPct > 82 ? "-100%" : "-50%";
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: `${leftPct}%`,
+        bottom: "calc(100% + 8px)",
+        transform: `translateX(${tx})`,
+        zIndex: 5,
+        pointerEvents: "none",
+        minWidth: 200,
+        padding: "10px 12px",
+        borderRadius: 8,
+        background: "var(--uni-card, #fff)",
+        border: "1px solid var(--uni-line-2)",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.18)",
+        fontSize: 12.5,
+        lineHeight: 1.5,
+      }}
+    >
+      <div style={{ fontWeight: 600, marginBottom: 6, color: "var(--uni-ink-2, inherit)" }}>
+        {labelForDaysAgo(bin.daysAgo)}
+      </div>
+      {rows.map((r) => (
+        <div
+          key={r.key}
+          style={{ display: "flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: 2,
+              background: r.color,
+              flex: "0 0 auto",
+            }}
+          />
+          <span style={{ flex: 1 }}>{r.label}</span>
+          <strong>{r.n.toLocaleString("en-US")}</strong>
+        </div>
+      ))}
+      <div
+        style={{
+          marginTop: 6,
+          paddingTop: 6,
+          borderTop: "1px solid var(--uni-line-2)",
+          display: "flex",
+          justifyContent: "space-between",
+        }}
+      >
+        <span>Total</span>
+        <strong>{count.toLocaleString("en-US")}</strong>
+      </div>
     </div>
   );
 }

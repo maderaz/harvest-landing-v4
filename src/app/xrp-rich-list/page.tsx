@@ -14,6 +14,7 @@ import {
   reportWebPageSchema,
 } from "@/lib/jsonld";
 import { PercentileCalculator } from "@/components/richlist/percentile-calculator";
+import { YieldPickCards } from "@/components/richlist/yield-pick-cards";
 import { TopAccountsTable } from "@/components/richlist/top-accounts-table";
 import { StatCards } from "@/components/richlist/stat-cards";
 import { holderAvatar } from "@/components/richlist/holder-avatars";
@@ -166,6 +167,12 @@ interface YieldPick {
   apy: number;
   tvlUsd: number;
   holders?: { count: number } | null;
+  /** Where the card sends a reader. Falls back to the DeFiLlama pool page. */
+  platformUrl?: string | null;
+  llamaUrl?: string | null;
+  /** Venue identity used as the click's venue_ref, matching the ranking. */
+  venueSlug?: string | null;
+  project?: string | null;
 }
 
 /** A pool as it sits in data/xrp-yield.json, before a rate is chosen for it. */
@@ -836,68 +843,74 @@ export default function XrpRichListPage() {
 
         <h2 className="rl-summary-h">Summary</h2>
         <ul className="rl-keyfind">
-          {/* Order set by Search Console, first 9 days live.
+          {/* Six bullets, one per query cluster, each carrying exactly one
+              date. Every one is a citation surface, so none can lose its date
+              and none can lose its dollar figure: converting a balance into
+              dollars is its own intent, not decoration.
 
-              The threshold cluster drew 2,663 impressions, 32 times the 83 the
-              top-holders cluster drew, and the bullet answering it was fifth of
-              five. The richest-wallet line that used to open here draws roughly
-              12 impressions. So the two swap ends: the largest query gets the
-              first bullet, and the hook that reads well but nobody searches
-              moves down. Nothing is removed, and every figure still renders
-              from the same snapshot. */}
-          {t1 ? (
-            <li>
-              To sit in the top 1% of XRP holders an account needed at least{" "}
-              <strong>{xrpAmount(t1.minXrp)} XRP</strong> as of {snapDate}.
-            </li>
-          ) : null}
-          {/* New. The top-10% queries had no answer in the summary at all, and
-              the pair reads better together than either does alone: the two
-              numbers are what turn "am I rich" into a scale. */}
-          {t10 && t50 ? (
-            <li>
-              The top 10% threshold was{" "}
-              <strong>{xrpAmount(t10.minXrp)} XRP</strong> and the top 50%
-              threshold was <strong>{xrpAmount(t50.minXrp)} XRP</strong> as of{" "}
-              {snapDate}.
-            </li>
-          ) : null}
-          <li>
-            <strong>{count(data.accounts)}</strong> XRP addresses were funded on
-            the XRP Ledger as of {snapDate}, controlling{" "}
-            {xrpAmount(data.xrpHeld)} XRP between them.
-          </li>
+              What changed is where the date sits. All six used to end on the
+              identical trailing clause, and six identical endings read as
+              generated rather than written even when every figure is right.
+              The date now rotates through the sentence - mid, front, mid, mid,
+              mid, end - with the coverage untouched.
+
+              The richest wallet leads on a product call rather than a search
+              one: it draws roughly 12 impressions against the threshold
+              cluster's 2,663, but it is the line that makes a reader want the
+              rest, and the thresholds still take bullets two and three. */}
           {data.top[0] ? (
             <li>
-              The richest XRP wallet holds{" "}
-              <strong>{count(data.top[0].xrp)} XRP</strong>
+              The richest XRP wallet held{" "}
+              <strong>{count(data.top[0].xrp)} XRP</strong> on {snapDate}
               {data.xrpUsd ? (
                 <>
                   , worth{" "}
                   <strong>${count(data.top[0].xrp * data.xrpUsd)}</strong>
                 </>
-              ) : null}{" "}
-              as of {snapDate}.
+              ) : null}
+              .
             </li>
           ) : null}
+          {t1 ? (
+            <li>
+              As of {snapDate}, an account needed at least{" "}
+              <strong>{xrpAmount(t1.minXrp)} XRP</strong> to sit in the top 1%
+              of XRP holders.
+            </li>
+          ) : null}
+          {/* The top-10% queries had no answer in the summary at all, and the
+              pair reads better together than either does alone: the two
+              numbers are what turn "am I rich" into a scale. */}
+          {t10 && t50 ? (
+            <li>
+              The top 10% threshold was{" "}
+              <strong>{xrpAmount(t10.minXrp)} XRP</strong> on {snapDate}, and
+              the top 50% threshold was{" "}
+              <strong>{xrpAmount(t50.minXrp)} XRP</strong>.
+            </li>
+          ) : null}
+          <li>
+            The XRP Ledger held <strong>{count(data.accounts)}</strong> funded
+            accounts as of {snapDate}, controlling {xrpAmount(data.xrpHeld)} XRP
+            between them.
+          </li>
           {largestExchange ? (
             <li>
-              The largest exchange holding XRP is{" "}
-              <strong>{largestExchange[0]}</strong>, with{" "}
+              <strong>{largestExchange[0]}</strong> was the largest exchange
+              holding XRP on {snapDate}, with{" "}
               <strong>{count(largestExchange[1].xrp)} XRP</strong> across{" "}
-              {largestExchange[1].accounts} accounts as of {snapDate}
+              {largestExchange[1].accounts} accounts
               {data.xrpUsd ? <>, worth {usd(largestExchange[1].xrp)}</> : null}.
             </li>
           ) : null}
           {larsen ? (
             <li>
               Chris Larsen, Ripple&rsquo;s co-founder and executive chairman,
-              holds <strong>{count(larsen.xrp)} XRP</strong> across{" "}
+              held <strong>{count(larsen.xrp)} XRP</strong> across{" "}
               {larsen.accounts} ranked accounts as of {snapDate}
               {data.xrpUsd ? (
                 <>
-                  , worth <strong>{usd(larsen.xrp)}</strong>{" "}
-                  at that date&rsquo;s rate
+                  , worth <strong>{usd(larsen.xrp)}</strong>
                 </>
               ) : null}
               .
@@ -1145,9 +1158,10 @@ export default function XrpRichListPage() {
         </div>
 
         <p className="rl-note">
-          Every tier contains the ones above it, so the cumulative column
-          climbs down the table rather than summing to 100%: the top 1% row
-          counts the top 0.1% inside it. The column beside it is what each
+          Every tier in the {snapDate} table contains the ones above it, so the
+          cumulative column climbs down the table rather than summing to 100%:
+          the top 1% row counts the top 0.1% inside it. The column beside it is
+          what each
           tier adds on its own, and those do sum. Thresholds are read from a
           histogram of every account balance, which bounds each figure at{" "}
           {data.method.thresholdRelativeErrorPct}% as of {snapDate}. Shares are
@@ -1662,7 +1676,7 @@ export default function XrpRichListPage() {
           {`Ripple controlled ${rippleRows.length} of the ${count(ranked)} largest XRP Ledger accounts as of ${snapDate}, holding ${xrpAmount(rippleXrp)} XRP, which is ${pctLabel(ripplePct)} of all XRP in funded accounts.`}
         </p>
         <p>
-          {`Of that, ${xrpAmount(rippleEscrow)} XRP sat in onchain escrow as of ${snapDate} and the remainder was spendable. Ripple also holds XRP in operational accounts that fall below the ${count(ranked)}th rank, so this is the ranked portion rather than Ripple's full position.`}
+          {`Of that, ${xrpAmount(rippleEscrow)} XRP sat in onchain escrow as of ${snapDate} and the remainder was spendable. Ripple also holds XRP in operational accounts that fall below the ${count(ranked)}th rank as of ${snapDate}, so this is the ranked portion rather than Ripple's full position.`}
         </p>
         <p className="rl-note">
           The percentage above is measured against all XRP in funded accounts
@@ -1800,17 +1814,19 @@ export default function XrpRichListPage() {
           </div>
 
           <p className="rl-note">
-            XRP was created once, at launch, with 100,000,000,000 units and no
-            way to make more. Every transaction destroys a small fee, so the
-            total only falls, which is why the total on the ledger as of{" "}
+            XRP was created once, at launch in 2012, with 100,000,000,000 units
+            and no way to make more. Every transaction destroys a small fee, so
+            the total only falls, which is why the total on the ledger as of{" "}
             {snapDate} is {count(1e11 - data.totalSupplyXrp)} XRP below the
             amount that was created.
           </p>
           <p className="rl-note">
-            That figure is the total destroyed since launch and not a rate. A
-            burn rate needs two measurements taken at different times, and this
-            page reads one ledger, so it can state the amount gone and not how
-            fast it is going.
+            The {count(1e11 - data.totalSupplyXrp)} XRP gap is the total
+            destroyed since launch as of {snapDate} and not a rate. A burn rate
+            needs two
+            measurements taken at different times, and this page reads one
+            ledger, so it can state the amount gone and not how fast it is
+            going.
           </p>
           {data.escrowAccounts != null && data.escrowObjects != null ? (
             <p className="rl-note">
@@ -1895,44 +1911,26 @@ export default function XrpRichListPage() {
 
           {yieldPicks ? (
             <>
-              {/* One card per venue kind, the largest by deposits in each. No
-                  action inside a card: four buttons to the same destination is
-                  four chances to pick the wrong one, so the section carries a
-                  single CTA underneath instead. */}
-              <div className="rl-picks">
-                {yieldPicks.picks.map((k) => (
-                  <div className="rl-pick" key={k.category}>
-                    <div className="rl-pick-head">
-                      <span className="rl-pick-name">
-                        {/* The first asset in the pair, which is the token a
-                            depositor actually brings. */}
-                        <AssetIcon
-                          asset={k.asset.split(" / ")[0] as "FXRP" | "stXRP"}
-                          size={22}
-                          decorative
-                        />
-                        <span className="rl-pick-platform">{k.platform}</span>
-                      </span>
-                      <span className="rl-pick-badge">{k.category}</span>
-                    </div>
-                    <div className="rl-pick-rate">{k.apy.toFixed(2)}%</div>
-                    <dl className="rl-pick-meta" data-lint="chrome">
-                      <div>
-                        <dt>Deposits</dt>
-                        <dd>{usdShort(k.tvlUsd)}</dd>
-                      </div>
-                      <div>
-                        <dt>Asset</dt>
-                        <dd>{k.asset}</dd>
-                      </div>
-                      <div>
-                        <dt>Holders</dt>
-                        <dd>{k.holders?.count ? count(k.holders.count) : "n/a"}</dd>
-                      </div>
-                    </dl>
-                  </div>
-                ))}
-              </div>
+              {/* One card per venue kind, the largest by deposits in each.
+                  The card itself is the action now: it names a venue and a
+                  rate, so a reader who wants that rate should not have to find
+                  the text link below, open the ranking and locate the same row
+                  a second time. Each one leaves through the same prompt and
+                  the same report_outbound_clicks channel as the ranking's own
+                  Open buttons. */}
+              <YieldPickCards
+                picks={yieldPicks.picks.map((k) => ({
+                  category: k.category,
+                  platform: k.platform,
+                  asset: k.asset,
+                  chain: k.chain,
+                  apy: k.apy,
+                  tvl: usdShort(k.tvlUsd),
+                  holders: k.holders?.count ? count(k.holders.count) : "n/a",
+                  href: k.platformUrl ?? k.llamaUrl ?? null,
+                  venueRef: k.venueSlug ?? k.project ?? k.platform,
+                }))}
+              />
 
               {/* Prose twin for the four cards. A retrieval system cannot cite
                   a figure sitting in a card without inventing the sentence
