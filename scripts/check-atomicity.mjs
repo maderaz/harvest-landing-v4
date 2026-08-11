@@ -125,6 +125,37 @@ const ORPHAN_OPENER =
 const ORPHAN_EXEMPT =
   /^(This (report|page|ranking|section)|There (is|are|were|was)|Neither\s+\S.*\bnor\b|Both\s+\S.*\band\b)/;
 
+/**
+ * Remove every element matching `open`, up to its own matching `</div>`.
+ *
+ * Depth-counted rather than regex-terminated. A self-closing `<div/>` is not
+ * valid HTML and React never emits one, so every `<div` opens a level. An
+ * unbalanced opener (truncated HTML) removes the remainder, which fails loudly
+ * on the next rule rather than silently keeping unlinted prose.
+ */
+function stripBalancedDivs(html, open) {
+  let out = "";
+  let cursor = 0;
+  open.lastIndex = 0;
+  let m;
+  while ((m = open.exec(html))) {
+    if (m.index < cursor) continue;
+    out += html.slice(cursor, m.index);
+    let depth = 1;
+    let i = m.index + m[0].length;
+    const tag = /<div\b|<\/div\s*>/gi;
+    tag.lastIndex = i;
+    let t;
+    while (depth > 0 && (t = tag.exec(html))) {
+      depth += t[0][1] === "/" ? -1 : 1;
+      i = t.index + t[0].length;
+    }
+    cursor = depth > 0 ? html.length : i;
+    open.lastIndex = cursor;
+  }
+  return out + html.slice(cursor);
+}
+
 function stripChrome(html) {
   let h = html;
   for (const re of [
@@ -141,7 +172,16 @@ function stripChrome(html) {
   }
   // Tables rendered as divs carry data-nosnippet; the spec exempts table
   // content from the digit rule, so anything inside one is out of scope.
-  h = h.replace(/<div[^>]*data-nosnippet[^>]*>[\s\S]*?<\/div>\s*<\/div>/gi, "");
+  //
+  // This used to end the strip at the first `</div></div>` pair, which is a
+  // guess at nesting depth rather than a close. On /xrp-rich-list that guess
+  // ran 42,000 characters past the element it was meant to remove and took two
+  // whole sections of prose with it, so the linter was blind to them and said
+  // the page passed. It was caught by accident: turning four cards from <div>
+  // into <a> moved where the pair happened to appear, and three real findings
+  // surfaced in copy nobody had changed. A strip that silences the gate has to
+  // know where the element ends, so this one counts.
+  h = stripBalancedDivs(h, /<div[^>]*\bdata-nosnippet\b[^>]*>/gi);
   // Interface chrome that happens to use prose tags: chart legends, stat-card
   // value lists, key/value pairs inside a card. The spec exempts table cells
   // and stat cards from the digit rule and exempts label lists from the
