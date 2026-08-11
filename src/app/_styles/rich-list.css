@@ -1256,6 +1256,70 @@
   text-overflow: ellipsis;
 }
 
+/* A card that is itself the link. The whole tile is the target, so it needs to
+   look pressable without turning into a button: the lift on hover and the
+   focus ring are the affordance, and the "Open on X" line only appears on
+   hover and on keyboard focus so the resting grid stays as quiet as it was.
+
+   background-image is reset at anchor specificity, and the hover rule below
+   re-asserts it, because ".uni-home-test .uni-home-content a" paints every
+   content link with a gold underline gradient. On an inline word that is the
+   house link style; on a card-sized anchor the 70% stop becomes a gold band
+   across the bottom third of the tile, and the hover state fills the whole
+   card. The report hit exactly this when its Discover control became a real
+   anchor and carries the same guard on .rp-discover. */
+.uni-home-test a.rl-pick--link,
+.uni-home-test .uni-home-content a.rl-pick--link {
+  display: block;
+  padding: 16px 18px 14px;
+  color: inherit;
+  text-decoration: none;
+  font-weight: inherit;
+  background: var(--uni-bg, #fff);
+  background-image: none;
+  transition:
+    border-color 0.14s ease,
+    box-shadow 0.14s ease,
+    transform 0.14s ease;
+}
+.uni-home-test a.rl-pick--link:hover,
+.uni-home-test .uni-home-content a.rl-pick--link:hover {
+  background: var(--uni-bg, #fff);
+  background-image: none;
+  border-color: color-mix(in srgb, var(--uni-gold, #e0a33e) 55%, var(--uni-line, #dddee0));
+  box-shadow: 0 4px 14px rgba(25, 23, 23, 0.09);
+  transform: translateY(-1px);
+}
+.uni-home-test a.rl-pick--link:focus-visible {
+  outline: 2px solid var(--uni-gold, #e0a33e);
+  outline-offset: 2px;
+}
+.uni-home-test .rl-pick-go {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--uni-ink-3);
+  opacity: 0;
+  transition: opacity 0.14s ease, color 0.14s ease;
+}
+.uni-home-test a.rl-pick--link:hover .rl-pick-go,
+.uni-home-test a.rl-pick--link:focus-visible .rl-pick-go {
+  opacity: 1;
+  color: var(--uni-ink);
+}
+/* Touch has no hover, so the line is simply always on there rather than
+   leaving a phone with no sign the card goes anywhere. */
+@media (hover: none) {
+  .uni-home-test .rl-pick-go { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .uni-home-test a.rl-pick--link { transition: none; }
+  .uni-home-test a.rl-pick--link:hover { transform: none; }
+}
+
 /* ---- bridge ----------------------------------------------------------- */
 
 .uni-home-test .rl-bridge {
