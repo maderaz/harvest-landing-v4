@@ -168,19 +168,59 @@ interface YieldPick {
   holders?: { count: number } | null;
 }
 
-function loadYieldPicks(): { picks: YieldPick[]; asOf: string } | null {
+/** A pool as it sits in data/xrp-yield.json, before a rate is chosen for it. */
+interface YieldPool extends YieldPick {
+  apyMean30d?: number | null;
+  exposure?: string | null;
+  rateNa?: boolean | null;
+}
+
+/**
+ * The rate the ranking publishes for a pool.
+ *
+ * This is `histRate` from report/xrp-yield-ranking, deliberately identical:
+ * the trailing 30-day mean where the venue has one, the current onchain rate
+ * where it does not. Reading `apy` on its own, as this file used to, is not a
+ * second opinion about the same pool, it is a different number. Spectra's
+ * August Principal Token publishes 5.09% and its `apy` field says 3.89%;
+ * Upshift's MXRPY publishes 1.78% and its `apy` field says 6.46%. Quoting the
+ * raw field here made every card on this page disagree with the ranking those
+ * cards send the reader to.
+ */
+const publishedRate = (p: YieldPool): number | null => {
+  if (p.rateNa) return null;
+  const r = p.apyMean30d ?? p.apy;
+  return Number.isFinite(r) ? (r as number) : null;
+};
+
+function loadYieldPicks(): {
+  picks: YieldPick[];
+  /** Genuine highest published rate among single-asset products. */
+  best: YieldPick | null;
+  asOf: string;
+} | null {
   try {
     const f = join(process.cwd(), "data", "xrp-yield.json");
     if (!existsSync(f)) return null;
     const d = JSON.parse(readFileSync(f, "utf-8")) as {
       generatedAt: string;
-      pools: YieldPick[];
+      pools: YieldPool[];
     };
     if (!Array.isArray(d.pools) || !d.pools.length) return null;
+
+    // Every pool carried at its published rate, so nothing downstream has to
+    // remember which field to read.
+    const rated = d.pools
+      .map((p) => {
+        const apy = publishedRate(p);
+        return apy == null ? null : { ...p, apy };
+      })
+      .filter((p): p is YieldPool & { apy: number } => p != null);
+
     const picks: YieldPick[] = [];
     for (const c of ["Vault", "Lending market", "Liquidity pool", "Fixed-Rate"]) {
-      const top = d.pools
-        .filter((x) => x.category === c && Number.isFinite(x.apy) && x.tvlUsd > 0)
+      const top = rated
+        .filter((x) => x.category === c && x.tvlUsd > 0)
         .sort((a, b) => b.tvlUsd - a.tvlUsd)[0];
       if (top) picks.push(top);
     }
@@ -188,7 +228,19 @@ function loadYieldPicks(): { picks: YieldPick[]; asOf: string } | null {
     // and the best rate last, which is the wrong answer to "where do people
     // earn on XRP".
     picks.sort((a, b) => b.apy - a.apy);
-    return picks.length === 4 ? { picks, asOf: d.generatedAt } : null;
+
+    // Not picks[0]. The four cards are the largest product in each category by
+    // deposits, so the best of those four is only the best rate by accident.
+    // A box promising "up to" has to mean it, and it is scoped to
+    // single-asset products for the same reason the ranking scopes its own
+    // one-sided table: a two-token pool is not somewhere a reader can put XRP
+    // and nothing else, so its rate is not an answer to this question.
+    const best =
+      rated
+        .filter((p) => p.exposure === "single" && p.tvlUsd > 0)
+        .sort((a, b) => b.apy - a.apy)[0] ?? null;
+
+    return picks.length === 4 ? { picks, best, asOf: d.generatedAt } : null;
   } catch {
     return null;
   }
@@ -916,18 +968,20 @@ export default function XrpRichListPage() {
             </ul>
           </div>
 
-          {/* topYield is picks[0]: loadYieldPicks sorts by rate, so this is
-              the best rate on the page and the box under a result quotes the
-              same figure the yield-sources section lists further down. */}
+          {/* The box under a result says "up to", so it is fed the genuine
+              highest published rate among single-asset XRP products, not the
+              best of the four cards below. Same figure, same basis and same
+              venue as row one of the ranking's one-sided table, because both
+              read data/xrp-yield.json through the same rate rule. */}
           <PercentileCalculator
             ladder={data.ladder}
             accounts={data.accounts}
             snapshotDate={snapDate}
             topYield={
-              yieldPicks
+              yieldPicks?.best
                 ? {
-                    apy: yieldPicks.picks[0].apy,
-                    platform: yieldPicks.picks[0].platform,
+                    apy: yieldPicks.best.apy,
+                    platform: yieldPicks.best.platform,
                   }
                 : null
             }
