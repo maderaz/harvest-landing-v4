@@ -179,11 +179,14 @@ export default function CalculatorAnalyticsPage() {
               Interactions with the percentile calculator on /xrp-rich-list.
               &ldquo;Started&rdquo; is a Start check press with a balance
               typed; &ldquo;Results shown&rdquo; is a rank rendered, and the
-              gap between them is people leaving during the check. The two
-              buttons under a result are tracked separately, so the click
-              -through into the XRP yield report can be read on its own. The
-              balance a visitor types is never recorded, which is why results
-              are grouped by percentile band rather than by amount.
+              gap between them is people leaving during the check. A result now
+              carries one box rather than two buttons, so &ldquo;Onward
+              clicks&rdquo; and the click-through beneath it are the same
+              number counted two ways. &ldquo;Into the ranking&rdquo; is the
+              retired second button and only appears while a timeframe still
+              reaches back far enough to contain it. The balance a visitor
+              types is never recorded, which is why results are grouped by
+              percentile band rather than by amount.
             </p>
           </div>
         </div>
@@ -222,12 +225,21 @@ export default function CalculatorAnalyticsPage() {
         className="uni-hub-stats"
         role="group"
         aria-label="Onward clicks"
-        style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginBottom: 32 }}
+        style={{
+          // The retired button's tile is not rendered as a permanent zero.
+          // It appears only while the selected timeframe still contains rows
+          // from before the two buttons became one box, and the row reflows
+          // from three columns to two when it does not.
+          gridTemplateColumns: `repeat(${stats?.toRanking ? 3 : 2}, minmax(0, 1fr))`,
+          marginBottom: 32,
+        }}
       >
-        <Stat label="Into the yield report" value={stats?.toReport} />
-        <Stat label="Into the ranking" value={stats?.toRanking} />
+        <Stat label="Onward clicks" value={stats?.toReport} />
+        {stats?.toRanking ? (
+          <Stat label="Into the ranking (retired)" value={stats.toRanking} />
+        ) : null}
         <Stat
-          label="Report click-through"
+          label="Click-through from a result"
           value={stats?.reportCtr ?? undefined}
           suffix="%"
         />

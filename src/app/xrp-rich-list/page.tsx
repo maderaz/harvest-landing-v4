@@ -83,16 +83,33 @@ const LARSEN_SOURCE = {
 // distribution and a title that disagrees with the page after a rebuild is
 // worse than a title with no number. Percentage tier names are fixed labels
 // and are safe. No year anywhere in metadata, so nothing goes stale in January.
-const TITLE = "XRP Rich List: Top Holders and Your Rank";
+//
+// Carries all three earners. The first revision dropped "Top Holders" for
+// "Top 1% Threshold" on impression share alone; AI Overview testing then
+// showed "top xrp holders" returning four citations, one of which links UPbit
+// directly to this page in its opening sentence. That phrase is paying for
+// itself, so it stays and the threshold match is added beside it rather than
+// swapped in. 47 characters, and no live figure: threshold values move daily
+// and a title that disagrees with the page after a rebuild is worse than a
+// title with no number. Tier names are fixed labels, so nothing goes stale.
+const TITLE = "XRP Rich List: Top 1%, Top Holders and Your Rank";
 // "Updated hourly" used to close this line and was not true: the walk runs on
 // `20 */6 * * *`, four times a day. A cadence claim in a snippet is checkable
 // against the dateline on the page, so it has to match the cron.
 const DESCRIPTION =
-  "Live XRP rich list calculator and holder distribution. See the top 1%, 10% and 25% thresholds and find where your balance ranks, read from the XRP Ledger.";
+  "Live XRP rich list calculator and holder distribution. See the top 1%, 5%, 10% and 25% thresholds and find where your balance ranks, read from the XRP Ledger.";
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: { absolute: `${TITLE} | ${SITE_NAME}` },
+    // No brand suffix on this page, deliberately. The live SERP was rendering
+    // "... - Harvest Finance", 18 characters that buy no trust from a visitor
+    // who does not know the brand and cost space that could carry a query
+    // match. This page competes on query match, not on masthead. `absolute`
+    // bypasses the layout's title template, so nothing is appended here.
+    //
+    // Recorded so nobody adds it back: the missing brand in search results is
+    // the intended trade, not an oversight.
+    title: { absolute: TITLE },
     description: DESCRIPTION,
     alternates: { canonical: PAGE_URL },
     openGraph: {
@@ -261,6 +278,20 @@ export default function XrpRichListPage() {
   const snap = data.ledgerCloseIso;
   const snapDate = utcDate(snap);
   const snapStamp = utcStamp(snap);
+  // Day-first in the hero line only, so the month and year sit next to each
+  // other. "August 11, 2026" does not contain the phrase "August 2026", and
+  // month-and-year variants ("xrp rich list may 2026") surface in autocomplete
+  // year-round. Same constant as everything else, so it rolls on its own and
+  // no prior year is ever written down.
+  const dayMonthYear = new Date(snap).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  const utcTime = `${String(new Date(snap).getUTCHours()).padStart(2, "0")}:${String(
+    new Date(snap).getUTCMinutes(),
+  ).padStart(2, "0")}`;
   // Derived from the snapshot, never hardcoded, so the current-year cluster is
   // covered with no annual maintenance and it rolls over on 1 January, which
   // is exactly when the demand rolls.
@@ -271,6 +302,50 @@ export default function XrpRichListPage() {
   // are the difference between a figure a reader can check against the table
   // and one they cannot.
   const share2 = (v: number) => `${v.toFixed(2)}%`;
+
+  // Aggregates for the three sections the AI Overview testing showed missing.
+  // All read from the same snapshot as everything else; nothing is hardcoded,
+  // so a later walk moves them together with the rest of the page.
+  //
+  // Band sums rather than a single band lookup: the distribution carries 17
+  // bands, so "above 10 million" spans three of them and "1 to 10 million"
+  // spans two. Picking one band by its min silently under-counted both.
+  const bandsAtOrAbove = (min: number) =>
+    data.bands.filter((b) => b.min >= min).reduce((n, b) => n + b.accounts, 0);
+  const oneToTenMillion = data.bands
+    .filter((b) => b.min >= 1e6 && b.max !== null && b.max <= 1e7)
+    .reduce((n, b) => n + b.accounts, 0);
+  const tenMillionPlus = bandsAtOrAbove(1e7);
+  const millionPlus = oneToTenMillion + tenMillionPlus;
+
+  const exchangeRows = data.top.filter((a) => a.label?.type === "exchange");
+  const exchangeAccounts = exchangeRows.length;
+  const exchangeXrp = exchangeRows.reduce((n, a) => n + a.xrp, 0);
+  // Grouped on the bare venue name so "Binance" and "Binance (XRP-BF2
+  // Reserve)" count as one venue, which is how a reader reads the ranking.
+  const exchangeRanking = Object.entries(
+    exchangeRows.reduce<Record<string, { xrp: number; accounts: number }>>((acc, a) => {
+      const name = (a.label?.name ?? "").replace(/\s*\(.*\)\s*$/, "").trim();
+      if (!name) return acc;
+      acc[name] = acc[name] ?? { xrp: 0, accounts: 0 };
+      acc[name].xrp += a.xrp;
+      acc[name].accounts += 1;
+      return acc;
+    }, {}),
+  )
+    .map(([name, v]) => ({ name, ...v }))
+    .sort((x, y) => y.xrp - x.xrp)
+    .slice(0, 5);
+
+  // The canonical largest-individual account, the same field the concentration
+  // section renders. Reused rather than re-derived from data.top: both gave the
+  // identical answer today, and two derivations of one figure is one more place
+  // for the page to contradict itself later.
+  const largestIndividual = data.concentration?.largestIndividual ?? null;
+  const rippleRows = data.top.filter((a) => a.label?.affiliation === "ripple");
+  const rippleXrp = rippleRows.reduce((n, a) => n + a.xrp, 0);
+  const rippleEscrow = rippleRows.reduce((n, a) => n + (a.escrowedXrp ?? 0), 0);
+  const ripplePct = data.xrpHeld > 0 ? (rippleXrp / data.xrpHeld) * 100 : 0;
 
   const t1 = tierOf(data, 1);
   const t10 = tierOf(data, 10);
@@ -365,7 +440,7 @@ export default function XrpRichListPage() {
   const faqs = [
     {
       q: "Is there an XRP rich list?",
-      a: `Yes, and it is also written as XRP richlist in one word. The XRP Ledger is public, so this page reads all ${count(data.accounts)} funded accounts from ledger ${count(data.ledgerIndex)}, closed ${snapStamp}, and ranks them by the XRP each one controls. How the walk and its histogram work, including the ${data.method.thresholdRelativeErrorPct}% threshold resolution that applied on ${snapDate}, is set out in the method section further down this page.`,
+      a: `Yes, and it is also written as XRP richlist in one word, XRP rich-list with a hyphen, rich list XRP with the words reversed, or XRP rich list wallets. The XRP Ledger is public, so this page reads all ${count(data.accounts)} funded accounts from ledger ${count(data.ledgerIndex)}, closed ${snapStamp}, and ranks them by the XRP each one controls. How the walk and its histogram work, including the ${data.method.thresholdRelativeErrorPct}% threshold resolution that applied on ${snapDate}, is set out in the method section further down this page.`,
     },
     {
       q: "How often is this XRP rich list updated?",
@@ -376,6 +451,47 @@ export default function XrpRichListPage() {
       a: t1
         ? `A balance of ${xrpAmount(t1.minXrp)} XRP put an account in the top 1% of funded XRP Ledger accounts as of ${snapDate}. That tier held ${pctLabel(t1.pctOfXrp)} of all XRP in funded accounts as of ${snapDate}.`
         : "",
+    },
+    {
+      // "How much", not "how many": the top-10% variants are searched in the
+      // other phrasing and the page had no top-10% question at all. Both
+      // figures already exist in the tier table; this states them as a
+      // standalone dated answer.
+      q: "How much XRP to be in the top 10 percent?",
+      a:
+        t10 && t50
+          ? `A balance of ${xrpAmount(t10.minXrp)} XRP put an account in the top 10% of funded XRP Ledger accounts as of ${snapDate}, and that tier held ${pctLabel(t10.pctOfXrp)} of all XRP in funded accounts on the same reading. The top 50% started far lower, at ${xrpAmount(t50.minXrp)} XRP as of ${snapDate}, which is the gap that makes most holders rank higher than they expect.`
+          : "",
+    },
+    {
+      q: "What percentage of XRP holders own more than 10,000 XRP?",
+      a: `${pctLabel(((data.exactCounts["10000"] ?? 0) / data.accounts) * 100)} of funded XRP Ledger accounts held at least 10,000 XRP as of ${snapDate}, which is ${count(data.exactCounts["10000"] ?? 0)} accounts out of ${count(data.accounts)}. The count is tallied directly on every walk rather than read off the histogram, which is what makes it exact.`,
+    },
+    {
+      // Roughly 50 impressions spread across phrasings the page never uses
+      // verbatim: "xrp holder list", "xrp list of holders", "biggest xrp
+      // holders". One question rather than a restructure, because 50
+      // impressions does not justify moving a section that works.
+      q: "Where can I see a list of XRP holders?",
+      a: `The list of the ${count(ranked)} largest XRP holders sits further down this page, ranked by the XRP each account controls as of ${snapDate}. Every row comes from ledger ${count(data.ledgerIndex)}, closed ${snapStamp}, rather than from a third-party index, and the accounts that could be identified are labelled with the exchange, company or person behind them. The remaining ${count(data.accounts - ranked)} funded accounts as of ${snapDate} are not listed one by one, and the distribution chart above the list is where they are counted instead.`,
+    },
+    {
+      q: "How many people own XRP?",
+      a: `Nobody can say from ledger data alone. ${count(data.accounts)} XRP Ledger accounts were funded as of ${snapDate}, and that is a count of accounts rather than of people: one person can open many, and the ${exchangeAccounts} exchange accounts identified in this ranking held ${xrpAmount(exchangeXrp)} XRP as of ${snapDate} for customers who have no account of their own. Estimates of 18 to 25 million owners worldwide, as circulated in ${year}, combine ledger addresses with exchange customer counts, and neither input can be checked against the ledger.`,
+    },
+    {
+      q: "How many XRP wallets are there?",
+      a: `${count(data.accounts)} XRP Ledger accounts were funded as of ${snapDate}, read from ledger ${count(data.ledgerIndex)}. An account has to hold the base reserve to exist at all, so accounts emptied below it are not counted, and an address that never received XRP has no ledger entry to count.`,
+    },
+    {
+      q: "Is an XRP account the same as a holder?",
+      a: `No. An account is an entry on the XRP Ledger and a holder is a person or a company, and the two do not map one to one in either direction. One holder can control many accounts, which is why ${rippleRows.length} of the ${count(ranked)} largest accounts as of ${snapDate} belong to a single company, and one account can hold XRP for very many people, which is what an exchange account is.`,
+    },
+    {
+      // 450 US searches at KD 0. The honest answer is a distribution, not a
+      // number, and the calculator is what turns it into a personal one.
+      q: "How much XRP should I own?",
+      a: `Nobody can answer that for you, and nothing on this page is advice: the amount is a question about your own circumstances rather than about the ledger. What the ledger can tell you is where any amount places you: ${xrpAmount(t1 ? t1.minXrp : 0)} XRP sat at the top 1% mark as of ${snapDate}, ${xrpAmount(t10 ? t10.minXrp : 0)} XRP at the top 10% and ${xrpAmount(t50 ? t50.minXrp : 0)} XRP at the top 50%. The calculator above places any balance against all ${count(data.accounts)} funded accounts as of ${snapDate}, without a wallet connection.`,
     },
     {
       q: "How many XRP holders have 10,000 or more?",
@@ -496,11 +612,20 @@ export default function XrpRichListPage() {
       // threshold and inventing one would be the wrong kind of confidence.
       q: "What counts as an XRP whale?",
       a: (() => {
-        const m1 = data.bands.find((b) => b.min === 1_000_000);
-        const m10 = data.bands.find((b) => b.min === 10_000_000);
-        if (!m1 || !m10) return "";
-        const both = m1.accounts + m10.accounts;
-        return `There is no official threshold, so the honest answer is a distribution rather than a number. ${count(both)} of the ${count(data.accounts)} funded XRP Ledger accounts held 1,000,000 XRP or more as of ${snapDate}, which is ${pctLabel(m1.pctOfAccounts + m10.pctOfAccounts)} of them, and those accounts controlled ${pctLabel(m1.pctOfXrp + m10.pctOfXrp)} of all XRP on that date. Above them, ${count(m10.accounts)} accounts held 10,000,000 XRP or more as of ${snapDate}. For a threshold that moves with the ledger rather than a round number, the top 1% of accounts started at ${t1 ? xrpAmount(t1.minXrp) : "the figure in the table above"} XRP as of ${snapDate}.`;
+        // Summed across every band at or above the mark rather than read from
+        // one band. The distribution went from 9 decade-wide bands to 17, so
+        // `bands.find(b => b.min === 1_000_000)` stopped meaning "a million or
+        // more" and started meaning "one to five million": this answer was
+        // silently dropping the 5M-10M, 100M-1bn and 1bn+ bands and
+        // undercounting the whale population by a few hundred accounts.
+        if (!millionPlus) return "";
+        const pctAccounts = data.bands
+          .filter((b) => b.min >= 1e6)
+          .reduce((n, b) => n + b.pctOfAccounts, 0);
+        const pctXrp = data.bands
+          .filter((b) => b.min >= 1e6)
+          .reduce((n, b) => n + b.pctOfXrp, 0);
+        return `There is no official threshold, so the honest answer is a distribution rather than a number. ${count(millionPlus)} of the ${count(data.accounts)} funded XRP Ledger accounts held 1,000,000 XRP or more as of ${snapDate}, which is ${pctLabel(pctAccounts)} of them, and those accounts controlled ${pctLabel(pctXrp)} of all XRP on that date. Above them, ${count(tenMillionPlus)} accounts held 10,000,000 XRP or more as of ${snapDate}. For a threshold that moves with the ledger rather than a round number, the top 1% of accounts started at ${t1 ? xrpAmount(t1.minXrp) : "the figure in the table above"} XRP as of ${snapDate}.`;
       })(),
     },
 ].filter((f) => f.a);
@@ -629,7 +754,7 @@ export default function XrpRichListPage() {
         <h1 className="uni-home-h1 rl-h1">XRP Rich List &amp; Calculator</h1>
         <p className="rl-dateline">
           Live from the XRP Ledger, refreshed four times a day. Latest
-          snapshot: {snapStamp}.
+          snapshot: {dayMonthYear} at {utcTime} UTC.
         </p>
         {/* Featured image. Static import, so Next emits the intrinsic size and
             the slot reserves its own height before the file loads. `priority`
@@ -659,11 +784,37 @@ export default function XrpRichListPage() {
 
         <h2 className="rl-summary-h">Summary</h2>
         <ul className="rl-keyfind">
-          {/* The hook, and the one line most visitors came for. It used to
-              open on the largest holding attributed to a person, which is the
-              more careful claim but buries the plain fact under two
-              qualifications before reaching a number. The careful version
-              still exists in full in the concentration section. */}
+          {/* Order set by Search Console, first 9 days live.
+
+              The threshold cluster drew 2,663 impressions, 32 times the 83 the
+              top-holders cluster drew, and the bullet answering it was fifth of
+              five. The richest-wallet line that used to open here draws roughly
+              12 impressions. So the two swap ends: the largest query gets the
+              first bullet, and the hook that reads well but nobody searches
+              moves down. Nothing is removed, and every figure still renders
+              from the same snapshot. */}
+          {t1 ? (
+            <li>
+              To sit in the top 1% of XRP holders an account needed at least{" "}
+              <strong>{xrpAmount(t1.minXrp)} XRP</strong> as of {snapDate}.
+            </li>
+          ) : null}
+          {/* New. The top-10% queries had no answer in the summary at all, and
+              the pair reads better together than either does alone: the two
+              numbers are what turn "am I rich" into a scale. */}
+          {t10 && t50 ? (
+            <li>
+              The top 10% threshold was{" "}
+              <strong>{xrpAmount(t10.minXrp)} XRP</strong> and the top 50%
+              threshold was <strong>{xrpAmount(t50.minXrp)} XRP</strong> as of{" "}
+              {snapDate}.
+            </li>
+          ) : null}
+          <li>
+            <strong>{count(data.accounts)}</strong> XRP addresses were funded on
+            the XRP Ledger as of {snapDate}, controlling{" "}
+            {xrpAmount(data.xrpHeld)} XRP between them.
+          </li>
           {data.top[0] ? (
             <li>
               The richest XRP wallet holds{" "}
@@ -700,17 +851,6 @@ export default function XrpRichListPage() {
               .
             </li>
           ) : null}
-          <li>
-            <strong>{count(data.accounts)}</strong> XRP addresses were funded on
-            the XRP Ledger as of {snapDate}, controlling{" "}
-            {xrpAmount(data.xrpHeld)} XRP between them.
-          </li>
-          {t1 ? (
-            <li>
-              To sit in the top 1% of XRP holders an account needed at least{" "}
-              <strong>{xrpAmount(t1.minXrp)} XRP</strong> as of {snapDate}.
-            </li>
-          ) : null}
         </ul>
       </section>
 
@@ -745,6 +885,15 @@ export default function XrpRichListPage() {
               <p className="rl-calc-pitch-sub">
                 Enter your XRP balance to see where you rank on the rich list.
               </p>
+              {/* The calculator is invisible to the layer currently sending
+                  people elsewhere. Two AI Overviews ended by recommending a
+                  competitor's monitor or offering to work out the tier by
+                  hand, while citing this page's data. Neither knows the tool
+                  exists, because the page never said so in a sentence. It
+                  holds the best CTR on the page at 12.22%. */}
+              <p className="rl-calc-pitch-sub">
+                {`The XRP rich list calculator on this page places any XRP balance against all ${count(data.accounts)} funded accounts as of ${snapDate}, without a wallet address, a connection or a sign-in.`}
+              </p>
             </div>
 
             <ul className="rl-checklist" data-lint="chrome">
@@ -767,11 +916,21 @@ export default function XrpRichListPage() {
             </ul>
           </div>
 
+          {/* topYield is picks[0]: loadYieldPicks sorts by rate, so this is
+              the best rate on the page and the box under a result quotes the
+              same figure the yield-sources section lists further down. */}
           <PercentileCalculator
             ladder={data.ladder}
             accounts={data.accounts}
-            ranked={ranked}
             snapshotDate={snapDate}
+            topYield={
+              yieldPicks
+                ? {
+                    apy: yieldPicks.picks[0].apy,
+                    platform: yieldPicks.picks[0].platform,
+                  }
+                : null
+            }
           />
         </div>
       </section>
@@ -856,17 +1015,43 @@ export default function XrpRichListPage() {
       {/* -------------------------------------------------------- FAQ */}
       <section className="uni-home-content rl-section" aria-labelledby="thresholds">
         <p className="rp-eyebrow">Distribution</p>
-        <h2 id="thresholds">XRP rich list {year}: current thresholds</h2>
+        {/* Heading retargeted to the query that actually shows this page.
+            "xrp top one percent threshold" drew 2,583 impressions in the first
+            9 days against 83 for the whole top-holders cluster, and the
+            heading answered neither in the searched phrasing.
+
+            The {year} token moves into the intro sentence below rather than
+            being dropped: "xrp rich list {year}" runs at 4.98% CTR, 2.7x the
+            main term, and it is still generated at build time, so nothing goes
+            stale in January. Do not hardcode it. */}
+        <h2 id="thresholds">
+          XRP top 1% threshold: how much XRP puts you in the top 1%
+        </h2>
+        {/* One tier gets the standalone atomic sentence and it is the top 1%:
+            that is the phrase the title targets and the query carrying 2,583
+            impressions. The rest go in the prose below and in the table.
+
+            Deliberately NOT one atomic sentence per tier. Five near-identical
+            sentences stacked up read as generated rather than written, and the
+            table already carries the full list with real column headers, which
+            is what an engine assembling a tier list reads anyway. */}
         <p className="rp-lead">
-          {t1 && t10 && t50
-            ? `The minimum to sit in the top 1% of funded XRP Ledger accounts was ${xrpAmount(t1.minXrp)} XRP as of ${snapDate}, against ${xrpAmount(t10.minXrp)} XRP for the top 10% and ${xrpAmount(t50.minXrp)} XRP for the top 50%.`
+          {t1
+            ? `An account needed at least ${xrpAmount(t1.minXrp)} XRP to sit in the top 1% of funded XRP Ledger accounts as of ${snapDate}.`
+            : ""}
+        </p>
+        <p>
+          {t10 && t50
+            ? `The top 10% starts far lower, at ${xrpAmount(t10.minXrp)} XRP, and the top 50% at ${xrpAmount(t50.minXrp)} XRP as of ${snapDate}. Most funded accounts hold very little, which is why the percentage thresholds fall away so steeply below the first percent.`
             : ""}
         </p>
         <p className="rl-section-intro">
-          A tier threshold is the smallest amount of XRP that placed an account
-          in that percentage of all {count(data.accounts)} funded accounts as of{" "}
-          {snapDate}. An account is measured on what it controls, which is its
-          spendable balance plus anything it holds in onchain escrow.
+          The XRP rich list {year} thresholds below are read from the same
+          ledger walk as the ranking. A tier threshold is the smallest amount of
+          XRP that placed an account in that percentage of all{" "}
+          {count(data.accounts)} funded accounts as of {snapDate}. An account is
+          measured on what it controls, which is its spendable balance plus
+          anything it holds in onchain escrow.
         </p>
 
         <div className="rl-dtable-wrap" data-nosnippet="">
@@ -915,6 +1100,56 @@ export default function XrpRichListPage() {
           measured against all XRP in funded accounts, escrowed and spendable
           together.
         </p>
+        {/* Every AI Overview tested quoted these thresholds as ranges, because
+            the sources they cite compile figures across several dates: "44,800
+            to 46,400" for a top 1% this page reads at a single number. Saying
+            where the figure comes from is the strongest available argument for
+            preferring it, and nobody else on that SERP can make it. */}
+        <p className="rl-note">
+          Figures circulating for these thresholds are usually ranges compiled
+          across several dates. Every number here is read from one validated
+          ledger, {count(data.ledgerIndex)}, closed {snapStamp}, with the error
+          on any tier bounded at {data.method.thresholdRelativeErrorPct}%.
+        </p>
+      </section>
+
+      {/* ------------------------------------------- how many people own XRP
+          The largest gap the AI Overview testing found. KD 0, parent topic of
+          "xrp rich list", and the page was not cited for it at all: the whole
+          answer in circulation rests on one article quoting "over 7.85
+          million" activated addresses, which is months stale against what this
+          walk reads.
+
+          The differentiator is the first sentence. Every source treats
+          accounts and people as the same thing; this one cannot, and saying so
+          is both more accurate and the reason to cite it. The bounds paragraph
+          is the part nobody else publishes. */}
+      <section className="uni-home-content rl-section" aria-labelledby="how-many">
+        <p className="rp-eyebrow">Holders</p>
+        <h2 id="how-many">How many people own XRP?</h2>
+        <p className="rp-lead">
+          {`${count(data.accounts)} XRP Ledger accounts were funded as of ${snapDate}, which is not the number of people who own XRP.`}
+        </p>
+        <p>
+          The account count is neither an upper nor a lower bound on the number
+          of owners. It runs higher than the number of people holding their own
+          XRP, because one person can open many accounts and{" "}
+          {count(data.accounts)} funded accounts as of {snapDate} say nothing
+          about how many hands hold them. It runs lower than the number of
+          people with XRP exposure worldwide, because the{" "}
+          {exchangeAccounts} exchange accounts identified in this ranking held{" "}
+          {xrpAmount(exchangeXrp)} XRP as of {snapDate} on behalf of customers
+          who have no XRP Ledger account at all.
+        </p>
+        <p>
+          {`${count(millionPlus)} accounts held more than 1 million XRP as of ${snapDate}: ${count(oneToTenMillion)} between 1 million and 10 million, and ${count(tenMillionPlus)} above 10 million.`}
+        </p>
+        <p>
+          No count of the people who own XRP exists onchain. Estimates in the
+          18 to 25 million range that circulate as of {snapDate} combine ledger
+          addresses with exchange customer counts, and neither input is
+          verifiable from ledger data.
+        </p>
       </section>
 
       {/* ------------------------------------------------------- chart */}
@@ -943,8 +1178,11 @@ export default function XrpRichListPage() {
         <div className="rl-chart-card">
           <div className="rl-chart-card-head">
             <div>
+              {/* "percentage" and "holders" are the searched words. The
+                  chart cluster runs at 7.41% CTR on "xrp holders percentage
+                  chart" and the heading contained neither term. */}
               <h3 className="rl-chart-card-title">
-                XRP rich list chart: funded accounts by balance band
+                XRP holders percentage chart: funded accounts by balance band
               </h3>
               <p className="rl-chart-card-desc">
                 All {count(data.accounts)} funded XRP Ledger accounts as of{" "}
@@ -1275,6 +1513,110 @@ export default function XrpRichListPage() {
           <p className="rl-note">{data.concentration.basis}</p>
         </section>
       ) : null}
+
+      {/* ------------------------------------------- who owns the most XRP
+          The page had an H2 for Chris Larsen and won the founder citation;
+          it had none for the broader question and was not cited there.
+
+          The sharpest result in the whole test series sits here: asked "who
+          owns the most xrp", Google named Binance as the largest exchange.
+          This page's data says UPbit, with roughly three times as much. On
+          "top xrp holders", where the page IS cited, Google corrected itself
+          and linked UPbit directly to this page. The data changes the answer
+          wherever the answer can find it, which is the argument for giving
+          the question its own heading. */}
+      <section className="uni-home-content rl-section" aria-labelledby="who-owns-most">
+        <p className="rp-eyebrow">Ownership</p>
+        <h2 id="who-owns-most">Who owns the most XRP?</h2>
+        <p className="rp-lead">
+          {`Ripple controlled ${rippleRows.length} of the ${count(ranked)} largest XRP Ledger accounts as of ${snapDate}, holding ${pctLabel(ripplePct)} of all XRP in funded accounts.`}
+        </p>
+        {exchangeRanking.length ? (
+          <p>
+            {`The largest exchange holding XRP is ${exchangeRanking[0].name}, with ${xrpAmount(exchangeRanking[0].xrp)} XRP across ${exchangeRanking[0].accounts} accounts as of ${snapDate}, ahead of every other custodial venue in this ranking.`}
+          </p>
+        ) : null}
+        {/* Read from data.concentration.largestIndividual, the same field the
+            concentration section further down renders. Deriving it a second
+            time from data.top gave an identical answer today and would be one
+            more place for the page to contradict itself later. */}
+        {largestIndividual ? (
+          <p>
+            {`The largest single account attributed to an individual rather than a company held ${xrpAmount(largestIndividual.xrp)} XRP as of ${snapDate}, at rank ${largestIndividual.rank} in the list above.`}
+          </p>
+        ) : null}
+
+        {exchangeRanking.length ? (
+          <div className="rl-dtable-wrap" data-nosnippet="">
+            <table className="rl-dtable">
+              <caption className="rl-dtable-cap">
+                Largest exchanges by XRP held in the {count(ranked)} ranked
+                accounts, as of {snapDate}
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col">Exchange</th>
+                  <th scope="col">XRP held</th>
+                  <th scope="col">Ranked accounts</th>
+                  <th scope="col">Percentage of XRP in funded accounts</th>
+                </tr>
+              </thead>
+              <tbody>
+                {exchangeRanking.map((e) => (
+                  <tr key={e.name}>
+                    <th scope="row">{e.name}</th>
+                    <td className="rl-num" data-label="XRP held">{xrpAmount(e.xrp)}</td>
+                    <td className="rl-num" data-label="Ranked accounts">{e.accounts}</td>
+                    <td className="rl-num" data-label="Percentage of XRP">
+                      {pctLabel(data.xrpHeld > 0 ? (e.xrp / data.xrpHeld) * 100 : 0)}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : null}
+        <p className="rl-note">
+          Exchange accounts hold XRP for customers rather than for
+          themselves, so a venue high in this list reflects how many people
+          keep XRP there rather than what the venue owns. Names come from{" "}
+          {attribution ?? "third-party attribution"} rather than from this
+          page, and only the {exchangeAccounts} exchange accounts identified
+          inside the {count(ranked)} ranked accounts as of {snapDate} are
+          counted.
+        </p>
+      </section>
+
+      {/* ------------------------------------------------ Ripple holdings
+          Absent from the Ripple paragraph of every test that had one, while
+          the figures in circulation ranged from "roughly 42%" to "about 42
+          billion" with no scope stated. The escrow read here matches the one
+          dedicated competitor page almost exactly, which is the check that
+          the measurement is right; the totals differ because they count
+          operational accounts below the 500th rank and this page cannot see
+          those.
+
+          Scoped as the fallback from the patch, not the aggregate-by-label
+          option: the walk keeps only the top N accounts, so summing Ripple's
+          label across the whole ledger needs the pipeline to retain more
+          than it does today. Stating the scope is honest and shippable now;
+          the aggregate is its own change. */}
+      <section className="uni-home-content rl-section" aria-labelledby="ripple-holdings">
+        <p className="rp-eyebrow">Ownership</p>
+        <h2 id="ripple-holdings">How much XRP does Ripple hold?</h2>
+        <p className="rp-lead">
+          {`Ripple controlled ${rippleRows.length} of the ${count(ranked)} largest XRP Ledger accounts as of ${snapDate}, holding ${xrpAmount(rippleXrp)} XRP, which is ${pctLabel(ripplePct)} of all XRP in funded accounts.`}
+        </p>
+        <p>
+          {`Of that, ${xrpAmount(rippleEscrow)} XRP sat in onchain escrow as of ${snapDate} and the remainder was spendable. Ripple also holds XRP in operational accounts that fall below the ${count(ranked)}th rank, so this is the ranked portion rather than Ripple's full position.`}
+        </p>
+        <p className="rl-note">
+          The percentage above is measured against all XRP in funded accounts
+          as of {snapDate}, not against the 100 billion units created when
+          the ledger launched. Figures quoted elsewhere sometimes use the
+          second denominator, which is why they run higher.
+        </p>
+      </section>
 
       {/* ------------------------------------------------------ larsen */}
       {larsen ? (

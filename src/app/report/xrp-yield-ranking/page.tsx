@@ -1781,7 +1781,7 @@ export default function XrpYieldRankingPage() {
             <p className="rp-lead">
               {rhHi != null && rhLo != null && rhTop ? (
                 <>
-                  Over the last 30 days, headline rates across the{" "}
+                  Over the 30 days to {updated}, headline rates across the{" "}
                   {venueCharts.length} larger charted venues sat between{" "}
                   <strong>{pct(rhLo)}</strong> and <strong>{pct(rhHi)}</strong>,
                   topped by {rhTop.name} at {pct(rhHi)}.

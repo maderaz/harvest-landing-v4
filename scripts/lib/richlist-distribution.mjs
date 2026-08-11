@@ -41,7 +41,16 @@ export const EXACT_THRESHOLDS = [
 
 // Tiers the threshold table shows. Each is "the minimum balance that puts an
 // account in the top N% of funded accounts by balance".
-export const TIERS = [0.1, 1, 5, 10, 25, 50];
+//
+// 0.01 was added after AI Overview testing: Google quoted a top 0.01% figure
+// of "over 3.8 million XRP" on "top xrp holders" while the page supplied no
+// such row. The histogram already holds the resolution, so this is one more
+// read over data the walk collects anyway, not a new pass.
+//
+// The tier appears in the artifact after the next scheduled walk. Both the
+// table and the prose render whatever tiers the data carries, so nothing needs
+// touching again when it lands.
+export const TIERS = [0.01, 0.1, 1, 5, 10, 25, 50];
 
 export class Distribution {
   constructor({ topN = 100 } = {}) {
