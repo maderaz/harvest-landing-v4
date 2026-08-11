@@ -92,7 +92,7 @@ export function DistributionChart({
   // for and the SVG's aria-label was the only place it could go without
   // padding the visible copy.
   const caption =
-    `XRP rich list chart: funded XRP Ledger accounts by balance band as of ${snapshotDate}. ` +
+    `XRP holders percentage chart: the percentage of funded XRP Ledger accounts in each balance band as of ${snapshotDate}. ` +
     rows
       .map((b) => `${bandName(b)} XRP: ${compact(b.accounts)} accounts`)
       .join(". ") +
