@@ -62,6 +62,31 @@ const TIER_ORDER = [
   "unknown",
 ];
 
+// Column tracks for the three tables on this page.
+//
+// These were real <table> elements carrying className="uni-hub-table", which
+// looked right and did nothing: that class is the CSS-grid pattern for divs
+// (hub-thead / hub-row / hub-cell on a fixed eight-column track) and has no
+// <th>/<td> rules at all. The tables therefore rendered with browser defaults
+// and no padding, so headers ran into each other and "bottom 50%8" read as one
+// token. Same div-grid markup as every other control-room table now.
+const ERA_COLS = "minmax(200px, 1.6fr) 130px 130px";
+const TIER_COLS = "minmax(140px, 1.4fr) 120px 120px";
+const EVENT_COLS =
+  "190px 92px minmax(130px, 1fr) 110px minmax(150px, 1fr) 100px";
+
+// Rows of the era comparison, transposed so the long labels run down the side.
+const ERA_ROWS: {
+  label: string;
+  of: (s: { results: number; converted: number; ctr: number | null; earn: number; top: number }) => string;
+}[] = [
+  { label: "Sessions shown a rank", of: (s) => s.results.toLocaleString("en-US") },
+  { label: "Sessions that clicked", of: (s) => s.converted.toLocaleString("en-US") },
+  { label: "Click-through", of: (s) => (s.ctr == null ? "—" : `${s.ctr}%`) },
+  { label: "Clicks into the yield report", of: (s) => s.earn.toLocaleString("en-US") },
+  { label: "Clicks into the ranking", of: (s) => s.top.toLocaleString("en-US") },
+];
+
 let _regionNames: Intl.DisplayNames | null = null;
 function countryName(code: string): string {
   const iso = code.trim().toUpperCase();
@@ -313,10 +338,10 @@ export default function CalculatorAnalyticsPage() {
 
       {eras && (
         <section className="aq-chart-card" style={{ marginBottom: 32 }}>
-          <div className="aq-chart-bignum-label" style={{ marginBottom: 4 }}>
+          <div className="aq-chart-bignum-label" style={{ marginBottom: 6 }}>
             Onward clicks, two buttons against one box
           </div>
-          <p className="uni-hub-sub" style={{ marginBottom: 12 }}>
+          <p className="uni-hub-sub" style={{ marginBottom: 18, maxWidth: 780 }}>
             Every fetched row, ignoring the timeframe filter above, because this
             compares one deploy against another and a short window would empty
             the older side. The split is inferred from the data rather than
@@ -327,38 +352,37 @@ export default function CalculatorAnalyticsPage() {
             were shown a rank and then clicked, not raw clicks, because with two
             buttons one visitor could press both.
           </p>
-          <table className="uni-hub-table">
-            <thead>
-              <tr>
-                <th scope="col">Layout</th>
-                <th scope="col">Sessions shown a rank</th>
-                <th scope="col">Sessions that clicked</th>
-                <th scope="col">Click-through</th>
-                <th scope="col">Clicks: yield report</th>
-                <th scope="col">Clicks: ranking</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>Two buttons</td>
-                <td>{eras.before.results.toLocaleString("en-US")}</td>
-                <td>{eras.before.converted.toLocaleString("en-US")}</td>
-                <td>{eras.before.ctr == null ? "—" : `${eras.before.ctr}%`}</td>
-                <td>{eras.before.earn.toLocaleString("en-US")}</td>
-                <td>{eras.before.top.toLocaleString("en-US")}</td>
-              </tr>
-              <tr>
-                <td>One box</td>
-                <td>{eras.after.results.toLocaleString("en-US")}</td>
-                <td>{eras.after.converted.toLocaleString("en-US")}</td>
-                <td>{eras.after.ctr == null ? "—" : `${eras.after.ctr}%`}</td>
-                <td>{eras.after.earn.toLocaleString("en-US")}</td>
-                <td>{eras.after.top.toLocaleString("en-US")}</td>
-              </tr>
-            </tbody>
-          </table>
+          {/* Transposed: metric down the side, layout across the top.
+              Laid out the other way this was six columns whose headers were
+              each longer than the figure underneath, so every label wrapped or
+              collided. Two eras and five metrics read better as five short
+              rows than as two very wide ones, and it stops being a table that
+              needs a scrollbar to say ten numbers. */}
+          {/* Capped rather than full-bleed. Three short columns stretched
+              across a 1900px card put half a metre of empty space between a
+              label and its figure, which is the thing the eye has to travel. */}
+          <div className="hub-table-wrap">
+            <div className="hub-table" style={{ minWidth: 520, maxWidth: 640 }}>
+              <div className="hub-thead" style={{ gridTemplateColumns: ERA_COLS }}>
+                <span className="hub-th">Measure</span>
+                <span className="hub-th hub-th-right">Two buttons</span>
+                <span className="hub-th hub-th-right">One box</span>
+              </div>
+              {ERA_ROWS.map((row) => (
+                <div
+                  key={row.label}
+                  className="hub-row"
+                  style={{ gridTemplateColumns: ERA_COLS }}
+                >
+                  <span className="hub-cell">{row.label}</span>
+                  <span className="hub-cell hub-num">{row.of(eras.before)}</span>
+                  <span className="hub-cell hub-num">{row.of(eras.after)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
           {eras.after.results < 30 && (
-            <p className="uni-hub-sub" style={{ marginTop: 10 }}>
+            <p className="uni-hub-sub" style={{ marginTop: 14, maxWidth: 780 }}>
               The one-box side has {eras.after.results.toLocaleString("en-US")}{" "}
               {eras.after.results === 1 ? "session" : "sessions"} behind it so
               far. Read the difference as a direction, not as a result, until
@@ -370,27 +394,31 @@ export default function CalculatorAnalyticsPage() {
 
       {tiers.length > 0 && (
         <section className="aq-chart-card" style={{ marginBottom: 32 }}>
-          <div className="aq-chart-bignum-label" style={{ marginBottom: 12 }}>
+          <div className="aq-chart-bignum-label" style={{ marginBottom: 14 }}>
             Where visitors land, by percentile band
           </div>
-          <table className="uni-hub-table">
-            <thead>
-              <tr>
-                <th scope="col">Band</th>
-                <th scope="col">Results</th>
-                <th scope="col">Share</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div className="hub-table-wrap">
+            <div className="hub-table" style={{ minWidth: 440, maxWidth: 560 }}>
+              <div className="hub-thead" style={{ gridTemplateColumns: TIER_COLS }}>
+                <span className="hub-th">Band</span>
+                <span className="hub-th hub-th-right">Results</span>
+                <span className="hub-th hub-th-right">Share</span>
+              </div>
               {tiers.map((t) => (
-                <tr key={t.tier}>
-                  <td>{t.tier}</td>
-                  <td>{t.n.toLocaleString("en-US")}</td>
-                  <td>{t.pct}%</td>
-                </tr>
+                <div
+                  key={t.tier}
+                  className="hub-row"
+                  style={{ gridTemplateColumns: TIER_COLS }}
+                >
+                  <span className="hub-cell">{t.tier}</span>
+                  <span className="hub-cell hub-num">
+                    {t.n.toLocaleString("en-US")}
+                  </span>
+                  <span className="hub-cell hub-num">{t.pct}%</span>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         </section>
       )}
 
@@ -411,25 +439,29 @@ export default function CalculatorAnalyticsPage() {
             break the calculator.
           </p>
         ) : (
-          <table className="uni-hub-table">
-            <thead>
-              <tr>
-                <th scope="col">When</th>
-                <th scope="col">Event</th>
-                <th scope="col">Band / target</th>
-                <th scope="col">Source</th>
-                <th scope="col">Country</th>
-                <th scope="col">Device</th>
-              </tr>
-            </thead>
-            <tbody>
+          <div className="hub-table-wrap aq-recent-wrap">
+            <div className="hub-table aq-recent-table">
+              <div className="hub-thead" style={{ gridTemplateColumns: EVENT_COLS }}>
+                <span className="hub-th">When</span>
+                <span className="hub-th">Event</span>
+                <span className="hub-th">Band / target</span>
+                <span className="hub-th">Source</span>
+                <span className="hub-th">Country</span>
+                <span className="hub-th">Device</span>
+              </div>
               {recent.map((r) => (
-                <tr key={r.id}>
-                  <td>{new Date(r.created_at).toLocaleString("en-GB")}</td>
-                  <td>{r.event ?? "—"}</td>
-                  <td>{r.tier ?? r.cta ?? "—"}</td>
-                  <td>{r.source ?? "—"}</td>
-                  <td>
+                <div
+                  key={r.id}
+                  className="hub-row"
+                  style={{ gridTemplateColumns: EVENT_COLS }}
+                >
+                  <span className="hub-cell aq-cell-time">
+                    {new Date(r.created_at).toLocaleString("en-GB")}
+                  </span>
+                  <span className="hub-cell">{r.event ?? "—"}</span>
+                  <span className="hub-cell">{r.tier ?? r.cta ?? "—"}</span>
+                  <span className="hub-cell">{r.source ?? "—"}</span>
+                  <span className="hub-cell">
                     {r.country ? (
                       <>
                         <CountryFlag country={r.country} /> {countryName(r.country)}
@@ -437,12 +469,12 @@ export default function CalculatorAnalyticsPage() {
                     ) : (
                       "—"
                     )}
-                  </td>
-                  <td>{r.device_type ?? "—"}</td>
-                </tr>
+                  </span>
+                  <span className="hub-cell">{r.device_type ?? "—"}</span>
+                </div>
               ))}
-            </tbody>
-          </table>
+            </div>
+          </div>
         )}
       </section>
     </div>
