@@ -313,7 +313,26 @@ export function PercentileCalculator({
                 the width of the panel asks the question the rank raises and
                 answers it with the best rate on the page. */}
             {topYield ? (
-              <a className="rl-calc-earn" href="#bridge">
+              <a
+                className="rl-calc-earn"
+                href="#bridge"
+                // Same event and same destination as the button it replaced,
+                // deliberately. The two buttons carried "earn-on-xrp" and
+                // "top-accounts"; only the first one survives, and it still
+                // goes to #bridge, so the result -> onward-click series in the
+                // control room continues across this change rather than
+                // restarting under a new name. The retired button simply stops
+                // appearing, which is the honest way to read one box beating
+                // two. Same-page anchor, so the insert is never racing an
+                // unload.
+                onClick={() =>
+                  trackCalculator({
+                    event: "cta",
+                    cta: "earn-on-xrp",
+                    targetUrl: "#bridge",
+                  })
+                }
+              >
                 <span className="rl-calc-earn-q">Where people earn on XRP?</span>
                 <span className="rl-calc-earn-a">
                   Up to {topYield.apy.toFixed(2)}% on {topYield.platform}
