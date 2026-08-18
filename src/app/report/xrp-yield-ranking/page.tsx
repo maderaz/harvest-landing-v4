@@ -301,7 +301,7 @@ export async function generateMetadata(): Promise<Metadata> {
   //
   // No brand suffix, same rule as /xrp-rich-list: the suffix spends characters
   // that the head term and the calculator need.
-  const title = "XRP Staking: 10+ Ways to Earn & Calculator";
+  const title = "XRP Staking: 10+ Ways to Earn Yield & Calculator";
   // The description opens on the definitive negative because that is the
   // differentiator: the AI Overview on this term cites eight sources that all
   // imply XRP can be staked.
@@ -664,9 +664,15 @@ export default function XrpYieldRankingPage() {
         const r = rate30Range(p);
         return {
           slug: p.venueSlug ?? p.id,
+          // Asset and detail travel separately, because the picker lays them
+          // out on different lines: rate, then venue, then what the product
+          // actually is.
+          asset: assetHead(p),
+          detail: p.detail ?? null,
           label: p.detail ? `${assetHead(p)} · ${p.detail}` : assetHead(p),
           venue: p.platform,
           chain: p.chain,
+          type: typeLabel(p),
           rate: histRate(p) as number,
           min30: r.min,
           max30: r.max,
@@ -1138,7 +1144,7 @@ export default function XrpYieldRankingPage() {
               number instead. */}
           <h1 className="uni-home-h1">
             XRP Staking: {pools.length >= 10 ? "10+" : pools.length}{" "}
-            Ways to Earn &amp; Calculator
+            Ways to Earn Yield &amp; Calculator
           </h1>
           {/* The definitive negative, moved to the top of the page.
               It used to sit ten sections down, inside "Can you stake XRP?".
@@ -1162,7 +1168,7 @@ export default function XrpYieldRankingPage() {
           </p>
           <p className="rp-updated">Last updated {updated}</p>
           <a href="#calculator" className="uni-home-cta-primary">
-            Work out what an amount earns
+            XRP Calculator
             <span aria-hidden="true">↓</span>
           </a>
         </div>

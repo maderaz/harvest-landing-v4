@@ -26,13 +26,19 @@
 import { useMemo, useState } from "react";
 import { AssetIcon } from "@/components/token-icons";
 import { trackCalculator } from "@/lib/richlist-tracking";
+import { ProductPicker } from "@/components/report/product-picker";
 
 export interface CalcProduct {
   slug: string;
   /** Product name as the ranking table shows it, e.g. "FXRP · MXRPY". */
   label: string;
+  /** Asset head and product detail, kept apart for the picker's two lines. */
+  asset: string;
+  detail: string | null;
   venue: string;
   chain: string;
+  /** Short product type, as the ranking's Type column shows it. */
+  type: string;
   /** Published rate, percent. The same figure the ranking row shows. */
   rate: number;
   /** Rate range over the trailing 30 days, percent, when history supports it. */
@@ -132,23 +138,15 @@ export function XrpStakingCalculator({
             </span>
           </div>
 
-          <label className="rp-calc-label" htmlFor="rp-product">
+          <span className="rp-calc-label" id="rp-product-label">
             Product
-          </label>
-          <div className="rp-calc-field rp-calc-field--select">
-            <select
-              id="rp-product"
-              className="rp-calc-select"
-              value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-            >
-              {products.map((p) => (
-                <option key={p.slug} value={p.slug}>
-                  {p.label} · {p.venue} · {p.rate.toFixed(2)}%
-                </option>
-              ))}
-            </select>
-          </div>
+          </span>
+          <ProductPicker
+            label="Product"
+            options={products}
+            value={slug}
+            onChange={setSlug}
+          />
 
           <button type="button" className="rp-calc-go" onClick={calculate}>
             Calculate
