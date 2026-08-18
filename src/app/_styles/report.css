@@ -2371,3 +2371,158 @@
   .rp-page .rp-calc-headline { font-size: 17px !important; }
   .rp-page .rp-calc-facts li { font-size: 14.5px; }
 }
+
+/* ---- Product picker ----------------------------------------------------
+   A listbox, not a <select>. The native control renders one flat truncated
+   line per option and, on a phone, takes the whole screen to do it, which
+   loses the rate, the venue and the type in the same grey run of text. The
+   rate leads at display size here because it is the only reason anyone opens
+   the list.
+
+   Two shapes, one component. Wide: a popover under the trigger, scrolled at
+   340px. Narrow: a sheet pinned to the bottom of the viewport with its own
+   scrim, because a popover anchored to a control halfway down the page either
+   runs past the fold or covers the field it belongs to. ---- */
+.rp-page .rp-pick {
+  position: relative;
+  margin: 0 0 16px;
+}
+.rp-page .rp-pick-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  background: var(--uni-bg, #fff);
+  border: 1px solid var(--rp-card-border, #eeeef5);
+  border-radius: 12px;
+  padding: 11px 14px;
+  font: inherit;
+  color: var(--uni-ink);
+  cursor: pointer;
+  transition: border-color 0.12s ease;
+}
+.rp-page .rp-pick-btn:hover,
+.rp-page .rp-pick-btn.is-open { border-color: var(--uni-ink); }
+.rp-page .rp-pick-btn:focus-visible {
+  outline: 2px solid var(--uni-gold, #ffb936);
+  outline-offset: 2px;
+}
+.rp-page .rp-pick-rate {
+  flex: 0 0 auto;
+  min-width: 66px;
+  font-family: var(--display);
+  font-size: 19px;
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  font-feature-settings: "tnum";
+  color: var(--uni-ink);
+}
+.rp-page .rp-pick-txt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.rp-page .rp-pick-venue {
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--uni-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rp-page .rp-pick-meta {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--uni-ink-3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rp-page .rp-pick-caret {
+  flex: 0 0 auto;
+  color: var(--uni-ink-3);
+  display: inline-flex;
+  transition: transform 0.15s ease;
+}
+.rp-page .rp-pick-btn.is-open .rp-pick-caret { transform: rotate(180deg); }
+
+.rp-page .rp-pick-scrim { display: none; }
+.rp-page .rp-pick-pop {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: var(--uni-card-2, #fff);
+  border: 1px solid var(--rp-card-border, #eeeef5);
+  border-radius: 14px;
+  box-shadow: 0 12px 34px rgba(10, 10, 17, 0.16);
+  overflow: hidden;
+}
+.rp-page .rp-pick-pop-h {
+  display: none;
+  margin: 0;
+}
+.rp-page .rp-pick-list {
+  max-height: 340px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 6px;
+}
+.rp-page .rp-pick-opt {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.rp-page .rp-pick-opt.is-active { background: rgba(10, 10, 17, 0.05); }
+.rp-page .rp-pick-opt.is-sel .rp-pick-venue { font-weight: 700; }
+.rp-page .rp-pick-opt.is-sel { box-shadow: inset 0 0 0 1px var(--uni-gold, #ffb936); }
+:root[data-theme="dark"] .rp-page .rp-pick-opt.is-active {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Sheet, not popover. 640px rather than a phone width, because the calculator
+   stacks to one column well before that and a popover in a single-column
+   layout has the same fold problem a phone does. */
+@media (max-width: 640px) {
+  .rp-page .rp-pick-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 60;
+    background: rgba(10, 10, 17, 0.45);
+  }
+  .rp-page .rp-pick-pop {
+    position: fixed;
+    z-index: 61;
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    border-radius: 16px 16px 0 0;
+    border-bottom: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -10px 40px rgba(10, 10, 17, 0.3);
+  }
+  .rp-page .rp-pick-pop-h {
+    display: block;
+    padding: 14px 16px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--uni-ink-3);
+    border-bottom: 1px solid var(--rp-card-border, #eeeef5);
+  }
+  .rp-page .rp-pick-list {
+    max-height: min(60vh, 420px);
+    padding: 8px;
+  }
+  .rp-page .rp-pick-opt { padding: 12px 12px; }
+}
