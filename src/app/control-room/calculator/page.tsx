@@ -87,6 +87,27 @@ const ERA_ROWS: {
   { label: "Clicks into the ranking", of: (s) => s.top.toLocaleString("en-US") },
 ];
 
+// The two calculators writing into richlist_calculator_events, and the
+// source_page each one reports. A row whose source_page matches neither is a
+// page that has not been added here yet, and it simply does not appear.
+type ToolKey = "rich-list" | "staking";
+const TOOLS: { key: ToolKey; label: string; path: string; blurb: string }[] = [
+  {
+    key: "rich-list",
+    label: "Rich list",
+    path: "/xrp-rich-list",
+    blurb:
+      "the percentile calculator on /xrp-rich-list. \u201CStarted\u201D is a Start check press with a balance typed; \u201CResults shown\u201D is a rank rendered, and the gap between them is people leaving during the check.",
+  },
+  {
+    key: "staking",
+    label: "Staking calculator",
+    path: "/report/xrp-yield-ranking",
+    blurb:
+      "the XRP staking calculator on /report/xrp-yield-ranking. \u201CStarted\u201D and \u201CResults shown\u201D both fire on a Calculate press, so their gap measures nothing here; the number that matters is the onward click into the ranking.",
+  },
+];
+
 let _regionNames: Intl.DisplayNames | null = null;
 function countryName(code: string): string {
   const iso = code.trim().toUpperCase();
@@ -100,7 +121,8 @@ function countryName(code: string): string {
 }
 
 export default function CalculatorAnalyticsPage() {
-  const [rows, setRows] = useState<CalcEvent[] | null>(null);
+  const [all, setAll] = useState<CalcEvent[] | null>(null);
+  const [tool, setTool] = useState<ToolKey>("rich-list");
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
   const [countries, setCountries] = useState<string[]>([]);
 
@@ -111,12 +133,23 @@ export default function CalculatorAnalyticsPage() {
         "richlist_calculator_events",
         `select=*&order=created_at.desc&limit=${ROWS_FETCH_LIMIT}`,
       );
-      if (alive) setRows(data);
+      if (alive) setAll(data);
     })();
     return () => {
       alive = false;
     };
   }, []);
+
+  // Two calculators write to this table, told apart by source_page. Scoping
+  // here rather than in the query keeps one round trip, and scoping at all is
+  // the point: blending them would put the staking calculator's completion
+  // rate into a number labelled "rich list", which an operator would read as
+  // the rich list changing behaviour.
+  const rows = useMemo(() => {
+    if (!all) return null;
+    const want = TOOLS.find((t) => t.key === tool)!.path;
+    return all.filter((r) => (r.source_page ?? "") === want);
+  }, [all, tool]);
 
   // The window in days, resolved once. The chart bins against exactly the span
   // the filters scope to, so a bar cannot sit outside the numbers above it.
@@ -190,7 +223,14 @@ export default function CalculatorAnalyticsPage() {
       counts.set(r.tier, (counts.get(r.tier) ?? 0) + 1);
     }
     const total = [...counts.values()].reduce((a, b) => a + b, 0);
-    return TIER_ORDER.filter((t) => counts.has(t)).map((t) => ({
+    // The rich list records a percentile band and reads best top-down in that
+    // order. The staking calculator records the selected product's venue slug,
+    // which has no natural order, so it falls back to volume.
+    const known = TIER_ORDER.filter((t) => counts.has(t));
+    const keys = known.length
+      ? known
+      : [...counts.keys()].sort((a, b) => (counts.get(b) ?? 0) - (counts.get(a) ?? 0));
+    return keys.map((t) => ({
       tier: t,
       n: counts.get(t) ?? 0,
       pct: total > 0 ? Math.round(((counts.get(t) ?? 0) / total) * 100) : 0,
@@ -217,6 +257,9 @@ export default function CalculatorAnalyticsPage() {
   // wrong on any deployment that shipped on a different day, and this table
   // is read on more than one.
   const eras = useMemo(() => {
+    // Only the rich-list calculator ever had two buttons, so the comparison
+    // is meaningless against any other tool's rows.
+    if (tool !== "rich-list") return null;
     if (!rows || !rows.length) return null;
     const ms = (r: CalcEvent) => new Date(r.created_at).getTime();
     const lastDual = rows
@@ -252,7 +295,7 @@ export default function CalculatorAnalyticsPage() {
       before: side(rows.filter((r) => ms(r) <= lastDual)),
       after: side(rows.filter((r) => ms(r) > lastDual)),
     };
-  }, [rows]);
+  }, [rows, tool]);
 
   return (
     <div className="uni-hub-test">
@@ -261,23 +304,32 @@ export default function CalculatorAnalyticsPage() {
           <div style={{ width: "100%" }}>
             <h1 className="uni-hub-h1">Rich List Calculator</h1>
             <p className="uni-hub-sub aq-sub-full">
-              Interactions with the percentile calculator on /xrp-rich-list.
-              &ldquo;Started&rdquo; is a Start check press with a balance
-              typed; &ldquo;Results shown&rdquo; is a rank rendered, and the
-              gap between them is people leaving during the check. A result now
-              carries one box rather than two buttons, so &ldquo;Onward
-              clicks&rdquo; and the click-through beneath it are the same
-              number counted two ways. &ldquo;Into the ranking&rdquo; is the
-              retired second button and only appears while a timeframe still
-              reaches back far enough to contain it. The balance a visitor
-              types is never recorded, which is why results are grouped by
-              percentile band rather than by amount.
+              Interactions with {TOOLS.find((t) => t.key === tool)!.blurb} The
+              amount a visitor types is never recorded, which is why results
+              are grouped by the answer shown rather than by the number
+              entered. Two calculators write to one table and are told apart by
+              source_page; the tabs above switch between them and every figure
+              on this page follows the selection.
             </p>
           </div>
         </div>
       </header>
 
       <div className="aq-filterbar">
+        <div className="aq-timeframe" role="tablist" aria-label="Calculator">
+          {TOOLS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              role="tab"
+              aria-selected={tool === t.key}
+              className={`aq-timeframe-tab${tool === t.key ? " active" : ""}`}
+              onClick={() => setTool(t.key)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
         <TimeframeSelector value={timeframe} onChange={setTimeframe} />
         <MultiSelect
           values={countries}
