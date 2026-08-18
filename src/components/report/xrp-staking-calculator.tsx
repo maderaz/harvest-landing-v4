@@ -17,11 +17,15 @@
 // It computes in the browser against build-time constants. No request per
 // lookup, so no amount a visitor types is transmitted or logged.
 //
-// It states the rate is variable in the same breath as it projects it. A
-// calculator that annualises one day's rate without saying the rate moves is
-// making a forecast, which this site does not do. The variance line and the
-// emissions line are not decoration around the result; they are part of it,
-// and neither is conditional on the number being large or small.
+// It says the rate moves in the same breath as it projects it. A calculator
+// that annualises one day's rate without that line is making a forecast, which
+// this site does not do. The line under the result is not conditional on the
+// number being large or small.
+//
+// The result panel carries the snapshot date exactly once, in the sentence
+// that attributes the rate. An earlier version printed it in the headline, the
+// detail line and both bullets, which reads as templated filler rather than as
+// four separate attributions.
 
 import { useMemo, useState } from "react";
 import { AssetIcon } from "@/components/token-icons";
@@ -46,7 +50,22 @@ export interface CalcProduct {
   max30: number | null;
   /** Fixed-rate Principal Tokens do not float, so they are worded differently. */
   fixed: boolean;
+  /**
+   * Which third of the rated field this product's rate falls in.
+   *
+   * A rate on its own tells a reader nothing about whether it is good: 4.20%
+   * is either the best on the page or the middle of it, and only the ranking
+   * says which. Thirds rather than a rank position, because "3rd of 12" reads
+   * as a leaderboard and invites the reader to chase the top row.
+   */
+  band: "top" | "mid" | "low" | null;
 }
+
+const BAND_LABEL: Record<"top" | "mid" | "low", string> = {
+  top: "top third",
+  mid: "middle third",
+  low: "bottom third",
+};
 
 const money = (n: number) =>
   n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -66,16 +85,13 @@ export function XrpStakingCalculator({
   products,
   asOf,
   xrpUsd,
-  priceAsOf,
-  incentivized,
   total,
 }: {
   products: CalcProduct[];
   asOf: string;
-  /** XRP price in dollars. The dollar clause is dropped when it is absent. */
+  /** XRP price in dollars. The dollar line is dropped when it is absent. */
   xrpUsd: number | null;
-  priceAsOf: string | null;
-  incentivized: number;
+  /** How many rated products the ranking holds, for the band sentence. */
   total: number;
 }) {
   const [raw, setRaw] = useState("");
@@ -167,62 +183,46 @@ export function XrpStakingCalculator({
           <div className="rp-calc-out" role="status" aria-live="polite">
             {shown ? (
               <>
+                {/* The date appears once in this panel, in the sentence that
+                    attributes the rate. It used to run four times across a
+                    headline, a detail line and two bullets, which is the
+                    stutter the /usdc hub was rebuilt to get rid of: the reader
+                    is looking at one reading of one rate, so it is dated once
+                    and the rest of the panel gets on with the answer. */}
                 <p className="rp-calc-headline">
-                  About <strong>{xrpAmt(earned)} XRP</strong> a year
+                  You might earn about <strong>{xrpAmt(earned)} XRP</strong> a
+                  year
                 </p>
                 <p className="rp-calc-detail">
-                  {xrpAmt(shown.amount)} XRP at {shown.product.label} on{" "}
-                  {shown.product.venue} would earn about {xrpAmt(earned)} XRP
-                  over a year at the {shown.product.rate.toFixed(2)}% rate
-                  recorded as of {asOf}
-                  {xrpUsd != null ? (
-                    <>
-                      , worth ${money(earned * xrpUsd)} at the{" "}
-                      {priceAsOf ?? asOf} XRP price
-                    </>
-                  ) : null}
-                  .
+                  {xrpAmt(shown.amount)} XRP supplied into the{" "}
+                  {shown.product.label} on {shown.product.venue} would earn
+                  about {xrpAmt(earned)} XRP over a year at the prevailing{" "}
+                  {shown.product.rate.toFixed(2)}% recorded as of {asOf}.
                 </p>
                 <ul className="rp-calc-facts">
-                  {/* Not optional, and not phrased as a caveat. The figure
-                      above annualises one reading; these two lines are what
-                      make that figure honest rather than a projection. */}
-                  <li>
-                    {shown.product.fixed ? (
-                      <>
-                        That rate is fixed to the product&rsquo;s maturity
-                        rather than floating, but its market price moves
-                        {shown.product.min30 != null && shown.product.max30 != null ? (
-                          <>
-                            , and the quoted rate has ranged from{" "}
-                            {shown.product.min30.toFixed(2)}% to{" "}
-                            {shown.product.max30.toFixed(2)}% over the 30 days
-                            to {asOf}
-                          </>
-                        ) : null}
-                        .
-                      </>
-                    ) : shown.product.min30 != null && shown.product.max30 != null ? (
-                      <>
-                        That rate is variable and has ranged from{" "}
-                        {shown.product.min30.toFixed(2)}% to{" "}
-                        {shown.product.max30.toFixed(2)}% over the 30 days to{" "}
-                        {asOf}.
-                      </>
-                    ) : (
-                      <>
-                        That rate is variable, and this product has too little
-                        rate history as of {asOf} to state a 30-day range for
-                        it.
-                      </>
-                    )}
-                  </li>
-                  <li>
-                    {incentivized} of the {total} products in this ranking
-                    depended on reward emissions for most of their rate as of{" "}
-                    {asOf}, so published rates move.
-                  </li>
+                  {xrpUsd != null ? (
+                    <li>
+                      At the current XRP price, that comes to about{" "}
+                      <strong>${money(earned * xrpUsd)}</strong> over the year.
+                    </li>
+                  ) : null}
+                  {shown.product.band ? (
+                    <li>
+                      Among the {total} XRP products tracked here, this one
+                      sits in the{" "}
+                      <strong>{BAND_LABEL[shown.product.band]}</strong> by rate.
+                    </li>
+                  ) : null}
                 </ul>
+                {/* Kept, and kept small. Annualising a single reading without
+                    saying the rate moves is a forecast, and this site does not
+                    make those; it is a line rather than a third bullet because
+                    it qualifies the whole panel rather than adding a finding. */}
+                <p className="rp-calc-foot">
+                  {shown.product.fixed
+                    ? "That rate is fixed to the product's maturity rather than floating, but its market price moves, so this is one reading annualised rather than a forecast."
+                    : "Rates here move with borrower demand and with reward programs that start and stop, so this is one reading annualised rather than a forecast."}
+                </p>
                 {/* Same-page anchor, so the insert is never racing an
                     unload. Without it the result -> ranking half of this
                     tool's funnel would record nothing, which is the number

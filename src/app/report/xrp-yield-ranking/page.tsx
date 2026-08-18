@@ -658,6 +658,20 @@ export default function XrpYieldRankingPage() {
     // follows by rate, two-asset pools included but never defaulted to.
     const rank = (p: XrpPool) =>
       (p.exposure === "single" ? 1_000_000 : 0) + (histRate(p) ?? 0);
+    // Which third of the rated field each rate falls in, taken on rate alone
+    // rather than on the display order above, which puts single-asset products
+    // first regardless of rate. A reader asking "is 4.20% good" is asking
+    // about the rate, not about the sort.
+    const byRate = [...rated].sort((a, b) => (histRate(b) ?? 0) - (histRate(a) ?? 0));
+    const bandOf = (p: XrpPool): "top" | "mid" | "low" | null => {
+      const i = byRate.indexOf(p);
+      if (i < 0 || byRate.length < 3) return null;
+      return i < byRate.length / 3
+        ? "top"
+        : i < (byRate.length * 2) / 3
+          ? "mid"
+          : "low";
+    };
     return [...rated]
       .sort((a, b) => rank(b) - rank(a))
       .map((p) => {
@@ -677,6 +691,7 @@ export default function XrpYieldRankingPage() {
           min30: r.min,
           max30: r.max,
           fixed: productTypeOf(p) === "Fixed-rate",
+          band: bandOf(p),
         };
       });
   })();
@@ -1310,9 +1325,7 @@ export default function XrpYieldRankingPage() {
               products={calcProducts}
               asOf={updated}
               xrpUsd={xrpPrice?.usd ?? null}
-              priceAsOf={xrpPrice?.asOf || null}
-              incentivized={stats.incentivized}
-              total={stats.venues}
+              total={calcProducts.length}
             />
           </section>
         ) : null}
