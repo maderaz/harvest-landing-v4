@@ -197,7 +197,12 @@ export default function CalculatorAnalyticsPage() {
     const starts = filtered.filter((r) => r.event === "start").length;
     const results = filtered.filter((r) => r.event === "result").length;
     const ctas = filtered.filter((r) => r.event === "cta");
-    const toReport = ctas.filter((r) => r.cta === "earn-on-xrp").length;
+    // Each tool has its own surviving CTA value: earn-on-xrp on the rich list,
+    // see-ranking on the staking calculator. Counting the literal rather than
+    // the tool would show the staking view a permanent zero.
+    const toReport = ctas.filter((r) =>
+      tool === "staking" ? r.cta === "see-ranking" : r.cta === "earn-on-xrp",
+    ).length;
     const toRanking = ctas.filter((r) => r.cta === "top-accounts").length;
     return {
       starts,
@@ -213,7 +218,7 @@ export default function CalculatorAnalyticsPage() {
       reportCtr: results > 0 ? Math.round((toReport / results) * 100) : null,
       sessions: new Set(filtered.map((r) => r.session_id)).size,
     };
-  }, [filtered]);
+  }, [filtered, tool]);
 
   const tiers = useMemo(() => {
     if (!filtered) return [];
@@ -352,12 +357,31 @@ export default function CalculatorAnalyticsPage() {
         aria-label="Calculator summary"
         style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", marginBottom: 32 }}
       >
-        <Stat label="Started" value={stats?.starts} />
-        <Stat label="Results shown" value={stats?.results} />
-        <Stat label="Completion rate" value={stats?.completion ?? undefined} suffix="%" />
-        <Stat label="Unique sessions" value={stats?.sessions} />
+        {tool === "staking" ? (
+          <>
+            {/* Start and result fire on the same press here, so the pair of
+                tiles and the rate between them would be one number shown
+                three times. */}
+            <Stat label="Calculations" value={stats?.results} />
+            <Stat label="Unique sessions" value={stats?.sessions} />
+            <Stat label="Onward clicks" value={stats?.toReport} />
+            <Stat
+              label="Click-through from a result"
+              value={stats?.reportCtr ?? undefined}
+              suffix="%"
+            />
+          </>
+        ) : (
+          <>
+            <Stat label="Started" value={stats?.starts} />
+            <Stat label="Results shown" value={stats?.results} />
+            <Stat label="Completion rate" value={stats?.completion ?? undefined} suffix="%" />
+            <Stat label="Unique sessions" value={stats?.sessions} />
+          </>
+        )}
       </div>
 
+      {tool === "rich-list" ? (
       <div
         className="uni-hub-stats"
         role="group"
@@ -381,6 +405,7 @@ export default function CalculatorAnalyticsPage() {
           suffix="%"
         />
       </div>
+      ) : null}
 
       {filtered && filtered.length > 0 && (
         <div style={{ marginBottom: 32 }}>
@@ -447,12 +472,16 @@ export default function CalculatorAnalyticsPage() {
       {tiers.length > 0 && (
         <section className="aq-chart-card" style={{ marginBottom: 32 }}>
           <div className="aq-chart-bignum-label" style={{ marginBottom: 14 }}>
-            Where visitors land, by percentile band
+            {tool === "staking"
+              ? "Which product visitors picked"
+              : "Where visitors land, by percentile band"}
           </div>
           <div className="hub-table-wrap">
             <div className="hub-table" style={{ minWidth: 440, maxWidth: 560 }}>
               <div className="hub-thead" style={{ gridTemplateColumns: TIER_COLS }}>
-                <span className="hub-th">Band</span>
+                <span className="hub-th">
+                  {tool === "staking" ? "Product" : "Band"}
+                </span>
                 <span className="hub-th hub-th-right">Results</span>
                 <span className="hub-th hub-th-right">Share</span>
               </div>
