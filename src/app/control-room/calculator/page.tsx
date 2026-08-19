@@ -20,7 +20,7 @@
 // "top 1%" rather than as an amount.
 
 import { useEffect, useMemo, useState } from "react";
-import { supabaseSelect } from "@/lib/supabase";
+import { supabaseSelectAll } from "@/lib/supabase";
 import {
   TimeframeSelector,
   resolveDays,
@@ -47,7 +47,10 @@ interface CalcEvent {
   device_type: string | null;
 }
 
-const ROWS_FETCH_LIMIT = 5000;
+// Ceiling on rows pulled for one calculator, paged 1,000 at a time. High
+// enough that it is not reached in normal use, and when it is the page says
+// so rather than quietly showing a shorter history than the data holds.
+const ROWS_FETCH_LIMIT = 100_000;
 const ROWS_DISPLAY_LIMIT = 200;
 
 // Percentile bands in the order the calculator can produce them, so the
@@ -122,35 +125,41 @@ function countryName(code: string): string {
 }
 
 export default function CalculatorAnalyticsPage() {
-  const [all, setAll] = useState<CalcEvent[] | null>(null);
+  const [rows, setRows] = useState<CalcEvent[] | null>(null);
   const [tool, setTool] = useState<ToolKey>("rich-list");
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
   const [countries, setCountries] = useState<string[]>([]);
 
+  // Scoped in the QUERY and paged, rather than one blind "newest 5000".
+  //
+  // The old read asked for the newest 5,000 rows across both calculators and
+  // all time, then filtered by source_page in the browser. Once the table
+  // passed 5,000 rows that cap started landing inside the window an operator
+  // was looking at: everything older than the cap existed in Supabase and
+  // simply never reached the page, so a chart set to 30 days showed four and
+  // the honest conclusion from the outside was "we are not saving these".
+  //
+  // Two changes. source_page moves into the query, so one tool's volume can
+  // no longer push the other tool's history off the end. And the fetch pages
+  // through in chunks instead of stopping at a limit, so the only ceiling is
+  // the explicit one below, which the page says out loud when it is reached.
+  const tap = TOOLS.find((t) => t.key === tool)!;
   useEffect(() => {
     let alive = true;
+    setRows(null);
     void (async () => {
-      const data = await supabaseSelect<CalcEvent>(
+      const data = await supabaseSelectAll<CalcEvent>(
         "richlist_calculator_events",
-        `select=*&order=created_at.desc&limit=${ROWS_FETCH_LIMIT}`,
+        `select=*&source_page=eq.${encodeURIComponent(tap.path)}&order=created_at.desc`,
+        1000,
+        ROWS_FETCH_LIMIT,
       );
-      if (alive) setAll(data);
+      if (alive) setRows(data);
     })();
     return () => {
       alive = false;
     };
-  }, []);
-
-  // Two calculators write to this table, told apart by source_page. Scoping
-  // here rather than in the query keeps one round trip, and scoping at all is
-  // the point: blending them would put the staking calculator's completion
-  // rate into a number labelled "rich list", which an operator would read as
-  // the rich list changing behaviour.
-  const rows = useMemo(() => {
-    if (!all) return null;
-    const want = TOOLS.find((t) => t.key === tool)!.path;
-    return all.filter((r) => (r.source_page ?? "") === want);
-  }, [all, tool]);
+  }, [tap.path]);
 
   // The window in days, resolved once. The chart bins against exactly the span
   // the filters scope to, so a bar cannot sit outside the numbers above it.
@@ -350,6 +359,23 @@ export default function CalculatorAnalyticsPage() {
           as a census.
         </FilterHint>
       </div>
+
+      {/* Coverage, said out loud. Every number below is drawn from the rows
+          named here, so if a chart looks short this line is what tells you
+          whether the data is missing or merely not loaded. */}
+      <p className="uni-hub-sub" style={{ margin: "-14px 0 26px", fontSize: 13 }}>
+        {rows === null
+          ? "Loading events…"
+          : rows.length === 0
+            ? `No events stored for ${tap.label.toLowerCase()} yet.`
+            : `${rows.length.toLocaleString("en-US")} events stored for ${tap.label.toLowerCase()}, back to ${new Date(
+                eventTimeMs(rows[rows.length - 1].created_at),
+              ).toLocaleDateString("en-GB")}${
+                rows.length >= ROWS_FETCH_LIMIT
+                  ? ". That is the fetch ceiling, so older events exist and are not shown"
+                  : ""
+              }.`}
+      </p>
 
       <div
         className="uni-hub-stats"
