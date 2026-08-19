@@ -24,6 +24,7 @@ import { supabaseSelect } from "@/lib/supabase";
 import {
   TimeframeSelector,
   resolveDays,
+  eventTimeMs,
   type Timeframe,
 } from "@/components/admin/timeframe-selector";
 import { CountryFlag } from "@/components/admin/country-flag";
@@ -155,8 +156,8 @@ export default function CalculatorAnalyticsPage() {
   // the filters scope to, so a bar cannot sit outside the numbers above it.
   const days = useMemo(() => {
     const oldestMs =
-      rows && rows.length ? new Date(rows[rows.length - 1].created_at).getTime() : null;
-    return resolveDays(timeframe, oldestMs);
+      rows && rows.length ? eventTimeMs(rows[rows.length - 1].created_at) : null;
+    return resolveDays(timeframe, Number.isFinite(oldestMs as number) ? oldestMs : null);
   }, [rows, timeframe]);
 
   // Timeframe first, then country, so the country counts in the picker
@@ -166,11 +167,10 @@ export default function CalculatorAnalyticsPage() {
     if (timeframe === "all") return rows;
     // "all" is handled above, so the oldest row only matters as the span
     // resolveDays falls back to; rows arrive newest-first.
-    const oldestMs = rows.length
-      ? new Date(rows[rows.length - 1].created_at).getTime()
-      : null;
+    const oldestRaw = rows.length ? eventTimeMs(rows[rows.length - 1].created_at) : null;
+    const oldestMs = Number.isFinite(oldestRaw as number) ? oldestRaw : null;
     const cut = Date.now() - resolveDays(timeframe, oldestMs) * 86_400_000;
-    return rows.filter((r) => new Date(r.created_at).getTime() >= cut);
+    return rows.filter((r) => eventTimeMs(r.created_at) >= cut);
   }, [rows, timeframe]);
 
   const countryOptions = useMemo<MultiOption[]>(() => {
@@ -266,7 +266,7 @@ export default function CalculatorAnalyticsPage() {
     // is meaningless against any other tool's rows.
     if (tool !== "rich-list") return null;
     if (!rows || !rows.length) return null;
-    const ms = (r: CalcEvent) => new Date(r.created_at).getTime();
+    const ms = (r: CalcEvent) => eventTimeMs(r.created_at);
     const lastDual = rows
       .filter((r) => r.event === "cta" && r.cta === "top-accounts")
       .reduce((m, r) => Math.max(m, ms(r)), 0);
@@ -537,7 +537,7 @@ export default function CalculatorAnalyticsPage() {
                   style={{ gridTemplateColumns: EVENT_COLS }}
                 >
                   <span className="hub-cell aq-cell-time">
-                    {new Date(r.created_at).toLocaleString("en-GB")}
+                    {new Date(eventTimeMs(r.created_at)).toLocaleString("en-GB")}
                   </span>
                   <span className="hub-cell">{r.event ?? "—"}</span>
                   <span className="hub-cell">{r.tier ?? r.cta ?? "—"}</span>
@@ -605,8 +605,13 @@ function ChartSection({
     const out: { daysAgo: number; byStage: Record<string, number> }[] = [];
     for (let i = 0; i < days; i++) out.push({ daysAgo: days - 1 - i, byStage: {} });
     for (const e of events) {
-      const daysAgo = Math.floor((now - new Date(e.created_at).getTime()) / dayMs);
-      if (daysAgo < 0 || daysAgo >= days) continue;
+      const t = eventTimeMs(e.created_at);
+      if (!Number.isFinite(t)) continue;
+      // Clamped, not dropped. A row a few seconds newer than this render's
+      // clock is still a row that happened, and silently discarding it is how
+      // a chart ends up contradicting the tiles above it.
+      const daysAgo = Math.max(0, Math.floor((now - t) / dayMs));
+      if (daysAgo >= days) continue;
       const k = e.event ?? "unknown";
       const bin = out[days - 1 - daysAgo];
       bin.byStage[k] = (bin.byStage[k] || 0) + 1;

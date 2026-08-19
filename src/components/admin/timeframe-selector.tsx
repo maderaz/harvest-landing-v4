@@ -40,6 +40,28 @@ export function resolveDays(
   return Math.min(Math.max(7, span), maxDays);
 }
 
+/**
+ * Milliseconds for a `created_at` coming back from PostgREST.
+ *
+ * A `timestamptz` column serialises with an offset and `new Date` reads it
+ * correctly. A plain `timestamp` column does not, and `new Date` then reads
+ * the string as LOCAL time, so a row written at 12:00 UTC is understood as
+ * 12:00 in the viewer's zone. West of UTC that lands in the future, which is
+ * how a chart can quietly disagree with the stat tiles above it: a tile
+ * counting "the last 30 days" has no upper bound and keeps the row, while a
+ * chart bucketing by days-ago computes a negative bucket and drops it. Seen on
+ * the calculator page as 484 events in the tiles and a peak of 4 a day in the
+ * chart beside them.
+ *
+ * Appending Z when no zone is present makes both readings agree and is correct
+ * either way, because every writer here stamps UTC.
+ */
+export function eventTimeMs(value: string | null | undefined): number {
+  if (!value) return NaN;
+  const hasZone = /(?:Z|[+-]\d{2}:?\d{2})$/.test(value.trim());
+  return new Date(hasZone ? value : `${value.trim()}Z`).getTime();
+}
+
 export function TimeframeSelector({
   value,
   onChange,
