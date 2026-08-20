@@ -846,6 +846,20 @@ export default function XrpRichListPage() {
           portrait of Brad Garlinghouse and the remaining portraits from X.
         </p>
 
+        {/* Phone only, and only here.
+            On a desktop the calculator is a screen away and the table of
+            contents is in the margin the whole time. On a phone the reader
+            lands on a headline, an image and then six summary bullets, and
+            the tool most of them came for is several thousand pixels down
+            with nothing announcing it. This is the announcement. It targets
+            the section rather than the calculator card, so the badge and the
+            "XRP Rich List Calculator" heading land at the top of the viewport
+            and the reader can see what they arrived at before they use it. */}
+        <a href="#calculator-section" className="rl-figure-cta">
+          Go to Calculator
+          <span aria-hidden="true">↓</span>
+        </a>
+
         <h2 className="rl-summary-h">Summary</h2>
         <ul className="rl-keyfind">
           {/* Six bullets, one per query cluster, each carrying exactly one
@@ -933,7 +947,14 @@ export default function XrpRichListPage() {
 
           Written against this repo's own tokens rather than copied verbatim.
           See the note in _styles/rich-list.css for why. */}
-      <section className="rl-section rl-feature" aria-labelledby="calculator-title">
+      {/* The id is on the section rather than on the heading so a jump from
+          the CTA under the header image brings the badge with it; landing on
+          the h2 alone puts the badge above the fold line. */}
+      <section
+        id="calculator-section"
+        className="rl-section rl-feature"
+        aria-labelledby="calculator-title"
+      >
         <div className="rl-feature-card">
           <div className="rl-feature-copy">
             {/* The badge sits inside the heading block rather than above it,
