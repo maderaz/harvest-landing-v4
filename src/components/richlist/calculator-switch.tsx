@@ -141,12 +141,11 @@ export function CalculatorSwitch({
           rank
         ) : (
           <div className="rl-calc-embed">
-            <p className="rl-calcswitch-note">
-              The same calculator that sits on Harvest&rsquo;s XRP staking
-              report, reading the same rates. XRP has no native staking, so
-              every product below is a lending market, a vault, a liquidity
-              position or a fixed-rate instrument.
-            </p>
+            {/* No standfirst above the card. The tab that was just pressed
+                already says what the tool is, and the card's own first line
+                says what to do with it; a paragraph between the two pushed
+                the input below the fold on a phone to explain something
+                nobody had asked. */}
             <XrpStakingCalculator
               products={staking.products}
               asOf={staking.asOf}
