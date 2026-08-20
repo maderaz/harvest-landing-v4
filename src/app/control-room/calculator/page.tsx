@@ -1,6 +1,6 @@
 "use client";
 
-// Control Room > Reports > Rich List Calculator.
+// Control Room > Reports > Calculators.
 //
 // The two numbers the /xrp-rich-list build spec asked for before launch and
 // which nobody could see until this page existed:
@@ -91,28 +91,57 @@ const ERA_ROWS: {
   { label: "Clicks into the ranking", of: (s) => s.top.toLocaleString("en-US") },
 ];
 
-// The two calculators writing into richlist_calculator_events, and the
-// source_page each one reports. A row whose source_page matches neither is a
-// page that has not been added here yet, and it simply does not appear.
-type ToolKey = "rich-list" | "staking";
-// `paths` rather than one path: the staking calculator writes from its own
-// page and from the switch on /xrp-rich-list, which reports
-// "/xrp-rich-list#staking-calculator" so its interactions do not land in the
-// rich list's completion rate. Both belong to the same tool.
-const TOOLS: { key: ToolKey; label: string; paths: string[]; blurb: string }[] = [
+// The three calculator surfaces writing into richlist_calculator_events, and
+// the source_page each one reports. A row whose source_page matches none of
+// them is a page that has not been added here yet, and it simply does not
+// appear.
+type ToolKey = "rich-list" | "staking-report" | "staking-richlist";
+
+// ONE PATH PER TAB. The staking calculator is the same component in two
+// places, and for a while this table treated it as one tool by giving the
+// staking tab both source_pages. That is the wrong unit. The two placements
+// are read by different audiences arriving for different reasons: one is the
+// tool the yield report is built around, the other is a second answer offered
+// to someone who came to rank a balance. Summed, a strong surface hides a weak
+// one and neither can be judged, which is exactly the decision these numbers
+// exist to inform. Splitting them costs nothing, because every row already
+// carries the source_page that tells them apart.
+//
+// `kind` picks which funnel the tiles describe; `switched` marks the one
+// surface that sits behind a switch and therefore has a stage before its
+// first calculation.
+const TOOLS: {
+  key: ToolKey;
+  label: string;
+  path: string;
+  kind: "rank" | "staking";
+  switched?: boolean;
+  blurb: string;
+}[] = [
   {
     key: "rich-list",
     label: "Rich list",
-    paths: ["/xrp-rich-list"],
+    path: "/xrp-rich-list",
+    kind: "rank",
     blurb:
       "the percentile calculator on /xrp-rich-list. \u201CStarted\u201D is a Start check press with a balance typed; \u201CResults shown\u201D is a rank rendered, and the gap between them is people leaving during the check.",
   },
   {
-    key: "staking",
-    label: "Staking calculator",
-    paths: ["/report/xrp-yield-ranking", "/xrp-rich-list#staking-calculator"],
+    key: "staking-report",
+    label: "Staking \u00B7 report",
+    path: "/report/xrp-yield-ranking",
+    kind: "staking",
     blurb:
-      "the XRP staking calculator, on /report/xrp-yield-ranking and behind the switch on /xrp-rich-list. \u201CStarted\u201D and \u201CResults shown\u201D both fire on a Calculate press, so their gap measures nothing here; the number that matters is the onward click into the ranking.",
+      "the XRP staking calculator on its own page, /report/xrp-yield-ranking. \u201CStarted\u201D and \u201CResults shown\u201D both fire on a Calculate press, so their gap measures nothing here; the number that matters is the onward click into the ranking.",
+  },
+  {
+    key: "staking-richlist",
+    label: "Staking \u00B7 rich list",
+    path: "/xrp-rich-list#staking-calculator",
+    kind: "staking",
+    switched: true,
+    blurb:
+      "the same XRP staking calculator behind the switch on /xrp-rich-list, counted entirely apart from the copy on the yield report. A visitor has to flip the switch to see it at all, so the flip is the first stage of its funnel and the share of flips that reach a calculation is what says whether the switch earns its place.",
   },
 ];
 
@@ -148,18 +177,16 @@ export default function CalculatorAnalyticsPage() {
   // through in chunks instead of stopping at a limit, so the only ceiling is
   // the explicit one below, which the page says out loud when it is reached.
   const tap = TOOLS.find((t) => t.key === tool)!;
-  const tapKey = tap.paths.join(",");
+  const tapPath = tap.path;
   useEffect(() => {
     let alive = true;
     setRows(null);
     void (async () => {
-      const inList = tapKey
-        .split(",")
-        .map((p) => `"${p}"`)
-        .join(",");
       const data = await supabaseSelectAll<CalcEvent>(
         "richlist_calculator_events",
-        `select=*&source_page=in.(${encodeURIComponent(inList)})&order=created_at.desc`,
+        // Encoded, because one of the three paths carries a "#" and an
+        // unescaped fragment marker would truncate the query string.
+        `select=*&source_page=eq.${encodeURIComponent(tapPath)}&order=created_at.desc`,
         1000,
         ROWS_FETCH_LIMIT,
       );
@@ -168,7 +195,7 @@ export default function CalculatorAnalyticsPage() {
     return () => {
       alive = false;
     };
-  }, [tapKey]);
+  }, [tapPath]);
 
   // The window in days, resolved once. The chart bins against exactly the span
   // the filters scope to, so a bar cannot sit outside the numbers above it.
@@ -219,9 +246,34 @@ export default function CalculatorAnalyticsPage() {
     // see-ranking on the staking calculator. Counting the literal rather than
     // the tool would show the staking view a permanent zero.
     const toReport = ctas.filter((r) =>
-      tool === "staking" ? r.cta === "see-ranking" : r.cta === "earn-on-xrp",
+      tap.kind === "staking" ? r.cta === "see-ranking" : r.cta === "earn-on-xrp",
     ).length;
     const toRanking = ctas.filter((r) => r.cta === "top-accounts").length;
+
+    // The switch in front of the embedded calculator.
+    //
+    // Counted in sessions rather than in events, and that is the whole point.
+    // A visitor toggling back and forth is one person considering one thing,
+    // and a per-event rate would score their indecision as demand. So: how
+    // many distinct sessions flipped to the staking calculator, and how many
+    // of those went on to be shown a number. Anything else divides two
+    // quantities that are not about the same people.
+    const flipSessions = new Set(
+      filtered
+        .filter((r) => r.event === "switch" && r.tier === "to-staking")
+        .map((r) => r.session_id),
+    );
+    const resultSessions = new Set(
+      filtered.filter((r) => r.event === "result").map((r) => r.session_id),
+    );
+    let flipsUsed = 0;
+    for (const s of flipSessions) if (resultSessions.has(s)) flipsUsed++;
+    const flipsBack = new Set(
+      filtered
+        .filter((r) => r.event === "switch" && r.tier === "to-rich-list")
+        .map((r) => r.session_id),
+    ).size;
+
     return {
       starts,
       results,
@@ -235,8 +287,14 @@ export default function CalculatorAnalyticsPage() {
       // The spec's second number: does a rank move anyone into the report.
       reportCtr: results > 0 ? Math.round((toReport / results) * 100) : null,
       sessions: new Set(filtered.map((r) => r.session_id)).size,
+      flips: flipSessions.size,
+      flipsUsed,
+      flipsBack,
+      flipUse: flipSessions.size > 0
+        ? Math.round((flipsUsed / flipSessions.size) * 100)
+        : null,
     };
-  }, [filtered, tool]);
+  }, [filtered, tap.kind]);
 
   const tiers = useMemo(() => {
     if (!filtered) return [];
@@ -325,14 +383,15 @@ export default function CalculatorAnalyticsPage() {
       <header className="uni-hub-hero aq-hero-slim aq-hero-fullwidth">
         <div className="uni-hub-hero-headline">
           <div style={{ width: "100%" }}>
-            <h1 className="uni-hub-h1">Rich List Calculator</h1>
+            <h1 className="uni-hub-h1">Calculators</h1>
             <p className="uni-hub-sub aq-sub-full">
-              Interactions with {TOOLS.find((t) => t.key === tool)!.blurb} The
-              amount a visitor types is never recorded, which is why results
-              are grouped by the answer shown rather than by the number
-              entered. Two calculators write to one table and are told apart by
-              source_page; the tabs above switch between them and every figure
-              on this page follows the selection.
+              Interactions with {tap.blurb} The amount a visitor types is never
+              recorded, which is why results are grouped by the answer shown
+              rather than by the number entered. Three calculator surfaces
+              write to one table and are told apart by source_page, one path
+              each; the tabs below switch between them and every figure on this
+              page follows the selection, so no surface is ever counted inside
+              another.
             </p>
           </div>
         </div>
@@ -372,12 +431,14 @@ export default function CalculatorAnalyticsPage() {
       {/* Coverage, said out loud. Every number below is drawn from the rows
           named here, so if a chart looks short this line is what tells you
           whether the data is missing or merely not loaded. */}
-      <p className="uni-hub-sub" style={{ margin: "-14px 0 26px", fontSize: 13 }}>
+      {/* Three tabs pushed the filter bar taller than the two it was tuned
+          against, and -14px put this line into the tab row. */}
+      <p className="uni-hub-sub" style={{ margin: "-6px 0 26px", fontSize: 13 }}>
         {rows === null
           ? "Loading events…"
           : rows.length === 0
-            ? `No events stored for ${tap.label.toLowerCase()} yet.`
-            : `${rows.length.toLocaleString("en-US")} events stored for ${tap.label.toLowerCase()}, back to ${new Date(
+            ? `No events stored for ${tap.path} yet.`
+            : `${rows.length.toLocaleString("en-US")} events stored for ${tap.path}, back to ${new Date(
                 eventTimeMs(rows[rows.length - 1].created_at),
               ).toLocaleDateString("en-GB")}${
                 rows.length >= ROWS_FETCH_LIMIT
@@ -392,7 +453,21 @@ export default function CalculatorAnalyticsPage() {
         aria-label="Calculator summary"
         style={{ gridTemplateColumns: "repeat(4, minmax(0, 1fr))", marginBottom: 32 }}
       >
-        {tool === "staking" ? (
+        {tap.switched ? (
+          <>
+            {/* The embedded tool's own funnel, which starts one stage earlier
+                than either of the others: nobody sees this calculator without
+                first flipping the switch. */}
+            <Stat label="Sessions that flipped to it" value={stats?.flips} />
+            <Stat label="Calculations" value={stats?.results} />
+            <Stat
+              label="Flips that reached a result"
+              value={stats?.flipUse ?? undefined}
+              suffix="%"
+            />
+            <Stat label="Onward clicks" value={stats?.toReport} />
+          </>
+        ) : tap.kind === "staking" ? (
           <>
             {/* Start and result fire on the same press here, so the pair of
                 tiles and the rate between them would be one number shown
@@ -442,9 +517,34 @@ export default function CalculatorAnalyticsPage() {
       </div>
       ) : null}
 
+      {tap.switched ? (
+        <div
+          className="uni-hub-stats"
+          role="group"
+          aria-label="Switch behaviour"
+          style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginBottom: 32 }}
+        >
+          <Stat label="Unique sessions" value={stats?.sessions} />
+          {/* Not a failure. Someone who looks at the rates and goes back to
+              the rank has used both tools, which is the case for having both
+              on one page; it is only worth watching against the tile to its
+              left. */}
+          <Stat label="Flipped back to the rank" value={stats?.flipsBack} />
+          <Stat
+            label="Click-through from a result"
+            value={stats?.reportCtr ?? undefined}
+            suffix="%"
+          />
+        </div>
+      ) : null}
+
       {filtered && filtered.length > 0 && (
         <div style={{ marginBottom: 32 }}>
-          <ChartSection events={filtered} days={days} />
+          <ChartSection
+            events={filtered}
+            days={days}
+            stages={tap.switched ? [FLIP_STAGE, ...STAGES] : STAGES}
+          />
         </div>
       )}
 
@@ -507,7 +607,7 @@ export default function CalculatorAnalyticsPage() {
       {tiers.length > 0 && (
         <section className="aq-chart-card" style={{ marginBottom: 32 }}>
           <div className="aq-chart-bignum-label" style={{ marginBottom: 14 }}>
-            {tool === "staking"
+            {tap.kind === "staking"
               ? "Which product visitors picked"
               : "Where visitors land, by percentile band"}
           </div>
@@ -515,7 +615,7 @@ export default function CalculatorAnalyticsPage() {
             <div className="hub-table" style={{ minWidth: 440, maxWidth: 560 }}>
               <div className="hub-thead" style={{ gridTemplateColumns: TIER_COLS }}>
                 <span className="hub-th">
-                  {tool === "staking" ? "Product" : "Band"}
+                  {tap.kind === "staking" ? "Product" : "Band"}
                 </span>
                 <span className="hub-th hub-th-right">Results</span>
                 <span className="hub-th hub-th-right">Share</span>
@@ -597,15 +697,23 @@ export default function CalculatorAnalyticsPage() {
   );
 }
 
-// The three funnel stages, in the order they happen. Fixed order and fixed
-// colours, not derived from the data: a stage keeps its colour when a
-// timeframe contains none of it, which is the case a shifting palette gets
-// wrong exactly when an operator is looking for a missing stage.
+// The funnel stages, in the order they happen. Fixed order and fixed colours,
+// not derived from the data: a stage keeps its colour when a timeframe
+// contains none of it, which is the case a shifting palette gets wrong exactly
+// when an operator is looking for a missing stage.
+//
+// "Flipped" leads the list but is only passed to the chart on the one surface
+// that has a switch. Showing it everywhere would put a legend entry on two
+// pages that can never produce it, and a permanent zero in a legend reads as a
+// broken stage rather than an absent one.
+const FLIP_STAGE = { key: "switch", label: "Flipped to it", color: "#B07AA1" } as const;
 const STAGES = [
   { key: "start", label: "Started", color: "#4E79A7" },
   { key: "result", label: "Result shown", color: "#59A14F" },
   { key: "cta", label: "Onward click", color: "#F28E2B" },
 ] as const;
+
+type Stage = { key: string; label: string; color: string };
 
 function labelForDaysAgo(d: number): string {
   if (d === 0) return "today";
@@ -624,15 +732,17 @@ function labelForDaysAgo(d: number): string {
 function ChartSection({
   events,
   days,
+  stages,
 }: {
   events: CalcEvent[];
   days: number;
+  stages: readonly Stage[];
 }) {
   const [mode, setMode] = useState<"all" | "breakdown">("breakdown");
   const [hidden, setHidden] = useState<Set<string>>(new Set());
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
-  const visible = STAGES.filter((s) => mode === "all" || !hidden.has(s.key));
+  const visible = stages.filter((s) => mode === "all" || !hidden.has(s.key));
 
   const bins = useMemo(() => {
     const now = Date.now();
@@ -771,7 +881,7 @@ function ChartSection({
 
         {mode === "breakdown" && (
           <div style={{ marginTop: 12, display: "flex", flexWrap: "wrap", gap: "6px 14px" }}>
-            {STAGES.map((s) => {
+            {stages.map((s) => {
               const off = hidden.has(s.key);
               return (
                 <button
