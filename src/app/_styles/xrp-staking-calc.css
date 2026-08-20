@@ -458,11 +458,71 @@
   color: var(--uni-ink-3) !important;
   max-width: 68ch;
 }
-/* The embedded calculator sits inside the rich list's gold card, where the
-   report page's white-on-white surface would disappear. */
+/* ---- The embedded calculator wears the rich list calculator's skin --------
+   Same card, same gold, same dot pattern, same CTA shape. The two tools swap
+   places inside one panel on one page, and a surface that changes colour when
+   a tab is pressed reads as a different page having loaded rather than as the
+   same card showing a second tool. The rules below are the ones from
+   rich-list.css `.rl-calc` and `.rl-calc-cta`, applied to the report page's
+   markup; they live here rather than there because .rl-calc-embed only ever
+   exists on the page this stylesheet is loaded for anyway, and splitting them
+   across two files is how the two skins drift apart. */
 .rl-calc-embed .rp-calc {
-  background: var(--uni-bg, #fff);
-  border-color: var(--uni-line, #dddee0);
+  margin: 0;
+  padding: 26px 26px 24px;
+  background-color: var(--uni-gold, #ffb936);
+  background-image:
+    radial-gradient(
+      circle at 88% 18%,
+      rgba(255, 145, 30, 0.42) 0%,
+      rgba(255, 185, 54, 0) 55%
+    ),
+    radial-gradient(circle, rgba(25, 23, 23, 0.07) 1px, transparent 1.3px);
+  background-size: auto, 12px 12px;
+  background-position: 0 0, 0 0;
+  background-repeat: no-repeat, repeat;
+  border: 1px solid color-mix(in srgb, var(--uni-ink) 12%, transparent);
+  box-shadow: 0 6px 24px rgba(25, 23, 23, 0.10);
+  border-radius: var(--uni-radius, 20px);
+  color: #191717;
+}
+/* The palette is redefined ON THE CARD rather than element by element, which
+   is the trick rich-list.css uses for the same surface and the reason it has
+   not drifted: the gold is gold in both themes, so everything inside it needs
+   dark ink and light controls in both themes, and one token block covers
+   every child including any added later. Element-by-element overrides would
+   have to fight the `!important` colours the report page's own rules carry,
+   and would miss the next thing somebody puts in the panel.
+
+   --uni-bg is what the field and the picker paint themselves with and what
+   the buttons use for a label on an ink fill; left on the page's dark value
+   it gives a black field on a gold card and a button whose text matches its
+   own background. */
+.rl-calc-embed .rp-calc {
+  --uni-ink: #191717;
+  --uni-ink-2: #262521;
+  --uni-ink-3: #4b4944;
+  --uni-bg: #ffffff;
+  --uni-card: #ffffff;
+  --uni-card-2: #ffffff;
+  --uni-line: color-mix(in srgb, #191717 16%, transparent);
+  --rp-card-border: color-mix(in srgb, #191717 14%, transparent);
+}
+/* Gold bullets on a gold card are not bullets. */
+.rl-calc-embed .rp-calc .rp-calc-facts li::before {
+  background: var(--uni-ink);
+}
+/* The CTA takes the rich list's primary shape: an ink pill, not the gold one,
+   which on this background would be a button-shaped hole. */
+.uni-home-test .uni-home-content .rl-calc-embed a.rp-calc-cta,
+.rl-calc-embed a.rp-calc-cta {
+  border-radius: var(--uni-radius-pill, 999px);
+  padding: 11px 18px;
+  background: var(--uni-ink);
+  color: var(--uni-bg, #fff) !important;
+  border: 1px solid var(--uni-ink);
+  font-size: 14.5px;
+  font-weight: 700;
 }
 /* Below ~560px the two labels plus the badge come to about 390px of content,
    which is wider than the column on any phone. The row was already allowed to
