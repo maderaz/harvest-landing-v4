@@ -95,20 +95,24 @@ const ERA_ROWS: {
 // source_page each one reports. A row whose source_page matches neither is a
 // page that has not been added here yet, and it simply does not appear.
 type ToolKey = "rich-list" | "staking";
-const TOOLS: { key: ToolKey; label: string; path: string; blurb: string }[] = [
+// `paths` rather than one path: the staking calculator writes from its own
+// page and from the switch on /xrp-rich-list, which reports
+// "/xrp-rich-list#staking-calculator" so its interactions do not land in the
+// rich list's completion rate. Both belong to the same tool.
+const TOOLS: { key: ToolKey; label: string; paths: string[]; blurb: string }[] = [
   {
     key: "rich-list",
     label: "Rich list",
-    path: "/xrp-rich-list",
+    paths: ["/xrp-rich-list"],
     blurb:
       "the percentile calculator on /xrp-rich-list. \u201CStarted\u201D is a Start check press with a balance typed; \u201CResults shown\u201D is a rank rendered, and the gap between them is people leaving during the check.",
   },
   {
     key: "staking",
     label: "Staking calculator",
-    path: "/report/xrp-yield-ranking",
+    paths: ["/report/xrp-yield-ranking", "/xrp-rich-list#staking-calculator"],
     blurb:
-      "the XRP staking calculator on /report/xrp-yield-ranking. \u201CStarted\u201D and \u201CResults shown\u201D both fire on a Calculate press, so their gap measures nothing here; the number that matters is the onward click into the ranking.",
+      "the XRP staking calculator, on /report/xrp-yield-ranking and behind the switch on /xrp-rich-list. \u201CStarted\u201D and \u201CResults shown\u201D both fire on a Calculate press, so their gap measures nothing here; the number that matters is the onward click into the ranking.",
   },
 ];
 
@@ -144,13 +148,18 @@ export default function CalculatorAnalyticsPage() {
   // through in chunks instead of stopping at a limit, so the only ceiling is
   // the explicit one below, which the page says out loud when it is reached.
   const tap = TOOLS.find((t) => t.key === tool)!;
+  const tapKey = tap.paths.join(",");
   useEffect(() => {
     let alive = true;
     setRows(null);
     void (async () => {
+      const inList = tapKey
+        .split(",")
+        .map((p) => `"${p}"`)
+        .join(",");
       const data = await supabaseSelectAll<CalcEvent>(
         "richlist_calculator_events",
-        `select=*&source_page=eq.${encodeURIComponent(tap.path)}&order=created_at.desc`,
+        `select=*&source_page=in.(${encodeURIComponent(inList)})&order=created_at.desc`,
         1000,
         ROWS_FETCH_LIMIT,
       );
@@ -159,7 +168,7 @@ export default function CalculatorAnalyticsPage() {
     return () => {
       alive = false;
     };
-  }, [tap.path]);
+  }, [tapKey]);
 
   // The window in days, resolved once. The chart bins against exactly the span
   // the filters scope to, so a bar cannot sit outside the numbers above it.

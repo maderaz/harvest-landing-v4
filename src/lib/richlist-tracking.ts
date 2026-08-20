@@ -12,6 +12,9 @@
 // rather than a percentile band. It is the same kind of value: a coarse label
 // for which answer the visitor was shown, not anything about the visitor.
 //
+// A tool can override `source_page` when it is embedded somewhere other than
+// its own page; see `sourcePage` below.
+//
 // The build spec asked for two numbers before launch: the calculator's
 // completion rate, and the click-through from a result into the XRP yield
 // report. The report gets few sessions and almost no onward clicks, so whether
@@ -120,6 +123,17 @@ export interface RichListCalculatorEvent {
   /** Which onward click. Only on "cta". */
   cta?: CalculatorCta | null;
   targetUrl?: string | null;
+  /**
+   * What to record as `source_page`, when the tool is not the page it sits on.
+   *
+   * The staking calculator also appears on /xrp-rich-list, behind a switch
+   * above the rich list calculator. Left to default, its events would report
+   * the rich list's path and land in the rich list's completion rate, which is
+   * the one number that page exists to measure. It reports
+   * "/xrp-rich-list#staking-calculator" instead: still the page it is on, but
+   * distinguishable, and no new column to add to a live table.
+   */
+  sourcePage?: string;
 }
 
 /**
@@ -159,7 +173,7 @@ export function trackCalculator(e: RichListCalculatorEvent): void {
       tier: e.tier ?? null,
       cta: e.cta ?? null,
       target_url: e.targetUrl ?? null,
-      source_page: window.location.pathname,
+      source_page: e.sourcePage ?? window.location.pathname,
       source: deriveSource(document.referrer || ""),
       country: geo.country ?? null,
       city: geo.city ?? null,

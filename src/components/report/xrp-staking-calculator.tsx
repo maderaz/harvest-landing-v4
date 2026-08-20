@@ -86,6 +86,9 @@ export function XrpStakingCalculator({
   asOf,
   xrpUsd,
   total,
+  sourcePage,
+  ctaHref = "#ranking",
+  ctaLabel = "See every product in the ranking",
 }: {
   products: CalcProduct[];
   asOf: string;
@@ -93,6 +96,13 @@ export function XrpStakingCalculator({
   xrpUsd: number | null;
   /** How many rated products the ranking holds, for the band sentence. */
   total: number;
+  /** Set when the calculator is embedded on a page that is not its own, so
+   *  its events do not land in the host page's funnel. */
+  sourcePage?: string;
+  /** Where the button under a result goes. On the ranking page that is the
+   *  table below; embedded elsewhere it has to be the report itself. */
+  ctaHref?: string;
+  ctaLabel?: string;
 }) {
   const [raw, setRaw] = useState("");
   const [slug, setSlug] = useState(products[0]?.slug ?? "");
@@ -113,9 +123,9 @@ export function XrpStakingCalculator({
     const a = amount ?? 10_000;
     if (!raw.trim()) setRaw("10,000");
     if (!product) return;
-    trackCalculator({ event: "start" });
+    trackCalculator({ event: "start", sourcePage });
     setShown({ amount: a, product });
-    trackCalculator({ event: "result", tier: product.slug });
+    trackCalculator({ event: "result", tier: product.slug, sourcePage });
   }
 
   if (!products.length) return null;
@@ -230,17 +240,23 @@ export function XrpStakingCalculator({
                     the visit. */}
                 <a
                   className="rp-calc-cta"
-                  href="#ranking"
+                  href={ctaHref}
                   onClick={() =>
                     trackCalculator({
                       event: "cta",
                       cta: "see-ranking",
-                      targetUrl: "#ranking",
+                      targetUrl: ctaHref,
+                      sourcePage,
                     })
                   }
                 >
-                  See every product in the ranking
-                  <span aria-hidden="true">↓</span>
+                  {ctaLabel}
+                  {/* Down when the target is further down this page, right
+                      when it is another page. An arrow that points the wrong
+                      way is a small promise the click does not keep. */}
+                  <span aria-hidden="true">
+                    {ctaHref.startsWith("#") ? "↓" : "→"}
+                  </span>
                 </a>
               </>
             ) : null}
