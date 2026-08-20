@@ -397,7 +397,13 @@ export default function CalculatorAnalyticsPage() {
         </div>
       </header>
 
-      <div className="aq-filterbar">
+      {/* .lf-filterbar, the house control row (flex, wrapping, 10px gap), and
+          not the aq-filterbar this page used to name: that class has no rule
+          anywhere in the stylesheets, so the row was four inline-level
+          controls laid out by default flow with no gap and no wrap behaviour,
+          and the coverage line below it had to be dragged up by a negative
+          margin to sit anywhere near the bar. Both halves of that go. */}
+      <div className="lf-filterbar" style={{ marginBottom: 14 }}>
         <div className="aq-timeframe" role="tablist" aria-label="Calculator">
           {TOOLS.map((t) => (
             <button
@@ -431,9 +437,7 @@ export default function CalculatorAnalyticsPage() {
       {/* Coverage, said out loud. Every number below is drawn from the rows
           named here, so if a chart looks short this line is what tells you
           whether the data is missing or merely not loaded. */}
-      {/* Three tabs pushed the filter bar taller than the two it was tuned
-          against, and -14px put this line into the tab row. */}
-      <p className="uni-hub-sub" style={{ margin: "-6px 0 26px", fontSize: 13 }}>
+      <p className="uni-hub-sub" style={{ margin: "0 0 26px", fontSize: 13 }}>
         {rows === null
           ? "Loading events…"
           : rows.length === 0
@@ -656,7 +660,13 @@ export default function CalculatorAnalyticsPage() {
           </p>
         ) : (
           <div className="hub-table-wrap aq-recent-wrap">
-            <div className="hub-table aq-recent-table">
+            {/* .aq-recent-table carries min-width: 1180px, a floor sized for
+                the nine-column clicks table. This one has six columns needing
+                about 780px, so the floor was pushing Device out of the card
+                and putting a horizontal scrollbar under a table that fits.
+                Its own floor instead, which still scrolls on a narrow
+                screen and stops inventing width on a wide one. */}
+            <div className="hub-table aq-recent-table" style={{ minWidth: 820 }}>
               <div className="hub-thead" style={{ gridTemplateColumns: EVENT_COLS }}>
                 <span className="hub-th">When</span>
                 <span className="hub-th">Event</span>
@@ -677,14 +687,17 @@ export default function CalculatorAnalyticsPage() {
                   <span className="hub-cell">{r.event ?? "—"}</span>
                   <span className="hub-cell">{r.tier ?? r.cta ?? "—"}</span>
                   <span className="hub-cell">{r.source ?? "—"}</span>
-                  <span className="hub-cell">
-                    {r.country ? (
-                      <>
-                        <CountryFlag country={r.country} /> {countryName(r.country)}
-                      </>
-                    ) : (
-                      "—"
-                    )}
+                  {/* Flag, then the country's name. CountryFlag also prints
+                      the ISO code, which beside the name reads as "US United
+                      States"; the code is hidden here (see .aq-calc-country
+                      in asset-hub.css) rather than dropping the name, because
+                      a name is what an operator scanning a column reads and
+                      the flag is what they spot. A row with no country still
+                      renders the component, so the neutral glyph holds the
+                      column's alignment instead of a bare dash. */}
+                  <span className="hub-cell aq-calc-country">
+                    <CountryFlag country={r.country} />
+                    {r.country ? countryName(r.country) : null}
                   </span>
                   <span className="hub-cell">{r.device_type ?? "—"}</span>
                 </div>
