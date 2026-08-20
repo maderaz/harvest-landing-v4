@@ -28,6 +28,7 @@ import {
   XrpStakingCalculator,
   type CalcProduct,
 } from "@/components/report/xrp-staking-calculator";
+import { trackCalculator } from "@/lib/richlist-tracking";
 
 /**
  * What the staking calculator reports as `source_page` from this page.
@@ -58,6 +59,29 @@ export function CalculatorSwitch({
 }) {
   const [mode, setMode] = useState<"rank" | "earn">("rank");
 
+  // Both directions are recorded, and both against the embedded calculator's
+  // source_page rather than the page's own.
+  //
+  // The question this answers is about the embedded tool: how many people
+  // reach for it, and how many of those go on to use it. Filed under
+  // /xrp-rich-list the flips would sit in the rich list calculator's numbers,
+  // where they measure nothing and inflate its event count; filed here they
+  // are the first stage of the embedded tool's own funnel. The flip back is
+  // recorded for the same reason it is worth knowing: a visitor who looks at
+  // the staking calculator and returns to the rank has told us something a
+  // visitor who never flipped has not.
+  //
+  // A press on the tab already selected is not a switch and is not recorded.
+  const flip = (next: "rank" | "earn") => {
+    if (next === mode) return;
+    setMode(next);
+    trackCalculator({
+      event: "switch",
+      tier: next === "earn" ? "to-staking" : "to-rich-list",
+      sourcePage: EMBEDDED_STAKING_SOURCE,
+    });
+  };
+
   const rank = (
     <PercentileCalculator
       ladder={ladder}
@@ -83,7 +107,7 @@ export function CalculatorSwitch({
           aria-selected={mode === "rank"}
           aria-controls="rl-calc-panel"
           className={`rl-calcswitch-tab${mode === "rank" ? " is-on" : ""}`}
-          onClick={() => setMode("rank")}
+          onClick={() => flip("rank")}
         >
           Rich List Calculator
         </button>
@@ -94,9 +118,17 @@ export function CalculatorSwitch({
           aria-selected={mode === "earn"}
           aria-controls="rl-calc-panel"
           className={`rl-calcswitch-tab${mode === "earn" ? " is-on" : ""}`}
-          onClick={() => setMode("earn")}
+          onClick={() => flip("earn")}
         >
           XRP Staking Calculator
+          {/* The badge is the only thing telling a reader the second tab is
+              worth pressing, on a control whose default tab is what the page
+              is named after. aria-hidden because a screen reader announcing
+              "popular" between the tab name and its selected state reads as
+              part of the label. */}
+          <span className="rl-calcswitch-badge" aria-hidden="true">
+            popular
+          </span>
         </button>
       </div>
 

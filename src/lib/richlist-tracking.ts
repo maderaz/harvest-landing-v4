@@ -27,12 +27,18 @@
 // and folding it into either would move numbers an operator reads as
 // acquisition.
 //
-// Three events, which is the smallest set that answers both questions:
-//   - "start"   the visitor pressed Start check with a balance typed
-//   - "result"  a rank was shown
+// Four events, which is the smallest set that answers the questions asked of
+// these tools:
+//   - "switch"  the visitor flipped the calculator switch on /xrp-rich-list
+//   - "start"   the visitor pressed the calculate button with an amount typed
+//   - "result"  an answer was shown
 //   - "cta"     the visitor clicked the box under the result
 //
-// start -> result is the completion rate. result -> cta is the click-through.
+// start -> result is the completion rate and result -> cta is the
+// click-through. switch -> start is the third: of the people who flip to the
+// staking calculator, how many actually use it. A flip that leads nowhere is
+// the failure mode worth seeing, and it is invisible without its own event
+// because a visitor who flips and leaves produces nothing else at all.
 //
 // WHAT IS DELIBERATELY NOT SENT: the balance. The visitor types a number that
 // is nobody's business, the lookup runs entirely in the browser against a
@@ -117,8 +123,12 @@ import {
 export type CalculatorCta = "top-accounts" | "earn-on-xrp" | "see-ranking";
 
 export interface RichListCalculatorEvent {
-  event: "start" | "result" | "cta";
-  /** Coarse percentile band the result fell into. Only on "result". */
+  event: "switch" | "start" | "result" | "cta";
+  /**
+   * What the answer was. A percentile band on the rich list calculator, the
+   * selected product's venue slug on the staking calculator, and on "switch"
+   * the tool being switched TO, so a flip and a flip back are separable.
+   */
   tier?: string | null;
   /** Which onward click. Only on "cta". */
   cta?: CalculatorCta | null;

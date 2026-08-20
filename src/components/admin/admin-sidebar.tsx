@@ -75,7 +75,7 @@ const SECTIONS: Section[] = [
         icon: "click",
       },
       {
-        label: "Rich List Calculator",
+        label: "Calculators",
         href: "/control-room/calculator",
         icon: "sliders",
       },
