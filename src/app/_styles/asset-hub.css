@@ -2272,3 +2272,16 @@ body:has(.uni-hub-test) {
   color: #9a8a5e;
   cursor: default;
 }
+
+/* Country cell in the calculator's Recent events table.
+   CountryFlag renders flag + ISO code, which is the right pair on the tables
+   that print nothing else; this one prints the country's full name beside it,
+   and the code between the two turns "United States" into "US United States".
+   The flag stays, the name stays, the code goes. */
+.uni-hub-test .aq-calc-country {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.uni-hub-test .aq-calc-country .country-code { display: none; }
