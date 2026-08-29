@@ -72,10 +72,14 @@
 /* Not sticky. Rows expand in place here, and a sticky header covers the row
    you just opened. Same treatment .rp-rank takes. */
 .cc-table .hub-thead { position: static; top: auto; backdrop-filter: none; }
-.cc-table { min-width: 860px; }
+.cc-table { min-width: 720px; }
 .cc-table .hub-thead,
 .cc-table .hub-row {
-  grid-template-columns: 34px minmax(0, 1.5fr) 120px 130px 110px 96px 84px;
+  grid-template-columns: 34px minmax(0, 1.2fr) minmax(0, 1.6fr) 84px;
+}
+.cc-rank.has-score .cc-table .hub-thead,
+.cc-rank.has-score .cc-table .hub-row {
+  grid-template-columns: 34px minmax(0, 1.2fr) minmax(0, 1.5fr) 70px 84px;
 }
 /* globals.css hides .hub-table cells nth-child(4), (5) and (6) below 1100px:
    generic rules for the vault tables, which drop Type/TVL there. This table
@@ -85,13 +89,7 @@
 .cc-table .hub-thead .hub-th,
 .cc-table .hub-row .hub-cell { display: block !important; }
 .cc-table .hub-row .cc-action { display: flex !important; }
-/* One line per row, whatever the licence is called. */
-.cc-col-licence {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.cc-submob { display: none; }
+
 .cc-table .cc-name {
   display: inline-flex;
   align-items: center;
@@ -118,16 +116,34 @@
   line-height: 1;
   color: var(--uni-ink-3);
 }
-.cc-sub {
-  display: block;
-  margin-top: 2px;
-  font-size: 11.5px;
+/* The venue's own words, marked as chips so they never read as our finding. */
+.cc-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 5px;
+}
+.cc-chip {
+  padding: 2px 7px;
+  border: 1px solid var(--rp-card-border, #dedee6);
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
   color: var(--uni-ink-3);
+  white-space: nowrap;
+}
+.cc-bonus {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--uni-ink-2);
 }
 .cc-dim { color: var(--uni-ink-3); }
-.cc-action { display: flex; justify-content: flex-end; }
+.cc-action { display: flex; justify-content: flex-end; align-items: center; }
+.cc-nolink { color: var(--uni-ink-3); }
 .cc-rowgroup { border-bottom: 1px solid var(--rp-card-border, #eeeef5); }
-.cc-rowgroup .hub-row { border-bottom: 0; }
+.cc-rowgroup .hub-row { border-bottom: 0; align-items: start; }
+.cc-submob { display: none; }
 
 /* The outbound button. Anchor specificity, because .uni-home-content a paints
    every link with the house gold-underline gradient. */
@@ -155,6 +171,25 @@
 .cc-detail {
   padding: 4px 14px 20px;
   background: var(--uni-tint-2, rgba(25, 23, 23, 0.02));
+}
+.cc-detail-h {
+  margin: 10px 0 8px !important;
+  font-size: 11.5px !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3) !important;
+}
+.cc-page .cc-claimlist {
+  margin: 0 0 4px;
+  padding-left: 18px;
+  display: grid;
+  gap: 5px;
+}
+.cc-page .cc-claimlist li {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--uni-ink-2);
 }
 .cc-facts {
   display: grid;
@@ -349,27 +384,40 @@
 @media (max-width: 640px) {
   .cc-table { min-width: 0; }
   .cc-table .hub-thead,
-  .cc-table .hub-row {
-    grid-template-columns: 22px minmax(0, 1fr) 42px 68px;
+  .cc-rank.has-score .cc-table .hub-thead,
+  .cc-table .hub-row,
+  .cc-rank.has-score .cc-table .hub-row {
+    grid-template-columns: 22px minmax(0, 1fr) 62px;
     gap: 8px;
   }
   /* Outranks the blanket assert above, which is itself !important. */
-  .cc-table .hub-thead .hub-th.cc-col-licence,
-  .cc-table .hub-thead .hub-th.cc-col-wd,
-  .cc-table .hub-thead .hub-th.cc-col-kyc,
-  .cc-table .hub-row .hub-cell.cc-col-licence,
-  .cc-table .hub-row .hub-cell.cc-col-wd,
-  .cc-table .hub-row .hub-cell.cc-col-kyc { display: none !important; }
+  .cc-table .hub-thead .hub-th.cc-col-bonus,
+  .cc-table .hub-thead .hub-th.cc-col-score,
+  .cc-table .hub-row .hub-cell.cc-col-bonus,
+  .cc-table .hub-row .hub-cell.cc-col-score { display: none !important; }
   .cc-submob {
     display: block;
-    margin-top: 3px;
-    font-size: 11.5px;
-    line-height: 1.35;
-    color: var(--uni-ink-3);
+    margin-top: 5px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--uni-ink-2);
   }
+  .cc-chip { font-size: 10px; padding: 2px 6px; }
   .cc-table .hub-row { padding: 12px 10px; align-items: center; }
   .cc-page .uni-home-content a.cc-open,
   .cc-open { padding: 7px 11px; font-size: 12.5px; }
   .cc-detail { padding: 4px 10px 18px; }
   .cc-facts { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px 16px; }
+}
+
+/* The "nothing is verified yet" state. Says so in the reader's line of sight
+   rather than only in the methodology. */
+.cc-page .cc-state {
+  margin: 0 0 18px !important;
+  padding: 12px 14px;
+  border-left: 3px solid var(--uni-gold, #ffb936);
+  background: var(--uni-tint-2, rgba(25, 23, 23, 0.02));
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: var(--uni-ink-2) !important;
 }

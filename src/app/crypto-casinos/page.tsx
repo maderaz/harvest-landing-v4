@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { loadCasinos } from "@/lib/crypto-casinos-data";
+import { casinoScore, isVerified } from "@/lib/crypto-casinos";
 import { CasinoTable } from "@/components/casinos/casino-table";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { breadcrumbSchema, faqPageSchema } from "@/lib/jsonld";
@@ -11,16 +12,18 @@ import "../_styles/crypto-casinos.css";
 
 const PAGE_URL = `${SITE_URL}/crypto-casinos`;
 
-// noindex until there is something to index. An empty comparison page is
-// thin content, and the flag clears itself the moment entries land.
+// noindex until at least one venue has been checked AND has a link. A list of
+// welcome-bonus copy with nothing verified is the same page as every other
+// listicle, and there is no reason for it to be indexed as a third one. The
+// flag clears itself when the first row is real.
 export function generateMetadata(): Metadata {
-  const listed = loadCasinos().casinos.length;
+  const ready = loadCasinos().casinos.some((c) => c.url && isVerified(c));
   return {
   title: "Crypto Casinos Ranked by Payout Speed, Licence and KYC",
   description:
     "Crypto casino sites compared on what decides whether you get paid: licence, KYC threshold, withdrawal speed, and what the bonus really costs behind its wagering requirement.",
   alternates: { canonical: PAGE_URL },
-  robots: listed > 0 ? undefined : { index: false, follow: true },
+  robots: ready ? undefined : { index: false, follow: true },
   openGraph: {
     title: "Crypto Casinos Ranked by Payout Speed, Licence and KYC",
     description:
@@ -62,6 +65,8 @@ const FAQS = [
 export default function CryptoCasinosPage() {
   const { casinos } = loadCasinos();
   const listed = casinos.length;
+  const checked = casinos.filter((c) => casinoScore(c) != null).length;
+  const linked = casinos.filter((c) => c.url).length;
 
   const jsonLd: object[] = [
     breadcrumbSchema([
@@ -160,10 +165,20 @@ export default function CryptoCasinosPage() {
               <p className="rp-eyebrow">Ranking</p>
               <h2 id="ranking">Crypto casino sites compared</h2>
               <p>
-                {listed > 0
-                  ? `${listed} venues, scored out of 100 on licence, KYC threshold, withdrawal speed, provable fairness and playthrough. Open a row for the full terms and the date they were read.`
-                  : "No venues are listed yet. The table below fills from a reviewed list; nothing appears here until its licence, withdrawal policy and bonus terms have been read off the venue itself."}
+                {listed === 0
+                  ? "No venues are listed yet."
+                  : `${listed} venues. ${checked} of them have been checked against their own terms and carry a score; the rest are listed in the order they were supplied, which is a commercial order and not a merit one.`}
               </p>
+              {listed > 0 && checked < listed ? (
+                <p className="cc-state">
+                  The chips and the bullets on each row are the venue&rsquo;s
+                  own wording, reproduced as claims. &ldquo;Instant
+                  withdrawals&rdquo; and &ldquo;no KYC&rdquo; are advertising
+                  until somebody reads the terms, and the verified block inside
+                  each row says &ldquo;not checked&rdquo; until they have been.
+                  {linked === 0 ? " No outbound links are live yet." : null}
+                </p>
+              ) : null}
               <CasinoTable casinos={casinos} />
             </section>
 
@@ -182,7 +197,14 @@ export default function CryptoCasinosPage() {
               <p className="rp-eyebrow">Method</p>
               <h2 id="methodology">How the score is built</h2>
               <p>
-                Out of 100, from published facts only, so any row can be
+                Two kinds of information sit on this page and they are never
+                mixed. What a venue advertises is reproduced as a claim, in its
+                own words. What the score runs on is read off the venue&rsquo;s
+                terms or its regulator, and a venue nobody has read scores
+                nothing rather than scoring well on its own marketing.
+              </p>
+              <p>
+                Out of 100, from checked facts only, so any scored row can be
                 recomputed from the table above.
               </p>
               <ul className="cc-method">
