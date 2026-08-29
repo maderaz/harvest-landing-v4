@@ -1,0 +1,375 @@
+/* /crypto-casinos. Rides the report shell (rp-page) for type and spacing;
+   only the ranking, the guard block and the calculator are new. */
+
+/* Age and risk notice. Tinted rather than boxed in grey: it has to read as a
+   notice on first paint, above the fold, without looking like a cookie bar. */
+.cc-page .cc-guard {
+  margin: 0 0 34px;
+  padding: 18px 20px;
+  border: 1px solid color-mix(in srgb, #b23c17 26%, transparent);
+  border-radius: var(--uni-radius, 20px);
+  background: color-mix(in srgb, #ff7a45 8%, transparent);
+}
+.cc-page .cc-guard p {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.65;
+  color: var(--uni-ink-2);
+}
+.cc-page .cc-guard p:last-child { margin-bottom: 0; }
+.cc-page .cc-guard a { color: var(--uni-ink); text-decoration: underline; }
+
+/* ---- filters ---------------------------------------------------------- */
+.cc-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+.cc-select {
+  appearance: none;
+  padding: 8px 30px 8px 12px;
+  border: 1px solid var(--rp-card-border, #dedee6);
+  border-radius: 999px;
+  background: var(--uni-bg, #fff);
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
+    linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 14px center, right 9px center;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--uni-ink);
+  cursor: pointer;
+}
+.cc-toggle {
+  padding: 8px 14px;
+  border: 1px solid var(--rp-card-border, #dedee6);
+  border-radius: 999px;
+  background: var(--uni-bg, #fff);
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--uni-ink-2);
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+}
+.cc-toggle:hover { border-color: var(--uni-ink); }
+.cc-toggle.is-on {
+  background: var(--uni-gold, #ffb936);
+  border-color: var(--uni-gold, #ffb936);
+  color: #1a1a1a;
+}
+.cc-count {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--uni-ink-3);
+}
+
+/* ---- the table -------------------------------------------------------- */
+/* Not sticky. Rows expand in place here, and a sticky header covers the row
+   you just opened. Same treatment .rp-rank takes. */
+.cc-table .hub-thead { position: static; top: auto; backdrop-filter: none; }
+.cc-table { min-width: 860px; }
+.cc-table .hub-thead,
+.cc-table .hub-row {
+  grid-template-columns: 34px minmax(0, 1.5fr) 120px 130px 110px 96px 84px;
+}
+/* globals.css hides .hub-table cells nth-child(4), (5) and (6) below 1100px:
+   generic rules for the vault tables, which drop Type/TVL there. This table
+   has its own columns and decides its own reflow, so every cell is asserted
+   back and the ones that go on a phone are named in the query below.
+   !important because those rules carry more specificity than a class can. */
+.cc-table .hub-thead .hub-th,
+.cc-table .hub-row .hub-cell { display: block !important; }
+.cc-table .hub-row .cc-action { display: flex !important; }
+/* One line per row, whatever the licence is called. */
+.cc-col-licence {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cc-submob { display: none; }
+.cc-table .cc-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 650;
+  color: var(--uni-ink);
+  cursor: pointer;
+  text-align: left;
+}
+.cc-table .cc-name:hover { text-decoration: underline; }
+.cc-chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  background: var(--uni-tint, rgba(25, 23, 23, 0.06));
+  font-size: 12px;
+  line-height: 1;
+  color: var(--uni-ink-3);
+}
+.cc-sub {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  color: var(--uni-ink-3);
+}
+.cc-dim { color: var(--uni-ink-3); }
+.cc-action { display: flex; justify-content: flex-end; }
+.cc-rowgroup { border-bottom: 1px solid var(--rp-card-border, #eeeef5); }
+.cc-rowgroup .hub-row { border-bottom: 0; }
+
+/* The outbound button. Anchor specificity, because .uni-home-content a paints
+   every link with the house gold-underline gradient. */
+.cc-page .uni-home-content a.cc-open,
+.cc-open {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 7px 15px;
+  border-radius: 999px;
+  border: 1px solid var(--uni-ink);
+  background: var(--uni-ink);
+  background-image: none !important;
+  color: var(--uni-bg, #fff) !important;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.cc-page .uni-home-content a.cc-open:hover,
+.cc-open:hover { opacity: 0.88; }
+
+/* ---- expanded row ----------------------------------------------------- */
+.cc-detail {
+  padding: 4px 14px 20px;
+  background: var(--uni-tint-2, rgba(25, 23, 23, 0.02));
+}
+.cc-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 12px 22px;
+  margin: 0 0 14px;
+}
+.cc-fact dt {
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+}
+.cc-fact dd {
+  margin: 3px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--uni-ink);
+}
+.cc-note {
+  margin: 0 0 8px !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: var(--uni-ink-2) !important;
+}
+.cc-checked {
+  margin: 0 !important;
+  font-size: 12px !important;
+  color: var(--uni-ink-3) !important;
+}
+.cc-empty {
+  padding: 22px;
+  border: 1px dashed var(--rp-card-border, #dedee6);
+  border-radius: var(--uni-radius, 20px);
+  font-size: 14px !important;
+  color: var(--uni-ink-3) !important;
+}
+
+/* ---- method list ------------------------------------------------------ */
+.cc-page .cc-method { display: grid; gap: 10px; margin: 0 0 18px; }
+.cc-page .cc-method li { line-height: 1.65; }
+
+/* ---- bonus calculator ------------------------------------------------- */
+.cc-calc {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  margin: 4px 0 0;
+  padding: 26px 28px 28px;
+  border: 1px solid var(--rp-card-border, #eeeef5);
+  border-radius: var(--uni-radius, 20px);
+  background: var(--uni-card-2, #fff);
+}
+@media (min-width: 900px) {
+  .cc-calc {
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: 34px;
+    align-items: start;
+  }
+  .cc-calc-res {
+    border-left: 1px solid var(--uni-line);
+    padding-left: 34px;
+    min-height: 210px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+}
+.cc-calc > * { min-width: 0; }
+.cc-calc-label {
+  display: block;
+  margin: 0 0 7px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--uni-ink-2);
+}
+.cc-calc-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  padding: 0 14px;
+  border: 1px solid var(--rp-card-border, #eeeef5);
+  border-radius: 12px;
+  background: var(--uni-bg, #fff);
+}
+.cc-calc-field:focus-within { border-color: var(--uni-ink); }
+.cc-calc-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 13px 0;
+  border: 0;
+  outline: none;
+  background: none;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--uni-ink);
+  font-feature-settings: "tnum";
+}
+.cc-calc-field--select .cc-calc-input {
+  appearance: none;
+  cursor: pointer;
+  font-size: 15px;
+}
+.cc-calc-unit {
+  flex: 0 0 auto;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--uni-ink-2);
+}
+.cc-calc-go {
+  width: 100%;
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--uni-ink);
+  color: var(--uni-bg, #fff);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+.cc-calc-go:hover { opacity: 0.85; }
+.cc-calc-privacy {
+  margin: 16px 0 0 !important;
+  font-size: 12.5px !important;
+  color: var(--uni-ink-3) !important;
+}
+.cc-calc-rest {
+  margin: 0 !important;
+  font-size: 14px !important;
+  color: var(--uni-ink-3) !important;
+  text-align: center;
+}
+.cc-calc-headline {
+  margin: 0 0 6px !important;
+  font-family: var(--display);
+  font-size: 19px !important;
+  line-height: 1.35 !important;
+  color: var(--uni-ink) !important;
+  font-feature-settings: "tnum";
+}
+.cc-calc-detail {
+  margin: 0 0 16px !important;
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: var(--uni-ink-3) !important;
+}
+.cc-calc-facts {
+  margin: 0 0 16px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 11px;
+}
+.cc-calc-facts li {
+  position: relative;
+  padding-left: 18px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.cc-calc-facts li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.66em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--uni-gold, #ffb936);
+}
+.cc-calc-facts strong { color: var(--uni-ink); font-weight: 650; }
+.cc-calc-foot {
+  margin: 0 !important;
+  font-size: 12.5px !important;
+  line-height: 1.6 !important;
+  color: var(--uni-ink-3) !important;
+}
+
+@media (max-width: 800px) {
+  .cc-calc { padding: 20px 18px 22px; }
+  .cc-page .cc-guard { padding: 16px 16px; }
+  .cc-count { margin-left: 0; }
+}
+
+/* Phone: four columns that fit, and no sideways scroll. The Open button is
+   the row's only action and it cannot live off the edge of the screen;
+   licence, withdrawal and KYC move to the sub-line and the expanded row. */
+@media (max-width: 640px) {
+  .cc-table { min-width: 0; }
+  .cc-table .hub-thead,
+  .cc-table .hub-row {
+    grid-template-columns: 22px minmax(0, 1fr) 42px 68px;
+    gap: 8px;
+  }
+  /* Outranks the blanket assert above, which is itself !important. */
+  .cc-table .hub-thead .hub-th.cc-col-licence,
+  .cc-table .hub-thead .hub-th.cc-col-wd,
+  .cc-table .hub-thead .hub-th.cc-col-kyc,
+  .cc-table .hub-row .hub-cell.cc-col-licence,
+  .cc-table .hub-row .hub-cell.cc-col-wd,
+  .cc-table .hub-row .hub-cell.cc-col-kyc { display: none !important; }
+  .cc-submob {
+    display: block;
+    margin-top: 3px;
+    font-size: 11.5px;
+    line-height: 1.35;
+    color: var(--uni-ink-3);
+  }
+  .cc-table .hub-row { padding: 12px 10px; align-items: center; }
+  .cc-page .uni-home-content a.cc-open,
+  .cc-open { padding: 7px 11px; font-size: 12.5px; }
+  .cc-detail { padding: 4px 10px 18px; }
+  .cc-facts { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px 16px; }
+}
