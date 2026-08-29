@@ -3,6 +3,8 @@ import Link from "next/link";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { loadCasinos } from "@/lib/crypto-casinos-data";
 import { casinoScore, isVerified } from "@/lib/crypto-casinos";
+import { AssetIcon } from "@/components/token-icons";
+import { ReportToc, type TocItem } from "@/components/report/report-toc";
 import { CasinoTable } from "@/components/casinos/casino-table";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { breadcrumbSchema, faqPageSchema } from "@/lib/jsonld";
@@ -11,6 +13,24 @@ import "../_styles/report.css";
 import "../_styles/crypto-casinos.css";
 
 const PAGE_URL = `${SITE_URL}/crypto-casinos`;
+
+const HERO_COINS = ["BTC", "ETH", "USDT"];
+
+const TOC_ITEMS: TocItem[] = [
+  { id: "ranking", label: "The listing" },
+  { id: "bonus-calculator", label: "Bonus calculator" },
+  { id: "methodology", label: "How it is scored" },
+  { id: "faq", label: "FAQ" },
+  { id: "disclosure", label: "Disclosure" },
+];
+
+// Build-time, so the stamp cannot drift from the deploy that produced it.
+const UPDATED = new Date().toLocaleDateString("en-US", {
+  month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
 
 // noindex until at least one venue has been checked AND has a link. A list of
 // welcome-bonus copy with nothing verified is the same page as every other
@@ -62,11 +82,22 @@ const FAQS = [
   },
 ];
 
+function HeroStat({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="uni-home-hero-stat">
+      <span className="uni-home-hero-stat-label">{label}</span>
+      <span className="uni-home-hero-stat-value">{value}</span>
+    </div>
+  );
+}
+
 export default function CryptoCasinosPage() {
   const { casinos } = loadCasinos();
   const listed = casinos.length;
   const checked = casinos.filter((c) => casinoScore(c) != null).length;
   const linked = casinos.filter((c) => c.url).length;
+  const claimNoKyc = casinos.filter((c) => c.claimed.noKyc).length;
+  const claimInstant = casinos.filter((c) => c.claimed.instantWithdrawal).length;
 
   const jsonLd: object[] = [
     breadcrumbSchema([
@@ -99,7 +130,17 @@ export default function CryptoCasinosPage() {
 
       <section className="uni-home-hero rp-hero">
         <div className="uni-home-hero-inner">
-          <p className="rp-eyebrow">Comparison</p>
+          <div className="rp-hero-tokens" aria-hidden="true">
+            {HERO_COINS.map((t, i) => (
+              <span
+                key={t}
+                className="rp-hero-tok"
+                style={{ marginLeft: i ? -4 : 0, zIndex: HERO_COINS.length - i }}
+              >
+                <AssetIcon asset={t} size={13} />
+              </span>
+            ))}
+          </div>
           <h1 className="uni-home-h1">
             Crypto casinos, ranked by whether they pay out
           </h1>
@@ -110,6 +151,19 @@ export default function CryptoCasinosPage() {
             identity documents, how long a withdrawal takes, and what the bonus
             costs once its playthrough is priced.
           </p>
+          {/* .uni-home-hero-stat is a designed card in home.css that nothing
+              had used yet: translucent white, which is what it wants on the
+              gold hero. The fourth number is the point of the page, and it
+              says zero until the checking is done. */}
+          {listed > 0 && (
+            <div className="uni-home-hero-stats">
+              <HeroStat label="Venues listed" value={listed} />
+              <HeroStat label="Advertise no KYC" value={claimNoKyc} />
+              <HeroStat label="Advertise instant payouts" value={claimInstant} />
+              <HeroStat label="Independently checked" value={checked} />
+            </div>
+          )}
+          <p className="rp-updated">Last updated {UPDATED}</p>
           <div className="uni-home-hero-actions">
             <a href="#ranking" className="uni-home-cta-primary">
               See the ranking
@@ -126,6 +180,20 @@ export default function CryptoCasinosPage() {
       <main className="uni-home-shell">
         <div className="rp-doc">
           <div className="rp-doc-main">
+            {/* The jump nav lives here rather than in the hero: its link
+                styling is scoped to .uni-home-content, and below 1080px the
+                sticky rail is hidden so this is the only nav on the page. */}
+            <div className="uni-home-content cc-navwrap">
+              <nav className="rp-toc" aria-label="On this page">
+                <span className="rp-toc-label">On this page</span>
+                {TOC_ITEMS.map((t) => (
+                  <a key={t.id} href={`#${t.id}`}>
+                    {t.label}
+                  </a>
+                ))}
+              </nav>
+            </div>
+
             {/* Above the ranking, not in the footer. */}
             <aside className="cc-guard" aria-label="Age and risk notice">
               <p>
@@ -279,6 +347,10 @@ export default function CryptoCasinosPage() {
               </p>
             </section>
           </div>
+
+          <aside className="rp-doc-aside" aria-label="On this page">
+            <ReportToc items={TOC_ITEMS} />
+          </aside>
         </div>
       </main>
     </div>

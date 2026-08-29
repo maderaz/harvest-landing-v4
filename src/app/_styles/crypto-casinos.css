@@ -1,6 +1,16 @@
 /* /crypto-casinos. Rides the report shell (rp-page) for type and spacing;
    only the ranking, the guard block and the calculator are new. */
 
+/* One inset surface, defined per theme rather than as a light-mode literal
+   with a fallback: rgba(25,23,23,0.02) is invisible on the dark body, which
+   is what the expanded row and the state notice were painting themselves. */
+.cc-page { --cc-inset: rgba(25, 23, 23, 0.03); }
+@media (prefers-color-scheme: dark) {
+  .cc-page { --cc-inset: rgba(255, 255, 255, 0.05); }
+}
+:root[data-theme="dark"] .cc-page { --cc-inset: rgba(255, 255, 255, 0.05); }
+:root[data-theme="light"] .cc-page { --cc-inset: rgba(25, 23, 23, 0.03); }
+
 /* Age and risk notice. Tinted rather than boxed in grey: it has to read as a
    notice on first paint, above the fold, without looking like a cookie bar. */
 .cc-page .cc-guard {
@@ -111,7 +121,7 @@
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  background: var(--uni-tint, rgba(25, 23, 23, 0.06));
+  background: var(--cc-inset);
   font-size: 12px;
   line-height: 1;
   color: var(--uni-ink-3);
@@ -170,7 +180,7 @@
 /* ---- expanded row ----------------------------------------------------- */
 .cc-detail {
   padding: 4px 14px 20px;
-  background: var(--uni-tint-2, rgba(25, 23, 23, 0.02));
+  background: var(--cc-inset);
 }
 .cc-detail-h {
   margin: 10px 0 8px !important;
@@ -416,8 +426,23 @@
   margin: 0 0 18px !important;
   padding: 12px 14px;
   border-left: 3px solid var(--uni-gold, #ffb936);
-  background: var(--uni-tint-2, rgba(25, 23, 23, 0.02));
+  background: var(--cc-inset);
   font-size: 13.5px !important;
   line-height: 1.6 !important;
   color: var(--uni-ink-2) !important;
 }
+
+/* The jump nav sits above the age notice, so it loses the top rule .rp-toc
+   carries when it follows prose. */
+.cc-page .cc-navwrap { padding: 0; }
+.cc-page .cc-navwrap .rp-toc {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+  margin-bottom: 26px;
+}
+
+/* Values sit on one baseline even when a label wraps to two lines. The cards
+   are already flex columns, so the figure just takes the remaining space. */
+.cc-page .uni-home-hero-stat { justify-content: flex-start; }
+.cc-page .uni-home-hero-stat-value { margin-top: auto; }
