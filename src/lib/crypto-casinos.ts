@@ -127,6 +127,81 @@ export const CLAIM_LABELS: { key: keyof CasinoClaims; label: string }[] = [
   { key: "cashback", label: "Cashback" },
 ];
 
+/**
+ * What the advertised welcome bonus is worth, parsed from the venue's own
+ * headline. Still a claim: this reads the marketing, it does not check it.
+ *
+ * The cap is paired with the percentage that introduces it rather than taken
+ * as the first figure in the string, because these headlines bundle offers.
+ * "$750k World Cup Race + 10% Weekly Cashback + 100% Bonus Up To 1 BTC" has a
+ * prize pool, a cashback rate and a welcome bonus in one line, and the first
+ * number is the one thing that is not the welcome bonus.
+ */
+export interface ParsedBonus {
+  pct: number | null;
+  cap: number | null;
+  unit: "USD" | "EUR" | "BTC" | "ETH" | null;
+}
+
+const AMOUNT =
+  "(?:\\$\\s*)?(\\d[\\d,]*(?:\\.\\d+)?)\\s*(k|K)?\\s*(USDT|USD|EUR|BTC|ETH)?";
+
+type Amount = { cap: number; unit: NonNullable<ParsedBonus["unit"]> };
+
+function readAmount(num: string, k?: string, unit?: string): Amount | null {
+  const n = Number(num.replace(/,/g, ""));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const mult = k ? 1000 : 1;
+  const u = (unit ?? "USD").toUpperCase();
+  const norm =
+    u === "USDT" || u === "USD" ? "USD" : u === "EUR" ? "EUR" : u === "BTC" ? "BTC" : u === "ETH" ? "ETH" : null;
+  if (!norm) return null;
+  return { cap: n * mult, unit: norm };
+}
+
+export function parseBonus(headline: string | null): ParsedBonus {
+  const empty: ParsedBonus = { pct: null, cap: null, unit: null };
+  if (!headline) return empty;
+  const t = headline.replace(/\u00a0/g, " ");
+
+  // Every "N% ... up to <amount>" pair, keeping the one with the largest N:
+  // a headline that bundles a 10% cashback with a 100% match is advertising
+  // the match as its welcome bonus.
+  const paired = new RegExp(
+    `(\\d+(?:\\.\\d+)?)\\s*%[^%]{0,60}?up\\s*to\\s*${AMOUNT}`,
+    "gi",
+  );
+  let best: (Amount & { pct: number }) | null = null;
+  for (const m of t.matchAll(paired)) {
+    const amt = readAmount(m[2], m[3], m[4]);
+    if (!amt) continue;
+    const pct = Number(m[1]);
+    if (!best || pct > best.pct) best = { pct, cap: amt.cap, unit: amt.unit };
+  }
+  if (best) return { pct: best.pct, cap: best.cap, unit: best.unit };
+
+  // No pair: take the headline percentage and, separately, a standalone
+  // amount ("20,000 USDT Welcome Bonus + 15% Cashback").
+  const pctAll = [...t.matchAll(/(\d+(?:\.\d+)?)\s*%/g)].map((m) => Number(m[1]));
+  const pct = pctAll.length ? Math.max(...pctAll) : null;
+  const stand = new RegExp(`(?:up\\s*to\\s*)?${AMOUNT}\\b`, "i").exec(t);
+  const amt = stand ? readAmount(stand[1], stand[2], stand[3]) : null;
+  return { pct, cap: amt?.cap ?? null, unit: amt?.unit ?? null };
+}
+
+/**
+ * The advertised cap in dollars, for ordering. USDT is treated as a dollar
+ * and EUR as close enough to one; both are stated on the page. BTC and ETH
+ * need a rate, and there is no price feed behind this page, so they return
+ * null and those rows are ordered on their percentage instead rather than on
+ * a number nobody checked.
+ */
+export function bonusUsd(p: ParsedBonus): number | null {
+  if (p.cap == null) return null;
+  if (p.unit === "USD" || p.unit === "EUR") return p.cap;
+  return null;
+}
+
 /** Wagering turnover a bonus requires, and what it costs at a given edge. */
 export function wageringMath(bonusUsd: number, wagering: number, houseEdgePct: number) {
   const turnover = bonusUsd * wagering;

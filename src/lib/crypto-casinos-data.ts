@@ -4,7 +4,7 @@
 
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { casinoScore, type Casino, type CasinoData } from "@/lib/crypto-casinos";
+import { bonusUsd, parseBonus, type Casino, type CasinoData } from "@/lib/crypto-casinos";
 
 export function loadCasinos(): CasinoData {
   try {
@@ -14,16 +14,20 @@ export function loadCasinos(): CasinoData {
     const casinos = (Array.isArray(d.casinos) ? d.casinos : []).filter(
       (c: Casino) => c && c.slug && c.name,
     );
-    // Verified venues rank above unverified ones, by score. Everything else
-    // keeps the order it was supplied in, which is commercial and is labelled
-    // that way on the page rather than dressed up as a merit order.
+    // Ordered by the size of the advertised welcome bonus, which is what the
+    // page says it is ordered by. Dollar-capped offers first, largest cap
+    // down; then offers whose cap is in BTC or ETH or is not stated at all,
+    // by match percentage, because converting a crypto cap needs a rate this
+    // page has no feed for. Supplied order breaks any remaining tie.
     casinos.sort((a, b) => {
-      const sa = casinoScore(a);
-      const sb = casinoScore(b);
-      if (sa != null && sb != null) return sb - sa || a.order - b.order;
-      if (sa != null) return -1;
-      if (sb != null) return 1;
-      return a.order - b.order;
+      const pa = parseBonus(a.bonusClaim);
+      const pb = parseBonus(b.bonusClaim);
+      const ua = bonusUsd(pa);
+      const ub = bonusUsd(pb);
+      if (ua != null && ub != null) return ub - ua || a.order - b.order;
+      if (ua != null) return -1;
+      if (ub != null) return 1;
+      return (pb.pct ?? -1) - (pa.pct ?? -1) || a.order - b.order;
     });
     return { generatedAt: d.generatedAt ?? null, casinos };
   } catch {
