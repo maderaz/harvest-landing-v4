@@ -8,6 +8,7 @@
 
 import { useMemo, useState } from "react";
 import { OutboundLink } from "@/components/report/outbound-link";
+import { CASINO_LOGOS } from "@/lib/casino-logos";
 import {
   casinoScore,
   CLAIM_LABELS,
@@ -72,7 +73,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
         </span>
       </div>
 
-      <div className="hub-table-wrap">
+      <div className="hub-table-wrap" data-voice-skip="">
         <div className="hub-table cc-table">
           <div className="hub-thead">
             <span className="hub-th">#</span>
@@ -87,11 +88,24 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
             const score = casinoScore(c);
             const chips = CLAIM_LABELS.filter((l) => c.claimed[l.key]);
             const lead = bonusLead(c);
+            const logo = CASINO_LOGOS[c.slug];
             return (
               <div key={c.slug} className="cc-rowgroup">
                 <div className="hub-row">
                   <span className="hub-cell hub-rank">{i + 1}</span>
-                  <span className="hub-cell">
+                  <span className="hub-cell cc-venue">
+                    {logo ? (
+                      <img
+                        className="cc-logo"
+                        src={logo.src}
+                        alt=""
+                        width={84}
+                        height={36}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : null}
+                    <span className="cc-venue-txt">
                     <button
                       type="button"
                       className="cc-name"
@@ -112,6 +126,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                     )}
                     <span className="cc-submob">
                       {lead ? <strong>{lead}</strong> : null} {c.bonusClaim}
+                    </span>
                     </span>
                   </span>
                   {/* The figure first, then the offer in the venue's own
