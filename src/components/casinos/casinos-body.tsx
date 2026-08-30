@@ -224,9 +224,10 @@ export function CasinosBody() {
               </p>
               <p className="cc-state">
                 The chips and the bullets on each row are the venue&rsquo;s own
-                wording, reproduced as claims. We read published terms and we do
-                not play, so nothing here is a report of a withdrawal anyone
-                made. {linked === 0 ? "No outbound links are live yet. " : ""}
+                wording, reproduced as claims. Everything in the checked
+                column comes off a venue&rsquo;s own terms or its regulator,
+                with the date it was read.{" "}
+                {linked === 0 ? "No outbound links are live yet. " : ""}
                 A bigger headline is not a better offer, which is what the next
                 two sections are for.
               </p>
@@ -646,12 +647,12 @@ export function CasinosBody() {
                 rule printed above the table.
               </p>
               <p>
-                <strong>We read terms. We do not play.</strong> Every fact in
-                the checked column comes off a venue&rsquo;s own terms page or
-                its regulator, with the date it was read. Nothing on this page
-                reports a deposit or a withdrawal that anyone here made, because
-                nobody here has made one. Where a venue has not been read, the
-                row says so.
+                <strong>Where the numbers come from.</strong> Every figure in
+                the checked column is read off a venue&rsquo;s own terms page
+                or its regulator, and carries the date it was read. Where a
+                venue has not been read, the row says so instead of guessing.
+                Playthrough, minimum deposit and payout windows are quoted from
+                the published terms and not estimated.
               </p>
               <p>
                 Terms change without notice, and a date is the only claim this

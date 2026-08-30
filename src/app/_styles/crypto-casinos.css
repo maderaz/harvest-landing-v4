@@ -85,11 +85,11 @@
 .cc-table { min-width: 720px; }
 .cc-table .hub-thead,
 .cc-table .hub-row {
-  grid-template-columns: 34px minmax(0, 1.2fr) minmax(0, 1.6fr) 84px;
+  grid-template-columns: 34px minmax(0, 1.55fr) minmax(0, 1.35fr) 84px;
 }
 .cc-rank.has-score .cc-table .hub-thead,
 .cc-rank.has-score .cc-table .hub-row {
-  grid-template-columns: 34px minmax(0, 1.2fr) minmax(0, 1.5fr) 70px 84px;
+  grid-template-columns: 34px minmax(0, 1.5fr) minmax(0, 1.25fr) 70px 84px;
 }
 /* globals.css hides .hub-table cells nth-child(4), (5) and (6) below 1100px:
    generic rules for the vault tables, which drop Type/TVL there. This table
@@ -589,4 +589,46 @@
     color: var(--uni-ink);
   }
   .cc-page .cc-cmp td.cc-cmp-name::before { content: none; }
+}
+
+/* ---- venue wordmarks ---------------------------------------------------
+   The logos are landscape (1619x686) rather than square marks, so they sit
+   beside the name at a fixed width and the row keeps one height. The name
+   stays in the markup: the logo is decorative, and a wordmark is not a
+   heading a screen reader can use. */
+/* Outranks the blanket `display: block !important` assert above, which is
+   there to beat globals.css hiding nth-child cells below 1100px. */
+.cc-table .hub-row .hub-cell.cc-venue {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 11px;
+}
+.cc-venue-txt { min-width: 0; }
+.cc-logo {
+  flex: 0 0 auto;
+  width: 84px;
+  height: auto;
+  aspect-ratio: 1619 / 686;
+  margin-top: 1px;
+  border-radius: 6px;
+  object-fit: contain;
+}
+/* A dark wordmark on the dark page would disappear, and these arrive from
+   eighteen different brands with no shared background. A light plaque behind
+   every one of them is the only treatment that works for all eighteen. */
+:root[data-theme="dark"] .cc-page .cc-logo,
+:root[data-theme="dark"] .cc-page .cc-detail-logo {
+  background: #fff;
+  padding: 3px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .cc-page .cc-logo,
+  :root:not([data-theme="light"]) .cc-page .cc-detail-logo {
+    background: #fff;
+    padding: 3px;
+  }
+}
+@media (max-width: 640px) {
+  .cc-venue { gap: 9px; }
+  .cc-logo { width: 60px; }
 }
