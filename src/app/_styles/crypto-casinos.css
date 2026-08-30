@@ -673,10 +673,28 @@
 }
 .cc-page .uni-home-content .rp-venue-prose p:last-child { margin-bottom: 0; }
 
+/* Inside a review card the subheads are the reader's entry points, so they
+   sit tighter than the 28px the page gives an h3 between sections, and the
+   first one does not push off the standfirst above it. */
+.cc-page .uni-home-content .rp-venue-prose h3 {
+  margin: 22px 0 8px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.006em;
+}
+.cc-page .uni-home-content .rp-venue-prose > div:first-of-type h3 { margin-top: 16px; }
+.cc-page .uni-home-content p.cc-review-lead {
+  margin: 0;
+  color: var(--uni-ink);
+  font-weight: 550;
+}
+.cc-page .rp-venue-prose .cc-risks { margin: 0; }
+.cc-page .rp-venue-prose .cc-risks > li { font-size: 15px; }
+
 /* Where the review's claims came from. Small, under the card, and never
    styled as body copy: it is provenance and not part of the argument. */
 .cc-page .uni-home-content p.cc-sources {
-  margin: 14px 0 0;
+  margin: 18px 0 0;
   font-size: 13px;
   line-height: 1.62;
   color: var(--uni-ink-3);

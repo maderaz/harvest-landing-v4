@@ -12,10 +12,9 @@ import { CasinoTable } from "@/components/casinos/casino-table";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { loadCasinos } from "@/lib/crypto-casinos-data";
 import { CASINO_LOGOS, LOGO_RATIO, hasLogo } from "@/lib/casino-logos";
-import { casinoScore, checkedCount } from "@/lib/crypto-casinos";
+import { casinoScore, checkedCount, type Casino } from "@/lib/crypto-casinos";
 import {
   BONUS_TERMS,
-  CASINO_CRYPTO_REVIEW,
   BONUS_TYPES,
   COINS,
   CRYPTO_VS_FIAT,
@@ -24,12 +23,15 @@ import {
   NETWORKS,
   RANK_COUNT,
   RANK_LABEL,
+  VENUE_REVIEWS,
+  type VenueReview,
   RG_TOOLS,
   SCAM_SIGNALS,
   WALLET_STEPS,
   compareRows,
   money,
   rankWord,
+  reviewFacts,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
 
@@ -37,7 +39,7 @@ const HERO_COINS = ["BTC", "ETH", "USDT"];
 
 export const TOC_ITEMS: TocItem[] = [
   { id: "ranking", label: `The ${RANK_LABEL}` },
-  { id: "casino-crypto", label: "Number one, reviewed" },
+  { id: "reviews", label: "The top two, reviewed" },
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
   { id: "compare", label: "Side by side" },
@@ -126,6 +128,87 @@ function NamedList({ items }: { items: { name: string; body: string }[] }) {
   );
 }
 
+/**
+ * One review card.
+ *
+ * The .rp-venue family comes from the report page, unchanged. What is local
+ * is the shape inside it: a subhead per question, then the caveats as
+ * labelled bullets, then the facts grid. A reader after one answer should be
+ * able to find it without reading the other three.
+ */
+function VenueReviewCard({
+  review,
+  rank,
+  casino,
+}: {
+  review: VenueReview;
+  rank: number;
+  casino: Casino | undefined;
+}) {
+  const logo = CASINO_LOGOS[review.slug];
+  return (
+    <article className="rp-venue cc-review" id={review.slug}>
+      <div className="rp-venue-head">
+        {logo ? (
+          <span className="cc-review-logo">
+            <img
+              src={logo.src}
+              alt=""
+              width={112}
+              height={Math.round(112 / LOGO_RATIO)}
+              loading="lazy"
+              decoding="async"
+            />
+          </span>
+        ) : null}
+        <span className="rp-venue-title">
+          <span className="rp-venue-name">{casino?.name}</span>
+          <span className="rp-venue-plat">{review.operator}</span>
+        </span>
+        <span className="rp-badges">
+          <span className="rp-badge">Rank {rank} by bonus size</span>
+          <span className="rp-badge rp-badge-chain">
+            {casino ? checkedCount(casino) : 0} of 7 checked
+          </span>
+        </span>
+      </div>
+      <div className="rp-venue-body">
+        <div className="rp-venue-prose">
+          <p className="cc-review-lead">{review.standfirst}</p>
+          {review.sections.map((sec) => (
+            <div key={sec.h}>
+              <h3>{sec.h}</h3>
+              <p>{sec.body}</p>
+            </div>
+          ))}
+          <h3>Keep in mind</h3>
+          <NamedList items={review.keepInMind} />
+        </div>
+        <div className="rp-facts">
+          {reviewFacts(review, casino).map((f) => (
+            <div className="rp-fact" key={f.label}>
+              <span className="rp-fact-k">{f.label}</span>
+              <span className="rp-fact-v">{f.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <p className="cc-sources">
+        Read on {UPDATED} from{" "}
+        {review.sources.map((src, i) => (
+          <span key={src.url}>
+            {i > 0 ? ", " : ""}
+            <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+              {src.label}
+            </a>
+          </span>
+        ))}
+        .
+      </p>
+    </article>
+  );
+}
+
 export function CasinosBody() {
   const { casinos } = loadCasinos();
   const listed = casinos.length;
@@ -137,9 +220,6 @@ export function CasinosBody() {
   const turnover = turnoverRows(casinos);
   const compare = compareRows(casinos);
   const readTerms = casinos.filter((c) => checkedCount(c) > 0).length;
-  const topVenue = ranked.find((c) => c.slug === CASINO_CRYPTO_REVIEW.slug);
-  const topLogo = CASINO_LOGOS[CASINO_CRYPTO_REVIEW.slug];
-  const topChecked = topVenue ? checkedCount(topVenue) : 0;
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -257,77 +337,27 @@ export function CasinosBody() {
             </Section>
 
             <Section
-              id="casino-crypto"
-              eyebrow="Number one"
-              title="Casino Crypto, reviewed"
+              id="reviews"
+              eyebrow="Reviewed"
+              title="The top two, reviewed"
               dated
             >
               <p>
-                {CASINO_CRYPTO_REVIEW.standfirst} Here is what the public
-                record says about the venue behind it, and what it does not.
+                The two venues the ranking puts first, and what the public
+                record says about them. Neither has been played by anyone
+                here, so withdrawal speed and provably fair stay unchecked on
+                both rows.
               </p>
               <div className="rp-venues">
-                <article className="rp-venue">
-                  <div className="rp-venue-head">
-                    {topLogo ? (
-                      <span className="cc-review-logo">
-                        <img
-                          src={topLogo.src}
-                          alt=""
-                          width={112}
-                          height={Math.round(112 / LOGO_RATIO)}
-                          loading="lazy"
-                          decoding="async"
-                        />
-                      </span>
-                    ) : null}
-                    <span className="rp-venue-title">
-                      <span className="rp-venue-name">{topVenue?.name}</span>
-                      <span className="rp-venue-plat">
-                        {CASINO_CRYPTO_REVIEW.operator}
-                      </span>
-                    </span>
-                    <span className="rp-badges">
-                      <span className="rp-badge">Rank 1 by bonus size</span>
-                      <span className="rp-badge rp-badge-chain">
-                        {topChecked} of 7 checked
-                      </span>
-                    </span>
-                  </div>
-                  <div className="rp-venue-body">
-                    <div className="rp-venue-prose">
-                      {CASINO_CRYPTO_REVIEW.blurb.map((para, i) => (
-                        <p key={i}>{para}</p>
-                      ))}
-                    </div>
-                    <div className="rp-facts">
-                      {CASINO_CRYPTO_REVIEW.facts.map((f) => (
-                        <div className="rp-fact" key={f.label}>
-                          <span className="rp-fact-k">{f.label}</span>
-                          <span className="rp-fact-v">{f.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </article>
-              </div>
-              <p className="cc-sources">
-                Read on {UPDATED} from{" "}
-                {CASINO_CRYPTO_REVIEW.sources.map((src, i) => (
-                  <span key={src.url}>
-                    {i > 0 ? ", " : ""}
-                    <a
-                      href={src.url}
-                      rel="nofollow noopener noreferrer"
-                      target="_blank"
-                    >
-                      {src.label}
-                    </a>
-                  </span>
+                {VENUE_REVIEWS.map((r, i) => (
+                  <VenueReviewCard
+                    key={r.slug}
+                    review={r}
+                    rank={i + 1}
+                    casino={ranked.find((c) => c.slug === r.slug)}
+                  />
                 ))}
-                . No one here has deposited or withdrawn at this venue, so
-                withdrawal speed and provably fair stay unchecked on its row.
-              </p>
+              </div>
             </Section>
 
             <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager" dated>

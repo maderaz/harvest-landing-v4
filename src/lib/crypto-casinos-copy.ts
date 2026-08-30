@@ -192,66 +192,173 @@ export const FAQS: { q: string; a: string }[] = [
   { q: "What is RTP?", a: "Return to player, the share of total stakes a game pays back over a very long run. A 96% slot keeps four cents of every dollar wagered on average. Provably fair originals often publish 98% or better, which is why bonus terms tend to bar them." },
 ];
 
-/* ---- the venue at number one ----------------------------------------- */
+
+/* ---- the two venues at the top, reviewed ----------------------------- */
 
 export interface VenueReview {
   slug: string;
+  /** Sits under the venue name in the card head. */
   operator: string;
-  /** Standing under the badge row, one line. */
+  /** One line under the badges, before the first subhead. */
   standfirst: string;
-  /** Body paragraphs, in order. */
-  blurb: string[];
+  /**
+   * Blocks under their own h3.
+   *
+   * The headings are the questions people type, worded the way they type
+   * them. A reader who wants one answer can find it without reading the
+   * other three, which is the whole difference between this and the wall of
+   * paragraphs it replaces.
+   */
+  sections: { h: string; body: string }[];
+  /** The caveats, as labelled bullets. Rendered through NamedList. */
+  keepInMind: { name: string; body: string }[];
   facts: { label: string; value: string }[];
-  /** Where each claim above came from, linked under the card. */
   sources: { label: string; url: string }[];
 }
 
 /**
- * Casino Crypto, reviewed.
+ * The facts grid for a review card.
  *
- * It is first in the ranking on the size of its advertised bonus and nothing
- * else, and a page that puts a venue at the top without saying anything about
- * it is doing what every competing list does. Everything below is public
- * record, read on 30 August 2026. Nobody here has played there, and the
- * review does not pretend otherwise: withdrawal speed and provably fair stay
- * unchecked on the row for that reason.
+ * Static rows come off the review; the turnover row is computed from the
+ * venue record so it cannot disagree with the turnover table further down
+ * the page. A venue with no single playthrough figure gets no turnover row
+ * instead of a made-up one.
+ */
+export function reviewFacts(
+  review: VenueReview,
+  casino: Casino | undefined,
+): { label: string; value: string }[] {
+  const rows = [...review.facts];
+  const t = casino ? turnoverUsd(casino) : null;
+  if (t != null) {
+    rows.push({ label: "Turnover on the full cap", value: money(t) });
+  }
+  return rows;
+}
+
+/**
+ * Casino Crypto, first by advertised bonus.
+ *
+ * Public record only, read 30 August 2026. Nobody here has played there, so
+ * withdrawal speed and provably fair stay unchecked on its row and the card
+ * says so rather than filling the gap.
  */
 export const CASINO_CRYPTO_REVIEW: VenueReview = {
   slug: "casino-crypto",
   operator: "BMGruppe Ltd",
   standfirst:
-    "First on this page because its advertised welcome bonus is the largest. That is a fact about the advertising.",
-  blurb: [
-    "The headline is 350% up to 35,000 USDT with 777 free spins. Read the offer and it is a ladder, not a match: the percentage and the cap are running totals across the first six deposits. The published legs put 100% up to 15,000 USDT at 40x playthrough on the second deposit, up to 200 free spins on the third, 100% up to 10,000 USDT at 35x on the fourth, and up to 377 free spins at 30x on the fifth. Reaching the number on the banner means depositing six times and clearing a different requirement on each one. Sports betting and mini games do not count toward any of it.",
-    "The operator is BMGruppe Ltd, registered in Anjouan under company number 00005056, holding licence ALSI-202510020-F11 from the Government of the Autonomous Island of Anjouan in the Union of Comoros. An Anjouan licence is real and it is also the cheapest and quickest one a gambling operator can buy. It is not Malta and it is not the UK Gambling Commission: there is very little dispute machinery behind it, so a player whose withdrawal is refused has no regulator that will meaningfully act. The word licensed is doing less work here than it looks like it is doing.",
-    "The site launched in 2026, so it is months old and not years. Searching AskGamblers and Trustpilot turns up no profile for it and no complaint file, and that reads better than it is: a brand this new has had no time to accumulate one either way. The name itself is a hazard, because the results fill up with crypto-casino.io, Crypto Games.io and Cryptorino instead, and some of those do carry withdrawal complaints. Check the domain character by character before depositing anywhere.",
-    "No KYC is the default and it has exceptions, which are written down: verification can be requested on suspected bonus abuse, an anti-money-laundering flag, or a legal request. That is standard wording across the industry. It is also the clause that fires on a large win, so treat no KYC as the usual case and not as a guarantee.",
-    "The rest is as advertised and unverified by us. Over 10,000 titles from 96 or more providers, 17 or more coins, BetBack cashback quoted up to 75%, withdrawals described as instant. Published minimum deposits conflict across sources, at $5 in some write-ups and $30 in others, and until the cashier is opened neither figure is worth printing as fact.",
+    "Top of the table because its advertised bonus is the biggest. That is a fact about the advertising, so here is the rest.",
+  sections: [
+    {
+      h: "Is Casino Crypto legit?",
+      body: "It is a real site with a real licence, and the licence is the weakest kind there is. BMGruppe Ltd holds ALSI-202510020-F11 from Anjouan, in the Comoros. Those cost little and arrive fast, and almost no dispute process sits behind one. If a withdrawal gets refused, no regulator is going to act for you. The word licensed is doing less work here than it looks like.",
+    },
+    {
+      h: "Operating since",
+      body: "2026. Months, not years. Nothing has gone publicly wrong, and nothing has had the time to.",
+    },
+    {
+      h: "The biggest bonus for newcomers",
+      body: "350% up to 35,000 USDT and 777 free spins, and it is a ladder, not a match. The whole figure is a running total over your first six deposits, each with its own playthrough: 100% up to 15,000 USDT at 40x on the second, 200 free spins on the third, 100% up to 10,000 USDT at 35x on the fourth, 377 spins at 30x on the fifth. Sports and mini games count toward none of it. Seeing 35,000 means depositing six times and clearing six separate requirements.",
+    },
+  ],
+  keepInMind: [
+    {
+      name: "Jurisdiction",
+      body: "Anjouan, which in practice is self-regulation. Read it as no consumer protection, not as a stamp of approval.",
+    },
+    {
+      name: "Freshness",
+      body: "A 2026 launch with no track record either way. The empty complaint file is not a clean record, it is an empty one.",
+    },
+    {
+      name: "Reputation",
+      body: "Nothing on AskGamblers or Trustpilot under this name. Searching for it brings back crypto-casino.io, Crypto Games.io and Cryptorino instead, and some of those do carry withdrawal complaints. Check the domain character by character.",
+    },
+    {
+      name: "The no-KYC promise",
+      body: "A default, not a guarantee. The terms allow documents to be requested on suspected bonus abuse, an AML flag or a legal request, which is the clause that fires on a big win.",
+    },
   ],
   facts: [
     { label: "Operator", value: "BMGruppe Ltd, company no. 00005056" },
     { label: "Licence", value: "Anjouan, Union of Comoros, ALSI-202510020-F11" },
     { label: "Live since", value: "2026" },
-    { label: "Welcome bonus", value: "350% up to 35,000 USDT and 777 free spins, spread over six deposits" },
+    { label: "Welcome bonus", value: "350% up to 35,000 USDT and 777 free spins, over six deposits" },
     { label: "Wagering", value: "40x on the largest match leg, 30x to 35x on the rest" },
     { label: "Minimum deposit", value: "Sources conflict, $5 or $30. Not confirmed" },
-    { label: "KYC", value: "None by default, requested on bonus abuse, AML flags or legal request" },
     { label: "Games", value: "10,000 or more, from 96 or more providers" },
     { label: "Withdrawal speed", value: "Advertised as instant. Not checked" },
     { label: "Provably fair", value: "Not checked" },
   ],
   sources: [
-    {
-      label: "Cryptopolitan review",
-      url: "https://www.cryptopolitan.com/casinocrypto-io-review/",
-    },
-    {
-      label: "Operator terms and conditions",
-      url: "https://casinocrypto.io/en/terms-and-conditions",
-    },
-    {
-      label: "AskGamblers complaint search",
-      url: "https://www.askgamblers.com/online-casinos/complaints",
-    },
+    { label: "Cryptopolitan review", url: "https://www.cryptopolitan.com/casinocrypto-io-review/" },
+    { label: "Operator terms and conditions", url: "https://casinocrypto.io/en/terms-and-conditions" },
+    { label: "AskGamblers complaint search", url: "https://www.askgamblers.com/online-casinos/complaints" },
   ],
 };
+
+/**
+ * Lucky Rollers, second by advertised bonus.
+ *
+ * The inverse of the venue above it: the clearest published terms on this
+ * page sitting behind an operator nobody can name. The precise-looking
+ * complaint statistics circulating for this brand come from an affiliate
+ * site and trace to no primary source, so they are not printed here.
+ */
+export const LUCKY_ROLLERS_REVIEW: VenueReview = {
+  slug: "lucky-rollers",
+  operator: "Operator not published",
+  standfirst:
+    "Second by bonus size, and the clearest terms on this page. The gap is who is behind them.",
+  sections: [
+    {
+      h: "Is Lucky Rollers legit?",
+      body: "We cannot tell you who runs it. No operating company and no licence number turn up anywhere we can check, which is a worse answer than the weak licence above: that one can at least be looked up. The odd part is that the terms themselves are unusually plain, so the missing operator looks less like sloppiness and more like a choice.",
+    },
+    {
+      h: "The biggest bonus for newcomers",
+      body: "100% up to 30,000 USDT, 100 free spins and a free bet. The 30,000 is a ceiling reached across deposits and not one match, and the playthrough is 40x. Cleared against the full cap that is $1.2M of wagering, the figure in the table below, and the reason a large headline is not the same thing as a good offer.",
+    },
+    {
+      h: "What the terms actually say",
+      body: "Thirteen coins in and out, around 6,000 titles, 5 USDT to open, payouts described as instant, no identity documents at standard withdrawal levels. Weekly cashback lands on a Monday with no playthrough attached, which is rarer than it sounds. This is the most we have been able to read off any venue on the page.",
+    },
+  ],
+  keepInMind: [
+    {
+      name: "Jurisdiction",
+      body: "Unknown. Searching turns up an affiliate site quoting a licence number, an operating company and complaint statistics to one decimal place, none of which trace to a primary source. Treat precise numbers with no source as marketing.",
+    },
+    { name: "Freshness", body: "No launch date published, so there is no way to weigh how long the payout record runs." },
+    {
+      name: "Reputation",
+      body: "No complaint file we could find under this name, and the name collides with LuckyRolls, Lucky Casino and Lucky Creek, so most of what a search returns is about somebody else.",
+    },
+    {
+      name: "The no-KYC promise",
+      body: "Advertised at standard withdrawal levels, and the same caveat applies as everywhere: it is the usual case, not a guarantee.",
+    },
+  ],
+  facts: [
+    { label: "Operator", value: "Not published" },
+    { label: "Licence", value: "Not published" },
+    { label: "Live since", value: "Not published" },
+    { label: "Welcome bonus", value: "100% up to 30,000 USDT, 100 free spins and a free bet" },
+    { label: "Wagering", value: "40x" },
+    { label: "Minimum deposit", value: "5 USDT" },
+    { label: "Coins", value: "13, including BTC, ETH, USDT, USDC, XRP and SOL" },
+    { label: "Games", value: "Around 6,000" },
+    { label: "Withdrawal speed", value: "Instant, per its own terms. Not checked" },
+    { label: "Provably fair", value: "Not checked" },
+  ],
+  sources: [
+    { label: "Venue terms and conditions", url: "https://luckyrollers.io/terms-and-conditions" },
+    { label: "AskGamblers complaint search", url: "https://www.askgamblers.com/online-casinos/complaints" },
+  ],
+};
+
+export const VENUE_REVIEWS: VenueReview[] = [
+  CASINO_CRYPTO_REVIEW,
+  LUCKY_ROLLERS_REVIEW,
+];
