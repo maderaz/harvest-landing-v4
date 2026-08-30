@@ -10,37 +10,79 @@
 import { useState } from "react";
 import { wageringMath } from "@/lib/crypto-casinos";
 
-const EDGES = [
-  { label: "Blackjack, basic strategy", pct: 0.5 },
-  { label: "Baccarat, banker", pct: 1.06 },
-  { label: "European roulette", pct: 2.7 },
-  { label: "Slots, typical", pct: 4 },
-  { label: "American roulette", pct: 5.26 },
+// Edge, and how much of a wager the bonus terms usually count. Slots clear a
+// playthrough at face value; tables often count a fifth, which turns 40x into
+// 200x of blackjack and is the term most readers never find.
+const GAMES = [
+  { label: "Slots, typical", pct: 4, contrib: 100 },
+  { label: "Blackjack, basic strategy", pct: 0.5, contrib: 20 },
+  { label: "Baccarat, banker", pct: 1.06, contrib: 20 },
+  { label: "European roulette", pct: 2.7, contrib: 20 },
+  { label: "American roulette", pct: 5.26, contrib: 20 },
 ];
+
+export interface CalcPreset {
+  slug: string;
+  name: string;
+  cap: number;
+  wagering: number;
+}
 
 const money = (n: number) =>
   n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
-export function WageringCalculator() {
+export function WageringCalculator({ presets = [] }: { presets?: CalcPreset[] }) {
   const [bonus, setBonus] = useState("500");
   const [wr, setWr] = useState("40");
-  const [edge, setEdge] = useState(4);
-  const [shown, setShown] = useState<{ b: number; w: number; e: number } | null>(
-    null,
-  );
+  const [gameIdx, setGameIdx] = useState(0);
+  const [shown, setShown] = useState<
+    { b: number; w: number; g: (typeof GAMES)[number] } | null
+  >(null);
+
+  const applyPreset = (slug: string) => {
+    const p = presets.find((x) => x.slug === slug);
+    if (!p) return;
+    setBonus(String(p.cap));
+    setWr(String(p.wagering));
+    setShown(null);
+  };
 
   const calculate = () => {
     const b = Number(bonus.replace(/[,\s]/g, "")) || 0;
     const w = Number(wr) || 0;
-    if (b <= 0 || w <= 0) return;
-    setShown({ b, w, e: edge });
+    if (b <= 0 || w < 0) return;
+    setShown({ b, w, g: GAMES[gameIdx] });
   };
 
-  const res = shown ? wageringMath(shown.b, shown.w, shown.e) : null;
+  // A game that counts a fifth of each wager needs five times the turnover.
+  const effectiveWr = shown ? shown.w * (100 / shown.g.contrib) : 0;
+  const res = shown ? wageringMath(shown.b, effectiveWr, shown.g.pct) : null;
 
   return (
     <div className="cc-calc">
       <div className="cc-calc-in">
+        {presets.length > 0 && (
+          <>
+            <label className="cc-calc-label" htmlFor="cc-preset">
+              Load a listed offer
+            </label>
+            <div className="cc-calc-field cc-calc-field--select">
+              <select
+                id="cc-preset"
+                className="cc-calc-input"
+                defaultValue=""
+                onChange={(e) => applyPreset(e.target.value)}
+              >
+                <option value="">Type my own numbers</option>
+                {presets.map((p) => (
+                  <option key={p.slug} value={p.slug}>
+                    {p.name} · ${p.cap.toLocaleString("en-US")} at {p.wagering}x
+                  </option>
+                ))}
+              </select>
+            </div>
+          </>
+        )}
         <label className="cc-calc-label" htmlFor="cc-bonus">Bonus amount (USD)</label>
         <div className="cc-calc-field">
           <input
@@ -65,17 +107,17 @@ export function WageringCalculator() {
           <span className="cc-calc-unit">x</span>
         </div>
 
-        <label className="cc-calc-label" htmlFor="cc-edge">Game</label>
+        <label className="cc-calc-label" htmlFor="cc-edge">Game you would clear it on</label>
         <div className="cc-calc-field cc-calc-field--select">
           <select
             id="cc-edge"
             className="cc-calc-input"
-            value={edge}
-            onChange={(e) => setEdge(Number(e.target.value))}
+            value={gameIdx}
+            onChange={(e) => setGameIdx(Number(e.target.value))}
           >
-            {EDGES.map((g) => (
-              <option key={g.label} value={g.pct}>
-                {g.label} ({g.pct}% edge)
+            {GAMES.map((g, i) => (
+              <option key={g.label} value={i}>
+                {g.label} ({g.pct}% edge, counts {g.contrib}%)
               </option>
             ))}
           </select>
@@ -98,11 +140,14 @@ export function WageringCalculator() {
             </p>
             <p className="cc-calc-detail">
               A ${money(shown.b)} bonus at {shown.w}x playthrough obliges $
-              {money(res.turnover)} of turnover.
+              {money(shown.b * shown.w)} of turnover on slots.{" "}
+              {shown.g.contrib < 100
+                ? `${shown.g.label} counts ${shown.g.contrib}% of each wager, so clearing it there takes $${money(res.turnover)}.`
+                : ""}
             </p>
             <ul className="cc-calc-facts">
               <li>
-                At a {shown.e}% house edge that turnover costs about{" "}
+                At a {shown.g.pct}% house edge that turnover costs about{" "}
                 <strong>${money(res.expectedCost)}</strong> on average.
               </li>
               <li>

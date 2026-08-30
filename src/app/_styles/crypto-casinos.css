@@ -467,3 +467,126 @@
   color: var(--uni-ink-3);
 }
 .cc-submob strong { color: var(--uni-ink); font-weight: 650; }
+
+/* ---- borrowed shapes, defined locally ----------------------------------
+   .uh-risks, .uh-cols and the eyebrow dateline are all scoped to
+   .uni-hub-test.uh-page in usdc-hub.css, and this page runs on
+   .uni-home-test.rp-page. Widening those selectors would reach into a live
+   page for no reason, so the two shapes are rebuilt here instead. */
+
+/* Named bullets, hairline-separated. The label carries the meaning and the
+   body explains it, so a reader can scan the left edge alone. */
+.cc-page .cc-risks {
+  margin: 0 0 20px;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+}
+.cc-page .cc-risks > li {
+  padding: 15px 0;
+  border-top: 1px solid var(--rp-card-border, #eeeef5);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--uni-ink-2);
+}
+.cc-page .cc-risks > li:first-child { border-top: 0; padding-top: 4px; }
+.cc-page .cc-risks > li:last-child { padding-bottom: 4px; }
+.cc-page .cc-risks strong { color: var(--uni-ink); font-weight: 650; }
+
+/* Term on the left, both readings on the right. Stacks on a phone. */
+.cc-page .cc-cols {
+  margin: 0 0 20px;
+  display: grid;
+  gap: 0;
+}
+.cc-page .cc-cols > div {
+  display: grid;
+  grid-template-columns: minmax(0, 200px) minmax(0, 1fr);
+  gap: 8px 24px;
+  padding: 14px 0;
+  border-top: 1px solid var(--rp-card-border, #eeeef5);
+}
+.cc-page .cc-cols > div:first-child { border-top: 0; }
+.cc-page .cc-cols dt {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--uni-ink);
+}
+.cc-page .cc-cols dd {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.cc-page .cc-cols dd strong { color: var(--uni-ink); font-weight: 650; }
+@media (max-width: 640px) {
+  .cc-page .cc-cols > div { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+}
+
+/* Dateline on the eyebrow row. Zero extra vertical space, and it is what
+   satisfies the atomicity gate for a whole section. */
+.cc-page .uni-home-content .cc-eyebrow-sep,
+.cc-page .uni-home-content .cc-eyebrow-date {
+  font-weight: 500;
+  color: var(--uni-ink-3);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* h3 inside a section, for the sub-blocks in Bonuses and Getting started. */
+.cc-page .uni-home-content h3 {
+  margin: 28px 0 12px;
+  font-size: 18px;
+  line-height: 1.35;
+  color: var(--uni-ink);
+}
+
+/* The side-by-side table on a phone.
+   .rp-ref-table's reflow sets td to inline, which runs six values together
+   with nothing saying which is which. This one keeps a row per field and
+   prints the column name from data-label beside it. */
+@media (max-width: 640px) {
+  .cc-page .cc-cmp { min-width: 0; }
+  .cc-page .cc-cmp thead { display: none; }
+  .cc-page .cc-cmp,
+  .cc-page .cc-cmp tbody,
+  .cc-page .cc-cmp tr { display: block; width: 100%; }
+  .cc-page .cc-cmp tr {
+    padding: 14px 0;
+    border-top: 1px solid var(--rp-card-border, #eeeef5);
+  }
+  .cc-page .cc-cmp tr:first-child { border-top: 0; }
+  .cc-page .cc-cmp td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 3px 0;
+    border: 0;
+    text-align: right;
+    font-size: 13.5px;
+  }
+  .cc-page .cc-cmp td::before {
+    content: attr(data-label);
+    flex: 0 0 auto;
+    text-align: left;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--uni-ink-3);
+  }
+  /* The venue name is the row's heading, so it keeps the full width. */
+  .cc-page .cc-cmp td.cc-cmp-name {
+    display: block;
+    text-align: left;
+    margin-bottom: 6px;
+    font-size: 15.5px;
+    font-weight: 650;
+    color: var(--uni-ink);
+  }
+  .cc-page .cc-cmp td.cc-cmp-name::before { content: none; }
+}

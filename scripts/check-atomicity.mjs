@@ -62,6 +62,7 @@ const PAGES = [
   "btc",
   "aave",
   "morpho",
+  "crypto-casinos",
 ];
 
 const ENTITY_CAP = 10;

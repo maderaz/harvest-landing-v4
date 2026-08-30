@@ -36,6 +36,12 @@ export interface CasinoVerified {
   provablyFair: boolean | null;
   /** Playthrough multiple on the headline bonus. */
   wagering: number | null;
+  /**
+   * The cap in dollars as the terms state it, where the headline does not.
+   * Wild.io advertises "up to 350%" and caps the bonus at $1,000; the parser
+   * can only read the headline, so the real figure is recorded here.
+   */
+  capUsd?: number | null;
   chains: string[] | null;
   games: number | null;
   restricted: string[] | null;
@@ -52,6 +58,10 @@ export interface Casino {
   claims: string[];
   claimed: CasinoClaims;
   verified: CasinoVerified;
+  /** As published, in the venue's own unit. Free text because they all differ. */
+  minDeposit?: string | null;
+  /** The clause from the bonus terms that a reader would want quoted. */
+  termsNote?: string | null;
   lastChecked: string | null;
   notes?: string | null;
 }
@@ -74,15 +84,29 @@ const WITHDRAWAL_POINTS: Record<WithdrawalSpeed, number> = {
   "over 24 hours": 4,
 };
 
-/** A venue is scoreable once the four load-bearing facts have been read. */
+/**
+ * The seven facts the score reads. Coverage is shown per row as "n of 7", so a
+ * low score reads as work not yet done instead of as a bad venue.
+ */
+export const CHECK_FIELDS: (keyof CasinoVerified)[] = [
+  "licence",
+  "kyc",
+  "withdrawal",
+  "provablyFair",
+  "wagering",
+  "chains",
+  "games",
+];
+
+export function checkedCount(c: Casino): number {
+  return CHECK_FIELDS.filter((f) => c.verified[f] != null).length;
+}
+
+/** Below this the row has too little behind it to carry a number at all. */
+export const MIN_CHECKED_TO_SCORE = 3;
+
 export function isVerified(c: Casino): boolean {
-  const v = c.verified;
-  return (
-    v.kyc != null &&
-    v.withdrawal != null &&
-    v.provablyFair != null &&
-    (v.licence !== undefined)
-  );
+  return checkedCount(c) >= MIN_CHECKED_TO_SCORE;
 }
 
 /**
@@ -97,6 +121,8 @@ export function isVerified(c: Casino): boolean {
 export function casinoScore(c: Casino): number | null {
   if (!isVerified(c)) return null;
   const v = c.verified;
+  // Absolute, out of 100. An unread field scores nothing, which is why the
+  // coverage count sits beside the number wherever it is shown.
   let s = 0;
   if (v.licence) s += v.licence.number ? 25 : 18;
   if (v.kyc) s += KYC_POINTS[v.kyc] ?? 0;
@@ -200,6 +226,28 @@ export function bonusUsd(p: ParsedBonus): number | null {
   if (p.cap == null) return null;
   if (p.unit === "USD" || p.unit === "EUR") return p.cap;
   return null;
+}
+
+/**
+ * What the terms oblige before the bonus can be withdrawn: the cap multiplied
+ * by its playthrough. Null unless both are known.
+ *
+ * This is the figure the competing lists leave out. Two venues advertise
+ * $30,000; one asks $1.2M of wagering for it and the other asks $1.8M.
+ */
+export function turnoverUsd(c: Casino): number | null {
+  const cap = capOf(c);
+  const wr = c.verified.wagering;
+  // Zero is a real answer and the best one on the page: a bonus with no
+  // playthrough obliges nothing, so it belongs in the table rather than
+  // filtered out of it.
+  if (cap == null || wr == null || wr < 0) return null;
+  return cap * wr;
+}
+
+/** The terms figure where one has been read, and the headline otherwise. */
+export function capOf(c: Casino): number | null {
+  return c.verified.capUsd ?? bonusUsd(parseBonus(c.bonusClaim));
 }
 
 /** Wagering turnover a bonus requires, and what it costs at a given edge. */

@@ -72,7 +72,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
         </span>
       </div>
 
-      <div className="hub-table-wrap">
+      <div className="hub-table-wrap" data-voice-skip="">
         <div className="hub-table cc-table">
           <div className="hub-thead">
             <span className="hub-th">#</span>
