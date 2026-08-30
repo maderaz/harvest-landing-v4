@@ -13,20 +13,35 @@ import {
   casinoScore,
   CLAIM_LABELS,
   KYC_LABEL,
+  capOf,
   parseBonus,
   type Casino,
 } from "@/lib/crypto-casinos";
 
 const UNIT_PREFIX: Record<string, string> = { USD: "$", EUR: "\u20ac" };
 
-/** The headline figure, pulled to the front of the bonus cell. */
-function bonusLead(c: Casino): string | null {
+/**
+ * The figure pulled to the front of the bonus cell, and the figure the row is
+ * ranked on. Same function both places, so the eye and the sort agree.
+ *
+ * A cap read off the terms wins over the headline. Wild.io advertises "up to
+ * 350%" and caps the bonus at $1,000, and leading with the 350 would put this
+ * page in the business of repeating a number its own data contradicts.
+ */
+function bonusLead(c: Casino): { text: string; fromTerms: boolean } | null {
+  const terms = c.verified.capUsd;
+  if (terms != null) {
+    return { text: `$${terms.toLocaleString("en-US")}`, fromTerms: true };
+  }
   const p = parseBonus(c.bonusClaim);
   if (p.cap != null && p.unit) {
     const n = p.cap.toLocaleString("en-US");
-    return UNIT_PREFIX[p.unit] ? `${UNIT_PREFIX[p.unit]}${n}` : `${n} ${p.unit}`;
+    return {
+      text: UNIT_PREFIX[p.unit] ? `${UNIT_PREFIX[p.unit]}${n}` : `${n} ${p.unit}`,
+      fromTerms: false,
+    };
   }
-  return p.pct != null ? `${p.pct}%` : null;
+  return p.pct != null ? { text: `${p.pct}%`, fromTerms: false } : null;
 }
 
 export function CasinoTable({ casinos }: { casinos: Casino[] }) {
@@ -125,7 +140,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                       </span>
                     )}
                     <span className="cc-submob">
-                      {lead ? <strong>{lead}</strong> : null} {c.bonusClaim}
+                      {lead ? <strong>{lead.text}</strong> : null} {c.bonusClaim}
                     </span>
                     </span>
                   </span>
@@ -133,7 +148,14 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                       words underneath. The column the page is ranked on
                       should be the one the eye lands on. */}
                   <span className="hub-cell cc-col-bonus cc-bonus">
-                    {lead ? <span className="cc-bonus-lead">{lead}</span> : null}
+                    {lead ? (
+                      <span className="cc-bonus-lead">
+                        {lead.text}
+                        {lead.fromTerms ? (
+                          <span className="cc-bonus-src">from the terms</span>
+                        ) : null}
+                      </span>
+                    ) : null}
                     <span className="cc-bonus-full">{c.bonusClaim ?? "—"}</span>
                   </span>
                   {anyScored ? (

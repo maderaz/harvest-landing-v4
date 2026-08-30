@@ -11,27 +11,33 @@ import { ReportToc, type TocItem } from "@/components/report/report-toc";
 import { CasinoTable } from "@/components/casinos/casino-table";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { loadCasinos } from "@/lib/crypto-casinos-data";
+import { CASINO_LOGOS, LOGO_RATIO, hasLogo } from "@/lib/casino-logos";
 import { casinoScore, checkedCount } from "@/lib/crypto-casinos";
 import {
   BONUS_TERMS,
+  CASINO_CRYPTO_REVIEW,
   BONUS_TYPES,
   COINS,
   CRYPTO_VS_FIAT,
   DEPOSIT_STEPS,
   FAQS,
   NETWORKS,
+  RANK_COUNT,
+  RANK_LABEL,
   RG_TOOLS,
   SCAM_SIGNALS,
   WALLET_STEPS,
   compareRows,
   money,
+  rankWord,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
 
 const HERO_COINS = ["BTC", "ETH", "USDT"];
 
 export const TOC_ITEMS: TocItem[] = [
-  { id: "ranking", label: "The TOP20" },
+  { id: "ranking", label: `The ${RANK_LABEL}` },
+  { id: "casino-crypto", label: "Number one, reviewed" },
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
   { id: "compare", label: "Side by side" },
@@ -126,10 +132,14 @@ export function CasinosBody() {
   const checked = casinos.filter((c) => casinoScore(c) != null).length;
   const linked = casinos.filter((c) => c.url).length;
   const claimNoKyc = casinos.filter((c) => c.claimed.noKyc).length;
-  const ranked = casinos.slice(0, 20);
+  // The wordmark set is the membership list. See lib/casino-logos.
+  const ranked = casinos.filter((c) => hasLogo(c.slug));
   const turnover = turnoverRows(casinos);
   const compare = compareRows(casinos);
   const readTerms = casinos.filter((c) => checkedCount(c) > 0).length;
+  const topVenue = ranked.find((c) => c.slug === CASINO_CRYPTO_REVIEW.slug);
+  const topLogo = CASINO_LOGOS[CASINO_CRYPTO_REVIEW.slug];
+  const topChecked = topVenue ? checkedCount(topVenue) : 0;
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -147,11 +157,11 @@ export function CasinosBody() {
             ))}
           </div>
           <h1 className="uni-home-h1">
-            Crypto Casinos: TOP20 Ranked by Welcome Bonus
+            Crypto Casinos: {RANK_LABEL} Ranked by Welcome Bonus
           </h1>
           <p className="uni-home-sub">
-            The twenty largest welcome bonuses advertised by crypto casinos,
-            ordered by the size of the offer. A headline figure is not the same
+            The {rankWord()} largest welcome bonuses advertised by crypto
+            casinos, ordered by the size of the offer. A headline figure is not the same
             as money, so the calculator below prices each one against its
             playthrough, and every row says which of its terms have been read
             and which are still the venue&rsquo;s own wording.
@@ -213,7 +223,12 @@ export function CasinosBody() {
               </p>
             </aside>
 
-            <Section id="ranking" eyebrow="Ranking" title="The 20 biggest crypto casino welcome bonuses" dated>
+            <Section
+              id="ranking"
+              eyebrow="Ranking"
+              title={`The ${RANK_COUNT} biggest crypto casino welcome bonuses`}
+              dated
+            >
               <p>
                 Ordered by the size of the advertised welcome bonus, largest
                 first: {ranked.length} of the {listed} venues tracked. Offers
@@ -221,6 +236,13 @@ export function CasinosBody() {
                 or with no cap stated, rank below them on the match percentage,
                 because converting a crypto cap needs a rate this page has no
                 feed for.
+              </p>
+              <p>
+                The {ranked.length} listed are the venues whose brand we hold a
+                wordmark for. It is a plain rule and it cuts both ways: a venue
+                that belongs here by bonus size stays out until its mark
+                arrives, and a name we could not confirm as a real brand never
+                gets in. Wolf.io was one of those and is not on the page.
               </p>
               <p className="cc-state">
                 The chips and the bullets on each row are the venue&rsquo;s own
@@ -232,6 +254,80 @@ export function CasinosBody() {
                 two sections are for.
               </p>
               <CasinoTable casinos={ranked} />
+            </Section>
+
+            <Section
+              id="casino-crypto"
+              eyebrow="Number one"
+              title="Casino Crypto, reviewed"
+              dated
+            >
+              <p>
+                {CASINO_CRYPTO_REVIEW.standfirst} Here is what the public
+                record says about the venue behind it, and what it does not.
+              </p>
+              <div className="rp-venues">
+                <article className="rp-venue">
+                  <div className="rp-venue-head">
+                    {topLogo ? (
+                      <span className="cc-review-logo">
+                        <img
+                          src={topLogo.src}
+                          alt=""
+                          width={112}
+                          height={Math.round(112 / LOGO_RATIO)}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </span>
+                    ) : null}
+                    <span className="rp-venue-title">
+                      <span className="rp-venue-name">{topVenue?.name}</span>
+                      <span className="rp-venue-plat">
+                        {CASINO_CRYPTO_REVIEW.operator}
+                      </span>
+                    </span>
+                    <span className="rp-badges">
+                      <span className="rp-badge">Rank 1 by bonus size</span>
+                      <span className="rp-badge rp-badge-chain">
+                        {topChecked} of 7 checked
+                      </span>
+                    </span>
+                  </div>
+                  <div className="rp-venue-body">
+                    <div className="rp-venue-prose">
+                      {CASINO_CRYPTO_REVIEW.blurb.map((para, i) => (
+                        <p key={i}>{para}</p>
+                      ))}
+                    </div>
+                    <div className="rp-facts">
+                      {CASINO_CRYPTO_REVIEW.facts.map((f) => (
+                        <div className="rp-fact" key={f.label}>
+                          <span className="rp-fact-k">{f.label}</span>
+                          <span className="rp-fact-v">{f.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </article>
+              </div>
+              <p className="cc-sources">
+                Read on {UPDATED} from{" "}
+                {CASINO_CRYPTO_REVIEW.sources.map((src, i) => (
+                  <span key={src.url}>
+                    {i > 0 ? ", " : ""}
+                    <a
+                      href={src.url}
+                      rel="nofollow noopener noreferrer"
+                      target="_blank"
+                    >
+                      {src.label}
+                    </a>
+                  </span>
+                ))}
+                . No one here has deposited or withdrawn at this venue, so
+                withdrawal speed and provably fair stay unchecked on its row.
+              </p>
             </Section>
 
             <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager" dated>

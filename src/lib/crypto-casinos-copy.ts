@@ -4,12 +4,36 @@
 // table, a bullet and an FAQ answer has four chances to disagree with itself
 // if four files compute it. Nothing downstream recomputes.
 
+import { CASINO_LOGOS } from "@/lib/casino-logos";
 import { capOf, turnoverUsd, type Casino } from "@/lib/crypto-casinos";
 
 export const money = (n: number) =>
   n >= 1_000_000
     ? `$${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`
     : `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+
+/* ---- how many venues the ranking holds ------------------------------- */
+
+/**
+ * The ranking length, and the number in the title.
+ *
+ * It is the size of the wordmark set in lib/casino-logos, because a venue
+ * without a logo is not listed. Adding a file there moves this and the H1,
+ * the table and the TOC follow it.
+ */
+export const RANK_COUNT = Object.keys(CASINO_LOGOS).length;
+
+/** "TOP19", as the title, the H1 and the nav all say it. */
+export const RANK_LABEL = `TOP${RANK_COUNT}`;
+
+const WORDS = [
+  "zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
+  "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen",
+  "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
+];
+
+/** The count spelled out, for prose. Falls back to digits past twenty. */
+export const rankWord = (n: number = RANK_COUNT) => WORDS[n] ?? String(n);
 
 /* ---- derived from the venue data ------------------------------------- */
 
@@ -167,3 +191,67 @@ export const FAQS: { q: string; a: string }[] = [
   { q: "Are crypto casinos safe?", a: "The blockchain part is sound: transfers settle and cannot be reversed by a third party. The operator is where the risk sits. An offshore licence carries far less consumer protection than a state regulator, there is no deposit protection, and an irreversible transfer is irreversible in both directions." },
   { q: "What is RTP?", a: "Return to player, the share of total stakes a game pays back over a very long run. A 96% slot keeps four cents of every dollar wagered on average. Provably fair originals often publish 98% or better, which is why bonus terms tend to bar them." },
 ];
+
+/* ---- the venue at number one ----------------------------------------- */
+
+export interface VenueReview {
+  slug: string;
+  operator: string;
+  /** Standing under the badge row, one line. */
+  standfirst: string;
+  /** Body paragraphs, in order. */
+  blurb: string[];
+  facts: { label: string; value: string }[];
+  /** Where each claim above came from, linked under the card. */
+  sources: { label: string; url: string }[];
+}
+
+/**
+ * Casino Crypto, reviewed.
+ *
+ * It is first in the ranking on the size of its advertised bonus and nothing
+ * else, and a page that puts a venue at the top without saying anything about
+ * it is doing what every competing list does. Everything below is public
+ * record, read on 30 August 2026. Nobody here has played there, and the
+ * review does not pretend otherwise: withdrawal speed and provably fair stay
+ * unchecked on the row for that reason.
+ */
+export const CASINO_CRYPTO_REVIEW: VenueReview = {
+  slug: "casino-crypto",
+  operator: "BMGruppe Ltd",
+  standfirst:
+    "First on this page because its advertised welcome bonus is the largest. That is a fact about the advertising.",
+  blurb: [
+    "The headline is 350% up to 35,000 USDT with 777 free spins. Read the offer and it is a ladder, not a match: the percentage and the cap are running totals across the first six deposits. The published legs put 100% up to 15,000 USDT at 40x playthrough on the second deposit, up to 200 free spins on the third, 100% up to 10,000 USDT at 35x on the fourth, and up to 377 free spins at 30x on the fifth. Reaching the number on the banner means depositing six times and clearing a different requirement on each one. Sports betting and mini games do not count toward any of it.",
+    "The operator is BMGruppe Ltd, registered in Anjouan under company number 00005056, holding licence ALSI-202510020-F11 from the Government of the Autonomous Island of Anjouan in the Union of Comoros. An Anjouan licence is real and it is also the cheapest and quickest one a gambling operator can buy. It is not Malta and it is not the UK Gambling Commission: there is very little dispute machinery behind it, so a player whose withdrawal is refused has no regulator that will meaningfully act. The word licensed is doing less work here than it looks like it is doing.",
+    "The site launched in 2026, so it is months old and not years. Searching AskGamblers and Trustpilot turns up no profile for it and no complaint file, and that reads better than it is: a brand this new has had no time to accumulate one either way. The name itself is a hazard, because the results fill up with crypto-casino.io, Crypto Games.io and Cryptorino instead, and some of those do carry withdrawal complaints. Check the domain character by character before depositing anywhere.",
+    "No KYC is the default and it has exceptions, which are written down: verification can be requested on suspected bonus abuse, an anti-money-laundering flag, or a legal request. That is standard wording across the industry. It is also the clause that fires on a large win, so treat no KYC as the usual case and not as a guarantee.",
+    "The rest is as advertised and unverified by us. Over 10,000 titles from 96 or more providers, 17 or more coins, BetBack cashback quoted up to 75%, withdrawals described as instant. Published minimum deposits conflict across sources, at $5 in some write-ups and $30 in others, and until the cashier is opened neither figure is worth printing as fact.",
+  ],
+  facts: [
+    { label: "Operator", value: "BMGruppe Ltd, company no. 00005056" },
+    { label: "Licence", value: "Anjouan, Union of Comoros, ALSI-202510020-F11" },
+    { label: "Live since", value: "2026" },
+    { label: "Welcome bonus", value: "350% up to 35,000 USDT and 777 free spins, spread over six deposits" },
+    { label: "Wagering", value: "40x on the largest match leg, 30x to 35x on the rest" },
+    { label: "Minimum deposit", value: "Sources conflict, $5 or $30. Not confirmed" },
+    { label: "KYC", value: "None by default, requested on bonus abuse, AML flags or legal request" },
+    { label: "Games", value: "10,000 or more, from 96 or more providers" },
+    { label: "Withdrawal speed", value: "Advertised as instant. Not checked" },
+    { label: "Provably fair", value: "Not checked" },
+  ],
+  sources: [
+    {
+      label: "Cryptopolitan review",
+      url: "https://www.cryptopolitan.com/casinocrypto-io-review/",
+    },
+    {
+      label: "Operator terms and conditions",
+      url: "https://casinocrypto.io/en/terms-and-conditions",
+    },
+    {
+      label: "AskGamblers complaint search",
+      url: "https://www.askgamblers.com/online-casinos/complaints",
+    },
+  ],
+};
