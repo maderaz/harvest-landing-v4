@@ -208,10 +208,25 @@ export function parseBonus(headline: string | null): ParsedBonus {
 
   // No pair: take the headline percentage and, separately, a standalone
   // amount ("20,000 USDT Welcome Bonus + 15% Cashback").
+  //
+  // A bare number in one of these headlines is almost never the cap. It is a
+  // percentage, a free-spin count or a deposit count, and taking the first one
+  // put Wild.io in the ranking at $350 for "Up to 350%", Jack at $100 for
+  // "100 Free Spins" and Betgoat at $380. So the fallback only accepts a
+  // figure written as money: a dollar sign, a stated currency, a thousands
+  // separator or a k suffix. Anything else leaves the cap null and the venue
+  // is ordered on its match percentage instead.
   const pctAll = [...t.matchAll(/(\d+(?:\.\d+)?)\s*%/g)].map((m) => Number(m[1]));
   const pct = pctAll.length ? Math.max(...pctAll) : null;
-  const stand = new RegExp(`(?:up\\s*to\\s*)?${AMOUNT}\\b`, "i").exec(t);
-  const amt = stand ? readAmount(stand[1], stand[2], stand[3]) : null;
+  const stand = new RegExp(`(?:up\\s*to\\s*)?${AMOUNT}\\b`, "gi");
+  let amt: Amount | null = null;
+  for (const m of t.matchAll(stand)) {
+    const looksLikeMoney =
+      m[0].includes("$") || m[2] != null || m[3] != null || m[1].includes(",");
+    if (!looksLikeMoney) continue;
+    amt = readAmount(m[1], m[2], m[3]);
+    if (amt) break;
+  }
   return { pct, cap: amt?.cap ?? null, unit: amt?.unit ?? null };
 }
 

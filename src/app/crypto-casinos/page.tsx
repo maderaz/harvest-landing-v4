@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { loadCasinos } from "@/lib/crypto-casinos-data";
+import { hasLogo } from "@/lib/casino-logos";
 import { isVerified } from "@/lib/crypto-casinos";
-import { FAQS } from "@/lib/crypto-casinos-copy";
+import { FAQS, RANK_COUNT, RANK_LABEL } from "@/lib/crypto-casinos-copy";
 import { CasinosBody } from "@/components/casinos/casinos-body";
 import {
   breadcrumbSchema,
@@ -14,9 +15,10 @@ import "../_styles/report.css";
 import "../_styles/crypto-casinos.css";
 
 const PAGE_URL = `${SITE_URL}/crypto-casinos`;
-const TITLE = "Crypto Casinos: TOP20 Ranked by Welcome Bonus";
-const DESCRIPTION =
-  "The 20 largest advertised crypto casino welcome bonuses, ranked by the size of the offer, with the playthrough priced so you can see what each one is actually worth.";
+// The number is RANK_COUNT, which is the size of the wordmark set: a venue
+// without a logo is not in the ranking. Add a mark and the title moves.
+const TITLE = `Crypto Casinos: ${RANK_LABEL} Ranked by Welcome Bonus`;
+const DESCRIPTION = `The ${RANK_COUNT} largest advertised crypto casino welcome bonuses, ranked by the size of the offer, with the playthrough priced so you can see what each one is actually worth.`;
 
 // noindex until at least one venue has been checked AND has a link. A list of
 // welcome-bonus copy with nothing verified is the same page as every other
@@ -30,8 +32,7 @@ export function generateMetadata(): Metadata {
     robots: ready ? undefined : { index: false, follow: true },
     openGraph: {
       title: TITLE,
-      description:
-        "The 20 largest advertised crypto casino welcome bonuses, ranked by offer size, with the playthrough priced.",
+      description: `The ${RANK_COUNT} largest advertised crypto casino welcome bonuses, ranked by offer size, with the playthrough priced.`,
       url: PAGE_URL,
       siteName: SITE_NAME,
       type: "website",
@@ -41,7 +42,8 @@ export function generateMetadata(): Metadata {
 
 export default function CryptoCasinosPage() {
   const { casinos } = loadCasinos();
-  const ranked = casinos.slice(0, 20);
+  // Same membership rule the table uses. See lib/casino-logos.
+  const ranked = casinos.filter((c) => hasLogo(c.slug));
 
   const jsonLd: object[] = [
     breadcrumbSchema([

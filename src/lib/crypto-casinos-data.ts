@@ -4,7 +4,7 @@
 
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { bonusUsd, parseBonus, type Casino, type CasinoData } from "@/lib/crypto-casinos";
+import { capOf, parseBonus, type Casino, type CasinoData } from "@/lib/crypto-casinos";
 
 export function loadCasinos(): CasinoData {
   try {
@@ -19,15 +19,20 @@ export function loadCasinos(): CasinoData {
     // down; then offers whose cap is in BTC or ETH or is not stated at all,
     // by match percentage, because converting a crypto cap needs a rate this
     // page has no feed for. Supplied order breaks any remaining tie.
+    //
+    // capOf, not the parsed headline, so a cap read off the terms decides the
+    // position the same way it decides the printed figure. Wild.io advertises
+    // a percentage and caps at $1,000 in its terms; sorting on the headline
+    // put it fifteen places below where its own terms put it.
     casinos.sort((a, b) => {
-      const pa = parseBonus(a.bonusClaim);
-      const pb = parseBonus(b.bonusClaim);
-      const ua = bonusUsd(pa);
-      const ub = bonusUsd(pb);
+      const ua = capOf(a);
+      const ub = capOf(b);
       if (ua != null && ub != null) return ub - ua || a.order - b.order;
       if (ua != null) return -1;
       if (ub != null) return 1;
-      return (pb.pct ?? -1) - (pa.pct ?? -1) || a.order - b.order;
+      const pa = parseBonus(a.bonusClaim).pct ?? -1;
+      const pb = parseBonus(b.bonusClaim).pct ?? -1;
+      return pb - pa || a.order - b.order;
     });
     return { generatedAt: d.generatedAt ?? null, casinos };
   } catch {

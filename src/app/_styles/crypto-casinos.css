@@ -459,6 +459,17 @@
   color: var(--uni-ink);
   font-feature-settings: "tnum";
 }
+/* Marks a figure that came off the terms and not the banner above it. */
+.cc-bonus-src {
+  display: block;
+  margin-top: 1px;
+  font-family: var(--sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+}
 .cc-bonus-full {
   display: block;
   margin-top: 3px;
@@ -613,16 +624,33 @@
   border-radius: 6px;
   object-fit: contain;
 }
+/* The wordmark on the review card, sized to sit beside the venue name. */
+.cc-review-logo {
+  flex: 0 0 auto;
+  display: inline-flex;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.cc-review-logo img {
+  display: block;
+  width: 112px;
+  height: auto;
+  aspect-ratio: 1619 / 686;
+  object-fit: contain;
+}
+
 /* A dark wordmark on the dark page would disappear, and these arrive from
-   eighteen different brands with no shared background. A light plaque behind
-   every one of them is the only treatment that works for all eighteen. */
+   nineteen different brands with no shared background. A light plaque behind
+   every one of them is the only treatment that works for all nineteen. */
 :root[data-theme="dark"] .cc-page .cc-logo,
+:root[data-theme="dark"] .cc-page .cc-review-logo,
 :root[data-theme="dark"] .cc-page .cc-detail-logo {
   background: #fff;
   padding: 3px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .cc-page .cc-logo,
+  :root:not([data-theme="light"]) .cc-page .cc-review-logo,
   :root:not([data-theme="light"]) .cc-page .cc-detail-logo {
     background: #fff;
     padding: 3px;
@@ -631,4 +659,26 @@
 @media (max-width: 640px) {
   .cc-venue { gap: 9px; }
   .cc-logo { width: 60px; }
+  .cc-review-logo img { width: 88px; }
 }
+
+/* The .rp-venue card is borrowed from the report, where body copy is 20.5px.
+   This page runs at the homepage's 16px, so the card's prose is pulled back
+   in line with the paragraphs either side of it. Three classes and an element
+   to match report.css, which loads first. */
+.cc-page .uni-home-content .rp-venue-prose p {
+  font-size: 16px;
+  line-height: 1.65;
+  margin: 0 0 14px;
+}
+.cc-page .uni-home-content .rp-venue-prose p:last-child { margin-bottom: 0; }
+
+/* Where the review's claims came from. Small, under the card, and never
+   styled as body copy: it is provenance and not part of the argument. */
+.cc-page .uni-home-content p.cc-sources {
+  margin: 14px 0 0;
+  font-size: 13px;
+  line-height: 1.62;
+  color: var(--uni-ink-3);
+}
+.cc-page .uni-home-content p.cc-sources a { color: inherit; }
