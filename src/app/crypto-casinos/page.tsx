@@ -19,7 +19,7 @@ const HERO_COINS = ["BTC", "ETH", "USDT"];
 const TOC_ITEMS: TocItem[] = [
   { id: "ranking", label: "The listing" },
   { id: "bonus-calculator", label: "Bonus calculator" },
-  { id: "methodology", label: "How it is scored" },
+  { id: "methodology", label: "How it is ranked" },
   { id: "faq", label: "FAQ" },
   { id: "disclosure", label: "Disclosure" },
 ];
@@ -39,15 +39,15 @@ const UPDATED = new Date().toLocaleDateString("en-US", {
 export function generateMetadata(): Metadata {
   const ready = loadCasinos().casinos.some((c) => c.url && isVerified(c));
   return {
-  title: "Crypto Casinos Ranked by Payout Speed, Licence and KYC",
+  title: "Crypto Casinos: TOP20 Ranked by Welcome Bonus",
   description:
-    "Crypto casino sites compared on what decides whether you get paid: licence, KYC threshold, withdrawal speed, and what the bonus really costs behind its wagering requirement.",
+    "The 20 largest advertised crypto casino welcome bonuses, ranked by the size of the offer, with the playthrough priced so you can see what each one is actually worth.",
   alternates: { canonical: PAGE_URL },
   robots: ready ? undefined : { index: false, follow: true },
   openGraph: {
-    title: "Crypto Casinos Ranked by Payout Speed, Licence and KYC",
+    title: "Crypto Casinos: TOP20 Ranked by Welcome Bonus",
     description:
-      "Crypto casino sites compared on licence, KYC threshold, withdrawal speed and wagering requirements.",
+      "The 20 largest advertised crypto casino welcome bonuses, ranked by offer size, with the playthrough priced.",
     url: PAGE_URL,
     siteName: SITE_NAME,
     type: "website",
@@ -98,6 +98,9 @@ export default function CryptoCasinosPage() {
   const linked = casinos.filter((c) => c.url).length;
   const claimNoKyc = casinos.filter((c) => c.claimed.noKyc).length;
   const claimInstant = casinos.filter((c) => c.claimed.instantWithdrawal).length;
+  // TOP20 is the promise in the title, so it is what the table renders. The
+  // rest stay in the data file rather than on the page.
+  const ranked = casinos.slice(0, 20);
 
   const jsonLd: object[] = [
     breadcrumbSchema([
@@ -142,14 +145,14 @@ export default function CryptoCasinosPage() {
             ))}
           </div>
           <h1 className="uni-home-h1">
-            Crypto casinos, ranked by whether they pay out
+            Crypto Casinos: TOP20 Ranked by Welcome Bonus
           </h1>
           <p className="uni-home-sub">
-            Every other ranking of these venues sorts on the size of the welcome
-            bonus. This one sorts on the four things that decide whether money
-            leaves the site again: who licenses the operator, when it asks for
-            identity documents, how long a withdrawal takes, and what the bonus
-            costs once its playthrough is priced.
+            The twenty largest welcome bonuses advertised by crypto casinos,
+            ordered by the size of the offer. A headline figure is not the same
+            as money, so the calculator below prices each one against its
+            playthrough, and every row says which of its terms have been read
+            and which are still the venue&rsquo;s own wording.
           </p>
           {/* .uni-home-hero-stat is a designed card in home.css that nothing
               had used yet: translucent white, which is what it wants on the
@@ -157,9 +160,9 @@ export default function CryptoCasinosPage() {
               says zero until the checking is done. */}
           {listed > 0 && (
             <div className="uni-home-hero-stats">
-              <HeroStat label="Venues listed" value={listed} />
+              <HeroStat label="Bonuses ranked" value={ranked.length} />
+              <HeroStat label="Venues tracked" value={listed} />
               <HeroStat label="Advertise no KYC" value={claimNoKyc} />
-              <HeroStat label="Advertise instant payouts" value={claimInstant} />
               <HeroStat label="Independently checked" value={checked} />
             </div>
           )}
@@ -231,11 +234,11 @@ export default function CryptoCasinosPage() {
 
             <section className="uni-home-content" aria-labelledby="ranking">
               <p className="rp-eyebrow">Ranking</p>
-              <h2 id="ranking">Crypto casino sites compared</h2>
+              <h2 id="ranking">The 20 biggest crypto casino welcome bonuses</h2>
               <p>
                 {listed === 0
                   ? "No venues are listed yet."
-                  : `${listed} venues. ${checked} of them have been checked against their own terms and carry a score; the rest are listed in the order they were supplied, which is a commercial order and not a merit one.`}
+                  : `Ordered by the size of the advertised welcome bonus, largest first: ${ranked.length} of the ${listed} venues tracked. Offers capped in dollars rank on the cap; offers capped in BTC or ETH, or with no cap stated, rank below them on the match percentage, because converting a crypto cap needs a rate this page has no feed for.`}
               </p>
               {listed > 0 && checked < listed ? (
                 <p className="cc-state">
@@ -245,9 +248,11 @@ export default function CryptoCasinosPage() {
                   until somebody reads the terms, and the verified block inside
                   each row says &ldquo;not checked&rdquo; until they have been.
                   {linked === 0 ? " No outbound links are live yet." : null}
+                  {" "}A bigger headline is not a better offer: the calculator
+                  below is what tells the two apart.
                 </p>
               ) : null}
-              <CasinoTable casinos={casinos} />
+              <CasinoTable casinos={ranked} />
             </section>
 
             <section className="uni-home-content" aria-labelledby="bonus-calculator">
@@ -263,17 +268,34 @@ export default function CryptoCasinosPage() {
 
             <section className="uni-home-content" aria-labelledby="methodology">
               <p className="rp-eyebrow">Method</p>
-              <h2 id="methodology">How the score is built</h2>
+              <h2 id="methodology">How the order and the score are built</h2>
               <p>
+                <strong>The order is the bonus.</strong> Rows are sorted by the
+                largest welcome bonus the venue advertises, read from its own
+                headline. Where a headline bundles several offers, the cap is
+                taken from the percentage that introduces it rather than from
+                the first figure in the line, so a prize pool or a cashback
+                rate is not mistaken for the welcome bonus. USDT is treated as
+                a dollar and EUR as near enough to one. A cap in BTC or ETH is
+                not converted, because this page has no price feed behind it,
+                so those offers sort below the dollar-capped ones on their
+                match percentage instead.
+              </p>
+              <p>
+                <strong>The score is something else, and it is not the sort.</strong>{" "}
                 Two kinds of information sit on this page and they are never
                 mixed. What a venue advertises is reproduced as a claim, in its
                 own words. What the score runs on is read off the venue&rsquo;s
                 terms or its regulator, and a venue nobody has read scores
-                nothing rather than scoring well on its own marketing.
+                nothing rather than scoring well on its own marketing. It
+                appears as its own column once there is anything in it.
               </p>
               <p>
-                Out of 100, from checked facts only, so any scored row can be
-                recomputed from the table above.
+                A bigger headline is not a better offer. A 350% bonus behind a
+                60x playthrough can be worth less than a 100% bonus at 20x, and
+                the calculator above is the only thing on this page that tells
+                the two apart. Out of 100, from checked facts only, so any
+                scored row can be recomputed from the table.
               </p>
               <ul className="cc-method">
                 <li>

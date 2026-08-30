@@ -12,8 +12,21 @@ import {
   casinoScore,
   CLAIM_LABELS,
   KYC_LABEL,
+  parseBonus,
   type Casino,
 } from "@/lib/crypto-casinos";
+
+const UNIT_PREFIX: Record<string, string> = { USD: "$", EUR: "\u20ac" };
+
+/** The headline figure, pulled to the front of the bonus cell. */
+function bonusLead(c: Casino): string | null {
+  const p = parseBonus(c.bonusClaim);
+  if (p.cap != null && p.unit) {
+    const n = p.cap.toLocaleString("en-US");
+    return UNIT_PREFIX[p.unit] ? `${UNIT_PREFIX[p.unit]}${n}` : `${n} ${p.unit}`;
+  }
+  return p.pct != null ? `${p.pct}%` : null;
+}
 
 export function CasinoTable({ casinos }: { casinos: Casino[] }) {
   const [noKyc, setNoKyc] = useState(false);
@@ -73,6 +86,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
           {rows.map((c, i) => {
             const score = casinoScore(c);
             const chips = CLAIM_LABELS.filter((l) => c.claimed[l.key]);
+            const lead = bonusLead(c);
             return (
               <div key={c.slug} className="cc-rowgroup">
                 <div className="hub-row">
@@ -96,10 +110,16 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                         ))}
                       </span>
                     )}
-                    <span className="cc-submob">{c.bonusClaim}</span>
+                    <span className="cc-submob">
+                      {lead ? <strong>{lead}</strong> : null} {c.bonusClaim}
+                    </span>
                   </span>
+                  {/* The figure first, then the offer in the venue's own
+                      words underneath. The column the page is ranked on
+                      should be the one the eye lands on. */}
                   <span className="hub-cell cc-col-bonus cc-bonus">
-                    {c.bonusClaim ?? "—"}
+                    {lead ? <span className="cc-bonus-lead">{lead}</span> : null}
+                    <span className="cc-bonus-full">{c.bonusClaim ?? "—"}</span>
                   </span>
                   {anyScored ? (
                     <span className="hub-cell hub-num cc-col-score">
