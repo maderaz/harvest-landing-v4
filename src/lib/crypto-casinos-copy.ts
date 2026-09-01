@@ -35,12 +35,53 @@ const WORDS = [
 /** The count spelled out, for prose. Falls back to digits past twenty. */
 export const rankWord = (n: number = RANK_COUNT) => WORDS[n] ?? String(n);
 
+/* ---- the blocks above the table -------------------------------------- */
+
+const WORDS_CAP = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
+  "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
+];
+
+/**
+ * The four sentences under the H1.
+ *
+ * The H1 catches the query and the lead takes the responsibility off it: the
+ * sort is a fact about advertising, and the number that matters is two
+ * sections down. Both counts are derived, so neither can go stale when a
+ * wordmark or a set of terms arrives.
+ */
+export function leadSentences(priced: number): string {
+  const n = WORDS_CAP[RANK_COUNT] ?? String(RANK_COUNT);
+  const p = (WORDS_CAP[priced] ?? String(priced)).toLowerCase();
+  return `${n} welcome bonuses, largest advertised figure first. A cap is not cash: playthrough turns it into an obligation. ${p.charAt(0).toUpperCase()}${p.slice(1)} of these venues publish both numbers, so the calculator below prices the wager. Checked cells come off the venue's own terms, and dashes mean we have not read them yet.`;
+}
+
+/** Said once above the fold, and again at the foot of the page. */
+export const DISCLOSURE_SHORT =
+  "Harvest may earn a commission if you register through a link on this page. That payment does not change the sort order. Rows are ordered by advertised bonus size, by the rule above the table.";
+
+/** The one thing a US reader needs before the table, not after it. */
+export const LEGAL_SHORT =
+  "Most venues on this list do not accept players in the United States. Checking the law where you live is yours. An Anjouan or Curacao licence is not a US or UK licence.";
+
+/** Printed directly above the ranking. */
+export const SORT_RULE =
+  "Sort key: advertised bonus cap, dollars first. BTC-capped and uncapped offers sit below. A higher row is a larger headline, not a better venue.";
+
 /* ---- derived from the venue data ------------------------------------- */
 
 export interface TurnoverRow {
   slug: string;
   name: string;
+  /** The advertised headline cap, as the ranking prints it. */
   cap: number;
+  /**
+   * What the playthrough actually multiplies. Equal to cap for every venue
+   * whose offer is a single match, and smaller where the headline is a
+   * running total across deposits.
+   */
+  basis: number;
   wagering: number;
   turnover: number;
   minDeposit: string | null;
@@ -59,6 +100,7 @@ export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
         slug: c.slug,
         name: c.name,
         cap,
+        basis: c.verified.wageringBasisUsd ?? cap,
         wagering: wr,
         turnover: t,
         minDeposit: c.minDeposit ?? null,
@@ -175,16 +217,22 @@ export const DEPOSIT_STEPS: { title: string; body: string }[] = [
   { title: "Wait for confirmations", body: "Seconds to a few minutes on most chains. Bitcoin takes longer when the mempool is full." },
 ];
 
+// Ordered by what a reader arrives with, not by topic. The last two of the
+// first eight are not optional under this headline: a page that ranks
+// third-party venues and takes a commission has to answer both in its own
+// words, and the FAQPage schema carries them into the result.
 export const FAQS: { q: string; a: string }[] = [
   { q: "What is a crypto casino?", a: "An online casino that takes wagers in cryptocurrency, not in bank-processed money. Balances are funded by an onchain transfer and withdrawals are paid back to a wallet address. The games are the same ones a currency casino runs; what changes is the payment rail, and with it the speed of a withdrawal and how much identity checking sits in front of it." },
   { q: "Are crypto casinos legal?", a: "Crypto casino legality depends on where you live, not on the payment method. Online gambling is licensed in some jurisdictions, restricted to state operators in others, and prohibited in several. Most crypto casinos hold an offshore licence and block a list of countries at sign-up. Check the law where you live before you play, and check that list before you register." },
   { q: "Are crypto casinos legal in the United States?", a: "No federal law stops a player from using one. Seven states run regulated online casinos, and none of those operators takes cryptocurrency, so crypto play means an offshore site outside state regulation. Washington State criminalises taking part in online gambling. Enforcement elsewhere has focused on operators and not on players, and that is a pattern, not a protection." },
-  { q: "What does provably fair mean?", a: "A scheme where the casino commits to a hashed server seed before a round, combines it with a seed you control, and publishes both afterwards so the outcome can be recomputed. It proves the result was not changed after the bet was placed. It does not remove the house edge, and it says nothing about whether the operator will pay a withdrawal." },
-  { q: "Which crypto casinos do not require KYC?", a: "Some venues take no identity documents at sign-up and ask only above a withdrawal threshold; others ask for nothing at all. The policy is the operator's choice and it changes without notice, which is why each row here records the threshold and the date the terms were read. A venue advertising no KYC can still request documents on a large withdrawal." },
   { q: "Why does a bonus with a high wagering requirement cost money?", a: "A playthrough requirement obliges a multiple of the bonus to be wagered before any of it can be withdrawn, and every one of those wagers meets the game's house edge, so the turnover has an expected cost. A 200% bonus at 60x playthrough can be worth less than a 50% bonus at 20x once that cost is priced, which is what the calculator on this page works out." },
-  { q: "What is a good wagering requirement?", a: "Twenty times or under is generous and clearable. Thirty-five to forty is the industry norm. Sixty and above asks for turnover that will usually cost more than the bonus is worth, and the offers advertising the largest headline figures are the ones most likely to sit up there." },
-  { q: "How fast are crypto casino withdrawals?", a: "Faster than bank rails when nothing is flagged, because payment is an onchain transfer, not a card refund. The variable is not the chain but the operator: whether a withdrawal is auto-approved or queued for manual review, and at what size that review starts." },
   { q: "Which coin should I use?", a: "A stablecoin if the balance will sit for a while, because USDT and USDC hold their value between the deposit and the withdrawal. Litecoin, XRP, TRON or Solana if you move money often, because they settle in minutes for cents. Bitcoin is accepted everywhere and is the slowest and priciest of the common options." },
+  { q: "Which crypto casinos do not require KYC?", a: "Some venues take no identity documents at sign-up and ask only above a withdrawal threshold; others ask for nothing at all. The policy is the operator's choice and it changes without notice, which is why each row here records the threshold and the date the terms were read. A venue advertising no KYC can still request documents on a large withdrawal." },
+  { q: "How is this page ranked?", a: "By advertised welcome-bonus size, dollar caps first. That is a rule about advertising and not about which venue is safer or cheaper to clear. The Evidence column is separate: it counts how much of a venue we have read off its own terms, and it never moves a row. Venues without a wordmark are not listed at all." },
+  { q: "Does Harvest get paid?", a: "Yes, potentially. Harvest may earn a commission if you register through a link on this page. That payment does not change the sort order, which is fixed to the advertised bonus size by the rule printed above the table, and it does not change the Evidence column, which counts terms we have read. No venue has paid for a position here." },
+  { q: "What is a good wagering requirement?", a: "Twenty times or under is generous and clearable. Thirty-five to forty is the industry norm. Sixty and above asks for turnover that will usually cost more than the bonus is worth, and the offers advertising the largest headline figures are the ones most likely to sit up there." },
+  { q: "What does provably fair mean?", a: "A scheme where the casino commits to a hashed server seed before a round, combines it with a seed you control, and publishes both afterwards so the outcome can be recomputed. It proves the result was not changed after the bet was placed. It does not remove the house edge, and it says nothing about whether the operator will pay a withdrawal." },
+  { q: "How fast are crypto casino withdrawals?", a: "Faster than bank rails when nothing is flagged, because payment is an onchain transfer, not a card refund. The variable is not the chain but the operator: whether a withdrawal is auto-approved or queued for manual review, and at what size that review starts." },
   { q: "What happens if I send crypto on the wrong network?", a: "The funds are usually gone. USDT exists as a separate token on Ethereum, Tron, BSC, Solana and Polygon, and sending the Ethereum version to a Tron address puts it somewhere neither you nor the casino can reach. Check the network on both sides before confirming, every time." },
   { q: "Can I win real money at a crypto casino?", a: "Yes, and the expected result of continued play is still a loss, because every game carries a house edge. Wins are paid to your wallet in the coin you played with." },
   { q: "Do I pay tax on crypto gambling winnings?", a: "That depends on your country, and in the United States gambling winnings are taxable income whatever they are paid in. Disposing of the coin afterwards can be a second taxable event. Ask an accountant who knows your jurisdiction." },
@@ -212,6 +260,13 @@ export interface VenueReview {
   sections: { h: string; body: string }[];
   /** The caveats, as labelled bullets. Rendered through NamedList. */
   keepInMind: { name: string; body: string }[];
+  /**
+   * The strip at the top of the card, before any of the selling.
+   *
+   * {CHECKED} is replaced at render with the live coverage count, so a card
+   * can never claim more or less reading than the row beside it.
+   */
+  caveat: string;
   facts: { label: string; value: string }[];
   sources: { label: string; url: string }[];
 }
@@ -247,7 +302,9 @@ export const CASINO_CRYPTO_REVIEW: VenueReview = {
   slug: "casino-crypto",
   operator: "BMGruppe Ltd",
   standfirst:
-    "Top of the table because its advertised bonus is the biggest. That is a fact about the advertising, so here is the rest.",
+    "Ranked first by advertised bonus. Not ranked first by terms we have verified.",
+  caveat:
+    "{CHECKED} fields checked. Withdrawal speed, the coin list and provably fair are unread, and the 40x covers one leg of the offer, not all of it. The operator launched in 2026 under an Anjouan licence. Read the ladder before treating $35,000 as the offer.",
   sections: [
     {
       h: "Is Casino Crypto legit?",
@@ -310,7 +367,9 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   slug: "lucky-rollers",
   operator: "Operator not published",
   standfirst:
-    "Second by bonus size, and the clearest terms on this page. The gap is who is behind them.",
+    "Second by advertised bonus, and the highest evidence score on the page.",
+  caveat:
+    "{CHECKED} fields checked, and the offer itself is the best documented here. What is missing is the operator: no company and no licence number, so there is nobody to complain to. Provably fair is unread.",
   sections: [
     {
       h: "Is Lucky Rollers legit?",

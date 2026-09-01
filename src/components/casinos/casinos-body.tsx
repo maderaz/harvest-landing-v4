@@ -12,14 +12,16 @@ import { CasinoTable } from "@/components/casinos/casino-table";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { loadCasinos } from "@/lib/crypto-casinos-data";
 import { CASINO_LOGOS, LOGO_RATIO, hasLogo } from "@/lib/casino-logos";
-import { casinoScore, checkedCount, type Casino } from "@/lib/crypto-casinos";
+import { CHECK_TOTAL, casinoScore, checkedCount, type Casino } from "@/lib/crypto-casinos";
 import {
   BONUS_TERMS,
+  DISCLOSURE_SHORT,
   BONUS_TYPES,
   COINS,
   CRYPTO_VS_FIAT,
   DEPOSIT_STEPS,
   FAQS,
+  LEGAL_SHORT,
   NETWORKS,
   RANK_COUNT,
   RANK_LABEL,
@@ -27,10 +29,11 @@ import {
   type VenueReview,
   RG_TOOLS,
   SCAM_SIGNALS,
+  SORT_RULE,
   WALLET_STEPS,
   compareRows,
+  leadSentences,
   money,
-  rankWord,
   reviewFacts,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
@@ -39,9 +42,10 @@ const HERO_COINS = ["BTC", "ETH", "USDT"];
 
 export const TOC_ITEMS: TocItem[] = [
   { id: "ranking", label: `The ${RANK_LABEL}` },
-  { id: "reviews", label: "The top two, reviewed" },
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
+  { id: "bankroll", label: "Between sessions" },
+  { id: "reviews", label: "The top two, reviewed" },
   { id: "compare", label: "Side by side" },
   { id: "how-they-work", label: "How they work" },
   { id: "provably-fair", label: "Provably fair" },
@@ -60,6 +64,14 @@ export const TOC_ITEMS: TocItem[] = [
 
 const UPDATED = new Date().toLocaleDateString("en-US", {
   month: "long",
+  day: "numeric",
+  year: "numeric",
+  timeZone: "UTC",
+});
+
+/** The same date, short enough to sit inside a stat tile on one line. */
+const UPDATED_SHORT = new Date().toLocaleDateString("en-US", {
+  month: "short",
   day: "numeric",
   year: "numeric",
   timeZone: "UTC",
@@ -168,12 +180,18 @@ function VenueReviewCard({
         <span className="rp-badges">
           <span className="rp-badge">Rank {rank} by bonus size</span>
           <span className="rp-badge rp-badge-chain">
-            {casino ? checkedCount(casino) : 0} of 7 checked
+            {casino ? checkedCount(casino) : 0} of {CHECK_TOTAL} checked
           </span>
         </span>
       </div>
       <div className="rp-venue-body">
         <div className="rp-venue-prose">
+          <p className="cc-review-caveat">
+            {review.caveat.replace(
+              "{CHECKED}",
+              `${casino ? checkedCount(casino) : 0} of ${CHECK_TOTAL}`,
+            )}
+          </p>
           <p className="cc-review-lead">{review.standfirst}</p>
           {review.sections.map((sec) => (
             <div key={sec.h}>
@@ -214,7 +232,6 @@ export function CasinosBody() {
   const listed = casinos.length;
   const checked = casinos.filter((c) => casinoScore(c) != null).length;
   const linked = casinos.filter((c) => c.url).length;
-  const claimNoKyc = casinos.filter((c) => c.claimed.noKyc).length;
   // The wordmark set is the membership list. See lib/casino-logos.
   const ranked = casinos.filter((c) => hasLogo(c.slug));
   const turnover = turnoverRows(casinos);
@@ -239,22 +256,18 @@ export function CasinosBody() {
           <h1 className="uni-home-h1">
             Crypto Casinos: {RANK_LABEL} Ranked by Welcome Bonus
           </h1>
-          <p className="uni-home-sub">
-            The {rankWord()} largest welcome bonuses advertised by crypto
-            casinos, ordered by the size of the offer. A headline figure is not the same
-            as money, so the calculator below prices each one against its
-            playthrough, and every row says which of its terms have been read
-            and which are still the venue&rsquo;s own wording.
-          </p>
+          <p className="uni-home-sub">{leadSentences(turnover.length)}</p>
+          {/* Three, and all three defensible in one breath. "Venues tracked
+              38" and "Advertise no KYC 20" both sat above a ranking of 19,
+              where a larger number next to a smaller one reads as an
+              arithmetic error rather than as a different pool. */}
           {listed > 0 && (
             <div className="uni-home-hero-stats">
               <HeroStat label="Bonuses ranked" value={ranked.length} />
-              <HeroStat label="Venues tracked" value={listed} />
               <HeroStat label="Terms read" value={readTerms} />
-              <HeroStat label="Advertise no KYC" value={claimNoKyc} />
+              <HeroStat label="Last updated" value={UPDATED_SHORT} />
             </div>
           )}
-          <p className="rp-updated">Last updated {UPDATED}</p>
           <div className="uni-home-hero-actions">
             <a href="#ranking" className="uni-home-cta-primary">
               See the ranking
@@ -303,6 +316,23 @@ export function CasinosBody() {
               </p>
             </aside>
 
+            {/* Both of these used to live at the foot of the page. A reader
+                deciding whether to trust the sort order has to be told how
+                the page is paid before they read it, not after. The
+                #disclosure section at the end repeats this rather than
+                replacing it. */}
+            <aside className="cc-note" aria-label="Commercial disclosure">
+              <p>
+                <strong>How this page is paid.</strong> {DISCLOSURE_SHORT}
+              </p>
+            </aside>
+
+            <aside className="cc-note" aria-label="Where this is legal">
+              <p>
+                <strong>Where this is legal.</strong> {LEGAL_SHORT}
+              </p>
+            </aside>
+
             <Section
               id="ranking"
               eyebrow="Ranking"
@@ -324,40 +354,16 @@ export function CasinosBody() {
                 arrives, and a name we could not confirm as a real brand never
                 gets in. Wolf.io was one of those and is not on the page.
               </p>
+              <p className="cc-rule">{SORT_RULE}</p>
               <p className="cc-state">
-                The chips and the bullets on each row are the venue&rsquo;s own
-                wording, reproduced as claims. Everything in the checked
-                column comes off a venue&rsquo;s own terms or its regulator,
-                with the date it was read.{" "}
-                {linked === 0 ? "No outbound links are live yet. " : ""}
-                A bigger headline is not a better offer, which is what the next
-                two sections are for.
+                The chips and the bullets on each row are{" "}
+                <strong>venue claims</strong>, reproduced in the venue&rsquo;s
+                own wording. The Evidence column is ours: it counts how much of
+                a venue we have read off its own terms or its regulator, then
+                adjusts on what those readings say. It scores research, not the
+                offer, and it never moves a row.
               </p>
               <CasinoTable casinos={ranked} />
-            </Section>
-
-            <Section
-              id="reviews"
-              eyebrow="Reviewed"
-              title="The top two, reviewed"
-              dated
-            >
-              <p>
-                The two venues the ranking puts first, and what the public
-                record says about them. Neither has been played by anyone
-                here, so withdrawal speed and provably fair stay unchecked on
-                both rows.
-              </p>
-              <div className="rp-venues">
-                {VENUE_REVIEWS.map((r, i) => (
-                  <VenueReviewCard
-                    key={r.slug}
-                    review={r}
-                    rank={i + 1}
-                    casino={ranked.find((c) => c.slug === r.slug)}
-                  />
-                ))}
-              </div>
             </Section>
 
             <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager" dated>
@@ -387,7 +393,18 @@ export function CasinosBody() {
                       <tr key={r.slug}>
                         <td className="strong">{r.name}</td>
                         <td className="num">{money(r.cap)}</td>
-                        <td className="num">{r.wagering === 0 ? "None" : `${r.wagering}x`}</td>
+                        {/* The basis is printed whenever it is not the
+                            headline cap, otherwise the row's arithmetic does
+                            not work in front of the reader: Casino Crypto
+                            advertises $35,000 and the 40x applies to a single
+                            $15,000 leg. */}
+                        <td className="num">
+                          {r.wagering === 0
+                            ? "None"
+                            : r.basis !== r.cap
+                              ? `${r.wagering}x on ${money(r.basis)}`
+                              : `${r.wagering}x`}
+                        </td>
                         <td className="num">{r.turnover === 0 ? "Nothing" : money(r.turnover)}</td>
                         <td className="num">{r.minDeposit ?? "Not stated"}</td>
                       </tr>
@@ -430,15 +447,91 @@ export function CasinosBody() {
                 its playthrough requirement, and every one of those wagers meets
                 the house edge. This prices that.
               </p>
-              <WageringCalculator presets={turnover.map((r) => ({ slug: r.slug, name: r.name, cap: r.cap, wagering: r.wagering }))} />
+              {/* Opens on the row the page ranks first, so the intent the
+                  headline set is not lost between the table and the tool. The
+                  cap loaded is the figure the playthrough multiplies, which
+                  for a ladder offer is one leg and not the banner total. */}
+              <WageringCalculator
+                defaultSlug={ranked[0]?.slug}
+                presets={turnover.map((r) => ({
+                  slug: r.slug,
+                  name: r.name,
+                  cap: r.basis,
+                  wagering: r.wagering,
+                }))}
+              />
             </Section>
+
+            <Section
+              id="bankroll"
+              eyebrow="Between sessions"
+              title="Between sessions, the balance still sits somewhere"
+            >
+              <p>
+                A bonus and a session are one decision. What happens to the
+                balance afterwards is a different one, and it is the part
+                nobody writes about.
+              </p>
+              <p>
+                Money left in a casino account earns nothing and carries the
+                operator&rsquo;s risk for as long as it sits there. Every
+                caveat on this page about licences, withdrawal review and
+                no-KYC exceptions applies to an idle balance exactly as it
+                applies to an active one. Moving it back to a wallet ends that
+                exposure and starts a different set of questions.
+              </p>
+              <p>
+                Harvest indexes onchain yield on stablecoins, USDC and USDT
+                included, with the rates and the risks written down. It is not
+                a bank, nothing there is insured, and it is not a bonus. See
+                the <Link href="/usdc">USDC hub</Link> for what the rates
+                currently are and the{" "}
+                <Link href="/risk-framework">risk framework</Link> for what can
+                go wrong.
+              </p>
+              <p>
+                Parking yield is a separate decision from claiming a welcome
+                offer. Neither one makes the other safer.
+              </p>
+            </Section>
+
+            <Section
+              id="reviews"
+              eyebrow="Reviewed"
+              title="The top two, reviewed"
+              dated
+            >
+              <p>
+                Ranked first and second by advertised bonus. That ordering is
+                about the advertising, so here is what the public record says
+                about the venues underneath it. Neither has been played by
+                anyone here, and each card opens with what it does not know.
+              </p>
+              <div className="rp-venues">
+                {VENUE_REVIEWS.map((r, i) => (
+                  <VenueReviewCard
+                    key={r.slug}
+                    review={r}
+                    rank={i + 1}
+                    casino={ranked.find((c) => c.slug === r.slug)}
+                  />
+                ))}
+              </div>
+            </Section>
+
 
             {compare.length > 0 && (
               <Section id="compare" eyebrow="Compare" title="The venues we have read, side by side" dated>
                 <p>
+                  Only venues whose terms we have read. The ranking table above
+                  is larger and includes unread rows.
+                </p>
+                <p>
                   Coins, minimum deposit, payout window and playthrough for the{" "}
-                  {compare.length} venues whose terms have been read. Everything
-                  in this table comes off the venue or its terms page.
+                  {compare.length} of them. Every payout window here is the one
+                  written in the terms, not the one on the banner, which is why
+                  a venue advertising instant can show a window measured in
+                  hours.
                 </p>
                 <div className="rp-dtable-wrap">
                   <table className="rp-dtable cc-cmp">
@@ -800,11 +893,19 @@ export function CasinosBody() {
   );
 }
 
-function HeroStat({ label, value }: { label: string; value: number }) {
+function HeroStat({ label, value }: { label: string; value: number | string }) {
+  // A date in a slot built for a two-digit count wraps to three lines on a
+  // phone and drags the other tiles up with it, so text values render a size
+  // down and refuse to break.
+  const isText = typeof value === "string";
   return (
     <div className="uni-home-hero-stat">
       <span className="uni-home-hero-stat-label">{label}</span>
-      <span className="uni-home-hero-stat-value">{value}</span>
+      <span
+        className={`uni-home-hero-stat-value${isText ? " cc-stat-text" : ""}`}
+      >
+        {value}
+      </span>
     </div>
   );
 }

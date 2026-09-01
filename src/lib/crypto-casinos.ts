@@ -29,6 +29,11 @@ export interface CasinoClaims {
 }
 
 /** Facts read off the venue or its regulator. Null means nobody has looked. */
+export type ComplaintRecord =
+  | "none-found"
+  | "clean"
+  | "withdrawal-pattern";
+
 export interface CasinoVerified {
   licence: { authority: string; number: string | null } | null;
   kyc: KycPolicy | null;
@@ -42,6 +47,21 @@ export interface CasinoVerified {
    * can only read the headline, so the real figure is recorded here.
    */
   capUsd?: number | null;
+  /**
+   * The cap the playthrough actually applies to, when it is not the headline
+   * cap. Casino Crypto advertises 35,000 USDT across six deposits; the 40x
+   * applies to a single 15,000 leg, so multiplying the headline would invent
+   * a turnover figure nobody is ever asked for.
+   */
+  wageringBasisUsd?: number | null;
+  /**
+   * What a search of the public complaint boards turned up.
+   *
+   * null is "not searched" and is a different claim from "searched, nothing
+   * there". A new brand with no file is not a clean record, which is why
+   * none-found scores nothing rather than scoring well.
+   */
+  complaints?: ComplaintRecord | null;
   chains: string[] | null;
   games: number | null;
   restricted: string[] | null;
@@ -71,22 +91,41 @@ export interface CasinoData {
   casinos: Casino[];
 }
 
-const KYC_POINTS: Record<KycPolicy, number> = {
-  none: 20,
-  withdrawal: 12,
-  always: 4,
+/**
+ * Evidence first, quality second.
+ *
+ * The base pays for a fact having been read off the venue's own terms. The
+ * modifier then adjusts on what that fact says, and only ever on a field that
+ * was actually read, so an unknown can never earn a point. The old formula
+ * gave +7 for an unknown playthrough, which is how a venue with three fields
+ * read outscored one with four.
+ */
+const EVIDENCE_POINTS = {
+  wagering: 20,
+  licenceWithNumber: 15,
+  withdrawal: 15,
+  kyc: 10,
+  chains: 10,
+  provablyFair: 10,
+  complaints: 10,
+} as const;
+
+const WITHDRAWAL_MOD: Record<WithdrawalSpeed, number> = {
+  instant: 5,
+  "under 1 hour": 0,
+  "1-24 hours": 0,
+  "over 24 hours": -5,
 };
 
-const WITHDRAWAL_POINTS: Record<WithdrawalSpeed, number> = {
-  instant: 25,
-  "under 1 hour": 20,
-  "1-24 hours": 12,
-  "over 24 hours": 4,
+const COMPLAINT_MOD: Record<ComplaintRecord, number> = {
+  clean: 0,
+  "none-found": 0,
+  "withdrawal-pattern": -20,
 };
 
 /**
- * The seven facts the score reads. Coverage is shown per row as "n of 7", so a
- * low score reads as work not yet done instead of as a bad venue.
+ * The facts the score reads. Coverage is shown per row as "n of 8", so a low
+ * score reads as work not yet done instead of as a bad venue.
  */
 export const CHECK_FIELDS: (keyof CasinoVerified)[] = [
   "licence",
@@ -96,7 +135,10 @@ export const CHECK_FIELDS: (keyof CasinoVerified)[] = [
   "wagering",
   "chains",
   "games",
+  "complaints",
 ];
+
+export const CHECK_TOTAL = CHECK_FIELDS.length;
 
 export function checkedCount(c: Casino): number {
   return CHECK_FIELDS.filter((f) => c.verified[f] != null).length;
@@ -110,31 +152,54 @@ export function isVerified(c: Casino): boolean {
 }
 
 /**
- * The published score, out of 100, from verified facts only. Null when the
- * venue has not been checked, so an unchecked row can never be presented as
- * having earned a position.
+ * The evidence score, and what it is not.
  *
- * Bonus size is not scored. A headline behind a 60x playthrough is worth less
- * than a small one at 20x, and sorting on the headline is what every
- * competing list does.
+ * It measures how much of a venue we have actually read, then nudges on what
+ * those readings say. It is not a rating of the venue and it never moves a
+ * row: the table sorts on the advertised bonus, which is a fact about the
+ * advertising. Null below MIN_CHECKED_TO_SCORE, so a row with almost nothing
+ * behind it shows a dash instead of a number it has not earned.
+ *
+ * Bonus size is not scored at all. A large headline behind a 60x playthrough
+ * is worth less than a small one at 20x.
  */
 export function casinoScore(c: Casino): number | null {
   if (!isVerified(c)) return null;
   const v = c.verified;
-  // Absolute, out of 100. An unread field scores nothing, which is why the
-  // coverage count sits beside the number wherever it is shown.
   let s = 0;
-  if (v.licence) s += v.licence.number ? 25 : 18;
-  if (v.kyc) s += KYC_POINTS[v.kyc] ?? 0;
-  if (v.withdrawal) s += WITHDRAWAL_POINTS[v.withdrawal] ?? 0;
-  if (v.provablyFair) s += 15;
+
+  // Base: one payment per fact read.
+  if (v.wagering != null) s += EVIDENCE_POINTS.wagering;
+  if (v.licence?.number) s += EVIDENCE_POINTS.licenceWithNumber;
+  if (v.withdrawal) s += EVIDENCE_POINTS.withdrawal;
+  if (v.kyc) s += EVIDENCE_POINTS.kyc;
+  if (v.chains?.length) s += EVIDENCE_POINTS.chains;
+  if (v.provablyFair != null) s += EVIDENCE_POINTS.provablyFair;
+  if (v.complaints) s += EVIDENCE_POINTS.complaints;
+
+  // Modifier: only on fields that were read.
   const wr = v.wagering;
-  if (wr == null) s += 7;
-  else if (wr <= 20) s += 15;
-  else if (wr <= 35) s += 11;
-  else if (wr <= 50) s += 6;
-  return Math.round(s);
+  if (wr != null) {
+    if (wr <= 20) s += 10;
+    else if (wr <= 40) s += 5;
+    else if (wr > 50) s -= 5;
+  }
+  if (v.withdrawal) s += WITHDRAWAL_MOD[v.withdrawal] ?? 0;
+  if (v.complaints) s += COMPLAINT_MOD[v.complaints] ?? 0;
+
+  // Clamped to a hundred. The parts can add to 105, and a score out of 105
+  // is a number that invites a question the column cannot answer.
+  return Math.min(100, Math.max(0, Math.round(s)));
 }
+
+/** What the column is out of, for the sentence above the table. */
+export const EVIDENCE_MAX = 100;
+
+export const COMPLAINT_LABEL: Record<ComplaintRecord, string> = {
+  "none-found": "Searched, no file found",
+  clean: "File read, nothing outstanding",
+  "withdrawal-pattern": "Withdrawal complaints on record",
+};
 
 export const KYC_LABEL: Record<KycPolicy, string> = {
   none: "No KYC",
@@ -251,13 +316,16 @@ export function bonusUsd(p: ParsedBonus): number | null {
  * $30,000; one asks $1.2M of wagering for it and the other asks $1.8M.
  */
 export function turnoverUsd(c: Casino): number | null {
-  const cap = capOf(c);
   const wr = c.verified.wagering;
   // Zero is a real answer and the best one on the page: a bonus with no
   // playthrough obliges nothing, so it belongs in the table rather than
   // filtered out of it.
-  if (cap == null || wr == null || wr < 0) return null;
-  return cap * wr;
+  if (wr == null || wr < 0) return null;
+  // The basis, where the playthrough applies to something smaller than the
+  // headline cap. Otherwise the cap itself.
+  const base = c.verified.wageringBasisUsd ?? capOf(c);
+  if (base == null) return null;
+  return base * wr;
 }
 
 /** The terms figure where one has been read, and the headline otherwise. */

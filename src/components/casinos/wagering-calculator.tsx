@@ -31,9 +31,18 @@ export interface CalcPreset {
 const money = (n: number) =>
   n.toLocaleString("en-US", { maximumFractionDigits: 0 });
 
-export function WageringCalculator({ presets = [] }: { presets?: CalcPreset[] }) {
-  const [bonus, setBonus] = useState("500");
-  const [wr, setWr] = useState("40");
+export function WageringCalculator({
+  presets = [],
+  defaultSlug,
+}: {
+  presets?: CalcPreset[];
+  /** Which listed offer the tool opens on. The row the page ranks first, so
+   *  the intent the headline set survives into the tool. */
+  defaultSlug?: string;
+}) {
+  const start = presets.find((p) => p.slug === defaultSlug) ?? presets[0];
+  const [bonus, setBonus] = useState(start ? String(start.cap) : "500");
+  const [wr, setWr] = useState(start ? String(start.wagering) : "40");
   const [gameIdx, setGameIdx] = useState(0);
   const [shown, setShown] = useState<
     { b: number; w: number; g: (typeof GAMES)[number] } | null
@@ -70,7 +79,7 @@ export function WageringCalculator({ presets = [] }: { presets?: CalcPreset[] })
               <select
                 id="cc-preset"
                 className="cc-calc-input"
-                defaultValue=""
+                defaultValue={start?.slug ?? ""}
                 onChange={(e) => applyPreset(e.target.value)}
               >
                 <option value="">Type my own numbers</option>
@@ -127,7 +136,9 @@ export function WageringCalculator({ presets = [] }: { presets?: CalcPreset[] })
           Calculate
         </button>
         <p className="cc-calc-privacy">
-          Runs in your browser. Educational only, not advice or an offer.
+          Expected cost is house edge multiplied by required turnover. It is
+          not a prediction of what you will lose. Runs in your browser.
+          Educational only, not advice or an offer.
         </p>
       </div>
 

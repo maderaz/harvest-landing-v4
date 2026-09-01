@@ -46,6 +46,7 @@ export function OutboundLink({
   icon,
   className,
   ariaLabel,
+  rel = "noopener noreferrer nofollow",
   children,
 }: {
   href: string;
@@ -59,6 +60,12 @@ export function OutboundLink({
   icon?: ReactNode;
   className?: string;
   ariaLabel?: string;
+  /**
+   * Overrides the default only where the link is paid. A commercial
+   * destination needs sponsored alongside nofollow; everything else on the
+   * site is research and keeps the default.
+   */
+  rel?: string;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -112,7 +119,7 @@ export function OutboundLink({
         className={className}
         href={outHref}
         target="_blank"
-        rel="noopener noreferrer nofollow"
+        rel={rel}
         aria-label={ariaLabel}
         onClick={(e) => {
           if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
@@ -166,7 +173,7 @@ export function OutboundLink({
                 className="rp-modal-confirm"
                 href={outHref}
                 target="_blank"
-                rel="noopener noreferrer nofollow"
+                rel={rel}
                 onClick={() => {
                   track("confirm");
                   setOpen(false);
