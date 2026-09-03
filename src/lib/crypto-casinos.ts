@@ -49,9 +49,9 @@ export interface CasinoVerified {
   capUsd?: number | null;
   /**
    * The cap the playthrough actually applies to, when it is not the headline
-   * cap. Casino Crypto advertises 35,000 USDT across six deposits; the 40x
-   * applies to a single 15,000 leg, so multiplying the headline would invent
-   * a turnover figure nobody is ever asked for.
+   * cap. A ladder offer advertises a running total across several deposits
+   * while its playthrough applies to one leg, so multiplying the headline
+   * would invent a turnover figure nobody is ever asked for.
    */
   wageringBasisUsd?: number | null;
   /**
@@ -72,6 +72,15 @@ export interface Casino {
   name: string;
   /** Outbound link. Null until supplied; the row renders without a button. */
   url: string | null;
+  /**
+   * Whether the link above carries our affiliate token yet.
+   *
+   * "live" means the deal is signed and the URL is the attributed one, which
+   * is why the outbound helper must pass it through untouched. "pending"
+   * means it is the venue's plain domain while the deal is being set up, and
+   * the row will be swapped when the real link arrives.
+   */
+  dealStatus?: "live" | "pending" | null;
   /** Position in the supplied list. Commercial, and labelled as such. */
   order: number;
   bonusClaim: string | null;

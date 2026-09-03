@@ -47,6 +47,8 @@ export function OutboundLink({
   className,
   ariaLabel,
   rel = "noopener noreferrer nofollow",
+  keepHref = false,
+  body,
   children,
 }: {
   href: string;
@@ -66,10 +68,26 @@ export function OutboundLink({
    * site is research and keeps the default.
    */
   rel?: string;
+  /**
+   * Send the URL exactly as given, skipping ref=harvest.finance.
+   *
+   * An affiliate link already carries the token that attributes the traffic,
+   * and appending an unknown parameter to one risks the program dropping the
+   * referral. Everything else on the site wants the default.
+   */
+  keepHref?: boolean;
+  /**
+   * Replaces the default warning inside the modal.
+   *
+   * The default is written for a DeFi venue and talks about contracts and
+   * rates. A destination that is not one of those needs its own sentence, or
+   * the interstitial warns about the wrong thing.
+   */
+  body?: ReactNode;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  const outHref = withRef(href);
+  const outHref = keepHref ? href : withRef(href);
 
   useEffect(() => {
     if (!open) return;
@@ -155,11 +173,16 @@ export function OutboundLink({
               </span>
             </h3>
             <p className="rp-modal-body">
-              This takes you to {platform ? platform : "an external platform"},
-              an independent platform we track for research but don&rsquo;t run
-              ourselves. Harvest doesn&rsquo;t control its contracts, rates or
-              security, so it&rsquo;s worth a quick look of your own before you
-              use it.
+              {body ?? (
+                <>
+                  This takes you to{" "}
+                  {platform ? platform : "an external platform"}, an independent
+                  platform we track for research but don&rsquo;t run ourselves.
+                  Harvest doesn&rsquo;t control its contracts, rates or
+                  security, so it&rsquo;s worth a quick look of your own before
+                  you use it.
+                </>
+              )}
             </p>
             <div className="rp-modal-actions">
               <button

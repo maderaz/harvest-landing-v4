@@ -8,7 +8,7 @@
 
 import { useMemo, useState } from "react";
 import { OutboundLink } from "@/components/report/outbound-link";
-import { VENUE_REVIEWS } from "@/lib/crypto-casinos-copy";
+import { LEAVE_SITE_BODY, VENUE_REVIEWS } from "@/lib/crypto-casinos-copy";
 import { CASINO_LOGOS } from "@/lib/casino-logos";
 import {
   casinoScore,
@@ -175,15 +175,25 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                         honestly offer instead: where the reading came from. */}
                     {c.url ? (
                       <OutboundLink
-                        className="cc-open"
+                        className="cc-open cc-play"
                         href={c.url}
+                        // Sponsored on every venue link, including the ones
+                        // whose deal is still pending. They are commercial
+                        // destinations on a page that will be paid for them,
+                        // and marking them anything else would be wrong the
+                        // week a deal closes.
                         rel="sponsored nofollow noopener noreferrer"
+                        // Untouched. Four of these carry an affiliate token
+                        // and ref=harvest.finance attributes nothing on the
+                        // rest. See dealStatus in the data.
+                        keepHref
                         platform={c.name}
                         source="crypto-casinos"
                         rank={i + 1}
-                        ariaLabel={`Visit ${c.name}`}
+                        ariaLabel={`Play now at ${c.name}`}
+                        body={LEAVE_SITE_BODY(c.name)}
                       >
-                        Visit
+                        Play now
                       </OutboundLink>
                     ) : (
                       <a

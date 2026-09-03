@@ -65,6 +65,17 @@ export const DISCLOSURE_SHORT =
 export const LEGAL_SHORT =
   "Most venues on this list do not accept players in the United States. Checking the law where you live is yours. An Anjouan or Curacao licence is not a US or UK licence.";
 
+/**
+ * What the leave-site modal says on this page.
+ *
+ * The site's default warning is about contracts, rates and security, which is
+ * the right warning for a DeFi venue and the wrong one here. A reader leaving
+ * for a casino needs the three facts that actually apply: the house wins over
+ * time, the operator holds the balance, and this link is commercial.
+ */
+export const LEAVE_SITE_BODY = (name: string) =>
+  `${name} is a third-party gambling site. Harvest does not run it, hold your balance or process your withdrawal, and every game there has a house edge, so the expected result of continued play is a loss. This link is commercial and may pay us. Check the law where you live and read the bonus terms before you deposit.`;
+
 /** Printed directly above the ranking. */
 export const SORT_RULE =
   "Sort key: advertised bonus cap, dollars first. BTC-capped and uncapped offers sit below. A higher row is a larger headline, not a better venue.";
@@ -292,88 +303,24 @@ export function reviewFacts(
 }
 
 /**
- * Casino Crypto, first by advertised bonus.
+ * Lucky Rollers, first by advertised bonus.
  *
- * Public record only, read 30 August 2026. Nobody here has played there, so
- * withdrawal speed and provably fair stay unchecked on its row and the card
- * says so rather than filling the gap.
- */
-export const CASINO_CRYPTO_REVIEW: VenueReview = {
-  slug: "casino-crypto",
-  operator: "BMGruppe Ltd",
-  standfirst:
-    "Ranked first by advertised bonus. Not ranked first by terms we have verified.",
-  caveat:
-    "{CHECKED} fields checked. Withdrawal speed, the coin list and provably fair are unread, and the 40x covers one leg of the offer, not all of it. The operator launched in 2026 under an Anjouan licence. Read the ladder before treating $35,000 as the offer.",
-  sections: [
-    {
-      h: "Is Casino Crypto legit?",
-      body: "It is a real site with a real licence, and the licence is the weakest kind there is. BMGruppe Ltd holds ALSI-202510020-F11 from Anjouan, in the Comoros. Those cost little and arrive fast, and almost no dispute process sits behind one. If a withdrawal gets refused, no regulator is going to act for you. The word licensed is doing less work here than it looks like.",
-    },
-    {
-      h: "Operating since",
-      body: "2026. Months, not years. Nothing has gone publicly wrong, and nothing has had the time to.",
-    },
-    {
-      h: "The biggest bonus for newcomers",
-      body: "350% up to 35,000 USDT and 777 free spins, and it is a ladder, not a match. The whole figure is a running total over your first six deposits, each with its own playthrough: 100% up to 15,000 USDT at 40x on the second, 200 free spins on the third, 100% up to 10,000 USDT at 35x on the fourth, 377 spins at 30x on the fifth. Sports and mini games count toward none of it. Seeing 35,000 means depositing six times and clearing six separate requirements.",
-    },
-  ],
-  keepInMind: [
-    {
-      name: "Jurisdiction",
-      body: "Anjouan, which in practice is self-regulation. Read it as no consumer protection, not as a stamp of approval.",
-    },
-    {
-      name: "Freshness",
-      body: "A 2026 launch with no track record either way. The empty complaint file is not a clean record, it is an empty one.",
-    },
-    {
-      name: "Reputation",
-      body: "Nothing on AskGamblers or Trustpilot under this name. Searching for it brings back crypto-casino.io, Crypto Games.io and Cryptorino instead, and some of those do carry withdrawal complaints. Check the domain character by character.",
-    },
-    {
-      name: "The no-KYC promise",
-      body: "A default, not a guarantee. The terms allow documents to be requested on suspected bonus abuse, an AML flag or a legal request, which is the clause that fires on a big win.",
-    },
-  ],
-  facts: [
-    { label: "Operator", value: "BMGruppe Ltd, company no. 00005056" },
-    { label: "Licence", value: "Anjouan, Union of Comoros, ALSI-202510020-F11" },
-    { label: "Live since", value: "2026" },
-    { label: "Welcome bonus", value: "350% up to 35,000 USDT and 777 free spins, over six deposits" },
-    { label: "Wagering", value: "40x on the largest match leg, 30x to 35x on the rest" },
-    { label: "Minimum deposit", value: "Sources conflict, $5 or $30. Not confirmed" },
-    { label: "Games", value: "10,000 or more, from 96 or more providers" },
-    { label: "Withdrawal speed", value: "Advertised as instant. Not checked" },
-    { label: "Provably fair", value: "Not checked" },
-  ],
-  sources: [
-    { label: "Cryptopolitan review", url: "https://www.cryptopolitan.com/casinocrypto-io-review/" },
-    { label: "Operator terms and conditions", url: "https://casinocrypto.io/en/terms-and-conditions" },
-    { label: "AskGamblers complaint search", url: "https://www.askgamblers.com/online-casinos/complaints" },
-  ],
-};
-
-/**
- * Lucky Rollers, second by advertised bonus.
- *
- * The inverse of the venue above it: the clearest published terms on this
- * page sitting behind an operator nobody can name. The precise-looking
- * complaint statistics circulating for this brand come from an affiliate
- * site and trace to no primary source, so they are not printed here.
+ * The clearest published terms on this page sitting behind an operator
+ * nobody can name. The precise-looking complaint statistics circulating for
+ * this brand come from an affiliate site and trace to no primary source, so
+ * they are not printed here.
  */
 export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   slug: "lucky-rollers",
   operator: "Operator not published",
   standfirst:
-    "Second by advertised bonus, and the highest evidence score on the page.",
+    "First by advertised bonus, and the highest evidence score on the page.",
   caveat:
     "{CHECKED} fields checked, and the offer itself is the best documented here. What is missing is the operator: no company and no licence number, so there is nobody to complain to. Provably fair is unread.",
   sections: [
     {
       h: "Is Lucky Rollers legit?",
-      body: "We cannot tell you who runs it. No operating company and no licence number turn up anywhere we can check, which is a worse answer than the weak licence above: that one can at least be looked up. The odd part is that the terms themselves are unusually plain, so the missing operator looks less like sloppiness and more like a choice.",
+      body: "We cannot tell you who runs it. No operating company and no licence number turn up anywhere we can check, so there is no regulator to appeal to and no company to name in a complaint. The odd part is that the terms themselves are unusually plain, so the missing operator looks less like sloppiness and more like a choice.",
     },
     {
       h: "The biggest bonus for newcomers",
@@ -417,7 +364,4 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   ],
 };
 
-export const VENUE_REVIEWS: VenueReview[] = [
-  CASINO_CRYPTO_REVIEW,
-  LUCKY_ROLLERS_REVIEW,
-];
+export const VENUE_REVIEWS: VenueReview[] = [LUCKY_ROLLERS_REVIEW];

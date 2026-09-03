@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { loadCasinos } from "@/lib/crypto-casinos-data";
 import { hasLogo } from "@/lib/casino-logos";
-import { isVerified } from "@/lib/crypto-casinos";
 import { FAQS, RANK_COUNT, RANK_LABEL } from "@/lib/crypto-casinos-copy";
 import { CasinosBody } from "@/components/casinos/casinos-body";
 import {
@@ -20,16 +19,21 @@ const PAGE_URL = `${SITE_URL}/crypto-casinos`;
 const TITLE = `Crypto Casinos: ${RANK_LABEL} Ranked by Welcome Bonus`;
 const DESCRIPTION = `The ${RANK_COUNT} largest advertised crypto casino welcome bonuses, ranked by the size of the offer, with the playthrough priced so you can see what each one is actually worth.`;
 
-// noindex until at least one venue has been checked AND has a link. A list of
-// welcome-bonus copy with nothing verified is the same page as every other
-// listicle. The flag clears itself when the first row is real.
+// Held at noindex on purpose.
+//
+// The old gate lifted itself the moment a row had both a link and a reading,
+// which is now true of several. It is held anyway: most of the links are the
+// venue's plain domain while the affiliate deal is still being set up, so
+// they will be swapped. A page indexed with links that then change is a worse
+// start than a page indexed a week later. Lift this when dealStatus reads
+// "live" across the ranking, and add /crypto-casinos to sitemap.ts and to the
+// llms.txt list in scripts/build-seo-static.mjs in the same commit.
 export function generateMetadata(): Metadata {
-  const ready = loadCasinos().casinos.some((c) => c.url && isVerified(c));
   return {
     title: TITLE,
     description: DESCRIPTION,
     alternates: { canonical: PAGE_URL },
-    robots: ready ? undefined : { index: false, follow: true },
+    robots: { index: false, follow: true },
     openGraph: {
       title: TITLE,
       description: `The ${RANK_COUNT} largest advertised crypto casino welcome bonuses, ranked by offer size, with the playthrough priced.`,
@@ -58,7 +62,10 @@ export default function CryptoCasinosPage() {
   if (ranked.length > 0) {
     jsonLd.push(
       reportItemListSchema(
-        ranked.map((c) => ({ name: c.name, url: c.url ?? `${PAGE_URL}#ranking` })),
+        // Our own anchors, never the outbound URL. The list describes rows
+        // on this page, and a sponsored destination does not belong in
+        // structured data.
+        ranked.map((c) => ({ name: c.name, url: `${PAGE_URL}#${c.slug}` })),
         PAGE_URL,
       ),
     );

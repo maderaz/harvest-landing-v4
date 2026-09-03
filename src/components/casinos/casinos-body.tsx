@@ -9,6 +9,7 @@ import Link from "next/link";
 import { AssetIcon } from "@/components/token-icons";
 import { ReportToc, type TocItem } from "@/components/report/report-toc";
 import { CasinoTable } from "@/components/casinos/casino-table";
+import { OutboundLink } from "@/components/report/outbound-link";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { loadCasinos } from "@/lib/crypto-casinos-data";
 import { CASINO_LOGOS, LOGO_RATIO, hasLogo } from "@/lib/casino-logos";
@@ -21,6 +22,7 @@ import {
   CRYPTO_VS_FIAT,
   DEPOSIT_STEPS,
   FAQS,
+  LEAVE_SITE_BODY,
   LEGAL_SHORT,
   NETWORKS,
   RANK_COUNT,
@@ -45,7 +47,7 @@ export const TOC_ITEMS: TocItem[] = [
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
   { id: "bankroll", label: "Between sessions" },
-  { id: "reviews", label: "The top two, reviewed" },
+  { id: "reviews", label: "Number one, reviewed" },
   { id: "compare", label: "Side by side" },
   { id: "how-they-work", label: "How they work" },
   { id: "provably-fair", label: "Provably fair" },
@@ -183,6 +185,25 @@ function VenueReviewCard({
             {casino ? checkedCount(casino) : 0} of {CHECK_TOTAL} checked
           </span>
         </span>
+        {/* The same control as the table row, so a reader convinced by the
+            card does not have to scroll back up to act on it. */}
+        {casino?.url ? (
+          <span className="rp-visit-wrap">
+            <OutboundLink
+              className="cc-open cc-play"
+              href={casino.url}
+              rel="sponsored nofollow noopener noreferrer"
+              keepHref
+              platform={casino.name}
+              source="crypto-casinos-review"
+              rank={rank}
+              ariaLabel={`Play now at ${casino.name}`}
+              body={LEAVE_SITE_BODY(casino.name)}
+            >
+              Play now
+            </OutboundLink>
+          </span>
+        ) : null}
       </div>
       <div className="rp-venue-body">
         <div className="rp-venue-prose">
@@ -234,9 +255,13 @@ export function CasinosBody() {
   const linked = casinos.filter((c) => c.url).length;
   // The wordmark set is the membership list. See lib/casino-logos.
   const ranked = casinos.filter((c) => hasLogo(c.slug));
-  const turnover = turnoverRows(casinos);
-  const compare = compareRows(casinos);
-  const readTerms = casinos.filter((c) => checkedCount(c) > 0).length;
+  // Every derived table is scoped to the ranking, not to the 38 venues in the
+  // file. A venue that is not listed has no row, no wordmark and no button, so
+  // a reader meeting its name in the turnover table or the calculator has
+  // nowhere to go with it.
+  const turnover = turnoverRows(ranked);
+  const compare = compareRows(ranked);
+  const readTerms = ranked.filter((c) => checkedCount(c) > 0).length;
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -395,9 +420,9 @@ export function CasinosBody() {
                         <td className="num">{money(r.cap)}</td>
                         {/* The basis is printed whenever it is not the
                             headline cap, otherwise the row's arithmetic does
-                            not work in front of the reader: Casino Crypto
-                            advertises $35,000 and the 40x applies to a single
-                            $15,000 leg. */}
+                            not work in front of the reader: a ladder offer
+                            advertises a running total while its playthrough
+                            applies to one leg of it. */}
                         <td className="num">
                           {r.wagering === 0
                             ? "None"
@@ -498,14 +523,18 @@ export function CasinosBody() {
             <Section
               id="reviews"
               eyebrow="Reviewed"
-              title="The top two, reviewed"
+              title={
+                VENUE_REVIEWS.length > 1
+                  ? "The top two, reviewed"
+                  : "Number one, reviewed"
+              }
               dated
             >
               <p>
-                Ranked first and second by advertised bonus. That ordering is
-                about the advertising, so here is what the public record says
-                about the venues underneath it. Neither has been played by
-                anyone here, and each card opens with what it does not know.
+                The ranking orders on advertised bonus, which is a fact about
+                the advertising. Here is what the public record says about the
+                venue that ordering puts first. Nobody here has played there,
+                and the card opens with what it does not know.
               </p>
               <div className="rp-venues">
                 {VENUE_REVIEWS.map((r, i) => (
