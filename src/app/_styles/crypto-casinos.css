@@ -181,6 +181,18 @@
 .cc-action { display: flex; justify-content: flex-end; align-items: center; }
 .cc-rowgroup { border-bottom: 1px solid var(--rp-card-border, #eeeef5); }
 .cc-rowgroup .hub-row { border-bottom: 0; align-items: start; }
+/* The checked facts a reader gets without expanding the row. Quiet, because
+   they sit under the venue name and must not compete with it. */
+.cc-glance {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--uni-ink-3);
+}
+
 .cc-submob { display: none; }
 
 /* The outbound button. Anchor specificity, because .uni-home-content a paints
@@ -265,6 +277,18 @@
   line-height: 1.55;
   color: var(--uni-ink-2);
 }
+/* Where a fact came from. Small and under the value, so the value reads
+   first and the provenance is there for anyone who wants it. */
+.cc-fact-src {
+  display: block;
+  margin-top: 2px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--uni-ink-3);
+}
+.cc-page .uni-home-content .cc-fact-src a { color: inherit; }
+.cc-fact-unconf { font-style: italic; }
+
 .cc-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
