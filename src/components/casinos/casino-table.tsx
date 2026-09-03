@@ -14,13 +14,32 @@ import {
   casinoScore,
   CLAIM_LABELS,
   COMPLAINT_LABEL,
+  UNCONFIRMED,
   KYC_LABEL,
   capOf,
   parseBonus,
   type Casino,
+  type FieldSource,
 } from "@/lib/crypto-casinos";
 
 const UNIT_PREFIX: Record<string, string> = { USD: "$", EUR: "\u20ac" };
+
+/**
+ * The three facts worth showing before a reader expands a row.
+ *
+ * Licence, KYC and playthrough, because those are the questions the queries
+ * ask. An unread field is left out rather than printed as a dash: a line of
+ * dashes tells a reader nothing and takes a row's worth of height to do it.
+ */
+function glance(c: Casino): string[] {
+  const out: string[] = [];
+  if (c.verified.licence) out.push(c.verified.licence.authority);
+  if (c.verified.kyc) out.push(KYC_LABEL[c.verified.kyc]);
+  if (c.verified.wagering != null) {
+    out.push(c.verified.wagering === 0 ? "No wagering" : `${c.verified.wagering}x wagering`);
+  }
+  return out;
+}
 
 /** Venues with a review card of their own, so the cell can point at it. */
 const REVIEWED = new Set(VENUE_REVIEWS.map((r) => r.slug));
@@ -137,6 +156,9 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                         {open === c.slug ? "−" : "+"}
                       </span>
                     </button>
+                    {glance(c).length > 0 && (
+                      <span className="cc-glance">{glance(c).join(" · ")}</span>
+                    )}
                     {chips.length > 0 && (
                       <span className="cc-chips">
                         {chips.map((l) => (
@@ -220,30 +242,30 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                     )}
                     <p className="cc-detail-h">Checked against the venue</p>
                     <dl className="cc-facts">
-                      <Fact k="Licence">
+                      <Fact k="Licence" src={c.sources?.licence}>
                         {c.verified.licence
                           ? `${c.verified.licence.authority}${c.verified.licence.number ? ` · ${c.verified.licence.number}` : ""}`
                           : "Not checked"}
                       </Fact>
-                      <Fact k="KYC">
+                      <Fact k="KYC" src={c.sources?.kyc}>
                         {c.verified.kyc ? KYC_LABEL[c.verified.kyc] : "Not checked"}
                       </Fact>
-                      <Fact k="Withdrawal">
+                      <Fact k="Withdrawal" src={c.sources?.withdrawal}>
                         {c.verified.withdrawal ?? "Not checked"}
                       </Fact>
-                      <Fact k="Wagering">
+                      <Fact k="Wagering" src={c.sources?.wagering}>
                         {c.verified.wagering != null
                           ? `${c.verified.wagering}x`
                           : "Not checked"}
                       </Fact>
-                      <Fact k="Provably fair">
+                      <Fact k="Provably fair" src={c.sources?.provablyFair}>
                         {c.verified.provablyFair == null
                           ? "Not checked"
                           : c.verified.provablyFair
                             ? "Yes"
                             : "No"}
                       </Fact>
-                      <Fact k="Coins">
+                      <Fact k="Coins" src={c.sources?.chains}>
                         {c.verified.chains?.length
                           ? c.verified.chains.join(", ")
                           : "Not checked"}
@@ -251,7 +273,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                       {/* "Not searched" and "searched, nothing there" are
                           different claims, and only the second one is worth
                           anything to a reader. */}
-                      <Fact k="Complaints">
+                      <Fact k="Complaints" src={c.sources?.complaints}>
                         {c.verified.complaints
                           ? COMPLAINT_LABEL[c.verified.complaints]
                           : "Not searched"}
@@ -294,11 +316,40 @@ function Toggle({
   );
 }
 
-function Fact({ k, children }: { k: string; children: React.ReactNode }) {
+/**
+ * One checked fact, and where it came from.
+ *
+ * A value with no source is not presented as read: it says so, because the
+ * difference between a figure off a venue's terms and a figure off a supplied
+ * list is the difference this column exists to make.
+ */
+function Fact({
+  k,
+  src,
+  children,
+}: {
+  k: string;
+  src?: FieldSource | typeof UNCONFIRMED;
+  children: React.ReactNode;
+}) {
   return (
     <div className="cc-fact">
       <dt>{k}</dt>
-      <dd>{children}</dd>
+      <dd>
+        {children}
+        {src === UNCONFIRMED ? (
+          <span className="cc-fact-src cc-fact-unconf">
+            From the supplied list, not confirmed at the venue
+          </span>
+        ) : src ? (
+          <span className="cc-fact-src">
+            <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+              {new URL(src.url).hostname.replace(/^www\./, "")}
+            </a>
+            , read {src.readOn}
+          </span>
+        ) : null}
+      </dd>
     </div>
   );
 }

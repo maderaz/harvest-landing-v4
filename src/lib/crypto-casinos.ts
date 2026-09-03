@@ -29,6 +29,29 @@ export interface CasinoClaims {
 }
 
 /** Facts read off the venue or its regulator. Null means nobody has looked. */
+/**
+ * Where a verified value was read, and when.
+ *
+ * The page's whole claim is that these figures come off a venue's own terms
+ * or its regulator. Without a URL beside the value that is a promise rather
+ * than a fact, so scripts/check-evidence.mjs fails the build on any value
+ * that has neither a source nor an explicit unconfirmed marker.
+ */
+export interface FieldSource {
+  url: string;
+  /** ISO date the page was read. */
+  readOn: string;
+}
+
+/**
+ * A value carried over from the supplied seed list, with no page behind it.
+ *
+ * Kept distinct from a sourced value rather than deleted: the figure is
+ * probably right, it has just never been confirmed at the venue, and the row
+ * says which of the two it is.
+ */
+export const UNCONFIRMED = "unconfirmed" as const;
+
 export type ComplaintRecord =
   | "none-found"
   | "clean"
@@ -70,6 +93,13 @@ export interface CasinoVerified {
 export interface Casino {
   slug: string;
   name: string;
+  /**
+   * Where each verified field was read. Keyed by the field name in `verified`.
+   * The literal "unconfirmed" marks a value inherited from the supplied list.
+   */
+  sources?: Partial<
+    Record<keyof CasinoVerified, FieldSource | typeof UNCONFIRMED>
+  >;
   /** Outbound link. Null until supplied; the row renders without a button. */
   url: string | null;
   /**
