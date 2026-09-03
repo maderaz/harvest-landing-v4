@@ -11,8 +11,8 @@ import { ReportToc, type TocItem } from "@/components/report/report-toc";
 import { CasinoTable } from "@/components/casinos/casino-table";
 import { OutboundLink } from "@/components/report/outbound-link";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
-import { loadCasinos } from "@/lib/crypto-casinos-data";
-import { CASINO_LOGOS, LOGO_RATIO, hasLogo } from "@/lib/casino-logos";
+import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
+import { CASINO_LOGOS, LOGO_RATIO } from "@/lib/casino-logos";
 import { CHECK_TOTAL, casinoScore, checkedCount, type Casino } from "@/lib/crypto-casinos";
 import {
   BONUS_TERMS,
@@ -25,8 +25,7 @@ import {
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
   NETWORKS,
-  RANK_COUNT,
-  RANK_LABEL,
+  rankLabel,
   VENUE_REVIEWS,
   type VenueReview,
   RG_TOOLS,
@@ -36,14 +35,20 @@ import {
   compareRows,
   leadSentences,
   money,
+  spellOut,
   reviewFacts,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
 
 const HERO_COINS = ["BTC", "ETH", "USDT"];
 
-export const TOC_ITEMS: TocItem[] = [
-  { id: "ranking", label: `The ${RANK_LABEL}` },
+/**
+ * The rail and the jump nav. A function because the ranking's label carries
+ * its length, and that length is a property of the data rather than of a
+ * constant somebody has to remember to update.
+ */
+export const tocItems = (ranked: number): TocItem[] => [
+  { id: "ranking", label: `The ${rankLabel(ranked)}` },
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
   { id: "bankroll", label: "Between sessions" },
@@ -254,7 +259,7 @@ export function CasinosBody() {
   const checked = casinos.filter((c) => casinoScore(c) != null).length;
   const linked = casinos.filter((c) => c.url).length;
   // The wordmark set is the membership list. See lib/casino-logos.
-  const ranked = casinos.filter((c) => hasLogo(c.slug));
+  const ranked = casinos.filter(isRanked);
   // Every derived table is scoped to the ranking, not to the 38 venues in the
   // file. A venue that is not listed has no row, no wordmark and no button, so
   // a reader meeting its name in the turnover table or the calculator has
@@ -279,9 +284,11 @@ export function CasinosBody() {
             ))}
           </div>
           <h1 className="uni-home-h1">
-            Crypto Casinos: {RANK_LABEL} Ranked by Welcome Bonus
+            Crypto Casinos: {rankLabel(ranked.length)} Ranked by Welcome Bonus
           </h1>
-          <p className="uni-home-sub">{leadSentences(turnover.length)}</p>
+          <p className="uni-home-sub">
+            {leadSentences(ranked.length, turnover.length)}
+          </p>
           {/* Three, and all three defensible in one breath. "Venues tracked
               38" and "Advertise no KYC 20" both sat above a ranking of 19,
               where a larger number next to a smaller one reads as an
@@ -312,7 +319,7 @@ export function CasinosBody() {
             <div className="uni-home-content cc-navwrap">
               <nav className="rp-toc" aria-label="On this page">
                 <span className="rp-toc-label">On this page</span>
-                {TOC_ITEMS.map((t) => (
+                {tocItems(ranked.length).map((t) => (
                   <a key={t.id} href={`#${t.id}`}>
                     {t.label}
                   </a>
@@ -361,7 +368,7 @@ export function CasinosBody() {
             <Section
               id="ranking"
               eyebrow="Ranking"
-              title={`The ${RANK_COUNT} biggest crypto casino welcome bonuses`}
+              title={`The ${ranked.length} biggest crypto casino welcome bonuses`}
               dated
             >
               <p>
@@ -914,7 +921,7 @@ export function CasinosBody() {
           </div>
 
           <aside className="rp-doc-aside" aria-label="On this page">
-            <ReportToc items={TOC_ITEMS} />
+            <ReportToc items={tocItems(ranked.length)} />
           </aside>
         </div>
       </main>

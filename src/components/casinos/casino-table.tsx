@@ -12,6 +12,7 @@ import { LEAVE_SITE_BODY, VENUE_REVIEWS } from "@/lib/crypto-casinos-copy";
 import { CASINO_LOGOS } from "@/lib/casino-logos";
 import {
   casinoScore,
+  checkedCount,
   CLAIM_LABELS,
   COMPLAINT_LABEL,
   UNCONFIRMED,
@@ -241,6 +242,18 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                       </>
                     )}
                     <p className="cc-detail-h">Checked against the venue</p>
+                    {/* Seven repetitions of "Not checked" read as a broken
+                        component rather than as an honest gap. One sentence
+                        says the same thing. A row with partial coverage keeps
+                        the grid, because there the dashes are doing real work:
+                        they mark which fields are missing next to the ones
+                        that are not. */}
+                    {checkedCount(c) === 0 ? (
+                      <p className="cc-nothing">
+                        Nothing here has been read off this venue yet.
+                        Everything above is its own wording.
+                      </p>
+                    ) : (
                     <dl className="cc-facts">
                       <Fact k="Licence" src={c.sources?.licence}>
                         {c.verified.licence
@@ -279,6 +292,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                           : "Not searched"}
                       </Fact>
                     </dl>
+                    )}
                     <p className="cc-checked">
                       {c.lastChecked
                         ? `Terms last read ${c.lastChecked}.`
