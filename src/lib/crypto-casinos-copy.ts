@@ -35,12 +35,64 @@ const WORDS = [
 /** The count spelled out, for prose. Falls back to digits past twenty. */
 export const rankWord = (n: number = RANK_COUNT) => WORDS[n] ?? String(n);
 
+/* ---- the blocks above the table -------------------------------------- */
+
+const WORDS_CAP = [
+  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
+  "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
+  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
+];
+
+/**
+ * The four sentences under the H1.
+ *
+ * The H1 catches the query and the lead takes the responsibility off it: the
+ * sort is a fact about advertising, and the number that matters is two
+ * sections down. Both counts are derived, so neither can go stale when a
+ * wordmark or a set of terms arrives.
+ */
+export function leadSentences(priced: number): string {
+  const n = WORDS_CAP[RANK_COUNT] ?? String(RANK_COUNT);
+  const p = (WORDS_CAP[priced] ?? String(priced)).toLowerCase();
+  return `${n} welcome bonuses, largest advertised figure first. A cap is not cash: playthrough turns it into an obligation. ${p.charAt(0).toUpperCase()}${p.slice(1)} of these venues publish both numbers, so the calculator below prices the wager. Checked cells come off the venue's own terms, and dashes mean we have not read them yet.`;
+}
+
+/** Said once above the fold, and again at the foot of the page. */
+export const DISCLOSURE_SHORT =
+  "Harvest may earn a commission if you register through a link on this page. That payment does not change the sort order. Rows are ordered by advertised bonus size, by the rule above the table.";
+
+/** The one thing a US reader needs before the table, not after it. */
+export const LEGAL_SHORT =
+  "Most venues on this list do not accept players in the United States. Checking the law where you live is yours. An Anjouan or Curacao licence is not a US or UK licence.";
+
+/**
+ * What the leave-site modal says on this page.
+ *
+ * The site's default warning is about contracts, rates and security, which is
+ * the right warning for a DeFi venue and the wrong one here. A reader leaving
+ * for a casino needs the three facts that actually apply: the house wins over
+ * time, the operator holds the balance, and this link is commercial.
+ */
+export const LEAVE_SITE_BODY = (name: string) =>
+  `${name} is a third-party gambling site. Harvest does not run it, hold your balance or process your withdrawal, and every game there has a house edge, so the expected result of continued play is a loss. This link is commercial and may pay us. Check the law where you live and read the bonus terms before you deposit.`;
+
+/** Printed directly above the ranking. */
+export const SORT_RULE =
+  "Sort key: advertised bonus cap, dollars first. BTC-capped and uncapped offers sit below. A higher row is a larger headline, not a better venue.";
+
 /* ---- derived from the venue data ------------------------------------- */
 
 export interface TurnoverRow {
   slug: string;
   name: string;
+  /** The advertised headline cap, as the ranking prints it. */
   cap: number;
+  /**
+   * What the playthrough actually multiplies. Equal to cap for every venue
+   * whose offer is a single match, and smaller where the headline is a
+   * running total across deposits.
+   */
+  basis: number;
   wagering: number;
   turnover: number;
   minDeposit: string | null;
@@ -59,6 +111,7 @@ export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
         slug: c.slug,
         name: c.name,
         cap,
+        basis: c.verified.wageringBasisUsd ?? cap,
         wagering: wr,
         turnover: t,
         minDeposit: c.minDeposit ?? null,
@@ -175,16 +228,22 @@ export const DEPOSIT_STEPS: { title: string; body: string }[] = [
   { title: "Wait for confirmations", body: "Seconds to a few minutes on most chains. Bitcoin takes longer when the mempool is full." },
 ];
 
+// Ordered by what a reader arrives with, not by topic. The last two of the
+// first eight are not optional under this headline: a page that ranks
+// third-party venues and takes a commission has to answer both in its own
+// words, and the FAQPage schema carries them into the result.
 export const FAQS: { q: string; a: string }[] = [
   { q: "What is a crypto casino?", a: "An online casino that takes wagers in cryptocurrency, not in bank-processed money. Balances are funded by an onchain transfer and withdrawals are paid back to a wallet address. The games are the same ones a currency casino runs; what changes is the payment rail, and with it the speed of a withdrawal and how much identity checking sits in front of it." },
   { q: "Are crypto casinos legal?", a: "Crypto casino legality depends on where you live, not on the payment method. Online gambling is licensed in some jurisdictions, restricted to state operators in others, and prohibited in several. Most crypto casinos hold an offshore licence and block a list of countries at sign-up. Check the law where you live before you play, and check that list before you register." },
   { q: "Are crypto casinos legal in the United States?", a: "No federal law stops a player from using one. Seven states run regulated online casinos, and none of those operators takes cryptocurrency, so crypto play means an offshore site outside state regulation. Washington State criminalises taking part in online gambling. Enforcement elsewhere has focused on operators and not on players, and that is a pattern, not a protection." },
-  { q: "What does provably fair mean?", a: "A scheme where the casino commits to a hashed server seed before a round, combines it with a seed you control, and publishes both afterwards so the outcome can be recomputed. It proves the result was not changed after the bet was placed. It does not remove the house edge, and it says nothing about whether the operator will pay a withdrawal." },
-  { q: "Which crypto casinos do not require KYC?", a: "Some venues take no identity documents at sign-up and ask only above a withdrawal threshold; others ask for nothing at all. The policy is the operator's choice and it changes without notice, which is why each row here records the threshold and the date the terms were read. A venue advertising no KYC can still request documents on a large withdrawal." },
   { q: "Why does a bonus with a high wagering requirement cost money?", a: "A playthrough requirement obliges a multiple of the bonus to be wagered before any of it can be withdrawn, and every one of those wagers meets the game's house edge, so the turnover has an expected cost. A 200% bonus at 60x playthrough can be worth less than a 50% bonus at 20x once that cost is priced, which is what the calculator on this page works out." },
-  { q: "What is a good wagering requirement?", a: "Twenty times or under is generous and clearable. Thirty-five to forty is the industry norm. Sixty and above asks for turnover that will usually cost more than the bonus is worth, and the offers advertising the largest headline figures are the ones most likely to sit up there." },
-  { q: "How fast are crypto casino withdrawals?", a: "Faster than bank rails when nothing is flagged, because payment is an onchain transfer, not a card refund. The variable is not the chain but the operator: whether a withdrawal is auto-approved or queued for manual review, and at what size that review starts." },
   { q: "Which coin should I use?", a: "A stablecoin if the balance will sit for a while, because USDT and USDC hold their value between the deposit and the withdrawal. Litecoin, XRP, TRON or Solana if you move money often, because they settle in minutes for cents. Bitcoin is accepted everywhere and is the slowest and priciest of the common options." },
+  { q: "Which crypto casinos do not require KYC?", a: "Some venues take no identity documents at sign-up and ask only above a withdrawal threshold; others ask for nothing at all. The policy is the operator's choice and it changes without notice, which is why each row here records the threshold and the date the terms were read. A venue advertising no KYC can still request documents on a large withdrawal." },
+  { q: "How is this page ranked?", a: "By advertised welcome-bonus size, dollar caps first. That is a rule about advertising and not about which venue is safer or cheaper to clear. The Evidence column is separate: it counts how much of a venue we have read off its own terms, and it never moves a row. Venues without a wordmark are not listed at all." },
+  { q: "Does Harvest get paid?", a: "Yes, potentially. Harvest may earn a commission if you register through a link on this page. That payment does not change the sort order, which is fixed to the advertised bonus size by the rule printed above the table, and it does not change the Evidence column, which counts terms we have read. No venue has paid for a position here." },
+  { q: "What is a good wagering requirement?", a: "Twenty times or under is generous and clearable. Thirty-five to forty is the industry norm. Sixty and above asks for turnover that will usually cost more than the bonus is worth, and the offers advertising the largest headline figures are the ones most likely to sit up there." },
+  { q: "What does provably fair mean?", a: "A scheme where the casino commits to a hashed server seed before a round, combines it with a seed you control, and publishes both afterwards so the outcome can be recomputed. It proves the result was not changed after the bet was placed. It does not remove the house edge, and it says nothing about whether the operator will pay a withdrawal." },
+  { q: "How fast are crypto casino withdrawals?", a: "Faster than bank rails when nothing is flagged, because payment is an onchain transfer, not a card refund. The variable is not the chain but the operator: whether a withdrawal is auto-approved or queued for manual review, and at what size that review starts." },
   { q: "What happens if I send crypto on the wrong network?", a: "The funds are usually gone. USDT exists as a separate token on Ethereum, Tron, BSC, Solana and Polygon, and sending the Ethereum version to a Tron address puts it somewhere neither you nor the casino can reach. Check the network on both sides before confirming, every time." },
   { q: "Can I win real money at a crypto casino?", a: "Yes, and the expected result of continued play is still a loss, because every game carries a house edge. Wins are paid to your wallet in the coin you played with." },
   { q: "Do I pay tax on crypto gambling winnings?", a: "That depends on your country, and in the United States gambling winnings are taxable income whatever they are paid in. Disposing of the coin afterwards can be a second taxable event. Ask an accountant who knows your jurisdiction." },
@@ -192,66 +251,117 @@ export const FAQS: { q: string; a: string }[] = [
   { q: "What is RTP?", a: "Return to player, the share of total stakes a game pays back over a very long run. A 96% slot keeps four cents of every dollar wagered on average. Provably fair originals often publish 98% or better, which is why bonus terms tend to bar them." },
 ];
 
-/* ---- the venue at number one ----------------------------------------- */
+
+/* ---- the two venues at the top, reviewed ----------------------------- */
 
 export interface VenueReview {
   slug: string;
+  /** Sits under the venue name in the card head. */
   operator: string;
-  /** Standing under the badge row, one line. */
+  /** One line under the badges, before the first subhead. */
   standfirst: string;
-  /** Body paragraphs, in order. */
-  blurb: string[];
+  /**
+   * Blocks under their own h3.
+   *
+   * The headings are the questions people type, worded the way they type
+   * them. A reader who wants one answer can find it without reading the
+   * other three, which is the whole difference between this and the wall of
+   * paragraphs it replaces.
+   */
+  sections: { h: string; body: string }[];
+  /** The caveats, as labelled bullets. Rendered through NamedList. */
+  keepInMind: { name: string; body: string }[];
+  /**
+   * The strip at the top of the card, before any of the selling.
+   *
+   * {CHECKED} is replaced at render with the live coverage count, so a card
+   * can never claim more or less reading than the row beside it.
+   */
+  caveat: string;
   facts: { label: string; value: string }[];
-  /** Where each claim above came from, linked under the card. */
   sources: { label: string; url: string }[];
 }
 
 /**
- * Casino Crypto, reviewed.
+ * The facts grid for a review card.
  *
- * It is first in the ranking on the size of its advertised bonus and nothing
- * else, and a page that puts a venue at the top without saying anything about
- * it is doing what every competing list does. Everything below is public
- * record, read on 30 August 2026. Nobody here has played there, and the
- * review does not pretend otherwise: withdrawal speed and provably fair stay
- * unchecked on the row for that reason.
+ * Static rows come off the review; the turnover row is computed from the
+ * venue record so it cannot disagree with the turnover table further down
+ * the page. A venue with no single playthrough figure gets no turnover row
+ * instead of a made-up one.
  */
-export const CASINO_CRYPTO_REVIEW: VenueReview = {
-  slug: "casino-crypto",
-  operator: "BMGruppe Ltd",
+export function reviewFacts(
+  review: VenueReview,
+  casino: Casino | undefined,
+): { label: string; value: string }[] {
+  const rows = [...review.facts];
+  const t = casino ? turnoverUsd(casino) : null;
+  if (t != null) {
+    rows.push({ label: "Turnover on the full cap", value: money(t) });
+  }
+  return rows;
+}
+
+/**
+ * Lucky Rollers, first by advertised bonus.
+ *
+ * The clearest published terms on this page sitting behind an operator
+ * nobody can name. The precise-looking complaint statistics circulating for
+ * this brand come from an affiliate site and trace to no primary source, so
+ * they are not printed here.
+ */
+export const LUCKY_ROLLERS_REVIEW: VenueReview = {
+  slug: "lucky-rollers",
+  operator: "Operator not published",
   standfirst:
-    "First on this page because its advertised welcome bonus is the largest. That is a fact about the advertising.",
-  blurb: [
-    "The headline is 350% up to 35,000 USDT with 777 free spins. Read the offer and it is a ladder, not a match: the percentage and the cap are running totals across the first six deposits. The published legs put 100% up to 15,000 USDT at 40x playthrough on the second deposit, up to 200 free spins on the third, 100% up to 10,000 USDT at 35x on the fourth, and up to 377 free spins at 30x on the fifth. Reaching the number on the banner means depositing six times and clearing a different requirement on each one. Sports betting and mini games do not count toward any of it.",
-    "The operator is BMGruppe Ltd, registered in Anjouan under company number 00005056, holding licence ALSI-202510020-F11 from the Government of the Autonomous Island of Anjouan in the Union of Comoros. An Anjouan licence is real and it is also the cheapest and quickest one a gambling operator can buy. It is not Malta and it is not the UK Gambling Commission: there is very little dispute machinery behind it, so a player whose withdrawal is refused has no regulator that will meaningfully act. The word licensed is doing less work here than it looks like it is doing.",
-    "The site launched in 2026, so it is months old and not years. Searching AskGamblers and Trustpilot turns up no profile for it and no complaint file, and that reads better than it is: a brand this new has had no time to accumulate one either way. The name itself is a hazard, because the results fill up with crypto-casino.io, Crypto Games.io and Cryptorino instead, and some of those do carry withdrawal complaints. Check the domain character by character before depositing anywhere.",
-    "No KYC is the default and it has exceptions, which are written down: verification can be requested on suspected bonus abuse, an anti-money-laundering flag, or a legal request. That is standard wording across the industry. It is also the clause that fires on a large win, so treat no KYC as the usual case and not as a guarantee.",
-    "The rest is as advertised and unverified by us. Over 10,000 titles from 96 or more providers, 17 or more coins, BetBack cashback quoted up to 75%, withdrawals described as instant. Published minimum deposits conflict across sources, at $5 in some write-ups and $30 in others, and until the cashier is opened neither figure is worth printing as fact.",
+    "First by advertised bonus, and the highest evidence score on the page.",
+  caveat:
+    "{CHECKED} fields checked, and the offer itself is the best documented here. What is missing is the operator: no company and no licence number, so there is nobody to complain to. Provably fair is unread.",
+  sections: [
+    {
+      h: "Is Lucky Rollers legit?",
+      body: "We cannot tell you who runs it. No operating company and no licence number turn up anywhere we can check, so there is no regulator to appeal to and no company to name in a complaint. The odd part is that the terms themselves are unusually plain, so the missing operator looks less like sloppiness and more like a choice.",
+    },
+    {
+      h: "The biggest bonus for newcomers",
+      body: "100% up to 30,000 USDT, 100 free spins and a free bet. The 30,000 is a ceiling reached across deposits and not one match, and the playthrough is 40x. Cleared against the full cap that is $1.2M of wagering, the figure in the table below, and the reason a large headline is not the same thing as a good offer.",
+    },
+    {
+      h: "What the terms actually say",
+      body: "Thirteen coins in and out, around 6,000 titles, 5 USDT to open, payouts described as instant, no identity documents at standard withdrawal levels. Weekly cashback lands on a Monday with no playthrough attached, which is rarer than it sounds. This is the most we have been able to read off any venue on the page.",
+    },
+  ],
+  keepInMind: [
+    {
+      name: "Jurisdiction",
+      body: "Unknown. Searching turns up an affiliate site quoting a licence number, an operating company and complaint statistics to one decimal place, none of which trace to a primary source. Treat precise numbers with no source as marketing.",
+    },
+    { name: "Freshness", body: "No launch date published, so there is no way to weigh how long the payout record runs." },
+    {
+      name: "Reputation",
+      body: "No complaint file we could find under this name, and the name collides with LuckyRolls, Lucky Casino and Lucky Creek, so most of what a search returns is about somebody else.",
+    },
+    {
+      name: "The no-KYC promise",
+      body: "Advertised at standard withdrawal levels, and the same caveat applies as everywhere: it is the usual case, not a guarantee.",
+    },
   ],
   facts: [
-    { label: "Operator", value: "BMGruppe Ltd, company no. 00005056" },
-    { label: "Licence", value: "Anjouan, Union of Comoros, ALSI-202510020-F11" },
-    { label: "Live since", value: "2026" },
-    { label: "Welcome bonus", value: "350% up to 35,000 USDT and 777 free spins, spread over six deposits" },
-    { label: "Wagering", value: "40x on the largest match leg, 30x to 35x on the rest" },
-    { label: "Minimum deposit", value: "Sources conflict, $5 or $30. Not confirmed" },
-    { label: "KYC", value: "None by default, requested on bonus abuse, AML flags or legal request" },
-    { label: "Games", value: "10,000 or more, from 96 or more providers" },
-    { label: "Withdrawal speed", value: "Advertised as instant. Not checked" },
+    { label: "Operator", value: "Not published" },
+    { label: "Licence", value: "Not published" },
+    { label: "Live since", value: "Not published" },
+    { label: "Welcome bonus", value: "100% up to 30,000 USDT, 100 free spins and a free bet" },
+    { label: "Wagering", value: "40x" },
+    { label: "Minimum deposit", value: "5 USDT" },
+    { label: "Coins", value: "13, including BTC, ETH, USDT, USDC, XRP and SOL" },
+    { label: "Games", value: "Around 6,000" },
+    { label: "Withdrawal speed", value: "Instant, per its own terms. Not checked" },
     { label: "Provably fair", value: "Not checked" },
   ],
   sources: [
-    {
-      label: "Cryptopolitan review",
-      url: "https://www.cryptopolitan.com/casinocrypto-io-review/",
-    },
-    {
-      label: "Operator terms and conditions",
-      url: "https://casinocrypto.io/en/terms-and-conditions",
-    },
-    {
-      label: "AskGamblers complaint search",
-      url: "https://www.askgamblers.com/online-casinos/complaints",
-    },
+    { label: "Venue terms and conditions", url: "https://luckyrollers.io/terms-and-conditions" },
+    { label: "AskGamblers complaint search", url: "https://www.askgamblers.com/online-casinos/complaints" },
   ],
 };
+
+export const VENUE_REVIEWS: VenueReview[] = [LUCKY_ROLLERS_REVIEW];

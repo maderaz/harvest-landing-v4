@@ -8,10 +8,12 @@
 
 import { useMemo, useState } from "react";
 import { OutboundLink } from "@/components/report/outbound-link";
+import { LEAVE_SITE_BODY, VENUE_REVIEWS } from "@/lib/crypto-casinos-copy";
 import { CASINO_LOGOS } from "@/lib/casino-logos";
 import {
   casinoScore,
   CLAIM_LABELS,
+  COMPLAINT_LABEL,
   KYC_LABEL,
   capOf,
   parseBonus,
@@ -19,6 +21,9 @@ import {
 } from "@/lib/crypto-casinos";
 
 const UNIT_PREFIX: Record<string, string> = { USD: "$", EUR: "\u20ac" };
+
+/** Venues with a review card of their own, so the cell can point at it. */
+const REVIEWED = new Set(VENUE_REVIEWS.map((r) => r.slug));
 
 /**
  * The figure pulled to the front of the bonus cell, and the figure the row is
@@ -95,7 +100,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
             <span className="hub-th">Venue</span>
             <span className="hub-th cc-col-bonus">Welcome bonus, as advertised</span>
             {anyScored ? (
-              <span className="hub-th hub-th-right cc-col-score">Score</span>
+              <span className="hub-th hub-th-right cc-col-score">Evidence</span>
             ) : null}
             <span className="hub-th" />
           </div>
@@ -164,21 +169,39 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                     </span>
                   ) : null}
                   <span className="hub-cell cc-action">
+                    {/* An empty action cell on a ranked row reads either as
+                        a broken page or as a link somebody is hiding. Until a
+                        venue has a link, the cell says what the page can
+                        honestly offer instead: where the reading came from. */}
                     {c.url ? (
                       <OutboundLink
-                        className="cc-open"
+                        className="cc-open cc-play"
                         href={c.url}
+                        // Sponsored on every venue link, including the ones
+                        // whose deal is still pending. They are commercial
+                        // destinations on a page that will be paid for them,
+                        // and marking them anything else would be wrong the
+                        // week a deal closes.
+                        rel="sponsored nofollow noopener noreferrer"
+                        // Untouched. Four of these carry an affiliate token
+                        // and ref=harvest.finance attributes nothing on the
+                        // rest. See dealStatus in the data.
+                        keepHref
                         platform={c.name}
                         source="crypto-casinos"
                         rank={i + 1}
-                        ariaLabel={`Visit ${c.name}`}
+                        ariaLabel={`Play now at ${c.name}`}
+                        body={LEAVE_SITE_BODY(c.name)}
                       >
-                        Visit
+                        Play now
                       </OutboundLink>
                     ) : (
-                      <span className="cc-nolink" title="No link supplied yet">
-                        —
-                      </span>
+                      <a
+                        className="cc-open cc-open-quiet"
+                        href={REVIEWED.has(c.slug) ? `#${c.slug}` : "#disclosure"}
+                      >
+                        How we checked
+                      </a>
                     )}
                   </span>
                 </div>
@@ -224,6 +247,14 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                         {c.verified.chains?.length
                           ? c.verified.chains.join(", ")
                           : "Not checked"}
+                      </Fact>
+                      {/* "Not searched" and "searched, nothing there" are
+                          different claims, and only the second one is worth
+                          anything to a reader. */}
+                      <Fact k="Complaints">
+                        {c.verified.complaints
+                          ? COMPLAINT_LABEL[c.verified.complaints]
+                          : "Not searched"}
                       </Fact>
                     </dl>
                     <p className="cc-checked">

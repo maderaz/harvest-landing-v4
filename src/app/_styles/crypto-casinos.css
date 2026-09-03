@@ -29,6 +29,35 @@
 .cc-page .cc-guard p:last-child { margin-bottom: 0; }
 .cc-page .cc-guard a { color: var(--uni-ink); text-decoration: underline; }
 
+/* The disclosure and the legal line, above the fold. Same shape as the age
+   notice so they read as notices, quieter so the orange warning still wins
+   the eye. */
+.cc-page .cc-note {
+  margin: 0 0 14px;
+  padding: 14px 18px;
+  border: 1px solid var(--rp-card-border, #dedee6);
+  border-radius: var(--uni-radius, 20px);
+  background: var(--cc-inset);
+}
+.cc-page .cc-note + .cc-note { margin-bottom: 34px; }
+.cc-page .cc-note p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.62;
+  color: var(--uni-ink-2);
+}
+.cc-page .cc-note strong { color: var(--uni-ink); font-weight: 650; }
+
+/* The sort rule, immediately above the ranking. */
+.cc-page .uni-home-content p.cc-rule {
+  margin: 0 0 10px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+  padding-left: 12px;
+  border-left: 2px solid var(--uni-line, #e6e6ee);
+}
+
 /* ---- filters ---------------------------------------------------------- */
 .cc-filters {
   display: flex;
@@ -82,14 +111,14 @@
 /* Not sticky. Rows expand in place here, and a sticky header covers the row
    you just opened. Same treatment .rp-rank takes. */
 .cc-table .hub-thead { position: static; top: auto; backdrop-filter: none; }
-.cc-table { min-width: 720px; }
+.cc-table { min-width: 780px; }
 .cc-table .hub-thead,
 .cc-table .hub-row {
-  grid-template-columns: 34px minmax(0, 1.55fr) minmax(0, 1.35fr) 84px;
+  grid-template-columns: 34px minmax(0, 1.55fr) minmax(0, 1.35fr) 128px;
 }
 .cc-rank.has-score .cc-table .hub-thead,
 .cc-rank.has-score .cc-table .hub-row {
-  grid-template-columns: 34px minmax(0, 1.5fr) minmax(0, 1.25fr) 70px 84px;
+  grid-template-columns: 34px minmax(0, 1.5fr) minmax(0, 1.25fr) 70px 128px;
 }
 /* globals.css hides .hub-table cells nth-child(4), (5) and (6) below 1100px:
    generic rules for the vault tables, which drop Type/TVL there. This table
@@ -150,7 +179,6 @@
 }
 .cc-dim { color: var(--uni-ink-3); }
 .cc-action { display: flex; justify-content: flex-end; align-items: center; }
-.cc-nolink { color: var(--uni-ink-3); }
 .cc-rowgroup { border-bottom: 1px solid var(--rp-card-border, #eeeef5); }
 .cc-rowgroup .hub-row { border-bottom: 0; align-items: start; }
 .cc-submob { display: none; }
@@ -176,6 +204,42 @@
 }
 .cc-page .uni-home-content a.cc-open:hover,
 .cc-open:hover { opacity: 0.88; }
+
+/* Play now. The loudest thing in a row, on the site's gold.
+   Gold rather than the ink pill it replaced, because on a page whose whole
+   argument is that the headline bonus is not the offer, the one control that
+   sends a reader to a casino should be unmistakable rather than blend into
+   the table. Ink on gold in both themes: the pair holds its contrast whether
+   the page is light or dark, which a theme-following control would not. */
+.cc-page .uni-home-content a.cc-play,
+.cc-play {
+  min-height: 40px;
+  padding: 9px 18px;
+  border-color: var(--uni-gold);
+  background: var(--uni-gold);
+  color: #191717 !important;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.cc-page .uni-home-content a.cc-play:hover,
+.cc-play:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(255, 185, 54, 0.4);
+}
+
+/* The same control, outlined, for a row that has no commercial link. It has
+   to look like a secondary action and not like a paid one. */
+.cc-page .uni-home-content a.cc-open-quiet,
+.cc-open-quiet {
+  border-color: var(--rp-card-border, #dedee6);
+  background: transparent;
+  color: var(--uni-ink-2) !important;
+  font-weight: 600;
+}
 
 /* ---- expanded row ----------------------------------------------------- */
 .cc-detail {
@@ -397,7 +461,7 @@
   .cc-rank.has-score .cc-table .hub-thead,
   .cc-table .hub-row,
   .cc-rank.has-score .cc-table .hub-row {
-    grid-template-columns: 22px minmax(0, 1fr) 62px;
+    grid-template-columns: 22px minmax(0, 1fr) 104px;
     gap: 8px;
   }
   /* Outranks the blanket assert above, which is itself !important. */
@@ -416,6 +480,16 @@
   .cc-table .hub-row { padding: 12px 10px; align-items: center; }
   .cc-page .uni-home-content a.cc-open,
   .cc-open { padding: 7px 11px; font-size: 12.5px; }
+  /* A 60px stub is not a tap target. The last column is widened to hold the
+     button and the button fills it. */
+  .cc-page .uni-home-content a.cc-play,
+  .cc-play {
+    width: 100%;
+    min-height: 40px;
+    padding: 9px 10px;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+  }
   .cc-detail { padding: 4px 10px 18px; }
   .cc-facts { grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px 16px; }
 }
@@ -446,6 +520,14 @@
    are already flex columns, so the figure just takes the remaining space. */
 .cc-page .uni-home-hero-stat { justify-content: flex-start; }
 .cc-page .uni-home-hero-stat-value { margin-top: auto; }
+.cc-page .uni-home-hero-stat-value.cc-stat-text {
+  font-size: 20px;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+@media (max-width: 640px) {
+  .cc-page .uni-home-hero-stat-value.cc-stat-text { font-size: 16px; }
+}
 
 /* The bonus is the column the page is ranked on, so it leads with the figure
    at display size and carries the venue's full wording underneath. */
@@ -673,10 +755,40 @@
 }
 .cc-page .uni-home-content .rp-venue-prose p:last-child { margin-bottom: 0; }
 
+/* Inside a review card the subheads are the reader's entry points, so they
+   sit tighter than the 28px the page gives an h3 between sections, and the
+   first one does not push off the standfirst above it. */
+.cc-page .uni-home-content .rp-venue-prose h3 {
+  margin: 22px 0 8px;
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.006em;
+}
+.cc-page .uni-home-content .rp-venue-prose > div:first-of-type h3 { margin-top: 16px; }
+/* What the card does not know, before anything it does. Set apart so it is
+   not read as part of the pitch that follows it. */
+.cc-page .uni-home-content p.cc-review-caveat {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--cc-inset);
+  border-left: 3px solid color-mix(in srgb, #b23c17 45%, transparent);
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.cc-page .uni-home-content p.cc-review-lead {
+  margin: 0;
+  color: var(--uni-ink);
+  font-weight: 550;
+}
+.cc-page .rp-venue-prose .cc-risks { margin: 0; }
+.cc-page .rp-venue-prose .cc-risks > li { font-size: 15px; }
+
 /* Where the review's claims came from. Small, under the card, and never
    styled as body copy: it is provenance and not part of the argument. */
 .cc-page .uni-home-content p.cc-sources {
-  margin: 14px 0 0;
+  margin: 18px 0 0;
   font-size: 13px;
   line-height: 1.62;
   color: var(--uni-ink-3);
