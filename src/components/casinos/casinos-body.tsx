@@ -7,6 +7,8 @@
 
 import Link from "next/link";
 import { ReportToc, type TocItem } from "@/components/report/report-toc";
+import type { HarvestRow } from "@/app/crypto-casinos/page";
+import { LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
 import { CasinoTable } from "@/components/casinos/casino-table";
 import { OutboundLink } from "@/components/report/outbound-link";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
@@ -55,7 +57,7 @@ export const tocItems = (ranked: number): TocItem[] => [
   { id: "ranking", label: `The ${rankLabel(ranked)}` },
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
-  { id: "bankroll", label: "Between sessions" },
+  { id: "bankroll", label: "Bonus to work with Harvest" },
   { id: "reviews", label: "Number one, reviewed" },
   { id: "compare", label: "Side by side" },
   { id: "how-they-work", label: "How they work" },
@@ -254,7 +256,7 @@ function VenueReviewCard({
   );
 }
 
-export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
+export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
   const { casinos } = loadCasinos();
   const listed = casinos.length;
   const checked = casinos.filter((c) => casinoScore(c) != null).length;
@@ -443,20 +445,68 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
 
             <Section
               id="bankroll"
-              eyebrow="Between sessions"
-              title="Between sessions, the balance still sits somewhere"
+              eyebrow="Harvest"
+              title="Putting your welcome bonus to work with Harvest"
             >
+              {/* The title is the one thing on this page that could be read as
+                  promising something the bonus terms forbid, so the first line
+                  settles it. Nothing here applies to an uncleared bonus. */}
+              <p>
+                A bonus you have not cleared cannot go anywhere. It is locked to
+                the playthrough, and moving it is what the terms on every row
+                above exist to prevent. What can go somewhere is what you
+                withdraw once it clears, and whatever is not in play between
+                sessions.
+              </p>
               <p>
                 An idle casino balance earns nothing and keeps the
                 operator&rsquo;s risk for as long as it sits there. Every
                 caveat on this page about licences, withdrawal review and
                 no-KYC exceptions applies to it exactly as it applies to a
-                balance in play.
+                balance in play. Back in your own wallet, a stablecoin can sit
+                in an onchain strategy instead.
               </p>
-              <p>
-                Move it back to a wallet and Harvest indexes onchain yield on
-                USDC and USDT, uninsured and not a bonus. Rates on the{" "}
-                <Link href="/usdc">USDC hub</Link>, and what can go wrong in the{" "}
+              {harvest.length > 0 && (
+                <>
+                  <p>
+                    These are the USDC and USDT strategies Harvest indexes
+                    today, the ones holding at least{" "}
+                    {money(LOW_LIQUIDITY_TVL_THRESHOLD)} in deposits. Rates are
+                    a 24-hour reading and they move.
+                  </p>
+                  <div className="rp-dtable-wrap">
+                    <table className="rp-dtable">
+                      <thead>
+                        <tr>
+                          <th>Strategy</th>
+                          <th>Network</th>
+                          <th className="num">24h rate</th>
+                          <th className="num">Deposits</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {harvest.map((r) => (
+                          <tr key={`${r.name}-${r.chain}`}>
+                            <td className="strong">
+                              {r.name} <span className="rp-dtag">{r.asset}</span>
+                            </td>
+                            <td>{r.chain}</td>
+                            <td className="num">{r.apy.toFixed(2)}%</td>
+                            <td className="num">{money(r.tvl)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+              <p className="rp-fineprint">
+                None of this is insured, none of it is a bonus, and a rate that
+                reads well today is not a promise about next week. The
+                strategies carry smart-contract and market risk that a casino
+                balance does not, in exchange for the operator risk it does.
+                Every row above, its history and what can go wrong are on the{" "}
+                <Link href="/usdc">USDC hub</Link> and in the{" "}
                 <Link href="/risk-framework">risk framework</Link>.
               </p>
             </Section>
