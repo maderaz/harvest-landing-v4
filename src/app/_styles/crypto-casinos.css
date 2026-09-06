@@ -58,6 +58,58 @@
   border-left: 2px solid var(--uni-line, #e6e6ee);
 }
 
+/* ---- page head --------------------------------------------------------
+   Plain, not the site's gold hero. A ranking page has one job above the
+   fold and it is not a 595px panel. */
+.cc-page .cc-head {
+  padding: 34px 0 0;
+}
+.cc-page .cc-head-inner { max-width: 780px; }
+.cc-page .cc-h1 {
+  margin: 0 0 12px;
+  font-family: var(--display, var(--sans));
+  font-size: 40px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--uni-ink);
+}
+.cc-page .cc-intro {
+  margin: 0 0 14px;
+  font-size: 16px;
+  line-height: 1.62;
+  color: var(--uni-ink-2);
+}
+/* The three counts the stat tiles used to carry, on one line. */
+.cc-page .cc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 18px;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--uni-ink-3);
+}
+.cc-page .cc-meta strong { color: var(--uni-ink); font-weight: 700; }
+
+/* The one line that has to precede a sponsored click. */
+.cc-page .uni-home-content p.cc-brief {
+  margin: 0 0 14px;
+  padding: 11px 14px;
+  border-radius: 12px;
+  background: var(--cc-inset);
+  border-left: 3px solid color-mix(in srgb, #b23c17 45%, transparent);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.cc-page .uni-home-content p.cc-brief strong { color: var(--uni-ink); }
+
+@media (max-width: 640px) {
+  .cc-page .cc-head { padding-top: 22px; }
+  .cc-page .cc-h1 { font-size: 29px; }
+}
+
 /* ---- filters ---------------------------------------------------------- */
 .cc-filters {
   display: flex;
