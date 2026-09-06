@@ -12,19 +12,7 @@ export const money = (n: number) =>
     ? `$${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)}M`
     : `$${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
 
-/* ---- how many venues the ranking holds ------------------------------- */
-
-/**
- * The ranking length, and the number in the title.
- *
- * It is the size of the wordmark set in lib/casino-logos, because a venue
- * without a logo is not listed. Adding a file there moves this and the H1,
- * the table and the TOC follow it.
- */
-export const RANK_COUNT = Object.keys(CASINO_LOGOS).length;
-
-/** "TOP19", as the title, the H1 and the nav all say it. */
-export const RANK_LABEL = `TOP${RANK_COUNT}`;
+/* ---- counting in prose ------------------------------------------------ */
 
 const WORDS = [
   "zero", "one", "two", "three", "four", "five", "six", "seven", "eight",
@@ -32,16 +20,22 @@ const WORDS = [
   "sixteen", "seventeen", "eighteen", "nineteen", "twenty",
 ];
 
-/** The count spelled out, for prose. Falls back to digits past twenty. */
-export const rankWord = (n: number = RANK_COUNT) => WORDS[n] ?? String(n);
+/**
+ * A count spelled out, for prose.
+ *
+ * The ranking length used to be the size of the wordmark map, read at module
+ * scope. It is a property of the data now that membership also needs a link,
+ * so every caller passes the number it actually rendered.
+ */
+export const spellOut = (n: number, cap = false) => {
+  const w = WORDS[n] ?? String(n);
+  return cap ? w.charAt(0).toUpperCase() + w.slice(1) : w;
+};
+
+/** "TOP16", as the title, the H1 and the nav all say it. */
+export const rankLabel = (n: number) => `TOP${n}`;
 
 /* ---- the blocks above the table -------------------------------------- */
-
-const WORDS_CAP = [
-  "Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight",
-  "Nine", "Ten", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen",
-  "Sixteen", "Seventeen", "Eighteen", "Nineteen", "Twenty",
-];
 
 /**
  * The four sentences under the H1.
@@ -51,10 +45,10 @@ const WORDS_CAP = [
  * sections down. Both counts are derived, so neither can go stale when a
  * wordmark or a set of terms arrives.
  */
-export function leadSentences(priced: number): string {
-  const n = WORDS_CAP[RANK_COUNT] ?? String(RANK_COUNT);
-  const p = (WORDS_CAP[priced] ?? String(priced)).toLowerCase();
-  return `${n} welcome bonuses, largest advertised figure first. A cap is not cash: playthrough turns it into an obligation. ${p.charAt(0).toUpperCase()}${p.slice(1)} of these venues publish both numbers, so the calculator below prices the wager. Checked cells come off the venue's own terms, and dashes mean we have not read them yet.`;
+export function leadSentences(ranked: number, priced: number): string {
+  const n = spellOut(ranked, true);
+  const p = spellOut(priced, true);
+  return `${n} welcome bonuses, largest advertised figure first. A cap is not cash: playthrough turns it into an obligation. ${p} of these venues publish both numbers, so the calculator below prices the wager. Checked cells come off the venue's own terms, and dashes mean we have not read them yet.`;
 }
 
 /** Said once above the fold, and again at the foot of the page. */

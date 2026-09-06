@@ -6,13 +6,12 @@
 // number cannot differ between a table, a bullet and an FAQ answer.
 
 import Link from "next/link";
-import { AssetIcon } from "@/components/token-icons";
 import { ReportToc, type TocItem } from "@/components/report/report-toc";
 import { CasinoTable } from "@/components/casinos/casino-table";
 import { OutboundLink } from "@/components/report/outbound-link";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
-import { loadCasinos } from "@/lib/crypto-casinos-data";
-import { CASINO_LOGOS, LOGO_RATIO, hasLogo } from "@/lib/casino-logos";
+import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
+import { CASINO_LOGOS, LOGO_RATIO } from "@/lib/casino-logos";
 import { CHECK_TOTAL, casinoScore, checkedCount, type Casino } from "@/lib/crypto-casinos";
 import {
   BONUS_TERMS,
@@ -25,8 +24,7 @@ import {
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
   NETWORKS,
-  RANK_COUNT,
-  RANK_LABEL,
+  rankLabel,
   VENUE_REVIEWS,
   type VenueReview,
   RG_TOOLS,
@@ -36,14 +34,19 @@ import {
   compareRows,
   leadSentences,
   money,
+  spellOut,
   reviewFacts,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
 
-const HERO_COINS = ["BTC", "ETH", "USDT"];
-
-export const TOC_ITEMS: TocItem[] = [
-  { id: "ranking", label: `The ${RANK_LABEL}` },
+/**
+ * The rail and the jump nav. A function because the ranking's label carries
+ * its length, and that length is a property of the data rather than of a
+ * constant somebody has to remember to update.
+ */
+export const tocItems = (ranked: number): TocItem[] => [
+  { id: "ranking", label: `The ${rankLabel(ranked)}` },
+  { id: "ground-rules", label: "Ground rules" },
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
   { id: "bankroll", label: "Between sessions" },
@@ -254,7 +257,7 @@ export function CasinosBody() {
   const checked = casinos.filter((c) => casinoScore(c) != null).length;
   const linked = casinos.filter((c) => c.url).length;
   // The wordmark set is the membership list. See lib/casino-logos.
-  const ranked = casinos.filter((c) => hasLogo(c.slug));
+  const ranked = casinos.filter(isRanked);
   // Every derived table is scoped to the ranking, not to the 38 venues in the
   // file. A venue that is not listed has no row, no wordmark and no button, so
   // a reader meeting its name in the turnover table or the calculator has
@@ -265,54 +268,68 @@ export function CasinosBody() {
 
   return (
     <div className="uni-home-test rp-page cc-page">
-      <section className="uni-home-hero rp-hero">
-        <div className="uni-home-hero-inner">
-          <div className="rp-hero-tokens" aria-hidden="true">
-            {HERO_COINS.map((t, i) => (
-              <span
-                key={t}
-                className="rp-hero-tok"
-                style={{ marginLeft: i ? -4 : 0, zIndex: HERO_COINS.length - i }}
-              >
-                <AssetIcon asset={t} size={13} />
-              </span>
-            ))}
-          </div>
-          <h1 className="uni-home-h1">
-            Crypto Casinos: {RANK_LABEL} Ranked by Welcome Bonus
+      {/* A plain page head, not the site's gold hero.
+          The first ranking row used to sit 1681px down on a desktop and
+          2550px down on a phone, behind a 595px hero, three stat tiles and
+          three notice boxes. Nobody arrives at a ranking page to read 422
+          words first. The counts survive as one line, the warnings as one
+          line, and everything they used to say in full now sits under the
+          table where it can be as long as it needs to be. */}
+      <section className="cc-head">
+        <div className="cc-head-inner">
+          <h1 className="cc-h1">
+            Crypto Casinos: {rankLabel(ranked.length)} Ranked by Welcome Bonus
           </h1>
-          <p className="uni-home-sub">{leadSentences(turnover.length)}</p>
-          {/* Three, and all three defensible in one breath. "Venues tracked
-              38" and "Advertise no KYC 20" both sat above a ranking of 19,
-              where a larger number next to a smaller one reads as an
-              arithmetic error rather than as a different pool. */}
-          {listed > 0 && (
-            <div className="uni-home-hero-stats">
-              <HeroStat label="Bonuses ranked" value={ranked.length} />
-              <HeroStat label="Terms read" value={readTerms} />
-              <HeroStat label="Last updated" value={UPDATED_SHORT} />
-            </div>
-          )}
-          <div className="uni-home-hero-actions">
-            <a href="#ranking" className="uni-home-cta-primary">
-              See the ranking
-              <span aria-hidden="true">↓</span>
-            </a>
-            <a href="#bonus-calculator" className="uni-home-cta-secondary">
-              Bonus calculator
-              <span aria-hidden="true">↓</span>
-            </a>
-          </div>
+          <p className="cc-intro">{leadSentences(ranked.length, turnover.length)}</p>
+          <p className="cc-meta">
+            <span>
+              <strong>{ranked.length}</strong> ranked
+            </span>
+            <span>
+              <strong>{readTerms}</strong> with terms read
+            </span>
+            <span>Updated {UPDATED_SHORT}</span>
+          </p>
         </div>
       </section>
 
       <main className="uni-home-shell">
         <div className="rp-doc">
           <div className="rp-doc-main">
+            <Section
+              id="ranking"
+              eyebrow="Ranking"
+              title={`The ${ranked.length} biggest crypto casino welcome bonuses`}
+              dated
+            >
+              {/* One line, because the reader came for the table. The 18+
+                  block, the commercial disclosure and the US position each
+                  keep a full block under the ranking; what has to precede a
+                  sponsored click is here. */}
+              <p className="cc-brief">
+                <strong>18+, and 21+ where the law says so.</strong> Every game
+                here has a house edge, so the expected result of continued play
+                is a loss. Play now links are commercial and may pay us, which
+                does not change the order. Most of these venues do not accept
+                players in the United States.{" "}
+                <a href="#ground-rules">The full notices are under the table.</a>
+              </p>
+              {/* The sort is already in the intro. What is not is which of
+                  the tracked venues make the list and how ties break. */}
+              <p>
+                {spellOut(ranked.length, true)} of the {listed} venues tracked,
+                the ones whose wordmark we hold and have a link for. Dollar
+                caps rank first; offers capped in BTC or ETH rank below them on
+                the match percentage. A higher row is a larger headline, not a
+                better venue.
+              </p>
+              <CasinoTable casinos={ranked} />
+            </Section>
+
             <div className="uni-home-content cc-navwrap">
               <nav className="rp-toc" aria-label="On this page">
                 <span className="rp-toc-label">On this page</span>
-                {TOC_ITEMS.map((t) => (
+                {tocItems(ranked.length).map((t) => (
                   <a key={t.id} href={`#${t.id}`}>
                     {t.label}
                   </a>
@@ -320,7 +337,29 @@ export function CasinosBody() {
               </nav>
             </div>
 
-            <aside className="cc-guard" aria-label="Age and risk notice">
+            <Section
+              id="ground-rules"
+              eyebrow="Ground rules"
+              title="How to read this table, and what to know before you use it"
+            >
+              <p className="cc-rule">{SORT_RULE}</p>
+              <p className="cc-state">
+                The chips and the bullets on each row are{" "}
+                <strong>venue claims</strong>, reproduced in the venue&rsquo;s
+                own wording. The Evidence column is ours: it counts how much of
+                a venue we have read off its own terms or its regulator, then
+                adjusts on what those readings say. It scores research, not the
+                offer, and it never moves a row.
+              </p>
+              <p>
+                The {ranked.length} listed are the venues whose brand we hold a
+                wordmark for and have a link to. It is a plain rule and it cuts
+                both ways: a venue that belongs here by bonus size stays out
+                until its mark arrives, and a name we could not confirm as a
+                real brand never gets in. Wolf.io was one of those and is not
+                on the page.
+              </p>
+              <aside className="cc-guard" aria-label="Age and risk notice">
               <p>
                 <strong>18+ only, and 21+ where the law says so.</strong>{" "}
                 Gambling carries a real risk of losing money and can be
@@ -339,57 +378,27 @@ export function CasinosBody() {
                 jurisdictions. Checking the law where you live is your
                 responsibility, before registering anywhere on this page.
               </p>
-            </aside>
+              </aside>
 
             {/* Both of these used to live at the foot of the page. A reader
                 deciding whether to trust the sort order has to be told how
                 the page is paid before they read it, not after. The
                 #disclosure section at the end repeats this rather than
                 replacing it. */}
-            <aside className="cc-note" aria-label="Commercial disclosure">
+              <aside className="cc-note" aria-label="Commercial disclosure">
               <p>
                 <strong>How this page is paid.</strong> {DISCLOSURE_SHORT}
               </p>
-            </aside>
+              </aside>
 
-            <aside className="cc-note" aria-label="Where this is legal">
+              <aside className="cc-note" aria-label="Where this is legal">
               <p>
                 <strong>Where this is legal.</strong> {LEGAL_SHORT}
               </p>
-            </aside>
+              </aside>
 
-            <Section
-              id="ranking"
-              eyebrow="Ranking"
-              title={`The ${RANK_COUNT} biggest crypto casino welcome bonuses`}
-              dated
-            >
-              <p>
-                Ordered by the size of the advertised welcome bonus, largest
-                first: {ranked.length} of the {listed} venues tracked. Offers
-                capped in dollars rank on the cap. Offers capped in BTC or ETH,
-                or with no cap stated, rank below them on the match percentage,
-                because converting a crypto cap needs a rate this page has no
-                feed for.
-              </p>
-              <p>
-                The {ranked.length} listed are the venues whose brand we hold a
-                wordmark for. It is a plain rule and it cuts both ways: a venue
-                that belongs here by bonus size stays out until its mark
-                arrives, and a name we could not confirm as a real brand never
-                gets in. Wolf.io was one of those and is not on the page.
-              </p>
-              <p className="cc-rule">{SORT_RULE}</p>
-              <p className="cc-state">
-                The chips and the bullets on each row are{" "}
-                <strong>venue claims</strong>, reproduced in the venue&rsquo;s
-                own wording. The Evidence column is ours: it counts how much of
-                a venue we have read off its own terms or its regulator, then
-                adjusts on what those readings say. It scores research, not the
-                offer, and it never moves a row.
-              </p>
-              <CasinoTable casinos={ranked} />
             </Section>
+
 
             <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager" dated>
               <p>
@@ -914,7 +923,7 @@ export function CasinosBody() {
           </div>
 
           <aside className="rp-doc-aside" aria-label="On this page">
-            <ReportToc items={TOC_ITEMS} />
+            <ReportToc items={tocItems(ranked.length)} />
           </aside>
         </div>
       </main>
@@ -922,19 +931,3 @@ export function CasinosBody() {
   );
 }
 
-function HeroStat({ label, value }: { label: string; value: number | string }) {
-  // A date in a slot built for a two-digit count wraps to three lines on a
-  // phone and drags the other tiles up with it, so text values render a size
-  // down and refuse to break.
-  const isText = typeof value === "string";
-  return (
-    <div className="uni-home-hero-stat">
-      <span className="uni-home-hero-stat-label">{label}</span>
-      <span
-        className={`uni-home-hero-stat-value${isText ? " cc-stat-text" : ""}`}
-      >
-        {value}
-      </span>
-    </div>
-  );
-}
