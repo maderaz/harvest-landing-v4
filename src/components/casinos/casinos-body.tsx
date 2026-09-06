@@ -342,11 +342,12 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
             <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager">
               <p>
                 Cap multiplied by playthrough is what the terms oblige you to
-                stake before any of the bonus can leave. Every competing list
-                prints the cap and leaves out the multiplier.
+                stake before any of the bonus can leave. The cap is the figure
+                every ranking prints; the multiplier is the one that decides
+                what it costs.
               </p>
               <p>
-                {turnover.length} of the {listed} venues publish both, so the
+                We have both figures for {turnover.length} venues, so the
                 sum can be done. Sorted by what they ask, smallest first.
               </p>
               <div className="rp-dtable-wrap">
@@ -387,19 +388,29 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
               <div className="rp-tip">
                 <div className="rp-callout-head">
                   <span className="rp-callout-ico" aria-hidden="true">!</span>
-                  <span className="rp-callout-title">Read the cap, not the percentage</span>
+                  <span className="rp-callout-title">A cap is per deposit, and a bonus is not clearable on every game</span>
                 </div>
                 <p className="rp-tip-body">
-                  Wild.io&rsquo;s banner says up to 350%. Clause 6 of its bonus
-                  terms says the maximum bonus is $1,000. Both are on the same
-                  site on the same day, and the row above prints the second one.
-                  Its footer is worth reading too:{" "}
-                  <q cite="https://wild.io/terms-and-conditions">
-                    Wild.io is owned and operated by Stack Gaming Ltd.,
-                    registration number: 15986 &hellip; and operates under
-                    License No. ALSI-202504044-FI2
+                  Wild.io advertises up to 350% across a three-deposit package.
+                  Each stage carries its own ceiling, and the site shows
+                  &ldquo;Receive 120% bonus up to $1,000&rdquo; and
+                  &ldquo;Receive 100% bonus up to $1,000&rdquo; on separate
+                  stages, so the dollar figure limits one deposit and not
+                  the package. The percentage and the cap describe different
+                  things and do not contradict each other.
+                </p>
+                <p className="rp-tip-body">
+                  The clause worth reading is 2.4:{" "}
+                  <q cite="https://wild.io/bonus-terms">
+                    Wagering can only be done in Slots. Jackpot Games,
+                    Accumulator/Progressive Games, Table Games, Live Games,
+                    Sportsbook, or any other games can not be used to wager the
+                    bonus or while the bonus is active
                   </q>
-                  . That is more than most of this list will tell you.
+                  . Table games are not discounted to 20% here, they are barred
+                  outright, and 2.5 puts their contribution at nothing. A
+                  playthrough you cannot legally attempt on the game you wanted
+                  is worth more attention than the size of the cap.
                 </p>
               </div>
               <p className="rp-fineprint">
@@ -412,7 +423,8 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
             <Section id="bonus-calculator" eyebrow="Calculator" title="What a bonus actually costs">
               <p>
                 Every wager you make clearing a playthrough meets the house
-                edge. This prices that.
+                edge. This prices that, for the venues that publish both
+                numbers.
               </p>
               {/* Opens on the row the page ranks first, so the intent the
                   headline set is not lost between the table and the tool. The
@@ -443,15 +455,9 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
               </p>
               <p>
                 Move it back to a wallet and Harvest indexes onchain yield on
-                USDC and USDT, uninsured and not a bonus.{" "}
-                {usdcBest ? (
-                  <>
-                    The best-paying USDC strategy we track is on{" "}
-                    <strong>{usdcBest}</strong> right now.{" "}
-                  </>
-                ) : null}
-                Rates on the <Link href="/usdc">USDC hub</Link>, and what can go
-                wrong in the <Link href="/risk-framework">risk framework</Link>.
+                USDC and USDT, uninsured and not a bonus. Rates on the{" "}
+                <Link href="/usdc">USDC hub</Link>, and what can go wrong in the{" "}
+                <Link href="/risk-framework">risk framework</Link>.
               </p>
             </Section>
 
@@ -465,8 +471,9 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
               }
             >
               <p>
-                We read its terms and searched the complaint boards. We have
-                not deposited.
+                We read its own terms and promotion pages. We have not
+                deposited, and the public complaint boards were unreachable
+                from here, so nothing below rests on them.
               </p>
               <div className="rp-venues">
                 {VENUE_REVIEWS.map((r, i) => (
@@ -639,11 +646,13 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
                 </table>
               </div>
               <p>
-                Solana, XRP, Litecoin, Dogecoin and Bitcoin Cash each run on one
-                chain only, so there is nothing to get wrong. The risk sits in
-                the two stablecoins, and it is the same mistake that loses money
-                depositing into a vault: the token exists on several chains, the
-                address you were given lives on one of them.
+                The risk sits in the two stablecoins, and it is the same
+                mistake that loses money depositing into a vault: the token
+                exists on several chains, and the address you were given lives
+                on one of them. Single-chain coins remove that particular
+                choice without removing every one. XRP deposits at a shared
+                address usually need a destination tag, and a transfer that
+                arrives without it is not credited automatically.
               </p>
             </Section>
 
@@ -673,9 +682,11 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
                 </div>
                 <p className="rp-info-body">
                   No complaints channel with any force behind it when a
-                  withdrawal is refused. No segregated player funds. No link to
-                  a national self-exclusion register, so a block you set with
-                  one operator does not follow you anywhere else.
+                  withdrawal is refused, and no link to a national
+                  self-exclusion register, so a block you set with one operator
+                  does not follow you anywhere else. Whether player funds are
+                  held separately is a per-operator question, and not one any
+                  venue on this page answers.
                 </p>
               </div>
             </Section>
@@ -742,6 +753,14 @@ export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
                 venue has not been read, the row says so instead of guessing.
                 Playthrough, minimum deposit and payout windows are quoted from
                 the published terms and not estimated.
+              </p>
+              <p>
+                <strong>Who is responsible for this page.</strong> It is
+                researched and edited by the Harvest research team, which also
+                writes the yield rankings elsewhere on this site. Every checked
+                figure carries the page it was read from and the date, in the
+                expanded row. If a figure here is wrong or out of date, tell us
+                and we will correct it and re-date the row.
               </p>
               <p>
                 Terms change without notice, and a date is the only claim this

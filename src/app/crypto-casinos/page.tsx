@@ -38,13 +38,17 @@ async function bestUsdcApy(): Promise<string | null> {
 
 // Held at noindex on purpose.
 //
-// The old gate lifted itself the moment a row had both a link and a reading,
-// which is now true of several. It is held anyway: most of the links are the
-// venue's plain domain while the affiliate deal is still being set up, so
-// they will be swapped. A page indexed with links that then change is a worse
-// start than a page indexed a week later. Lift this when dealStatus reads
-// "live" across the ranking, and add /crypto-casinos to sitemap.ts and to the
-// llms.txt list in scripts/build-seo-static.mjs in the same commit.
+// The reason is quality, not commerce. This page carried a comparison error
+// until it was corrected: it presented Wild.io's percentage and its dollar cap
+// as a contradiction when they describe different things, and its evidence
+// column showed a composite score that read as a rating of the venue. Both are
+// fixed, and the page stays out of the index until the fixes have been
+// reviewed and more than two of the sixteen venues carry a documented source.
+//
+// The affiliate links being plain domains today is a business reason to wait,
+// and it is a weaker one. Lift this by deleting the robots line, and add
+// /crypto-casinos to sitemap.ts and to the llms.txt list in
+// scripts/build-seo-static.mjs in the same commit.
 export function generateMetadata(): Metadata {
   // The count is a property of the data, not a constant: a venue joins the
   // ranking when it has both a wordmark and a link, and the title follows.
