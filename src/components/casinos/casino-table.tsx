@@ -36,7 +36,9 @@ function glance(c: Casino): string[] {
   const out: string[] = [];
   if (c.verified.licence) out.push(c.verified.licence.authority);
   if (c.verified.kyc) out.push(KYC_LABEL[c.verified.kyc]);
-  if (c.verified.wagering != null) {
+  // Skipped when a claim chip already carries it, which is how Hyper Lucky
+  // printed "No wagering" twice in one row.
+  if (c.verified.wagering != null && !(c.verified.wagering === 0 && c.claimed.noWagering)) {
     out.push(c.verified.wagering === 0 ? "No wagering" : `${c.verified.wagering}x wagering`);
   }
   return out;

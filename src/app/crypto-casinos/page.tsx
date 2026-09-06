@@ -3,6 +3,9 @@ import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
 import { FAQS, rankLabel } from "@/lib/crypto-casinos-copy";
 import { CasinosBody } from "@/components/casinos/casinos-body";
+import { getLiveVaults, loadHistoryFile } from "@/lib/data";
+import { buildUsdcCohort } from "@/lib/usdc-hub";
+import { formatAPY } from "@/lib/format";
 import {
   breadcrumbSchema,
   faqPageSchema,
@@ -13,6 +16,25 @@ import "../_styles/report.css";
 import "../_styles/crypto-casinos.css";
 
 const PAGE_URL = `${SITE_URL}/crypto-casinos`;
+
+/**
+ * The current top USDC rate, for the one paragraph on this page that points at
+ * what Harvest actually does. A link to a hub is a call to action; a number is
+ * a reason to follow it. Null when the feed is unreadable, and the sentence
+ * drops the figure rather than inventing one.
+ */
+async function bestUsdcApy(): Promise<string | null> {
+  try {
+    const vaults = await getLiveVaults();
+    const c = buildUsdcCohort(
+      vaults.filter((v) => v.asset === "USDC"),
+      loadHistoryFile(),
+    );
+    return c.best ? formatAPY(c.best.apy24h) : null;
+  } catch {
+    return null;
+  }
+}
 
 // Held at noindex on purpose.
 //
@@ -44,7 +66,7 @@ export function generateMetadata(): Metadata {
   };
 }
 
-export default function CryptoCasinosPage() {
+export default async function CryptoCasinosPage() {
   const { casinos } = loadCasinos();
   // Same membership rule the table uses. See lib/casino-logos.
   const ranked = casinos.filter(isRanked);
@@ -77,7 +99,7 @@ export default function CryptoCasinosPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <CasinosBody />
+      <CasinosBody usdcBest={await bestUsdcApy()} />
     </>
   );
 }

@@ -68,6 +68,10 @@ export const LEGAL_SHORT =
 export const LEAVE_SITE_BODY = (name: string) =>
   `${name} is a third-party gambling site. Harvest does not run it, hold your balance or process your withdrawal, and every game there has a house edge, so the expected result of continued play is a loss. This link is commercial and may pay us. Check the law where you live and read the bonus terms before you deposit.`;
 
+/** What the Evidence column counts, said once, above the table. */
+export const EVIDENCE_NOTE =
+  "Evidence counts what we have read off a venue, not how good its offer is. It never moves a row.";
+
 /** Printed directly above the ranking. */
 export const SORT_RULE =
   "Sort key: advertised bonus cap, dollars first. BTC-capped and uncapped offers sit below. A higher row is a larger headline, not a better venue.";
@@ -192,7 +196,6 @@ export const SCAM_SIGNALS: { name: string; body: string }[] = [
   { name: "No licence on the page", body: "A legitimate operator prints its authority and licence number in the footer. If nothing is named, or the number does not appear on the regulator's own register, walk." },
   { name: "Terms that stay vague", body: "Payout policy, verification triggers and maximum withdrawals should be written down and findable. Vagueness here is what a venue leans on when it declines to pay." },
   { name: "No provably fair games", body: "A crypto-first venue with no verifiable originals and no explanation of how to check a seed has skipped the one thing that separates it from an ordinary casino." },
-  { name: "A thin list of coins", body: "Two or three coins and a single network suggests a venue that has not built its own payments, and is renting someone else's." },
   { name: "Withdrawal complaints in public", body: "This community is loud and fast. Search the venue name alongside the word withdrawal and read what comes back before depositing, not after." },
 ];
 
@@ -224,23 +227,17 @@ export const DEPOSIT_STEPS: { title: string; body: string }[] = [
 // first eight are not optional under this headline: a page that ranks
 // third-party venues and takes a commission has to answer both in its own
 // words, and the FAQPage schema carries them into the result.
+// Eight, and every one of them answers something the page does not already
+// have a heading for. The list ran to sixteen, half of it restating an H2.
 export const FAQS: { q: string; a: string }[] = [
   { q: "What is a crypto casino?", a: "An online casino that takes wagers in cryptocurrency, not in bank-processed money. Balances are funded by an onchain transfer and withdrawals are paid back to a wallet address. The games are the same ones a currency casino runs; what changes is the payment rail, and with it the speed of a withdrawal and how much identity checking sits in front of it." },
   { q: "Are crypto casinos legal?", a: "Crypto casino legality depends on where you live, not on the payment method. Online gambling is licensed in some jurisdictions, restricted to state operators in others, and prohibited in several. Most crypto casinos hold an offshore licence and block a list of countries at sign-up. Check the law where you live before you play, and check that list before you register." },
-  { q: "Are crypto casinos legal in the United States?", a: "No federal law stops a player from using one. Seven states run regulated online casinos, and none of those operators takes cryptocurrency, so crypto play means an offshore site outside state regulation. Washington State criminalises taking part in online gambling. Enforcement elsewhere has focused on operators and not on players, and that is a pattern, not a protection." },
   { q: "Why does a bonus with a high wagering requirement cost money?", a: "A playthrough requirement obliges a multiple of the bonus to be wagered before any of it can be withdrawn, and every one of those wagers meets the game's house edge, so the turnover has an expected cost. A 200% bonus at 60x playthrough can be worth less than a 50% bonus at 20x once that cost is priced, which is what the calculator on this page works out." },
-  { q: "Which coin should I use?", a: "A stablecoin if the balance will sit for a while, because USDT and USDC hold their value between the deposit and the withdrawal. Litecoin, XRP, TRON or Solana if you move money often, because they settle in minutes for cents. Bitcoin is accepted everywhere and is the slowest and priciest of the common options." },
   { q: "Which crypto casinos do not require KYC?", a: "Some venues take no identity documents at sign-up and ask only above a withdrawal threshold; others ask for nothing at all. The policy is the operator's choice and it changes without notice, which is why each row here records the threshold and the date the terms were read. A venue advertising no KYC can still request documents on a large withdrawal." },
+  { q: "What happens if I send crypto on the wrong network?", a: "The funds are usually gone. USDT exists as a separate token on Ethereum, Tron, BSC, Solana and Polygon, and sending the Ethereum version to a Tron address puts it somewhere neither you nor the casino can reach. Check the network on both sides before confirming, every time." },
   { q: "How is this page ranked?", a: "By advertised welcome-bonus size, dollar caps first. That is a rule about advertising and not about which venue is safer or cheaper to clear. The Evidence column is separate: it counts how much of a venue we have read off its own terms, and it never moves a row. Venues without a wordmark are not listed at all." },
   { q: "Does Harvest get paid?", a: "Yes, potentially. Harvest may earn a commission if you register through a link on this page. That payment does not change the sort order, which is fixed to the advertised bonus size by the rule printed above the table, and it does not change the Evidence column, which counts terms we have read. No venue has paid for a position here." },
   { q: "What is a good wagering requirement?", a: "Twenty times or under is generous and clearable. Thirty-five to forty is the industry norm. Sixty and above asks for turnover that will usually cost more than the bonus is worth, and the offers advertising the largest headline figures are the ones most likely to sit up there." },
-  { q: "What does provably fair mean?", a: "A scheme where the casino commits to a hashed server seed before a round, combines it with a seed you control, and publishes both afterwards so the outcome can be recomputed. It proves the result was not changed after the bet was placed. It does not remove the house edge, and it says nothing about whether the operator will pay a withdrawal." },
-  { q: "How fast are crypto casino withdrawals?", a: "Faster than bank rails when nothing is flagged, because payment is an onchain transfer, not a card refund. The variable is not the chain but the operator: whether a withdrawal is auto-approved or queued for manual review, and at what size that review starts." },
-  { q: "What happens if I send crypto on the wrong network?", a: "The funds are usually gone. USDT exists as a separate token on Ethereum, Tron, BSC, Solana and Polygon, and sending the Ethereum version to a Tron address puts it somewhere neither you nor the casino can reach. Check the network on both sides before confirming, every time." },
-  { q: "Can I win real money at a crypto casino?", a: "Yes. Wins are paid to your wallet in the coin you played with, usually within minutes of the withdrawal clearing review. Whether you keep them is a separate question from whether you can win them." },
-  { q: "Do I pay tax on crypto gambling winnings?", a: "That depends on your country, and in the United States gambling winnings are taxable income whatever they are paid in. Disposing of the coin afterwards can be a second taxable event. Ask an accountant who knows your jurisdiction." },
-  { q: "Are crypto casinos safe?", a: "The blockchain part is sound: transfers settle and cannot be reversed by a third party. The operator is where the risk sits. An offshore licence carries far less consumer protection than a state regulator, there is no deposit protection, and an irreversible transfer is irreversible in both directions." },
-  { q: "What is RTP?", a: "Return to player, the share of total stakes a game pays back over a very long run. A 96% slot keeps four cents of every dollar wagered on average. Provably fair originals often publish 98% or better, which is why bonus terms tend to bar them." },
 ];
 
 
@@ -311,12 +308,8 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
     "{CHECKED} fields checked, and the offer itself is the best documented here. What is missing is the operator: no company and no licence number, so there is nobody to complain to. Provably fair is unread.",
   sections: [
     {
-      h: "Is Lucky Rollers legit?",
-      body: "No operating company, no registration number, no licence number. Not in the footer, not in the terms, not anywhere we could check. A venue that writes its playthrough and its cashback rules this clearly has not forgotten how a footer works, so read the omission as deliberate. It leaves nobody to name in a complaint and no regulator to take it to.",
-    },
-    {
-      h: "The biggest bonus for newcomers",
-      body: "100% up to 30,000 USDT, 100 free spins and a free bet. The 30,000 is a ceiling reached across deposits and not one match, and the playthrough is 40x. Cleared against the full cap that is $1.2M of wagering, the figure in the table below, and the reason a large headline is not the same thing as a good offer.",
+      h: "Who runs Lucky Rollers",
+      body: "Nobody we can name. On the public record we cannot call this venue legit, because there is no operator to attach the word to. No company, no registration number, no licence number, not in the footer, not in the terms, not anywhere we could check. A venue that writes its playthrough and its cashback rules this clearly has not forgotten how a footer works, so read the omission as deliberate. It leaves nobody to name in a complaint and no regulator to take it to.",
     },
     {
       h: "What the terms actually say",
@@ -328,20 +321,16 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
       name: "Jurisdiction",
       body: "Unknown. Searching turns up an affiliate site quoting a licence number, an operating company and complaint statistics to one decimal place, none of which trace to a primary source. Treat precise numbers with no source as marketing.",
     },
-    { name: "Freshness", body: "No launch date published, so there is no way to weigh how long the payout record runs." },
     {
-      name: "Reputation",
-      body: "No complaint file we could find under this name, and the name collides with LuckyRolls, Lucky Casino and Lucky Creek, so most of what a search returns is about somebody else.",
-    },
-    {
-      name: "The no-KYC promise",
-      body: "Advertised at standard withdrawal levels, and the same caveat applies as everywhere: it is the usual case, not a guarantee.",
+      name: "The name",
+      body: "It collides with LuckyRolls, Lucky Casino and Lucky Creek, so most of what a search returns is about somebody else. Check the domain character by character before you deposit.",
     },
   ],
   facts: [
     { label: "Operator", value: "Not published" },
     { label: "Licence", value: "Not published" },
     { label: "Live since", value: "Not published" },
+    { label: "KYC", value: "No documents advertised at standard withdrawal levels. Advertised, not guaranteed" },
     { label: "Welcome bonus", value: "100% up to 30,000 USDT, 100 free spins and a free bet" },
     { label: "Wagering", value: "40x" },
     { label: "Minimum deposit", value: "5 USDT" },

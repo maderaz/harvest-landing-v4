@@ -175,11 +175,7 @@ export function WageringCalculator({
               than a fee you are charged.
             </p>
           </>
-        ) : (
-          <p className="cc-calc-rest">
-            Enter a bonus and its playthrough to see what clearing it costs.
-          </p>
-        )}
+        ) : null}
       </div>
     </div>
   );
