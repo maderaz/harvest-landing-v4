@@ -46,14 +46,12 @@ export const rankLabel = (n: number) => `TOP${n}`;
  * wordmark or a set of terms arrives.
  */
 export function leadSentences(ranked: number, priced: number): string {
-  const n = spellOut(ranked, true);
-  const p = spellOut(priced, true);
-  return `${n} welcome bonuses, largest advertised figure first. A cap is not cash: playthrough turns it into an obligation. ${p} of these venues publish both numbers, so the calculator below prices the wager. Checked cells come off the venue's own terms, and dashes mean we have not read them yet.`;
+  return `${spellOut(ranked, true)} welcome bonuses, largest advertised cap first. ${spellOut(priced, true)} venues publish the playthrough, so the table under the ranking shows what that cap actually obliges you to stake.`;
 }
 
 /** Said once above the fold, and again at the foot of the page. */
 export const DISCLOSURE_SHORT =
-  "Harvest may earn a commission if you register through a link on this page. That payment does not change the sort order. Rows are ordered by advertised bonus size, by the rule above the table.";
+  "Harvest may earn a commission if you register through a link on this page. No venue has paid for a position, and the order is fixed to the advertised bonus.";
 
 /** The one thing a US reader needs before the table, not after it. */
 export const LEGAL_SHORT =
@@ -239,7 +237,7 @@ export const FAQS: { q: string; a: string }[] = [
   { q: "What does provably fair mean?", a: "A scheme where the casino commits to a hashed server seed before a round, combines it with a seed you control, and publishes both afterwards so the outcome can be recomputed. It proves the result was not changed after the bet was placed. It does not remove the house edge, and it says nothing about whether the operator will pay a withdrawal." },
   { q: "How fast are crypto casino withdrawals?", a: "Faster than bank rails when nothing is flagged, because payment is an onchain transfer, not a card refund. The variable is not the chain but the operator: whether a withdrawal is auto-approved or queued for manual review, and at what size that review starts." },
   { q: "What happens if I send crypto on the wrong network?", a: "The funds are usually gone. USDT exists as a separate token on Ethereum, Tron, BSC, Solana and Polygon, and sending the Ethereum version to a Tron address puts it somewhere neither you nor the casino can reach. Check the network on both sides before confirming, every time." },
-  { q: "Can I win real money at a crypto casino?", a: "Yes, and the expected result of continued play is still a loss, because every game carries a house edge. Wins are paid to your wallet in the coin you played with." },
+  { q: "Can I win real money at a crypto casino?", a: "Yes. Wins are paid to your wallet in the coin you played with, usually within minutes of the withdrawal clearing review. Whether you keep them is a separate question from whether you can win them." },
   { q: "Do I pay tax on crypto gambling winnings?", a: "That depends on your country, and in the United States gambling winnings are taxable income whatever they are paid in. Disposing of the coin afterwards can be a second taxable event. Ask an accountant who knows your jurisdiction." },
   { q: "Are crypto casinos safe?", a: "The blockchain part is sound: transfers settle and cannot be reversed by a third party. The operator is where the risk sits. An offshore licence carries far less consumer protection than a state regulator, there is no deposit protection, and an irreversible transfer is irreversible in both directions." },
   { q: "What is RTP?", a: "Return to player, the share of total stakes a game pays back over a very long run. A 96% slot keeps four cents of every dollar wagered on average. Provably fair originals often publish 98% or better, which is why bonus terms tend to bar them." },
@@ -308,13 +306,13 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   slug: "lucky-rollers",
   operator: "Operator not published",
   standfirst:
-    "First by advertised bonus, and the highest evidence score on the page.",
+    "Publishes its bonus terms in unusually plain English. Does not publish who owns it.",
   caveat:
     "{CHECKED} fields checked, and the offer itself is the best documented here. What is missing is the operator: no company and no licence number, so there is nobody to complain to. Provably fair is unread.",
   sections: [
     {
       h: "Is Lucky Rollers legit?",
-      body: "We cannot tell you who runs it. No operating company and no licence number turn up anywhere we can check, so there is no regulator to appeal to and no company to name in a complaint. The odd part is that the terms themselves are unusually plain, so the missing operator looks less like sloppiness and more like a choice.",
+      body: "No operating company, no registration number, no licence number. Not in the footer, not in the terms, not anywhere we could check. A venue that writes its playthrough and its cashback rules this clearly has not forgotten how a footer works, so read the omission as deliberate. It leaves nobody to name in a complaint and no regulator to take it to.",
     },
     {
       h: "The biggest bonus for newcomers",
@@ -322,7 +320,7 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
     },
     {
       h: "What the terms actually say",
-      body: "Thirteen coins in and out, around 6,000 titles, 5 USDT to open, payouts described as instant, no identity documents at standard withdrawal levels. Weekly cashback lands on a Monday with no playthrough attached, which is rarer than it sounds. This is the most we have been able to read off any venue on the page.",
+      body: "Thirteen coins in and out, around 6,000 titles, 5 USDT to open, payouts described as instant, no identity documents at standard withdrawal levels. Weekly cashback pays out on Mondays with no playthrough on it, so that part is withdrawable the moment it lands.",
     },
   ],
   keepInMind: [

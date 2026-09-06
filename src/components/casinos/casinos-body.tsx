@@ -46,7 +46,6 @@ import {
  */
 export const tocItems = (ranked: number): TocItem[] => [
   { id: "ranking", label: `The ${rankLabel(ranked)}` },
-  { id: "ground-rules", label: "Ground rules" },
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
   { id: "bankroll", label: "Between sessions" },
@@ -307,21 +306,22 @@ export function CasinosBody() {
                   keep a full block under the ranking; what has to precede a
                   sponsored click is here. */}
               <p className="cc-brief">
-                <strong>18+, and 21+ where the law says so.</strong> Every game
-                here has a house edge, so the expected result of continued play
-                is a loss. Play now links are commercial and may pay us, which
-                does not change the order. Most of these venues do not accept
-                players in the United States.{" "}
-                <a href="#ground-rules">The full notices are under the table.</a>
+                <strong>18+.</strong> Play now links are commercial and may pay
+                us; no venue has paid for a position. Most of these venues do
+                not accept players in the United States.{" "}
+                <a href="#responsible">Limits and help lines</a>.
               </p>
-              {/* The sort is already in the intro. What is not is which of
-                  the tracked venues make the list and how ties break. */}
+              {/* Said here and nowhere else. The sort rule used to appear
+                  four times: the lead, above the table, a Ground rules
+                  section and the disclosure. */}
               <p>
-                {spellOut(ranked.length, true)} of the {listed} venues tracked,
-                the ones whose wordmark we hold and have a link for. Dollar
-                caps rank first; offers capped in BTC or ETH rank below them on
-                the match percentage. A higher row is a larger headline, not a
-                better venue.
+                {spellOut(ranked.length, true)} of the {listed} venues
+                tracked, the ones we hold a wordmark and a link for. Dollar caps sort
+                first, then offers capped in BTC or ETH on their match
+                percentage. Position tracks the size of the advertising, not
+                the quality of the venue. The chips are the venue&rsquo;s own
+                claims; the Evidence column is how much of a venue we have read
+                off its terms.
               </p>
               <CasinoTable casinos={ranked} />
             </Section>
@@ -337,75 +337,11 @@ export function CasinosBody() {
               </nav>
             </div>
 
-            <Section
-              id="ground-rules"
-              eyebrow="Ground rules"
-              title="How to read this table, and what to know before you use it"
-            >
-              <p className="cc-rule">{SORT_RULE}</p>
-              <p className="cc-state">
-                The chips and the bullets on each row are{" "}
-                <strong>venue claims</strong>, reproduced in the venue&rsquo;s
-                own wording. The Evidence column is ours: it counts how much of
-                a venue we have read off its own terms or its regulator, then
-                adjusts on what those readings say. It scores research, not the
-                offer, and it never moves a row.
-              </p>
-              <p>
-                The {ranked.length} listed are the venues whose brand we hold a
-                wordmark for and have a link to. It is a plain rule and it cuts
-                both ways: a venue that belongs here by bonus size stays out
-                until its mark arrives, and a name we could not confirm as a
-                real brand never gets in. Wolf.io was one of those and is not
-                on the page.
-              </p>
-              <aside className="cc-guard" aria-label="Age and risk notice">
-              <p>
-                <strong>18+ only, and 21+ where the law says so.</strong>{" "}
-                Gambling carries a real risk of losing money and can be
-                addictive. Every game listed here has a house edge, which means
-                the expected result of continued play is a loss. Play only what
-                you can afford to lose, and never with borrowed money.
-              </p>
-              <p>
-                Free, confidential help:{" "}
-                <a href="https://www.begambleaware.org/" rel="nofollow noopener noreferrer" target="_blank">BeGambleAware</a>,{" "}
-                <a href="https://www.gamblersanonymous.org/" rel="nofollow noopener noreferrer" target="_blank">Gamblers Anonymous</a>.
-                In the US, call or text 1-800-GAMBLER.
-              </p>
-              <p>
-                Online gambling is restricted or prohibited in many
-                jurisdictions. Checking the law where you live is your
-                responsibility, before registering anywhere on this page.
-              </p>
-              </aside>
-
-            {/* Both of these used to live at the foot of the page. A reader
-                deciding whether to trust the sort order has to be told how
-                the page is paid before they read it, not after. The
-                #disclosure section at the end repeats this rather than
-                replacing it. */}
-              <aside className="cc-note" aria-label="Commercial disclosure">
-              <p>
-                <strong>How this page is paid.</strong> {DISCLOSURE_SHORT}
-              </p>
-              </aside>
-
-              <aside className="cc-note" aria-label="Where this is legal">
-              <p>
-                <strong>Where this is legal.</strong> {LEGAL_SHORT}
-              </p>
-              </aside>
-
-            </Section>
-
-
             <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager" dated>
               <p>
-                A welcome bonus is not money. It is an obligation to wager,
-                and the size of that obligation is the cap multiplied by the
-                playthrough. Every competing list prints the first number and
-                leaves out the second.
+                Cap multiplied by playthrough is what the terms oblige you to
+                stake before any of the bonus can leave. Every competing list
+                prints the cap and leaves out the multiplier.
               </p>
               <p>
                 {turnover.length} of the {listed} venues publish both, so the
@@ -452,10 +388,16 @@ export function CasinosBody() {
                   <span className="rp-callout-title">Read the cap, not the percentage</span>
                 </div>
                 <p className="rp-tip-body">
-                  Wild.io advertises up to 350%. Its terms cap the bonus at
-                  $1,000. The headline and the money are two different numbers
-                  at a lot of these venues, and the terms are where the second
-                  one lives.
+                  Wild.io&rsquo;s banner says up to 350%. Clause 6 of its bonus
+                  terms says the maximum bonus is $1,000. Both are on the same
+                  site on the same day, and the row above prints the second one.
+                  Its footer is worth reading too:{" "}
+                  <q cite="https://wild.io/terms-and-conditions">
+                    Wild.io is owned and operated by Stack Gaming Ltd.,
+                    registration number: 15986 &hellip; and operates under
+                    License No. ALSI-202504044-FI2
+                  </q>
+                  . That is more than most of this list will tell you.
                 </p>
               </div>
               <p className="rp-fineprint">
@@ -477,9 +419,8 @@ export function CasinosBody() {
 
             <Section id="bonus-calculator" eyebrow="Calculator" title="What a bonus actually costs">
               <p>
-                A welcome bonus is not money until it has been wagered through
-                its playthrough requirement, and every one of those wagers meets
-                the house edge. This prices that.
+                Every wager you make clearing a playthrough meets the house
+                edge. This prices that.
               </p>
               {/* Opens on the row the page ranks first, so the intent the
                   headline set is not lost between the table and the tool. The
@@ -502,30 +443,17 @@ export function CasinosBody() {
               title="Between sessions, the balance still sits somewhere"
             >
               <p>
-                A bonus and a session are one decision. What happens to the
-                balance afterwards is a different one, and it is the part
-                nobody writes about.
-              </p>
-              <p>
-                Money left in a casino account earns nothing and carries the
+                An idle casino balance earns nothing and keeps the
                 operator&rsquo;s risk for as long as it sits there. Every
                 caveat on this page about licences, withdrawal review and
-                no-KYC exceptions applies to an idle balance exactly as it
-                applies to an active one. Moving it back to a wallet ends that
-                exposure and starts a different set of questions.
+                no-KYC exceptions applies to it exactly as it applies to a
+                balance in play.
               </p>
               <p>
-                Harvest indexes onchain yield on stablecoins, USDC and USDT
-                included, with the rates and the risks written down. It is not
-                a bank, nothing there is insured, and it is not a bonus. See
-                the <Link href="/usdc">USDC hub</Link> for what the rates
-                currently are and the{" "}
-                <Link href="/risk-framework">risk framework</Link> for what can
-                go wrong.
-              </p>
-              <p>
-                Parking yield is a separate decision from claiming a welcome
-                offer. Neither one makes the other safer.
+                Move it back to a wallet and Harvest indexes onchain yield on
+                USDC and USDT, uninsured and not a bonus, with the rates on the{" "}
+                <Link href="/usdc">USDC hub</Link> and what can go wrong in the{" "}
+                <Link href="/risk-framework">risk framework</Link>.
               </p>
             </Section>
 
@@ -537,13 +465,11 @@ export function CasinosBody() {
                   ? "The top two, reviewed"
                   : "Number one, reviewed"
               }
-              dated
             >
               <p>
-                The ranking orders on advertised bonus, which is a fact about
-                the advertising. Here is what the public record says about the
-                venue that ordering puts first. Nobody here has played there,
-                and the card opens with what it does not know.
+                What the public record says about the venue at the top, and
+                what it does not say. We have read its terms and searched the
+                complaint boards. We have not deposited.
               </p>
               <div className="rp-venues">
                 {VENUE_REVIEWS.map((r, i) => (
@@ -605,30 +531,18 @@ export function CasinosBody() {
             <Section id="how-they-work" eyebrow="Basics" title="What a crypto casino is, and how it works">
               <div className="rp-article">
                 <p>
-                  A crypto casino takes wagers in cryptocurrency. You send coins
-                  from your own wallet to an address the site generates, the
-                  balance appears, and a withdrawal goes back to a wallet
-                  address you give it. No card, no bank, no payment processor
-                  sitting in the middle deciding whether the transaction is
-                  allowed.
+                  Coins go from your wallet to an address the site generates,
+                  and withdrawals come back the same way. Payouts clear in
+                  minutes and cost a few cents on Tron or Solana, because a
+                  chain confirms them and no card issuer is deciding whether to
+                  allow it.
                 </p>
                 <p>
-                  That single change is what produces most of the differences.
-                  Withdrawals clear in minutes because a blockchain confirms
-                  them and a bank does not. Fees are the network fee, which on
-                  Tron or Solana is a few cents. Identity checks are often
-                  lighter, because there is no card issuer requiring them.
-                </p>
-                <p>
-                  The games are largely the same slots and tables a currency
-                  casino runs, from the same studios. What crypto sites add is a
-                  category of their own originals, built on verifiable random
-                  outcomes, which the section below explains.
-                </p>
-                <p>
-                  What you give up is the party standing behind the operator. A
-                  card payment can be disputed. An onchain transfer cannot be
-                  reversed by anyone, in either direction.
+                  The two things that card buys you are the ones you give up
+                  here. A card payment can be charged back; an onchain transfer
+                  cannot be reversed by anyone, in either direction. And in a
+                  dispute with the operator there is no bank in the middle, only
+                  whatever the licence in its footer is worth.
                 </p>
               </div>
             </Section>
@@ -867,6 +781,12 @@ export function CasinosBody() {
 
             <Section id="responsible" eyebrow="Control" title="Staying in control">
               <p>
+                <strong>18+, and 21+ where the law says so.</strong> Every game
+                on this page carries a house edge, so continued play loses money
+                on average. Play only what you can afford to lose, never with
+                borrowed money, and stop if it stops being a game.
+              </p>
+              <p>
                 Instant payments make it easier to keep going, which is the one
                 way the speed works against you. Every venue worth using ships
                 the tools below. Set them on the day you register, while the
@@ -898,10 +818,9 @@ export function CasinosBody() {
 
             <Section id="disclosure" eyebrow="Disclosure" title="How this page is funded and how it is built">
               <p>
-                Links to the venues on this page are commercial. Harvest may be
-                paid when a reader registers through one, and that payment does
-                not change the order: rows sort on the advertised bonus, by the
-                rule printed above the table.
+                Links to the venues on this page are commercial. What that pays
+                for is the link, never a position: see{" "}
+                <a href="#faq">Does Harvest get paid?</a> for the long answer.
               </p>
               <p>
                 <strong>Where the numbers come from.</strong> Every figure in

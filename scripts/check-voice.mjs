@@ -43,6 +43,43 @@ const BANNED = [
   { name: "a testament to", re: /\ba testament to\b/i },
   { name: "not just X, but Y", re: /\bnot just\b[^.]{0,50},?\s+but\b/i },
   { name: "em dash", re: /—/ },
+
+  // The second list. Not stock phrases this time but a rhythm: the same
+  // sentence engine reused every eighty words until the page reads as one
+  // voice explaining its own method. Each of these was on the page more than
+  // once before it was banned.
+  {
+    name: "X is not Y, it is Z",
+    re: /\b(?:is|are) not (?:money|cash|a forecast|a prediction)\b[^.]{0,40}\.\s+(?:It|They) (?:is|are)\b/i,
+  },
+  {
+    name: "a larger headline, not a better venue",
+    re: /\bnot a better venue\b/i,
+  },
+  {
+    name: "the part nobody writes about",
+    re: /\bnobody writes about\b/i,
+  },
+  {
+    name: "rarer than it sounds",
+    re: /\brarer than it (?:sounds|looks)\b/i,
+  },
+  {
+    name: "the odd part is",
+    re: /\bthe odd part is\b/i,
+  },
+  {
+    name: "that single change",
+    re: /\bthat single change\b/i,
+  },
+  {
+    name: "doing less work than it looks like",
+    re: /\bdoing less work\b/i,
+  },
+  {
+    name: "which is the difference this page exists to make",
+    re: /\bexists to (?:make|be different)\b/i,
+  },
 ];
 
 // Everything a reader never sees, plus everything that is data rather than
