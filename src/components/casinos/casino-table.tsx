@@ -11,7 +11,7 @@ import { OutboundLink } from "@/components/report/outbound-link";
 import { LEAVE_SITE_BODY, VENUE_REVIEWS } from "@/lib/crypto-casinos-copy";
 import { CASINO_LOGOS } from "@/lib/casino-logos";
 import {
-  casinoScore,
+  CHECK_TOTAL,
   checkedCount,
   CLAIM_LABELS,
   COMPLAINT_LABEL,
@@ -78,8 +78,11 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
   const [rake, setRake] = useState(false);
   const [open, setOpen] = useState<string | null>(null);
 
+  // The column counts documented fields now. A composite number invited the
+  // reading that it scored the offer, and it ranked a venue with no named
+  // operator above the only two whose licences carry a source.
   const anyScored = useMemo(
-    () => casinos.some((c) => casinoScore(c) != null),
+    () => casinos.some((c) => checkedCount(c) > 0),
     [casinos],
   );
 
@@ -122,12 +125,12 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
             <span className="hub-th">Venue</span>
             <span className="hub-th cc-col-bonus">Welcome bonus, as advertised</span>
             {anyScored ? (
-              <span className="hub-th hub-th-right cc-col-score">Evidence</span>
+              <span className="hub-th hub-th-right cc-col-score">Documented</span>
             ) : null}
             <span className="hub-th" />
           </div>
           {rows.map((c, i) => {
-            const score = casinoScore(c);
+            const documented = checkedCount(c);
             const chips = CLAIM_LABELS.filter((l) => c.claimed[l.key]);
             const lead = bonusLead(c);
             const logo = CASINO_LOGOS[c.slug];
@@ -159,6 +162,11 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                         {open === c.slug ? "−" : "+"}
                       </span>
                     </button>
+                    {!c.verified.licence && (
+                      <span className="cc-flag" title="No operator or licence found in the documents we could read">
+                        Operator not identified
+                      </span>
+                    )}
                     {glance(c).length > 0 && (
                       <span className="cc-glance">{glance(c).join(" · ")}</span>
                     )}
@@ -190,7 +198,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                   </span>
                   {anyScored ? (
                     <span className="hub-cell hub-num cc-col-score">
-                      {score ?? "—"}
+                      {documented > 0 ? `${documented}/${CHECK_TOTAL}` : "—"}
                     </span>
                   ) : null}
                   <span className="hub-cell cc-action">

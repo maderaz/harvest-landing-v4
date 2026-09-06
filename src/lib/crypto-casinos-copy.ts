@@ -46,7 +46,7 @@ export const rankLabel = (n: number) => `TOP${n}`;
  * wordmark or a set of terms arrives.
  */
 export function leadSentences(ranked: number, priced: number): string {
-  return `${spellOut(ranked, true)} welcome bonuses, largest advertised cap first. ${spellOut(priced, true)} venues publish the playthrough, so the table under the ranking shows what that cap actually obliges you to stake.`;
+  return `${spellOut(ranked, true)} welcome bonuses, largest advertised cap first. ${spellOut(priced, true)} of them publish a playthrough we could read, so the table under the ranking shows what those caps actually oblige you to stake.`;
 }
 
 /** Said once above the fold, and again at the foot of the page. */
@@ -237,7 +237,7 @@ export const FAQS: { q: string; a: string }[] = [
   { q: "What happens if I send crypto on the wrong network?", a: "The funds are usually gone. USDT exists as a separate token on Ethereum, Tron, BSC, Solana and Polygon, and sending the Ethereum version to a Tron address puts it somewhere neither you nor the casino can reach. Check the network on both sides before confirming, every time." },
   { q: "How is this page ranked?", a: "By advertised welcome-bonus size, dollar caps first. That is a rule about advertising and not about which venue is safer or cheaper to clear. The Evidence column is separate: it counts how much of a venue we have read off its own terms, and it never moves a row. Venues without a wordmark are not listed at all." },
   { q: "Does Harvest get paid?", a: "Yes, potentially. Harvest may earn a commission if you register through a link on this page. That payment does not change the sort order, which is fixed to the advertised bonus size by the rule printed above the table, and it does not change the Evidence column, which counts terms we have read. No venue has paid for a position here." },
-  { q: "What is a good wagering requirement?", a: "Twenty times or under is generous and clearable. Thirty-five to forty is the industry norm. Sixty and above asks for turnover that will usually cost more than the bonus is worth, and the offers advertising the largest headline figures are the ones most likely to sit up there." },
+  { q: "What is a good wagering requirement?", a: "The multiplier alone does not settle it. What matters alongside it is whether the playthrough applies to the bonus or to the deposit plus the bonus, which games count and at what rate, and how long you have. A 20x requirement on a base that includes your deposit, clearable only on slots, can oblige more turnover than a 40x on the bonus alone." },
 ];
 
 
@@ -303,13 +303,13 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   slug: "lucky-rollers",
   operator: "Operator not published",
   standfirst:
-    "Publishes its bonus terms in unusually plain English. Does not publish who owns it.",
+    "Publishes its bonus terms in unusually plain English. We could not find who owns it.",
   caveat:
-    "{CHECKED} fields checked, and the offer itself is the best documented here. What is missing is the operator: no company and no licence number, so there is nobody to complain to. Provably fair is unread.",
+    "{CHECKED} fields documented. The offer is the best documented on this page; the operator is not documented at all. Provably fair is unread and we have run no seed check anywhere.",
   sections: [
     {
       h: "Who runs Lucky Rollers",
-      body: "Nobody we can name. On the public record we cannot call this venue legit, because there is no operator to attach the word to. No company, no registration number, no licence number, not in the footer, not in the terms, not anywhere we could check. A venue that writes its playthrough and its cashback rules this clearly has not forgotten how a footer works, so read the omission as deliberate. It leaves nobody to name in a complaint and no regulator to take it to.",
+      body: "Nobody we can name. We did not find an operating company, a registration number or a licence number in the pages we were able to read, which were the site's own terms and promotion pages. We are not claiming the venue conceals them; we are saying we could not find them, and that we could not reach the public complaint boards from here to check further. Either way it leaves you with nobody to name in a complaint and no regulator to take it to, which is the part that matters before you deposit.",
     },
     {
       h: "What the terms actually say",
@@ -336,7 +336,7 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
     { label: "Minimum deposit", value: "5 USDT" },
     { label: "Coins", value: "13, including BTC, ETH, USDT, USDC, XRP and SOL" },
     { label: "Games", value: "Around 6,000" },
-    { label: "Withdrawal speed", value: "Instant, per its own terms. Not checked" },
+    { label: "Withdrawal speed", value: "Its terms say instant. That documents the claim, not the speed" },
     { label: "Provably fair", value: "Not checked" },
   ],
   sources: [

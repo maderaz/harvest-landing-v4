@@ -233,6 +233,34 @@
 .cc-action { display: flex; justify-content: flex-end; align-items: center; }
 .cc-rowgroup { border-bottom: 1px solid var(--rp-card-border, #eeeef5); }
 .cc-rowgroup .hub-row { border-bottom: 0; align-items: start; }
+/* Says on the row itself that we could not identify who runs the venue, so a
+   reader meets it before the Play now button rather than four sections later. */
+.cc-flag {
+  display: inline-block;
+  margin-top: 3px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, #b23c17 40%, transparent);
+  background: color-mix(in srgb, #ff7a45 10%, transparent);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--uni-ink-2);
+}
+
+/* When the terms bar the selected game outright there is no figure to show. */
+.cc-calc-barred {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: var(--cc-inset);
+  border-left: 3px solid color-mix(in srgb, #b23c17 45%, transparent);
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.cc-calc-barred strong { color: var(--uni-ink); }
+
 /* The checked facts a reader gets without expanding the row. Quiet, because
    they sit under the venue name and must not compete with it. */
 .cc-glance {
