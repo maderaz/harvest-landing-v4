@@ -1102,12 +1102,7 @@ export default function XrpYieldRankingPage() {
             {joinAnd(stats.chains.map(chainLabel))} as of {updated}.
           </p>
           <p className="rp-updated">Last updated {updated}</p>
-          {/* Two ways in, for the two things a visitor arrives wanting.
-              "What would my XRP earn" is the calculator; "what are the
-              options" is the ranking, and until now the second one had to be
-              found by scrolling past ten sections of prose written for the
-              first. Both are same-page anchors, so both land instantly and
-              neither costs a navigation. */}
+          {/* Both same-page anchors, so both land instantly. */}
           <div className="uni-home-hero-actions">
             <a href="#calculator" className="uni-home-cta-primary">
               XRP Calculator
