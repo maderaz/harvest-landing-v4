@@ -12,10 +12,17 @@ import { OutboundLink } from "@/components/report/outbound-link";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
 import { CASINO_LOGOS, LOGO_RATIO } from "@/lib/casino-logos";
-import { CHECK_TOTAL, casinoScore, checkedCount, type Casino } from "@/lib/crypto-casinos";
+import {
+  CHECK_TOTAL,
+  casinoScore,
+  checkedCount,
+  isVerified,
+  type Casino,
+} from "@/lib/crypto-casinos";
 import {
   BONUS_TERMS,
   DISCLOSURE_SHORT,
+  EVIDENCE_NOTE,
   BONUS_TYPES,
   COINS,
   CRYPTO_VS_FIAT,
@@ -55,10 +62,7 @@ export const tocItems = (ranked: number): TocItem[] => [
   { id: "provably-fair", label: "Provably fair" },
   { id: "coins", label: "Coins and fees" },
   { id: "networks", label: "Picking the network" },
-  { id: "getting-started", label: "Wallet and first deposit" },
   { id: "bonuses", label: "Bonus terms" },
-  { id: "games", label: "The games" },
-  { id: "crypto-vs-fiat", label: "Against a fiat casino" },
   { id: "legality", label: "Where this is legal" },
   { id: "scams", label: "Spotting a scam" },
   { id: "responsible", label: "Staying in control" },
@@ -250,7 +254,7 @@ function VenueReviewCard({
   );
 }
 
-export function CasinosBody() {
+export function CasinosBody({ usdcBest }: { usdcBest?: string | null }) {
   const { casinos } = loadCasinos();
   const listed = casinos.length;
   const checked = casinos.filter((c) => casinoScore(c) != null).length;
@@ -263,7 +267,7 @@ export function CasinosBody() {
   // nowhere to go with it.
   const turnover = turnoverRows(ranked);
   const compare = compareRows(ranked);
-  const readTerms = ranked.filter((c) => checkedCount(c) > 0).length;
+  const readTerms = ranked.filter(isVerified).length;
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -285,7 +289,7 @@ export function CasinosBody() {
               <strong>{ranked.length}</strong> ranked
             </span>
             <span>
-              <strong>{readTerms}</strong> with terms read
+              <strong>{readTerms}</strong> read in depth
             </span>
             <span>Updated {UPDATED_SHORT}</span>
           </p>
@@ -299,7 +303,6 @@ export function CasinosBody() {
               id="ranking"
               eyebrow="Ranking"
               title={`The ${ranked.length} biggest crypto casino welcome bonuses`}
-              dated
             >
               {/* One line, because the reader came for the table. The 18+
                   block, the commercial disclosure and the US position each
@@ -309,7 +312,7 @@ export function CasinosBody() {
                 <strong>18+.</strong> Play now links are commercial and may pay
                 us; no venue has paid for a position. Most of these venues do
                 not accept players in the United States.{" "}
-                <a href="#responsible">Limits and help lines</a>.
+                <a href="#responsible">Limits and help lines are at the foot of the page</a>.
               </p>
               {/* Said here and nowhere else. The sort rule used to appear
                   four times: the lead, above the table, a Ground rules
@@ -320,8 +323,7 @@ export function CasinosBody() {
                 first, then offers capped in BTC or ETH on their match
                 percentage. Position tracks the size of the advertising, not
                 the quality of the venue. The chips are the venue&rsquo;s own
-                claims; the Evidence column is how much of a venue we have read
-                off its terms.
+                claims. {EVIDENCE_NOTE}
               </p>
               <CasinoTable casinos={ranked} />
             </Section>
@@ -337,7 +339,7 @@ export function CasinosBody() {
               </nav>
             </div>
 
-            <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager" dated>
+            <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager">
               <p>
                 Cap multiplied by playthrough is what the terms oblige you to
                 stake before any of the bonus can leave. Every competing list
@@ -405,16 +407,6 @@ export function CasinosBody() {
                 anyone loses. What it costs depends on the game and on which
                 games the bonus permits, which is the calculator below.
               </p>
-              {turnover.some((r) => r.note) && (
-                <>
-                  <h3>Terms worth knowing</h3>
-                  <NamedList
-                    items={turnover
-                      .filter((r) => r.note)
-                      .map((r) => ({ name: r.name, body: r.note as string }))}
-                  />
-                </>
-              )}
             </Section>
 
             <Section id="bonus-calculator" eyebrow="Calculator" title="What a bonus actually costs">
@@ -451,9 +443,15 @@ export function CasinosBody() {
               </p>
               <p>
                 Move it back to a wallet and Harvest indexes onchain yield on
-                USDC and USDT, uninsured and not a bonus, with the rates on the{" "}
-                <Link href="/usdc">USDC hub</Link> and what can go wrong in the{" "}
-                <Link href="/risk-framework">risk framework</Link>.
+                USDC and USDT, uninsured and not a bonus.{" "}
+                {usdcBest ? (
+                  <>
+                    The best-paying USDC strategy we track is on{" "}
+                    <strong>{usdcBest}</strong> right now.{" "}
+                  </>
+                ) : null}
+                Rates on the <Link href="/usdc">USDC hub</Link>, and what can go
+                wrong in the <Link href="/risk-framework">risk framework</Link>.
               </p>
             </Section>
 
@@ -467,9 +465,8 @@ export function CasinosBody() {
               }
             >
               <p>
-                What the public record says about the venue at the top, and
-                what it does not say. We have read its terms and searched the
-                complaint boards. We have not deposited.
+                We read its terms and searched the complaint boards. We have
+                not deposited.
               </p>
               <div className="rp-venues">
                 {VENUE_REVIEWS.map((r, i) => (
@@ -485,7 +482,7 @@ export function CasinosBody() {
 
 
             {compare.length > 0 && (
-              <Section id="compare" eyebrow="Compare" title="The venues we have read, side by side" dated>
+              <Section id="compare" eyebrow="Compare" title="The venues we have read, side by side">
                 <p>
                   Only venues whose terms we have read. The ranking table above
                   is larger and includes unread rows.
@@ -532,10 +529,10 @@ export function CasinosBody() {
               <div className="rp-article">
                 <p>
                   Coins go from your wallet to an address the site generates,
-                  and withdrawals come back the same way. Payouts clear in
-                  minutes and cost a few cents on Tron or Solana, because a
-                  chain confirms them and no card issuer is deciding whether to
-                  allow it.
+                  and withdrawals come back the same way, costing a few cents on
+                  Tron or Solana. Payouts are advertised in minutes. Of the four
+                  venues whose terms we have read, three say instant and one
+                  says one to twenty-four hours.
                 </p>
                 <p>
                   The two things that card buys you are the ones you give up
@@ -550,18 +547,15 @@ export function CasinosBody() {
             <Section id="provably-fair" eyebrow="Fairness" title="Provably fair, and what it does not prove">
               <div className="rp-article">
                 <p>
-                  Before a round starts the casino publishes a hash of its
-                  server seed. You supply a seed of your own, or accept one the
-                  client generates. The outcome is computed from both. When the
-                  round ends the server seed is revealed, and you can hash it,
-                  check it matches what was published, and recompute the result
-                  yourself.
+                  The casino publishes a hash of its server seed before the
+                  round. You add a seed of your own. When the round ends the
+                  server seed is revealed, so you can hash it, match it against
+                  what was published, and recompute the result.
                 </p>
                 <p>
-                  What that proves is narrow and real: the casino fixed its half
-                  of the outcome before your bet and could not change it
-                  afterwards. Any venue offering this should also give you the
-                  verification tool and an explanation of how to use it.
+                  It proves one narrow thing: the casino fixed its half before
+                  your bet and could not change it after. We have not run a seed
+                  verification on any venue on this page, so no row claims one.
                 </p>
               </div>
               <div className="rp-info">
@@ -609,7 +603,6 @@ export function CasinosBody() {
                   </tbody>
                 </table>
               </div>
-              <NamedList items={COINS.map((c) => ({ name: `${c.name} (${c.sym})`, body: c.note }))} />
             </Section>
 
             <Section id="networks" eyebrow="Payments" title="Picking the network, and why it matters more than the coin">
@@ -647,112 +640,30 @@ export function CasinosBody() {
               </div>
               <p>
                 Solana, XRP, Litecoin, Dogecoin and Bitcoin Cash each run on one
-                chain only, so there is nothing to get wrong. The risk is
-                concentrated in the two stablecoins, which is also where most of
-                the volume sits.
+                chain only, so there is nothing to get wrong. The risk sits in
+                the two stablecoins, and it is the same mistake that loses money
+                depositing into a vault: the token exists on several chains, the
+                address you were given lives on one of them.
               </p>
             </Section>
 
-            <Section id="getting-started" eyebrow="Getting started" title="A wallet, then a first deposit">
-              <h3>Setting up a wallet</h3>
-              <Steps items={WALLET_STEPS} />
-              <p>
-                Most non-custodial wallets need no identity verification to
-                create. Buying the coin does: a centralised exchange will
-                verify you before it sells you anything, even when the casino
-                never asks.
-              </p>
-              <h3>Making the deposit</h3>
-              <Steps items={DEPOSIT_STEPS} />
-            </Section>
 
             <Section id="bonuses" eyebrow="Bonuses" title="The offers, and the terms underneath them">
-              <div className="rp-dtable-wrap">
-                <table className="rp-dtable">
-                  <thead>
-                    <tr>
-                      <th>Type</th>
-                      <th>How it works</th>
-                      <th>Typical</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {BONUS_TYPES.map((b) => (
-                      <tr key={b.type}>
-                        <td className="strong">{b.type}</td>
-                        <td>{b.how}</td>
-                        <td>{b.typical}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
               <h3>The terms that decide what an offer is worth</h3>
               <NamedList items={BONUS_TERMS} />
             </Section>
 
-            <Section id="games" eyebrow="Games" title="What you can actually play">
-              <div className="rp-article">
-                <p>
-                  Slots are the bulk of every library here, five to ten thousand
-                  of them, from the same studios that supply regulated casinos.
-                  Table games sit beside them, and blackjack at basic strategy
-                  carries the lowest house edge on the site at roughly half a
-                  percent.
-                </p>
-                <p>
-                  Live dealer tables are streamed from studios, and the game
-                  shows built around them have become the biggest draw after
-                  slots. Evolution and Pragmatic supply most of what you will
-                  see.
-                </p>
-                <p>
-                  The category crypto sites invented is the originals: Crash,
-                  Mines, Dice, Plinko, Limbo. They are simple, fast, verifiable
-                  round by round, and often run at 98% or better. That last
-                  number is why bonus terms usually bar them, and it is also why
-                  they are the best value on the site when you are playing your
-                  own money.
-                </p>
-              </div>
-            </Section>
 
-            <Section id="crypto-vs-fiat" eyebrow="Comparison" title="Against a card-and-bank casino">
-              <dl className="cc-cols">
-                {CRYPTO_VS_FIAT.map((r) => (
-                  <div key={r.k}>
-                    <dt>{r.k}</dt>
-                    <dd>
-                      <strong>Crypto:</strong> {r.crypto}
-                      <br />
-                      <strong>Fiat:</strong> {r.fiat}
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            </Section>
 
             <Section id="legality" eyebrow="Legal" title="Where this is legal">
               <div className="rp-article">
                 <p>
-                  The question is not whether crypto gambling is addressed by
-                  law. It is whether online casino gambling is legal where you
-                  live. The payment method does not change the answer.
-                </p>
-                <p>
-                  In the United States, no federal law prohibits a player from
-                  using an offshore casino. Seven states license online casinos:
-                  Connecticut, Delaware, Michigan, New Jersey, Pennsylvania,
-                  Rhode Island and West Virginia. None of those licensed
-                  operators accepts cryptocurrency. Crypto play therefore means
-                  a site outside state regulation, licensed somewhere like
-                  Curaçao or Anjouan.
-                </p>
-                <p>
-                  Enforcement has gone after operators and not players, and
-                  there is no public record of a player prosecuted for using an
-                  offshore site. Washington State is the exception worth
-                  knowing: it criminalises taking part in online gambling.
+                  The question is whether online casino gambling is legal where
+                  you live. The coin does not change the answer, and neither
+                  does the licence in the footer: Anjouan and Curaçao are not
+                  the UK Gambling Commission and not a US state regulator.
+                  Almost none of the venues on this page accept US players in
+                  the first place.
                 </p>
               </div>
               <div className="rp-info">
@@ -761,43 +672,45 @@ export function CasinosBody() {
                   <span className="rp-callout-title">What an offshore site does not give you</span>
                 </div>
                 <p className="rp-info-body">
-                  No state complaint channel when a withdrawal is refused. No
-                  segregated player funds. No link to a state self-exclusion
-                  register, so a block you set with one operator does not follow
-                  you anywhere else. Check your own state law before you
-                  register, and not the licence badge in the casino footer.
+                  No complaints channel with any force behind it when a
+                  withdrawal is refused. No segregated player funds. No link to
+                  a national self-exclusion register, so a block you set with
+                  one operator does not follow you anywhere else.
                 </p>
               </div>
             </Section>
 
-            <Section id="scams" eyebrow="Risk" title="Five signals that a venue is not worth the deposit">
+            <Section
+              id="scams"
+              eyebrow="Risk"
+              title={`${spellOut(SCAM_SIGNALS.length, true)} signals that a venue is not worth the deposit`}
+            >
               <p>
                 An onchain transfer cannot be clawed back, so the checking has
                 to happen before the money moves. These are the signals that
                 cost nothing to look for.
               </p>
               <NamedList items={SCAM_SIGNALS} />
+              <p>
+                Applied honestly, the first of those disqualifies the venue at
+                the top of this table. Lucky Rollers names no operator and no
+                licence number. It sorts first because its advertised bonus is
+                the largest, and that is all a first position on this page has
+                ever meant.
+              </p>
             </Section>
 
             <Section id="responsible" eyebrow="Control" title="Staying in control">
               <p>
-                <strong>18+, and 21+ where the law says so.</strong> Every game
-                on this page carries a house edge, so continued play loses money
-                on average. Play only what you can afford to lose, never with
-                borrowed money, and stop if it stops being a game.
-              </p>
-              <p>
-                Instant payments make it easier to keep going, which is the one
-                way the speed works against you. Every venue worth using ships
-                the tools below. Set them on the day you register, while the
-                decision is still an easy one.
+                Every game on this page carries a house edge, so continued play
+                loses money on average. Every venue worth using ships the tools
+                below. Set them on the day you register.
               </p>
               <NamedList items={RG_TOOLS} />
               <p>
                 Free and confidential help:{" "}
                 <a href="https://www.begambleaware.org/" rel="nofollow noopener noreferrer" target="_blank">BeGambleAware</a>,{" "}
-                <a href="https://gamblersanonymous.org/" rel="nofollow noopener noreferrer" target="_blank">Gamblers Anonymous</a>, and the{" "}
-                <a href="https://www.ncpgambling.org/help-treatment/about-the-national-problem-gambling-helpline/" rel="nofollow noopener noreferrer" target="_blank">National Problem Gambling Helpline</a>{" "}
+                <a href="https://www.ncpgambling.org/help-treatment/about-the-national-problem-gambling-helpline/" rel="nofollow noopener noreferrer" target="_blank">the National Problem Gambling Helpline</a>{" "}
                 on 1-800-GAMBLER.
               </p>
             </Section>
