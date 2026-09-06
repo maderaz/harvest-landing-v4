@@ -24,6 +24,7 @@ import {
 import {
   BONUS_TERMS,
   DISCLOSURE_SHORT,
+  HARVEST_STEPS,
   EVIDENCE_NOTE,
   BONUS_TYPES,
   COINS,
@@ -57,7 +58,7 @@ export const tocItems = (ranked: number): TocItem[] => [
   { id: "ranking", label: `The ${rankLabel(ranked)}` },
   { id: "turnover", label: "What a bonus is worth" },
   { id: "bonus-calculator", label: "Bonus calculator" },
-  { id: "bankroll", label: "Bonus to work with Harvest" },
+  { id: "bankroll", label: "Bonus to work on Harvest" },
   { id: "reviews", label: "Number one, reviewed" },
   { id: "compare", label: "Side by side" },
   { id: "how-they-work", label: "How they work" },
@@ -446,33 +447,27 @@ export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
             <Section
               id="bankroll"
               eyebrow="Harvest"
-              title="Putting your welcome bonus to work with Harvest"
+              title="Put Your Welcome Bonus to Work on Harvest"
             >
-              {/* The title is the one thing on this page that could be read as
-                  promising something the bonus terms forbid, so the first line
-                  settles it. Nothing here applies to an uncleared bonus. */}
               <p>
-                A bonus you have not cleared cannot go anywhere. It is locked to
-                the playthrough, and moving it is what the terms on every row
-                above exist to prevent. What can go somewhere is what you
-                withdraw once it clears, and whatever is not in play between
-                sessions.
+                Winnings that clear a playthrough and reach your own wallet are
+                usually a stablecoin. Sitting in a casino account, that balance
+                earns nothing and keeps the operator&rsquo;s risk for as long as
+                it stays there: every caveat on this page about licences,
+                withdrawal review and no-KYC exceptions applies to an idle
+                balance exactly as it applies to one in play.
               </p>
               <p>
-                An idle casino balance earns nothing and keeps the
-                operator&rsquo;s risk for as long as it sits there. Every
-                caveat on this page about licences, withdrawal review and
-                no-KYC exceptions applies to it exactly as it applies to a
-                balance in play. Back in your own wallet, a stablecoin can sit
-                in an onchain strategy instead.
+                Harvest indexes onchain strategies for the same two tokens.
+                What that involves:
               </p>
+              <Steps items={HARVEST_STEPS} />
               {harvest.length > 0 && (
                 <>
                   <p>
-                    These are the USDC and USDT strategies Harvest indexes
-                    today, the ones holding at least{" "}
-                    {money(LOW_LIQUIDITY_TVL_THRESHOLD)} in deposits. Rates are
-                    a 24-hour reading and they move.
+                    The USDC and USDT strategies in the index today, the ones
+                    holding at least {money(LOW_LIQUIDITY_TVL_THRESHOLD)} in
+                    deposits, ordered by their 24-hour rate.
                   </p>
                   <div className="rp-dtable-wrap">
                     <table className="rp-dtable">
@@ -500,12 +495,26 @@ export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
                   </div>
                 </>
               )}
+              {/* One labelled block rather than a caveat per paragraph. The
+                  page was already told that hedging sprinkled through prose
+                  reads as its own kind of tell. */}
+              <aside className="cc-note" aria-label="What this section is not">
+                <p>
+                  <strong>What this is not.</strong> It is not advice, not an
+                  offer, and not a recommendation to use any strategy listed
+                  above. Nothing here is insured and there is no deposit
+                  protection. A rate is a 24-hour reading that moves, and past
+                  rates do not predict future ones. These strategies carry
+                  smart-contract and market risk that a casino balance does
+                  not, in exchange for the operator risk it does. What you do
+                  with a balance, and any tax on it, is yours to decide.
+                </p>
+              </aside>
               <p className="rp-fineprint">
-                None of this is insured, none of it is a bonus, and a rate that
-                reads well today is not a promise about next week. The
-                strategies carry smart-contract and market risk that a casino
-                balance does not, in exchange for the operator risk it does.
-                Every row above, its history and what can go wrong are on the{" "}
+                None of this reaches a bonus you have not cleared. Bonus funds
+                are locked to the playthrough until it is met, which is what
+                the terms on every row above are for. Rates, history and the
+                things that can go wrong are on the{" "}
                 <Link href="/usdc">USDC hub</Link> and in the{" "}
                 <Link href="/risk-framework">risk framework</Link>.
               </p>
