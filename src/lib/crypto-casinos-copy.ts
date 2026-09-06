@@ -72,6 +72,28 @@ export const LEAVE_SITE_BODY = (name: string) =>
 export const EVIDENCE_NOTE =
   "Evidence counts what we have read off a venue, not how good its offer is. It never moves a row.";
 
+/**
+ * What moving a cleared balance onchain involves.
+ *
+ * Descriptive, not instructional: it says what the arrangement is, and leaves
+ * the decision where it belongs. No wallet brands, because the page already
+ * cut a tutorial for being the wrong thing to put in front of this reader.
+ */
+export const HARVEST_STEPS: { title: string; body: string }[] = [
+  {
+    title: "The balance leaves the casino first",
+    body: "Withdrawals go to an address you control. Until that happens the venue holds it, and so does everything on this page about who the venue is.",
+  },
+  {
+    title: "It stays a stablecoin",
+    body: "USDC and USDT are what the index covers here, and they are what a casino cashier pays out most often, so nothing has to be converted along the way.",
+  },
+  {
+    title: "The strategies are onchain and non-custodial",
+    body: "Deposits sit in contracts, not with a company, and the keys stay with the holder. That removes the operator risk and adds contract risk in its place.",
+  },
+];
+
 /** Printed directly above the ranking. */
 export const SORT_RULE =
   "Sort key: advertised bonus cap, dollars first. BTC-capped and uncapped offers sit below. A higher row is a larger headline, not a better venue.";
