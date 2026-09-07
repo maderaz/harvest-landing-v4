@@ -4,8 +4,7 @@
 // table, a bullet and an FAQ answer has four chances to disagree with itself
 // if four files compute it. Nothing downstream recomputes.
 
-import { CASINO_LOGOS } from "@/lib/casino-logos";
-import { capOf, turnoverUsd, type Casino } from "@/lib/crypto-casinos";
+import { capOf, parseBonus, turnoverUsd, type Casino } from "@/lib/crypto-casinos";
 
 export const money = (n: number) =>
   n >= 1_000_000
@@ -32,30 +31,26 @@ export const spellOut = (n: number, cap = false) => {
   return cap ? w.charAt(0).toUpperCase() + w.slice(1) : w;
 };
 
-/** "TOP16", as the title, the H1 and the nav all say it. */
-export const rankLabel = (n: number) => `TOP${n}`;
-
 /* ---- the blocks above the table -------------------------------------- */
 
-/**
- * The four sentences under the H1.
- *
- * The H1 catches the query and the lead takes the responsibility off it: the
- * sort is a fact about advertising, and the number that matters is two
- * sections down. Both counts are derived, so neither can go stale when a
- * wordmark or a set of terms arrives.
- */
-export function leadSentences(ranked: number, priced: number): string {
-  return `${spellOut(ranked, true)} welcome bonuses, largest advertised cap first. ${spellOut(priced, true)} of them publish a playthrough we could read, so the table under the ranking shows what those caps actually oblige you to stake.`;
-}
+/** The lead under the H1. The count is derived, so it cannot go stale. */
+export const LEAD = (ranked: number) =>
+  `We’ve compared the advertised offers from ${ranked} crypto casinos to help you narrow down your options. Browse welcome bonuses, cashback, and rakeback side by side, then take a closer look at the offers that interest you. Our selected casino reviews explain the key terms, and the wagering calculator helps you work out how much play a bonus requires before you commit to a deposit.`;
+
+/** The byline strip under the lead. */
+export const BYLINE = (ranked: number) => `${ranked} casinos compared`;
+
+/** What to do with the table, said once, directly above it. */
+export const RANKING_INTRO =
+  "Start with the offer, then check how it works: the deposit required to qualify, the games that count toward wagering, and the conditions for withdrawal. Expand an offer for the details, or select Play now to visit the casino.";
 
 /** Said once above the fold, and again at the foot of the page. */
 export const DISCLOSURE_SHORT =
-  "Harvest may earn a commission if you register through a link on this page. No venue has paid for a position, and the order is fixed to the advertised bonus.";
+  "We may earn a commission when you register through a Play Now link. No casino has paid for its position.";
 
-/** The one thing a US reader needs before the table, not after it. */
+/** The one thing a reader needs before the table, not after it. */
 export const LEGAL_SHORT =
-  "Most venues on this list do not accept players in the United States. Checking the law where you live is yours. An Anjouan or Curacao licence is not a US or UK licence.";
+  "18+. Country restrictions apply, and most listed casinos exclude US players.";
 
 /**
  * What the leave-site modal says on this page.
@@ -68,13 +63,235 @@ export const LEGAL_SHORT =
 export const LEAVE_SITE_BODY = (name: string) =>
   `${name} is a third-party gambling site. Harvest does not run it, hold your balance or process your withdrawal, and every game there has a house edge, so the expected result of continued play is a loss. This link is commercial and may pay us. Check the law where you live and read the bonus terms before you deposit.`;
 
-/** What the Evidence column counts, said once, above the table. */
-export const EVIDENCE_NOTE =
-  "Evidence counts what we have read off a venue, not how good its offer is. It never moves a row.";
+/**
+ * The Harvest section, which starts after the withdrawal has landed.
+ *
+ * Not a second pass at the bonus terms. Everything above this point is about
+ * money still inside a casino account; this is about money that has already
+ * left one, which is the only moment any of it applies.
+ */
+export const HARVEST_INTRO = [
+  "Once your casino withdrawal reaches your wallet, you can explore other ways to use those funds. If you’re interested in earning yield on stablecoins, Harvest helps you compare USDC and USDT strategies across DeFi, with rates, networks and strategy details in one place.",
+  "You can explore how each strategy earns its yield, how its rate has changed over time and what to expect when depositing or withdrawing. That gives you a fuller picture when deciding where to put your funds.",
+];
+
+/** What the table is a selection of. The floor is a criterion, not a badge. */
+export const HARVEST_SELECTION = (floor: string) =>
+  `The selection below highlights USDC strategies tracked by Harvest, each holding at least ${floor} in total deposits.`;
+
+/** What the APY column is, said at the column and not in a footnote. */
+export const APY_NOTE =
+  "Annualized yield based on the latest 24 hours of data. Rates change over time.";
+
+/** The one risk paragraph, beneath the table. */
+export const HARVEST_RISK =
+  "Explore the full comparison to see more strategies and their recent rate history. DeFi strategies carry smart-contract, liquidity and stablecoin risks, including the possibility of losing deposited funds. Our risk framework explains what to consider when comparing them.";
 
 /** Printed directly above the ranking. */
 export const SORT_RULE =
-  "Sort key: advertised bonus cap, dollars first. BTC-capped and uncapped offers sit below. A higher row is a larger headline, not a better venue.";
+  "Offers with dollar caps appear first, highest to lowest. Crypto-denominated offers are followed by an advertised match percentage, with percentage-only rewards at the end. Offer descriptions and feature labels reflect each operator’s published claims.";
+
+/* ---- the wagering section and the calculator -------------------------- */
+
+/** Above the turnover table. */
+export const WAGERING_INTRO = [
+  "When you’re comparing welcome bonuses, it helps to look at the wagering requirement alongside the amount on offer. A $100 bonus with a 40x requirement on bonus funds means placing $4,000 in qualifying bets before you can withdraw the bonus and eligible winnings.",
+  "The table below puts the listed bonus amounts alongside their wagering requirements, so you can see how the figures add up. Your own requirement will depend on the bonus you receive and the terms attached to it.",
+];
+
+/** Below the turnover table, and the handover to the calculator. */
+export const WAGERING_AFTER = [
+  "The wagering total adds up your qualifying bets throughout play. The same funds can contribute to several bets, while wins and losses change your available balance along the way. Each offer also has its own rules about which games count and how long you have to complete the requirement.",
+  "For a closer look at the numbers, try the calculator below. You can enter a bonus amount and explore how wagering requirements, game contribution, and house edge affect the estimated cost of playing it through.",
+];
+
+/** Above the calculator. */
+export const CALC_INTRO =
+  "Choose a casino offer or enter your own bonus amount to see how the wagering adds up. The calculator shows the total betting volume required and estimates the cost to complete it based on the game assumptions below. Try different amounts and settings to get a clearer picture of the offer you’re considering.";
+
+/** The one explanatory note under the calculator. */
+export const CALC_NOTE =
+  "The estimate combines total wagering with the assumed house edge and game contribution, assuming you complete the full requirement. Your actual results will vary, and each casino’s bonus terms determine which games qualify.";
+
+/**
+ * Offers advertised as a running total across several deposits.
+ *
+ * A calculator preset has to say which stage its figure is, otherwise the
+ * arithmetic silently answers a question nobody asked: Wild.io's $1,000 is one
+ * deposit's ceiling inside a three-deposit package, and BC.Game's $4,000 is
+ * the package total across four.
+ */
+export const BONUS_STAGES: Record<string, string> = {
+  "wild-io": "first deposit stage of a three-deposit package",
+  "bc-game": "advertised total across four match bonuses",
+};
+
+/* ---- what each row says ----------------------------------------------- */
+
+export type OfferKind = "welcome" | "cashback" | "rakeback";
+
+export const OFFER_FILTERS: { key: OfferKind | "all"; label: string }[] = [
+  { key: "all", label: "All offers" },
+  { key: "welcome", label: "Welcome bonuses" },
+  { key: "cashback", label: "Cashback" },
+  { key: "rakeback", label: "Rakeback" },
+];
+
+/**
+ * The offer, restated once per venue.
+ *
+ * Every line here is a restatement of the operator's own headline and nothing
+ * more: what the offer is, the one figure worth pulling out, and what else the
+ * banner includes. The figure appears in `headline` and never again in
+ * `support`, so a row prints it once.
+ *
+ * `kinds` is editorial classification of that headline, not a claim about the
+ * venue. A cashback rate and a rakeback rate are different products from a
+ * deposit match and must not inherit its wording.
+ */
+export interface OfferCopy {
+  kinds: OfferKind[];
+  summary: string;
+  headline: string;
+  support: string | null;
+}
+
+export const OFFERS: Record<string, OfferCopy> = {
+  "lucky-rollers": {
+    kinds: ["welcome", "cashback"],
+    summary: "Deposit match with spins and a free bet",
+    headline: "Up to 30,000 USDT",
+    support: "100% match, 100 free spins and one free bet",
+  },
+  "betpanda-io": {
+    kinds: ["welcome", "cashback"],
+    summary: "Deposit match capped in bitcoin, with weekly cashback",
+    headline: "Up to 1 BTC",
+    support: "100% match, 10% weekly cashback and a $750k race",
+  },
+  "coin-casino": {
+    kinds: ["welcome"],
+    summary: "200% deposit match",
+    headline: "Up to $30,000",
+    support: "The bonus scales with the qualifying deposit",
+  },
+  "hyper-lucky": {
+    kinds: ["cashback"],
+    summary: "Daily cashback with free spins",
+    headline: "20% daily cashback",
+    support: "Advertised up to $10,000, with 100 free spins",
+  },
+  casinopunkz: {
+    kinds: ["welcome", "cashback"],
+    summary: "Welcome bonus with cashback",
+    headline: "Up to 20,000 USDT",
+    support: "Advertised alongside 15% cashback",
+  },
+  thrill: {
+    kinds: ["rakeback", "cashback"],
+    summary: "Rakeback and cashback, with no deposit match advertised",
+    headline: "Up to 70% rakeback",
+    support: "Advertised alongside 10% cashback",
+  },
+  "bc-game": {
+    kinds: ["welcome"],
+    summary: "Welcome package across four deposits",
+    headline: "Up to $4,000",
+    support: "Four match bonuses and 400 free spins",
+  },
+  "wild-io": {
+    kinds: ["welcome", "cashback"],
+    summary: "Welcome package across three deposits",
+    headline: "Up to $1,000 per deposit",
+    support: "350% across the first three deposits, with 200 free spins",
+  },
+  cybet: {
+    kinds: ["welcome"],
+    summary: "Deposit match with free spins",
+    headline: "Up to $1,000",
+    support: "100% match and 50 free spins",
+  },
+  "betplay-io": {
+    kinds: ["welcome", "cashback", "rakeback"],
+    summary: "Deposit match in USDT",
+    headline: "Up to 5,000 USDT",
+    support: "100% match",
+  },
+  "lucky-block": {
+    kinds: ["welcome"],
+    summary: "200% deposit match with free spins",
+    headline: "Up to $25,000",
+    support: "200% match and 50 free spins",
+  },
+  betninja: {
+    kinds: ["welcome"],
+    summary: "Deposit match with free spins",
+    headline: "Up to $2,500",
+    support: "100% match and 100 free spins",
+  },
+  betfury: {
+    kinds: ["welcome"],
+    summary: "Deposit match with free spins",
+    headline: "Up to $10,500",
+    support: "590% advertised match and 225 free spins",
+  },
+  "7bit-casino": {
+    kinds: ["welcome", "cashback"],
+    summary: "Welcome bonus with free spins",
+    headline: "Up to $5,400",
+    support: "325% advertised match and 250 free spins",
+  },
+  "golden-panda": {
+    kinds: ["welcome"],
+    summary: "200% welcome package with free spins",
+    headline: "Up to $5,000",
+    support: "200% match and 50 free spins",
+  },
+  "wsm-casino": {
+    kinds: ["welcome", "cashback"],
+    summary: "200% deposit match with free spins",
+    headline: "Up to $25,000",
+    support: "200% match and 50 free spins",
+  },
+};
+
+/**
+ * A material unresolved issue a review actually found, said once in the row.
+ *
+ * Not generated from an empty field. The rows used to carry an automatic
+ * "Operator not identified" chip wherever a licence was unread, which put the
+ * same badge on fourteen of sixteen rows and turned a finding into wallpaper.
+ */
+export const ROW_NOTES: Record<string, string> = {
+  "lucky-rollers": "Operator and licence details remain unverified.",
+};
+
+/** The two or three facts printed beside the offer, in ordinary text. */
+export function keyDetails(c: Casino): string[] {
+  const out: string[] = [];
+  const wr = c.verified.wagering;
+  if (wr === 0) out.push("No wagering requirement");
+  else if (wr != null) out.push(`${wr}× wagering`);
+  if (c.minDeposit) out.push(`${c.minDeposit} minimum deposit`);
+  if (out.length < 3 && c.verified.withdrawal) {
+    out.push(`Published payout window: ${c.verified.withdrawal}`);
+  }
+  // An empty cell in a four-column row reads as a broken page. One plain
+  // sentence, said where a reader is looking for the terms.
+  if (out.length === 0) return ["Wagering and deposit terms not yet read"];
+  return out.slice(0, 3);
+}
+
+/** Which of the four filters a row belongs to. */
+export function offerKinds(c: Casino): OfferKind[] {
+  const known = OFFERS[c.slug];
+  if (known) return known.kinds;
+  const kinds: OfferKind[] = [];
+  if (capOf(c) != null) kinds.push("welcome");
+  if (c.claimed.cashback) kinds.push("cashback");
+  if (c.claimed.rakeback) kinds.push("rakeback");
+  return kinds;
+}
 
 /* ---- derived from the venue data ------------------------------------- */
 
@@ -93,6 +310,29 @@ export interface TurnoverRow {
   turnover: number;
   minDeposit: string | null;
   note: string | null;
+  /** True where the figure the row is ranked on is a cashback or rakeback
+   *  rate. It belongs in the turnover table and not in a deposit-bonus
+   *  preset, because there is no deposit match to model. */
+  cashback: boolean;
+}
+
+/**
+ * Whether the cap this row is ranked on came out of a cashback or rakeback
+ * clause rather than a deposit match.
+ *
+ * Tested on the segment of the headline the cap was read from, not the whole
+ * string: these headlines bundle offers, and Casino Punkz advertises a
+ * 20,000 USDT welcome bonus alongside a 15% cashback in one line.
+ */
+function cashbackHeadline(c: Casino): boolean {
+  const claim = c.bonusClaim;
+  // A cap read off the terms did not come from the banner at all.
+  if (!claim || c.verified.capUsd != null) return false;
+  const cap = parseBonus(claim).cap;
+  if (cap == null) return false;
+  const forms = [cap.toLocaleString("en-US"), String(cap), `${cap / 1000}k`];
+  const seg = claim.split("+").find((s) => forms.some((f) => s.includes(f)));
+  return seg != null && /\b(cash\s?back|rake\s?back)\b/i.test(seg);
 }
 
 /** Venues where both halves of the sum are known. Sorted by what they ask. */
@@ -112,6 +352,7 @@ export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
         turnover: t,
         minDeposit: c.minDeposit ?? null,
         note: c.termsNote ?? null,
+        cashback: cashbackHeadline(c),
       };
     })
     .filter((r): r is TurnoverRow => r != null)
@@ -162,14 +403,6 @@ export const NETWORKS: { coin: string; chains: string }[] = [
   { coin: "USD Coin (USDC)", chains: "Ethereum, Solana, Base, Polygon, Arbitrum, Optimism" },
 ];
 
-export const BONUS_TYPES: { type: string; how: string; typical: string }[] = [
-  { type: "Welcome match", how: "Multiplies your first deposit by a set percentage, up to a cap.", typical: "100% to 500%, capped anywhere from $1,000 to 1 BTC" },
-  { type: "Reload", how: "A smaller match on later deposits, usually on a set day.", typical: "25% to 100%" },
-  { type: "Free spins", how: "Fixed-stake spins on named slots. Winnings usually carry their own playthrough.", typical: "50 to 500 spins" },
-  { type: "Cashback", how: "Returns a share of net losses over a day or a week. Sometimes paid with no playthrough, which makes it the most useful offer on this list.", typical: "5% to 25%" },
-  { type: "Rakeback", how: "Returns a share of everything you wager, win or lose.", typical: "0.1% to 70%" },
-  { type: "VIP tier", how: "Faster withdrawals, higher limits, a named account manager.", typical: "Invitation or wagering volume" },
-];
 
 export const BONUS_TERMS: { name: string; body: string }[] = [
   { name: "Playthrough", body: "How many times the bonus, and often the deposit with it, has to be wagered before any of it can be withdrawn. Twenty times is generous. Sixty times and above means the offer is closer to a marketing number than to money." },
@@ -181,16 +414,6 @@ export const BONUS_TERMS: { name: string; body: string }[] = [
   { name: "Maximum withdrawal", body: "A ceiling on what a bonus can pay out. Welcome offers often have none. No-deposit offers almost always do." },
 ];
 
-export const CRYPTO_VS_FIAT: { k: string; crypto: string; fiat: string }[] = [
-  { k: "Payout time", crypto: "Minutes, once the venue approves it", fiat: "Two to five working days" },
-  { k: "Fees", crypto: "Network fee only, often under a dollar", fiat: "Card and transfer fees" },
-  { k: "Identity checks", crypto: "Often none at sign-up, common above a withdrawal threshold", fiat: "Full verification before the first payout" },
-  { k: "Bonus size", crypto: "Larger headline offers, higher playthrough", fiat: "Smaller offers, terms capped by the regulator" },
-  { k: "Game count", crypto: "Five to ten thousand, sourced globally", fiat: "Hundreds, limited by the licence" },
-  { k: "Provably fair", crypto: "Standard on originals", fiat: "Not offered" },
-  { k: "If it goes wrong", crypto: "The operator, and no one above it", fiat: "A regulator with a complaints process" },
-  { k: "Balance risk", crypto: "The coin can move while you play", fiat: "Held in a stable currency" },
-];
 
 export const SCAM_SIGNALS: { name: string; body: string }[] = [
   { name: "No licence on the page", body: "A legitimate operator prints its authority and licence number in the footer. If nothing is named, or the number does not appear on the regulator's own register, walk." },
@@ -207,21 +430,7 @@ export const RG_TOOLS: { name: string; body: string }[] = [
   { name: "Self-exclusion", body: "A long or permanent block that cannot be lifted early. The one tool built to survive a change of mind." },
 ];
 
-export const WALLET_STEPS: { title: string; body: string }[] = [
-  { title: "Pick a wallet", body: "Trust Wallet, MetaMask and Exodus all work. Check it supports the coin and the chain the venue wants before you go further." },
-  { title: "Install it from the source", body: "The official site or the app store, never a link in a chat. Fake wallet apps are the cheapest way to lose a balance." },
-  { title: "Write the recovery phrase down", body: "On paper, offline. It is the only route back into the wallet, and anyone who reads it owns the funds." },
-  { title: "Fund it", body: "Buy on an exchange and send it across. Exchanges verify identity even when the casino does not." },
-];
 
-export const DEPOSIT_STEPS: { title: string; body: string }[] = [
-  { title: "Open the cashier", body: "Pick the coin and the amount." },
-  { title: "Pick the network", body: "Match it to your wallet exactly. This is the step that loses money." },
-  { title: "Copy the address", body: "Copy it, never type it, and scan the QR code where one is offered." },
-  { title: "Paste it into your wallet", body: "Check the first four and last four characters against the original." },
-  { title: "Check the fee", body: "The network fee comes out of the transfer. Make sure what lands still clears the bonus minimum." },
-  { title: "Wait for confirmations", body: "Seconds to a few minutes on most chains. Bitcoin takes longer when the mempool is full." },
-];
 
 // Ordered by what a reader arrives with, not by topic. The last two of the
 // first eight are not optional under this headline: a page that ranks
@@ -241,108 +450,95 @@ export const FAQS: { q: string; a: string }[] = [
 ];
 
 
-/* ---- the two venues at the top, reviewed ----------------------------- */
-
-export interface VenueReview {
-  slug: string;
-  /** Sits under the venue name in the card head. */
-  operator: string;
-  /** One line under the badges, before the first subhead. */
-  standfirst: string;
-  /**
-   * Blocks under their own h3.
-   *
-   * The headings are the questions people type, worded the way they type
-   * them. A reader who wants one answer can find it without reading the
-   * other three, which is the whole difference between this and the wall of
-   * paragraphs it replaces.
-   */
-  sections: { h: string; body: string }[];
-  /** The caveats, as labelled bullets. Rendered through NamedList. */
-  keepInMind: { name: string; body: string }[];
-  /**
-   * The strip at the top of the card, before any of the selling.
-   *
-   * {CHECKED} is replaced at render with the live coverage count, so a card
-   * can never claim more or less reading than the row beside it.
-   */
-  caveat: string;
-  facts: { label: string; value: string }[];
-  sources: { label: string; url: string }[];
-}
+/* ---- the reviews ------------------------------------------------------ */
 
 /**
- * The facts grid for a review card.
+ * One venue, reviewed.
  *
- * Static rows come off the review; the turnover row is computed from the
- * venue record so it cannot disagree with the turnover table further down
- * the page. A venue with no single playthrough figure gets no turnover row
- * instead of a made-up one.
+ * The shape is deliberately not a template with slots for research
+ * completeness. Every attraction named has to come out of a published feature,
+ * the scope of the reading is stated once at the foot, and a material unknown
+ * is carried in the editorial verdict rather than sprinkled through the prose
+ * as hedging. Empty fields are not rendered; they are not written.
  */
-export function reviewFacts(
-  review: VenueReview,
-  casino: Casino | undefined,
-): { label: string; value: string }[] {
-  const rows = [...review.facts];
-  const t = casino ? turnoverUsd(casino) : null;
-  if (t != null) {
-    rows.push({ label: "Turnover on the full cap", value: money(t) });
-  }
-  return rows;
+export interface VenueReview {
+  slug: string;
+  /** The H2. Names the venue and what the review actually covers. */
+  title: string;
+  /** One paragraph, before the numbers. */
+  intro: string;
+  /** The published offer, as a two-column table. */
+  features: { label: string; value: string }[];
+  sections: { h: string; body: string[] }[];
+  /** The venue's own terms page, linked beside the outbound button. */
+  termsUrl: string;
+  /** Said once, at the foot, in a full sentence. */
+  scope: (readOn: string) => string;
 }
 
 /**
  * Lucky Rollers, first by advertised bonus.
  *
- * The clearest published terms on this page sitting behind an operator
- * nobody can name. The precise-looking complaint statistics circulating for
- * this brand come from an affiliate site and trace to no primary source, so
- * they are not printed here.
+ * The clearest published terms on this page sitting behind an operator nobody
+ * can name. The precise-looking complaint statistics circulating for this
+ * brand come from an affiliate site and trace to no primary source, so they
+ * are not printed here.
  */
 export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   slug: "lucky-rollers",
-  operator: "Operator not published",
-  standfirst:
-    "Publishes its bonus terms in unusually plain English. We could not find who owns it.",
-  caveat:
-    "{CHECKED} fields documented. The offer is the best documented on this page; the operator is not documented at all. Provably fair is unread and we have run no seed check anywhere.",
+  title: "Lucky Rollers review: welcome bonus, cashback and crypto payments",
+  intro:
+    "Lucky Rollers combines a deposit-match welcome bonus with free spins, a free bet and weekly cashback. That gives you a few different parts of the offer to compare, especially if you’re interested in recurring rewards alongside the initial deposit bonus. We’ve looked at the published terms to explain how the package fits together.",
+  features: [
+    {
+      label: "Welcome bonus",
+      value:
+        "100% match up to 30,000 USDT, plus 100 free spins and a free bet",
+    },
+    { label: "Bonus wagering", value: "40×" },
+    { label: "Minimum deposit", value: "5 USDT" },
+    {
+      label: "Crypto payments",
+      value: "13 currencies, including BTC, ETH, USDT, USDC, XRP and SOL",
+    },
+    {
+      label: "Weekly cashback",
+      value: "Paid on Mondays, with no additional wagering requirement",
+    },
+  ],
   sections: [
     {
-      h: "Who runs Lucky Rollers",
-      body: "Nobody we can name. We did not find an operating company, a registration number or a licence number in the pages we were able to read, which were the site's own terms and promotion pages. We are not claiming the venue conceals them; we are saying we could not find them, and that we could not reach the public complaint boards from here to check further. Either way it leaves you with nobody to name in a complaint and no regulator to take it to, which is the part that matters before you deposit.",
+      h: "How the welcome bonus works",
+      body: [
+        "The 100% match means the bonus follows the size of your qualifying deposit, up to the advertised limit. When comparing this offer, start with the amount you expect to receive: the minimum deposit gives you an entry point, while reaching the headline cap requires a much larger deposit.",
+        "The next detail to consider is the 40× wagering requirement. For example, a 100 USDT bonus under a bonus-only 40× requirement would involve 4,000 USDT in qualifying bets. The applicable terms should establish whether wagering covers the bonus alone or the deposit as well, which games contribute and the deadline for completion.",
+      ],
     },
     {
-      h: "What the terms actually say",
-      body: "Thirteen coins in and out, around 6,000 titles, 5 USDT to open, payouts described as instant, no identity documents at standard withdrawal levels. Weekly cashback pays out on Mondays with no playthrough on it, so that part is withdrawable the moment it lands.",
-    },
-  ],
-  keepInMind: [
-    {
-      name: "Jurisdiction",
-      body: "Unknown. Searching turns up an affiliate site quoting a licence number, an operating company and complaint statistics to one decimal place, none of which trace to a primary source. Treat precise numbers with no source as marketing.",
+      h: "What the weekly cashback adds",
+      body: [
+        "Weekly cashback is a separate part of the offer worth examining. According to the published promotion information, it is paid on Mondays without an additional wagering requirement attached to the credited cashback.",
+        "To judge its value, look at the qualifying activity, the cashback percentage and any payout cap. These details determine how much the reward could amount to for your own play.",
+      ],
     },
     {
-      name: "The name",
-      body: "It collides with LuckyRolls, Lucky Casino and Lucky Creek, so most of what a search returns is about somebody else. Check the domain character by character before you deposit.",
+      h: "Crypto payments and withdrawals",
+      body: [
+        "Lucky Rollers lists 13 supported cryptocurrencies, giving you several payment options to compare. Before transferring funds, check that the cashier supports both your chosen asset and the network you intend to use.",
+        "The operator advertises instant withdrawals and document-free withdrawals at standard levels. Review the verification conditions for your intended withdrawal amount, as those conditions matter when assessing how the advertised payout process would apply to you.",
+      ],
+    },
+    {
+      h: "Our view",
+      body: [
+        "Weekly cashback is the part of this offer we would examine alongside the welcome package. Its published terms describe a reward without additional wagering, while the deposit bonus carries a 40× requirement.",
+        "Our assessment also has an important outstanding point: we could not establish the operating company or licence from the terms and promotion pages reviewed. We would want those details confirmed before including Lucky Rollers among Harvest’s recommended casinos.",
+      ],
     },
   ],
-  facts: [
-    { label: "Operator", value: "Not published" },
-    { label: "Licence", value: "Not published" },
-    { label: "Live since", value: "Not published" },
-    { label: "KYC", value: "No documents advertised at standard withdrawal levels. Advertised, not guaranteed" },
-    { label: "Welcome bonus", value: "100% up to 30,000 USDT, 100 free spins and a free bet" },
-    { label: "Wagering", value: "40x" },
-    { label: "Minimum deposit", value: "5 USDT" },
-    { label: "Coins", value: "13, including BTC, ETH, USDT, USDC, XRP and SOL" },
-    { label: "Games", value: "Around 6,000" },
-    { label: "Withdrawal speed", value: "Its terms say instant. That documents the claim, not the speed" },
-    { label: "Provably fair", value: "Not checked" },
-  ],
-  sources: [
-    { label: "Venue terms and conditions", url: "https://luckyrollers.io/terms-and-conditions" },
-    { label: "AskGamblers complaint search", url: "https://www.askgamblers.com/online-casinos/complaints" },
-  ],
+  termsUrl: "https://luckyrollers.io/terms-and-conditions",
+  scope: (readOn) =>
+    `Review scope: Published terms and promotion information dated ${readOn}. This review covers the advertised offer; hands-on gameplay and withdrawal testing are outside its scope.`,
 };
 
 export const VENUE_REVIEWS: VenueReview[] = [LUCKY_ROLLERS_REVIEW];

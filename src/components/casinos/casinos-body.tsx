@@ -13,38 +13,35 @@ import { CasinoTable } from "@/components/casinos/casino-table";
 import { OutboundLink } from "@/components/report/outbound-link";
 import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
-import { CASINO_LOGOS, LOGO_RATIO } from "@/lib/casino-logos";
+import type { Casino } from "@/lib/crypto-casinos";
 import {
-  CHECK_TOTAL,
-  casinoScore,
-  checkedCount,
-  isVerified,
-  type Casino,
-} from "@/lib/crypto-casinos";
-import {
+  BONUS_STAGES,
   BONUS_TERMS,
+  BYLINE,
+  CALC_INTRO,
+  CALC_NOTE,
   DISCLOSURE_SHORT,
-  EVIDENCE_NOTE,
-  BONUS_TYPES,
+  APY_NOTE,
+  HARVEST_INTRO,
+  HARVEST_RISK,
+  HARVEST_SELECTION,
   COINS,
-  CRYPTO_VS_FIAT,
-  DEPOSIT_STEPS,
   FAQS,
+  LEAD,
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
   NETWORKS,
-  rankLabel,
+  RANKING_INTRO,
   VENUE_REVIEWS,
   type VenueReview,
   RG_TOOLS,
   SCAM_SIGNALS,
   SORT_RULE,
-  WALLET_STEPS,
+  WAGERING_AFTER,
+  WAGERING_INTRO,
   compareRows,
-  leadSentences,
   money,
   spellOut,
-  reviewFacts,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
 
@@ -54,11 +51,11 @@ import {
  * constant somebody has to remember to update.
  */
 export const tocItems = (ranked: number): TocItem[] => [
-  { id: "ranking", label: `The ${rankLabel(ranked)}` },
-  { id: "turnover", label: "What a bonus is worth" },
+  { id: "ranking", label: `Compare ${ranked} offers` },
+  { id: "turnover", label: "How much to wager" },
   { id: "bonus-calculator", label: "Bonus calculator" },
-  { id: "bankroll", label: "Bonus to work with Harvest" },
-  { id: "reviews", label: "Number one, reviewed" },
+  { id: "bankroll", label: "Put your crypto to work" },
+  { id: "reviews", label: "Lucky Rollers review" },
   { id: "compare", label: "Side by side" },
   { id: "how-they-work", label: "How they work" },
   { id: "provably-fair", label: "Provably fair" },
@@ -74,14 +71,6 @@ export const tocItems = (ranked: number): TocItem[] => [
 
 const UPDATED = new Date().toLocaleDateString("en-US", {
   month: "long",
-  day: "numeric",
-  year: "numeric",
-  timeZone: "UTC",
-});
-
-/** The same date, short enough to sit inside a stat tile on one line. */
-const UPDATED_SHORT = new Date().toLocaleDateString("en-US", {
-  month: "short",
   day: "numeric",
   year: "numeric",
   timeZone: "UTC",
@@ -122,22 +111,6 @@ function Section({
   );
 }
 
-function Steps({ items }: { items: { title: string; body: string }[] }) {
-  return (
-    <ul className="meth-limit-list">
-      {items.map((s, i) => (
-        <li className="meth-limit-item" key={s.title}>
-          <span className="meth-limit-num">{i + 1}</span>
-          <div className="meth-limit-body">
-            <p className="meth-limit-title">{s.title}</p>
-            <p className="meth-limit-desc">{s.body}</p>
-          </div>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 function NamedList({ items }: { items: { name: string; body: string }[] }) {
   return (
     <ul className="cc-risks">
@@ -151,116 +124,86 @@ function NamedList({ items }: { items: { name: string; body: string }[] }) {
 }
 
 /**
- * One review card.
+ * One venue, reviewed.
  *
- * The .rp-venue family comes from the report page, unchanged. What is local
- * is the shape inside it: a subhead per question, then the caveats as
- * labelled bullets, then the facts grid. A reader after one answer should be
- * able to find it without reading the other three.
+ * Not a card of fields with a completion score on it. A short introduction,
+ * the published offer as a table, two or three sections that each explain one
+ * feature, and an editorial view that carries the one material unknown. The
+ * scope of the reading is stated once, at the foot, in a full sentence.
  */
-function VenueReviewCard({
+function VenueReviewBody({
   review,
-  rank,
   casino,
+  readOn,
 }: {
   review: VenueReview;
-  rank: number;
   casino: Casino | undefined;
+  readOn: string;
 }) {
-  const logo = CASINO_LOGOS[review.slug];
   return (
-    <article className="rp-venue cc-review" id={review.slug}>
-      <div className="rp-venue-head">
-        {logo ? (
-          <span className="cc-review-logo">
-            <img
-              src={logo.src}
-              alt=""
-              width={112}
-              height={Math.round(112 / LOGO_RATIO)}
-              loading="lazy"
-              decoding="async"
-            />
-          </span>
-        ) : null}
-        <span className="rp-venue-title">
-          <span className="rp-venue-name">{casino?.name}</span>
-          <span className="rp-venue-plat">{review.operator}</span>
-        </span>
-        <span className="rp-badges">
-          <span className="rp-badge">Rank {rank} by bonus size</span>
-          <span className="rp-badge rp-badge-chain">
-            {casino ? checkedCount(casino) : 0} of {CHECK_TOTAL} checked
-          </span>
-        </span>
-        {/* The same control as the table row, so a reader convinced by the
-            card does not have to scroll back up to act on it. */}
+    <>
+      <p>{review.intro}</p>
+      <div className="rp-dtable-wrap">
+        <table className="rp-dtable cc-feat">
+          <thead>
+            <tr>
+              <th>Feature</th>
+              <th>Published offer</th>
+            </tr>
+          </thead>
+          <tbody>
+            {review.features.map((f) => (
+              <tr key={f.label}>
+                <td className="strong">{f.label}</td>
+                <td>{f.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {review.sections.map((sec) => (
+        <div key={sec.h}>
+          <h3>{sec.h}</h3>
+          {sec.body.map((para) => (
+            <p key={para.slice(0, 24)}>{para}</p>
+          ))}
+        </div>
+      ))}
+      <p className="cc-ctas">
         {casino?.url ? (
-          <span className="rp-visit-wrap">
-            <OutboundLink
-              className="cc-open cc-play"
-              href={casino.url}
-              rel="sponsored nofollow noopener noreferrer"
-              keepHref
-              platform={casino.name}
-              source="crypto-casinos-review"
-              rank={rank}
-              ariaLabel={`Play now at ${casino.name}`}
-              body={LEAVE_SITE_BODY(casino.name)}
-            >
-              Play now
-            </OutboundLink>
-          </span>
+          <OutboundLink
+            className="cc-open cc-play"
+            href={casino.url}
+            rel="sponsored nofollow noopener noreferrer"
+            keepHref
+            platform={casino.name}
+            source="crypto-casinos-review"
+            rank={1}
+            ariaLabel={`Play Now at ${casino.name}`}
+            body={LEAVE_SITE_BODY(casino.name)}
+          >
+            Play Now at {casino.name}
+          </OutboundLink>
         ) : null}
-      </div>
-      <div className="rp-venue-body">
-        <div className="rp-venue-prose">
-          <p className="cc-review-caveat">
-            {review.caveat.replace(
-              "{CHECKED}",
-              `${casino ? checkedCount(casino) : 0} of ${CHECK_TOTAL}`,
-            )}
-          </p>
-          <p className="cc-review-lead">{review.standfirst}</p>
-          {review.sections.map((sec) => (
-            <div key={sec.h}>
-              <h3>{sec.h}</h3>
-              <p>{sec.body}</p>
-            </div>
-          ))}
-          <h3>Keep in mind</h3>
-          <NamedList items={review.keepInMind} />
-        </div>
-        <div className="rp-facts">
-          {reviewFacts(review, casino).map((f) => (
-            <div className="rp-fact" key={f.label}>
-              <span className="rp-fact-k">{f.label}</span>
-              <span className="rp-fact-v">{f.value}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-      <p className="cc-sources">
-        Read on {UPDATED} from{" "}
-        {review.sources.map((src, i) => (
-          <span key={src.url}>
-            {i > 0 ? ", " : ""}
-            <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
-              {src.label}
-            </a>
-          </span>
-        ))}
-        .
+        <a href={review.termsUrl} rel="nofollow noopener noreferrer" target="_blank">
+          Read the casino&rsquo;s terms
+        </a>
       </p>
-    </article>
+      <p className="cc-scope">
+        <em>{review.scope(readOn)}</em>
+      </p>
+    </>
   );
 }
 
-export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
+export function CasinosBody({
+  harvest = [],
+  dataUpdated = "",
+}: {
+  harvest?: HarvestRow[];
+  dataUpdated?: string;
+}) {
   const { casinos } = loadCasinos();
-  const listed = casinos.length;
-  const checked = casinos.filter((c) => casinoScore(c) != null).length;
-  const linked = casinos.filter((c) => c.url).length;
   // The wordmark set is the membership list. See lib/casino-logos.
   const ranked = casinos.filter(isRanked);
   // Every derived table is scoped to the ranking, not to the 38 venues in the
@@ -269,7 +212,6 @@ export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
   // nowhere to go with it.
   const turnover = turnoverRows(ranked);
   const compare = compareRows(ranked);
-  const readTerms = ranked.filter(isVerified).length;
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -282,18 +224,16 @@ export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
           table where it can be as long as it needs to be. */}
       <section className="cc-head">
         <div className="cc-head-inner">
-          <h1 className="cc-h1">
-            Crypto Casinos: {rankLabel(ranked.length)} Ranked by Welcome Bonus
-          </h1>
-          <p className="cc-intro">{leadSentences(ranked.length, turnover.length)}</p>
+          {/* One expression, not text either side of an interpolation. JSX
+              drops the space at that boundary and the H1 rendered as
+              "16Bonuses", which is the same defect the review caught in
+              "38venues". */}
+          <h1 className="cc-h1">{`Crypto Casinos: ${ranked.length} Bonuses & Offers Compared`}</h1>
+          <p className="cc-intro">{LEAD(ranked.length)}</p>
           <p className="cc-meta">
-            <span>
-              <strong>{ranked.length}</strong> ranked
-            </span>
-            <span>
-              <strong>{readTerms}</strong> read in depth
-            </span>
-            <span>Updated {UPDATED_SHORT}</span>
+            <span>By Harvest</span>
+            <span>{BYLINE(ranked.length)}</span>
+            <span>Updated {UPDATED}</span>
           </p>
         </div>
       </section>
@@ -304,28 +244,23 @@ export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
             <Section
               id="ranking"
               eyebrow="Ranking"
-              title={`The ${ranked.length} biggest crypto casino welcome bonuses`}
+              title="Compare welcome bonuses, cashback and rakeback"
             >
-              {/* One line, because the reader came for the table. The 18+
-                  block, the commercial disclosure and the US position each
-                  keep a full block under the ranking; what has to precede a
-                  sponsored click is here. */}
-              <p className="cc-brief">
-                <strong>18+.</strong> Play now links are commercial and may pay
-                us; no venue has paid for a position. Most of these venues do
-                not accept players in the United States.{" "}
-                <a href="#responsible">Limits and help lines are at the foot of the page</a>.
-              </p>
+              <p>{RANKING_INTRO}</p>
               {/* Said here and nowhere else. The sort rule used to appear
                   four times: the lead, above the table, a Ground rules
                   section and the disclosure. */}
-              <p>
-                {spellOut(ranked.length, true)} of the {listed} venues
-                tracked, the ones we hold a wordmark and a link for. Dollar caps sort
-                first, then offers capped in BTC or ETH on their match
-                percentage. Position tracks the size of the advertising, not
-                the quality of the venue. The chips are the venue&rsquo;s own
-                claims. {EVIDENCE_NOTE}
+              <p>{SORT_RULE}</p>
+              <p>{DISCLOSURE_SHORT}</p>
+              {/* What has to precede a sponsored click sits directly above
+                  it. The full legal and responsible-gambling blocks keep
+                  their sections further down. */}
+              <p className="cc-brief">
+                {LEGAL_SHORT}{" "}
+                <a href="#responsible">
+                  Responsible gambling information and support
+                </a>
+                .
               </p>
               <CasinoTable casinos={ranked} />
             </Section>
@@ -341,17 +276,10 @@ export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
               </nav>
             </div>
 
-            <Section id="turnover" eyebrow="The real number" title="What each bonus asks you to wager">
-              <p>
-                Cap multiplied by playthrough is what the terms oblige you to
-                stake before any of the bonus can leave. The cap is the figure
-                every ranking prints; the multiplier is the one that decides
-                what it costs.
-              </p>
-              <p>
-                We have both figures for {turnover.length} venues, so the
-                sum can be done. Sorted by what they ask, smallest first.
-              </p>
+            <Section id="turnover" eyebrow="Bonus comparison" title="How much do you need to wager?">
+              {WAGERING_INTRO.map((p) => (
+                <p key={p.slice(0, 24)}>{p}</p>
+              ))}
               <div className="rp-dtable-wrap">
                 <table className="rp-dtable">
                   <thead>
@@ -387,6 +315,7 @@ export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
                   </tbody>
                 </table>
               </div>
+              <p>{WAGERING_AFTER[0]}</p>
               <div className="rp-tip">
                 <div className="rp-callout-head">
                   <span className="rp-callout-ico" aria-hidden="true">!</span>
@@ -415,128 +344,106 @@ export function CasinosBody({ harvest = [] }: { harvest?: HarvestRow[] }) {
                   is worth more attention than the size of the cap.
                 </p>
               </div>
-              <p className="rp-fineprint">
-                Turnover is what the terms oblige, and not a forecast of what
-                anyone loses. What it costs depends on the game and on which
-                games the bonus permits, which is the calculator below.
-              </p>
+              <p>{WAGERING_AFTER[1]}</p>
             </Section>
 
-            <Section id="bonus-calculator" eyebrow="Calculator" title="What a bonus actually costs">
-              <p>
-                Every wager you make clearing a playthrough meets the house
-                edge. This prices that, for the venues that publish both
-                numbers.
-              </p>
-              {/* Opens on the row the page ranks first, so the intent the
-                  headline set is not lost between the table and the tool. The
-                  cap loaded is the figure the playthrough multiplies, which
-                  for a ladder offer is one leg and not the banner total. */}
+            <Section id="bonus-calculator" eyebrow="Bonus calculator" title="Explore the numbers behind your bonus">
+              <p>{CALC_INTRO}</p>
+              {/* Deposit-match offers only. A cashback or rakeback rate has no
+                  deposit match to model, and the amount the playthrough
+                  multiplies is one leg of a ladder offer rather than the
+                  banner total, so the preset carries which stage it is. */}
               <WageringCalculator
-                defaultSlug={ranked[0]?.slug}
-                presets={turnover.map((r) => ({
-                  slug: r.slug,
-                  name: r.name,
-                  cap: r.basis,
-                  wagering: r.wagering,
-                }))}
+                presets={turnover
+                  .filter((r) => !r.cashback)
+                  .map((r) => ({
+                    slug: r.slug,
+                    name: r.name,
+                    bonus: r.basis,
+                    wagering: r.wagering,
+                    stage: BONUS_STAGES[r.slug] ?? null,
+                  }))}
               />
+              <p className="rp-fineprint">{CALC_NOTE}</p>
             </Section>
 
+            {/* Starts after the withdrawal has landed. Everything above this
+                point is about money still inside a casino account, and none
+                of it applies until the balance has left one. */}
             <Section
               id="bankroll"
               eyebrow="Harvest"
-              title="Putting your welcome bonus to work with Harvest"
+              title="Put your crypto to work with Harvest"
             >
-              {/* The title is the one thing on this page that could be read as
-                  promising something the bonus terms forbid, so the first line
-                  settles it. Nothing here applies to an uncleared bonus. */}
-              <p>
-                A bonus you have not cleared cannot go anywhere. It is locked to
-                the playthrough, and moving it is what the terms on every row
-                above exist to prevent. What can go somewhere is what you
-                withdraw once it clears, and whatever is not in play between
-                sessions.
-              </p>
-              <p>
-                An idle casino balance earns nothing and keeps the
-                operator&rsquo;s risk for as long as it sits there. Every
-                caveat on this page about licences, withdrawal review and
-                no-KYC exceptions applies to it exactly as it applies to a
-                balance in play. Back in your own wallet, a stablecoin can sit
-                in an onchain strategy instead.
-              </p>
+              {HARVEST_INTRO.map((p) => (
+                <p key={p.slice(0, 24)}>{p}</p>
+              ))}
               {harvest.length > 0 && (
                 <>
-                  <p>
-                    These are the USDC and USDT strategies Harvest indexes
-                    today, the ones holding at least{" "}
-                    {money(LOW_LIQUIDITY_TVL_THRESHOLD)} in deposits. Rates are
-                    a 24-hour reading and they move.
-                  </p>
+                  <p>{HARVEST_SELECTION(money(LOW_LIQUIDITY_TVL_THRESHOLD))}</p>
                   <div className="rp-dtable-wrap">
-                    <table className="rp-dtable">
+                    <table className="rp-dtable cc-vaults">
                       <thead>
                         <tr>
                           <th>Strategy</th>
+                          <th>Asset</th>
                           <th>Network</th>
-                          <th className="num">24h rate</th>
-                          <th className="num">Deposits</th>
+                          {/* The window is on the column, not in a footnote:
+                              a rate labelled "24h" reads as one day's return,
+                              and this figure is annualised. */}
+                          <th className="num">
+                            <abbr title={APY_NOTE}>APY</abbr>
+                          </th>
+                          <th className="num">Total deposits</th>
+                          <th />
                         </tr>
                       </thead>
                       <tbody>
                         {harvest.map((r) => (
-                          <tr key={`${r.name}-${r.chain}`}>
-                            <td className="strong">
-                              {r.name} <span className="rp-dtag">{r.asset}</span>
-                            </td>
+                          <tr key={r.slug}>
+                            <td className="strong">{r.name}</td>
+                            <td>{r.asset}</td>
                             <td>{r.chain}</td>
                             <td className="num">{r.apy.toFixed(2)}%</td>
                             <td className="num">{money(r.tvl)}</td>
+                            <td className="num">
+                              <Link className="cc-viewlink" href={`/${r.slug}`}>
+                                View strategy
+                              </Link>
+                            </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                  <p className="rp-fineprint">
+                    {APY_NOTE} Data updated {dataUpdated}.
+                  </p>
                 </>
               )}
-              <p className="rp-fineprint">
-                None of this is insured, none of it is a bonus, and a rate that
-                reads well today is not a promise about next week. The
-                strategies carry smart-contract and market risk that a casino
-                balance does not, in exchange for the operator risk it does.
-                Every row above, its history and what can go wrong are on the{" "}
-                <Link href="/usdc">USDC hub</Link> and in the{" "}
-                <Link href="/risk-framework">risk framework</Link>.
+              <p>{HARVEST_RISK}</p>
+              <p className="cc-ctas">
+                <Link className="cc-cta" href="/usdc">
+                  Explore USDC yields
+                </Link>
+                <Link href="/risk-framework">Understand the risks</Link>
               </p>
             </Section>
 
-            <Section
-              id="reviews"
-              eyebrow="Reviewed"
-              title={
-                VENUE_REVIEWS.length > 1
-                  ? "The top two, reviewed"
-                  : "Number one, reviewed"
-              }
-            >
-              <p>
-                We read its own terms and promotion pages. We have not
-                deposited, and the public complaint boards were unreachable
-                from here, so nothing below rests on them.
-              </p>
-              <div className="rp-venues">
-                {VENUE_REVIEWS.map((r, i) => (
-                  <VenueReviewCard
-                    key={r.slug}
-                    review={r}
-                    rank={i + 1}
-                    casino={ranked.find((c) => c.slug === r.slug)}
-                  />
-                ))}
-              </div>
-            </Section>
-
+            {VENUE_REVIEWS.map((r) => (
+              <Section
+                key={r.slug}
+                id="reviews"
+                eyebrow="Casino review"
+                title={r.title}
+              >
+                <VenueReviewBody
+                  review={r}
+                  casino={ranked.find((c) => c.slug === r.slug)}
+                  readOn={UPDATED}
+                />
+              </Section>
+            ))}
 
             {compare.length > 0 && (
               <Section id="compare" eyebrow="Compare" title="The venues we have read, side by side">
