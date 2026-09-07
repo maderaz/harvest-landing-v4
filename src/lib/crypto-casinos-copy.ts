@@ -33,9 +33,15 @@ export const spellOut = (n: number, cap = false) => {
 
 /* ---- the blocks above the table -------------------------------------- */
 
-/** The lead under the H1. The count is derived, so it cannot go stale. */
+/**
+ * The line under the H1, in the dateline position /xrp-rich-list uses.
+ *
+ * One sentence. The summary bullets under the image carry the substance now,
+ * and a paragraph between the headline and the image said the same things
+ * twice.
+ */
 export const LEAD = (ranked: number) =>
-  `We’ve compared welcome bonuses, cashback and rakeback from ${ranked} crypto casinos. Browse the offers below, then use the wagering comparison and calculator to see how the terms affect the bonus you’re considering.`;
+  `Welcome bonuses, cashback and rakeback from ${ranked} crypto casinos, ranked by the size of the offer.`;
 
 /** The byline strip under the lead. */
 export const BYLINE = (ranked: number) => `${ranked} casinos compared`;
@@ -114,63 +120,84 @@ export function summaryPoints(casinos: Casino[]): SummaryPoint[] {
     .filter((c) => offerKinds(c).includes("welcome") && capOf(c) != null)
     .map((c) => ({ c, cap: capOf(c) as number }))
     .sort((a, b) => b.cap - a.cap);
-  const total = capped.reduce((a, x) => a + x.cap, 0);
 
   if (capped.length > 0) {
     out.push({
-      lead: money(total),
-      rest: `of advertised welcome bonuses across the ${spellOut(capped.length)} casinos here that publish a ceiling, counting USDT as a dollar. It is a total of maximums, not something one deposit can reach, and each carries its own terms.`,
+      lead: money(capped.reduce((a, x) => a + x.cap, 0)),
+      rest: `of advertised welcome bonuses across ${casinos.length} tracked crypto casinos.`,
     });
     const top = capped[0];
     out.push({
       lead: OFFERS[top.c.slug]?.headline ?? money(top.cap),
-      rest: `is the largest single offer, at ${top.c.name}${
-        OFFERS[top.c.slug]?.support ? `: ${OFFERS[top.c.slug]?.support}` : ""
-      }.`,
+      rest: `is the largest single offer, at ${top.c.name}.`,
     });
   }
 
-  const played = casinos
-    .filter((c) => (c.verified.wagering ?? 0) > 0)
-    .map((c) => ({ c, wr: c.verified.wagering as number }))
-    .sort((a, b) => a.wr - b.wr);
-  if (played.length > 1) {
-    const lo = played[0];
-    const hi = played[played.length - 1];
+  const instant = casinos.filter((c) => c.claimed.instantWithdrawal).length;
+  if (instant > 0) {
     out.push({
-      lead: `${lo.wr}× to ${hi.wr}×`,
-      rest: `is the range of published playthroughs, from ${lo.c.name} to ${hi.c.name}. The multiplier decides what an offer costs to clear, and it is the figure the headline never carries.`,
-    });
-  }
-
-  const rows = turnoverRows(casinos).filter((r) => !r.cashback);
-  const worst = rows[rows.length - 1];
-  if (worst) {
-    out.push({
-      lead: amount(worst.turnover, worst.unit),
-      rest: `of qualifying bets is what the heaviest requirement here asks: ${worst.name} at ${worst.wagering}× on ${amount(worst.cap, worst.unit)}. The comparison below prices every one of them.`,
-    });
-  }
-
-  const cashback = casinos.filter((c) => offerKinds(c).includes("cashback")).length;
-  const rakeback = casinos.filter((c) => offerKinds(c).includes("rakeback")).length;
-  if (cashback > 0) {
-    out.push({
-      lead: `${spellOut(cashback, true)} offer cashback`,
-      rest: `and ${spellOut(rakeback)} offer rakeback, which pay on losses or on turnover, not on a deposit. Filter the ranking by offer type to see them on their own.`,
+      lead: `${spellOut(instant, true)} crypto casinos`,
+      rest: "advertise instant withdrawals.",
     });
   }
 
   const noKyc = casinos.filter((c) => c.claimed.noKyc).length;
-  const instant = casinos.filter((c) => c.claimed.instantWithdrawal).length;
-  if (noKyc > 0 || instant > 0) {
+  if (noKyc > 0) {
+    out.push({ lead: spellOut(noKyc, true), rest: "advertise no KYC." });
+  }
+
+  const played = casinos
+    .filter((c) => (c.verified.wagering ?? 0) > 0)
+    .map((c) => c.verified.wagering as number)
+    .sort((a, b) => a - b);
+  if (played.length > 1) {
     out.push({
-      lead: `${spellOut(noKyc, true)} advertise no KYC`,
-      rest: `and ${spellOut(instant)} advertise instant withdrawals. Those are the operators' own claims, and each row shows the published withdrawal time beside them where one exists.`,
+      lead: `${played[0]}× to ${played[played.length - 1]}×`,
+      rest: "playthroughs, priced for every offer in the comparison below.",
+    });
+  }
+
+  // The coins the most venues take, so the line names what a reader is likely
+  // to already hold instead of listing thirteen tickers.
+  const tally = new Map<string, number>();
+  for (const c of casinos) {
+    for (const coin of c.verified.chains ?? []) {
+      tally.set(coin, (tally.get(coin) ?? 0) + 1);
+    }
+  }
+  // Seven coins tie on venue count, so alphabetical order decided the line
+  // and it opened on LTC. Ties break toward what this audience actually
+  // holds; anything outside the list still sorts alphabetically.
+  const PREFERRED = ["BTC", "ETH", "USDT", "USDC", "SOL", "LTC"];
+  const rank = (coin: string) => {
+    const i = PREFERRED.indexOf(coin);
+    return i === -1 ? PREFERRED.length : i;
+  };
+  const common = [...tally.entries()]
+    .sort(
+      (a, b) => b[1] - a[1] || rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]),
+    )
+    .slice(0, 4)
+    .map(([coin]) => coin);
+  if (common.length === 4) {
+    out.push({
+      lead: "Get started",
+      rest: `with ${common.slice(0, 3).join(", ")}, ${common[3]} and more.`,
     });
   }
 
   return out;
+}
+
+/**
+ * The combined figure, rounded down to a thousand, for the title and the
+ * description. Both read off the same sum the first summary bullet prints, so
+ * a search result and the page cannot disagree about it.
+ */
+export function bonusTotalUsd(casinos: Casino[]): number {
+  return casinos
+    .filter((c) => offerKinds(c).includes("welcome"))
+    .reduce((a, c) => a + (capOf(c) ?? 0), 0);
 }
 
 /* ---- the wagering section and the calculator -------------------------- */

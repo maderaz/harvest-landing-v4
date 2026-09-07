@@ -212,7 +212,7 @@ function VenueReviewBody({
         </table>
       </div>
       {review.sections.map((sec) => (
-        <div key={sec.h}>
+        <div className="cc-review-body" key={sec.h}>
           <h3>{sec.h}</h3>
           {sec.body.map((para) => (
             <p key={para.slice(0, 24)}>{para}</p>
@@ -275,11 +275,7 @@ export function CasinosBody({
           table where it can be as long as it needs to be. */}
       <section className="cc-head">
         <div className="cc-head-inner">
-          {/* One expression, not text either side of an interpolation. JSX
-              drops the space at that boundary and the H1 rendered as
-              "16Bonuses", which is the same defect the review caught in
-              "38venues". */}
-          <h1 className="cc-h1">{`Crypto Casinos: ${ranked.length} Bonuses & Offers Compared`}</h1>
+          <h1 className="cc-h1">Best Crypto Casino Bonuses, Ranked by Offer Size</h1>
           <p className="cc-intro">{LEAD(ranked.length)}</p>
           <p className="cc-meta">
             <span>By Harvest</span>

@@ -832,12 +832,29 @@
   letter-spacing: 0;
 }
 
-/* h3 inside a section, for the sub-blocks in Bonuses and Getting started. */
+/* h3 inside a section.
+   18px semibold against 16px body was barely a step, so a subhead read as a
+   bolder sentence instead of as a way into the block under it. The display
+   face, more size and more air above than below tie it to what follows. */
 .cc-page .uni-home-content h3 {
-  margin: 28px 0 12px;
-  font-size: 18px;
-  line-height: 1.35;
+  margin: 34px 0 10px;
+  font-family: var(--display, var(--sans));
+  font-size: 22px;
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--uni-ink);
+}
+/* Inside a review the subheads are the reader's entry points and there are
+   four of them, so they get a rule above to separate the blocks outright. */
+.cc-page .cc-review-body h3 {
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rp-card-border, #eeeef5);
+}
+.cc-page .cc-review-body h3:first-of-type { border-top: 0; padding-top: 0; }
+@media (max-width: 640px) {
+  .cc-page .uni-home-content h3 { font-size: 19px; margin-top: 28px; }
 }
 
 /* The payments table. Two columns, and the second one is a sentence, so the
