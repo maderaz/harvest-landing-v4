@@ -67,6 +67,12 @@ const SECTIONS: Section[] = [
     ],
   },
   {
+    label: "Crypto Casinos",
+    items: [
+      { label: "Traffic & Links", href: "/control-room/casinos", icon: "dice" },
+    ],
+  },
+  {
     label: "Reports",
     items: [
       {
@@ -170,6 +176,14 @@ const NAV_ICONS = {
     <>
       <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
       <polyline points="17 6 23 6 23 12" />
+    </>
+  ),
+  dice: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8.5" cy="8.5" r="1.2" />
+      <circle cx="15.5" cy="15.5" r="1.2" />
+      <circle cx="12" cy="12" r="1.2" />
     </>
   ),
   grid: (
