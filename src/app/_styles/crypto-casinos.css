@@ -267,17 +267,6 @@
   line-height: 1.55;
   color: var(--uni-ink-2);
 }
-/* A material unresolved issue a review actually found. One row carries one. */
-.cc-keys-note {
-  display: block;
-  margin-top: 6px;
-  padding-left: 9px;
-  border-left: 2px solid color-mix(in srgb, #b23c17 45%, transparent);
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--uni-ink-3);
-}
-
 .cc-dim { color: var(--uni-ink-3); }
 .cc-action {
   display: flex;
@@ -376,56 +365,86 @@
   color: var(--uni-bg, #fff);
 }
 
-/* ---- expanded row ----------------------------------------------------- */
+/* ---- expanded row -----------------------------------------------------
+   A grid of short blocks rather than one 900px column. Each answers one
+   question, so each gets a card and the eye can pick the one it wants. */
 .cc-detail {
-  padding: 4px 14px 20px;
+  padding: 18px 16px 16px;
   background: var(--cc-inset);
 }
+.cc-blocks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+.cc-block {
+  padding: 14px 16px 12px;
+  border: 1px solid var(--rp-card-border, #eeeef5);
+  border-radius: 14px;
+  background: var(--uni-bg, #fff);
+}
 .cc-detail-h {
-  margin: 10px 0 8px !important;
-  font-size: 11.5px !important;
+  margin: 0 0 8px !important;
+  font-size: 11px !important;
   font-weight: 700;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--uni-ink-3) !important;
 }
+.cc-page .cc-block p {
+  margin: 0 0 6px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.cc-page .cc-block p:last-child { margin-bottom: 0; }
+.cc-page .cc-block strong { color: var(--uni-ink); font-weight: 650; }
+
+/* The operator's own bullets, with markers. They were rendering as an
+   indented run of lines that read as broken list styling. */
 .cc-page .cc-claimlist {
-  margin: 0 0 4px;
-  padding-left: 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 5px;
+  gap: 6px;
 }
 .cc-page .cc-claimlist li {
+  position: relative;
+  padding-left: 15px;
   font-size: 13.5px;
   line-height: 1.55;
   color: var(--uni-ink-2);
 }
-/* Where a value was read, and when. Small and under it, so the value reads
-   first and the provenance is there for anyone who wants it. */
+.cc-page .cc-claimlist li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.62em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--uni-gold, #ffb936);
+}
+
+/* Where a value was read, and when. Under the value, never beside it. */
 .cc-page .cc-detail-src {
-  margin: 2px 0 0 !important;
+  margin: 8px 0 0 !important;
   font-size: 11.5px !important;
   line-height: 1.5 !important;
   color: var(--uni-ink-3) !important;
 }
 .cc-page .uni-home-content .cc-detail-src a { color: inherit; }
 
-/* One block per question a reader is deciding on. */
-.cc-block { margin: 0 0 14px; }
-.cc-block:last-child { margin-bottom: 0; }
-.cc-page .cc-block p {
-  margin: 0 0 4px;
-  font-size: 13.5px;
-  line-height: 1.6;
-  color: var(--uni-ink-2);
+/* One line for the whole expansion, not one per block. */
+.cc-page .cc-detail-foot {
+  margin: 12px 0 0 !important;
+  font-size: 11.5px !important;
+  line-height: 1.5 !important;
+  color: var(--uni-ink-3) !important;
 }
 
-.cc-note {
-  margin: 0 0 8px !important;
-  font-size: 13.5px !important;
-  line-height: 1.6 !important;
-  color: var(--uni-ink-2) !important;
-}
 .cc-empty {
   padding: 22px;
   border: 1px dashed var(--rp-card-border, #dedee6);
@@ -676,7 +695,9 @@
     letter-spacing: 0.05em;
   }
   .cc-details-btn { padding-top: 8px; }
-  .cc-detail { padding: 4px 12px 18px; }
+  .cc-detail { padding: 14px 12px 12px; }
+  .cc-blocks { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .cc-block { padding: 12px 14px 10px; }
 }
 
 /* The "nothing is verified yet" state. Says so in the reader's line of sight
@@ -921,4 +942,21 @@
   letter-spacing: 0;
   text-transform: none;
   color: var(--uni-ink-3);
+}
+
+/* The image under a review's title. Sized by the file, not by an asserted
+   ratio, so an off-site asset of unknown shape is neither cropped nor
+   letterboxed. */
+.cc-page .cc-review-img {
+  margin: 0 0 20px;
+  border-radius: var(--uni-radius, 20px);
+  overflow: hidden;
+  background: var(--cc-inset);
+  line-height: 0;
+}
+.cc-page .cc-review-img img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
 }

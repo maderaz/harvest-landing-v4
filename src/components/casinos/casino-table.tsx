@@ -18,7 +18,6 @@ import {
   LEAVE_SITE_BODY,
   OFFERS,
   OFFER_FILTERS,
-  rowNote,
   keyDetails,
   offerKinds,
   type OfferKind,
@@ -128,7 +127,6 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
             const headline = offer?.headline ?? fallbackHeadline(c);
             const support = offer?.support ?? c.bonusClaim;
             const details = keyDetails(c);
-            const note = rowNote(c);
             const badges = BADGES.filter((b) => c.claimed[b.key]).slice(0, BADGE_LIMIT);
             const logo = CASINO_LOGOS[c.slug];
             const isOpen = open === c.slug;
@@ -172,7 +170,6 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                     {details.length > 0 && (
                       <span className="cc-keys-list">{details.join(" · ")}</span>
                     )}
-                    {note ? <span className="cc-keys-note">{note}</span> : null}
                   </span>
 
                   <span className="hub-cell cc-col-act cc-action">
@@ -263,77 +260,88 @@ function OfferDetails({ c, id }: { c: Casino; id: string }) {
 
   return (
     <div className="cc-detail" id={id}>
-      {(offer || c.claims.length > 0) && (
-        <Block title="How the offer works">
-          {offer ? <p>{offer.headline}. {offer.support}.</p> : null}
-          {c.claims.length > 0 && (
+      {/* A grid, not a column. Five short blocks stacked full width made a
+          900px measure out of two-line answers, and the row above already
+          carries the offer, so the first block no longer repeats it. */}
+      <div className="cc-blocks">
+        {c.claims.length > 0 && (
+          <Block title={`What ${c.name} advertises`}>
             <ul className="cc-claimlist">
               {c.claims.map((t) => (
                 <li key={t}>{t}</li>
               ))}
             </ul>
-          )}
-          <p className="cc-detail-src">
-            The wording above is {c.name}&rsquo;s own.
-          </p>
-        </Block>
-      )}
+            <p className="cc-detail-src">The wording above is the operator’s own.</p>
+          </Block>
+        )}
 
-      {c.minDeposit && (
-        <Block title="Qualifying deposit">
-          <p>{c.minDeposit} to trigger the offer, as published.</p>
-        </Block>
-      )}
-
-      {(wagering || c.termsNote) && (
-        <Block title="Wagering basis and eligible games">
-          {wagering ? <p>{wagering}</p> : null}
-          {c.termsNote ? <p>{c.termsNote}</p> : null}
-          <Src src={c.sources?.wagering} />
-        </Block>
-      )}
-
-      {v.withdrawal && (
-        <Block title="Withdrawal">
-          <p>Published withdrawal time: {v.withdrawal}.</p>
-          {/* The badge beside the row is the operator's own wording. Where the
-              published figure disagrees with it, the row leads with the figure
-              and the disagreement is explained here rather than left for a
-              reader to spot. */}
-          {c.claimed.instantWithdrawal && v.withdrawal !== "instant" ? (
+        {(c.minDeposit || offer) && (
+          <Block title="Qualifying deposit">
             <p>
-              {c.name} also advertises instant withdrawals. Where an operator
-              advertises one thing and publishes another, the published figure
-              is the one on the row.
+              {c.minDeposit
+                ? `${c.minDeposit} to trigger the offer, as published.`
+                : "No minimum deposit is published in the pages read here."}
             </p>
-          ) : null}
-          {v.kyc ? <p>Identity checks: {KYC_LABEL[v.kyc]}.</p> : null}
-          <Src src={c.sources?.withdrawal} />
-        </Block>
-      )}
+          </Block>
+        )}
 
-      <Block title="Operator and licence">
-        <p>
-          <strong>Operating company.</strong>{" "}
-          {c.operator ?? "Not named in the pages read here."}
-        </p>
-        <p>
-          <strong>Licence.</strong>{" "}
-          {v.licence
-            ? `${v.licence.authority}${v.licence.number ? `, ${v.licence.number}` : ""}`
-            : "Not confirmed."}
-        </p>
-        <Src src={c.sources?.licence} />
-        {v.chains?.length ? <p>Coins accepted: {v.chains.join(", ")}.</p> : null}
-        {v.complaints ? <p>Complaints: {COMPLAINT_LABEL[v.complaints]}.</p> : null}
-        {/* Said once, here, instead of on the row. A venue nobody has read
-            yet is a fact about our coverage, not a property of its offer. */}
-        <p className="cc-detail-src">
-          {c.lastChecked
-            ? `Terms last read ${c.lastChecked}.`
-            : "The terms behind this offer have not been read yet, so everything above is the operator’s own wording."}
-        </p>
-      </Block>
+        {(wagering || c.termsNote) && (
+          <Block title="Wagering and eligible games">
+            {wagering ? <p>{wagering}</p> : null}
+            {c.termsNote ? <p>{c.termsNote}</p> : null}
+            <Src src={c.sources?.wagering} />
+          </Block>
+        )}
+
+        {v.withdrawal && (
+          <Block title="Withdrawal">
+            <p>Published withdrawal time: {v.withdrawal}.</p>
+            {/* The badge beside the row is the operator's own wording. Where
+                the published figure disagrees with it, the row leads with the
+                figure and the disagreement is explained here rather than left
+                for a reader to spot. */}
+            {c.claimed.instantWithdrawal && v.withdrawal !== "instant" ? (
+              <p>
+                {c.name} also advertises instant withdrawals. Where an operator
+                advertises one thing and publishes another, the published
+                figure is the one on the row.
+              </p>
+            ) : null}
+            {v.kyc ? <p>Identity checks: {KYC_LABEL[v.kyc]}.</p> : null}
+            <Src src={c.sources?.withdrawal} />
+          </Block>
+        )}
+
+        {v.chains?.length ? (
+          <Block title="Coins accepted">
+            <p>{v.chains.join(", ")}</p>
+            <Src src={c.sources?.chains} />
+          </Block>
+        ) : null}
+
+        <Block title="Operator and licence">
+          <p>
+            <strong>Operating company.</strong>{" "}
+            {c.operator ?? "Not named in the pages read here."}
+          </p>
+          <p>
+            <strong>Licence.</strong>{" "}
+            {v.licence
+              ? `${v.licence.authority}${v.licence.number ? `, ${v.licence.number}` : ""}`
+              : "Not confirmed."}
+          </p>
+          {v.complaints ? <p>Complaints: {COMPLAINT_LABEL[v.complaints]}.</p> : null}
+          <Src src={c.sources?.licence} />
+        </Block>
+      </div>
+
+      {/* Said once, at the foot, for the whole expansion. A venue nobody has
+          read yet is a fact about our coverage, not a property of its offer. */}
+      <p className="cc-detail-foot">
+        {c.lastChecked
+          ? `Terms last read ${c.lastChecked}.`
+          : "The terms behind this offer have not been read yet, so everything above is the operator’s own wording."}
+      </p>
     </div>
   );
 }
