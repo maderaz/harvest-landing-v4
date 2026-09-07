@@ -679,6 +679,15 @@ export interface VenueReview {
   slug: string;
   /** The H2. Names the venue and what the review actually covers. */
   title: string;
+  /**
+   * An image directly under the title.
+   *
+   * Hosted off-site for now. Every other image on this page is committed to
+   * the repo and imported, which is what this should become: a local file is
+   * served from our own domain, cannot be hotlink-blocked or removed by a
+   * third party, and does not hand a visitor's IP to one.
+   */
+  image?: { src: string; alt: string; credit?: string };
   /** One paragraph, before the numbers. */
   intro: string;
   /** The published offer, as a two-column table. */
@@ -701,6 +710,10 @@ export interface VenueReview {
 export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   slug: "lucky-rollers",
   title: "Lucky Rollers review: welcome bonus, cashback and crypto payments",
+  image: {
+    src: "https://i.imgur.com/I3FQeji.png",
+    alt: "Lucky Rollers",
+  },
   intro:
     "Lucky Rollers combines a deposit-match welcome bonus with free spins, a free bet and weekly cashback. We read its published terms and promotion pages to work out what each part of the package is worth and what it costs to clear.",
   features: [

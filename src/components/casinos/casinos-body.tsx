@@ -166,6 +166,19 @@ function VenueReviewBody({
 }) {
   return (
     <>
+      {/* No width or height: the file is off-site and unmeasured here, and
+          asserting a ratio would either letterbox it or crop it. It sizes
+          naturally and the figure reserves nothing it cannot be sure of. */}
+      {review.image ? (
+        <figure className="cc-review-img">
+          <img
+            src={review.image.src}
+            alt={review.image.alt}
+            loading="lazy"
+            decoding="async"
+          />
+        </figure>
+      ) : null}
       <p>{review.intro}</p>
       <div className="rp-dtable-wrap">
         <table className="rp-dtable cc-feat">
