@@ -298,9 +298,11 @@ export const OFFERS: Record<string, OfferCopy> = {
     kinds: ["rakeback", "cashback"],
     type: "Rakeback",
     headline: "Up to 70% rakeback",
-    // What the 70% is calculated on is not published in anything read here,
-    // and a rate with no base is not a figure a reader can use.
-    support: "Advertised alongside 10% cashback. The rate’s basis is not published",
+    // The base is published: the help centre describes the calculation as
+    // eligible wagers against each game's house edge. The 70% headline rate
+    // itself is not confirmed by anything read there.
+    support:
+      "Advertised alongside 10% cashback. Calculated from eligible wagers and each game’s house edge",
   },
   "bc-game": {
     kinds: ["welcome"],
@@ -344,9 +346,9 @@ export const OFFERS: Record<string, OfferCopy> = {
   },
   betfury: {
     kinds: ["welcome"],
-    type: "Welcome bonus",
+    type: "Welcome package",
     headline: "Up to $10,500",
-    support: "590% advertised match and 225 free spins",
+    support: "590% advertised across three welcome bonuses, with 225 free spins",
   },
   "7bit-casino": {
     kinds: ["welcome", "cashback"],
@@ -355,10 +357,10 @@ export const OFFERS: Record<string, OfferCopy> = {
     support: "325% advertised match and 250 free spins",
   },
   "golden-panda": {
-    kinds: ["welcome"],
+    kinds: ["welcome", "cashback"],
     type: "Welcome package",
     headline: "Up to $5,000",
-    support: "200% match and 50 free spins",
+    support: "200% match and 50 free spins, alongside 10% weekly cashback",
   },
   "wsm-casino": {
     kinds: ["welcome", "cashback"],
@@ -386,9 +388,8 @@ export const OFFERS: Record<string, OfferCopy> = {
  */
 export function keyDetails(c: Casino): string[] {
   const out: string[] = [];
-  if (c.verified.withdrawal) {
-    out.push(`Published withdrawal time: ${c.verified.withdrawal}`);
-  }
+  const w = c.verified.withdrawalNote ?? c.verified.withdrawal;
+  if (w) out.push(`Published withdrawal time: ${w}`);
   const wr = c.verified.wagering;
   if (wr === 0) {
     // Scoped, not global: Hyper Lucky's zero is the cashback's, and free
@@ -401,19 +402,39 @@ export function keyDetails(c: Casino): string[] {
   } else if (wr != null) {
     out.push(`${wr}× wagering`);
   }
-  if (c.minDeposit) out.push(`${c.minDeposit} minimum crypto deposit`);
+  if (c.verified.wageringDays != null) {
+    out.push(`${c.verified.wageringDays} days to complete the wagering`);
+  }
+  // Funding an account and triggering the offer are two thresholds, so the
+  // row says which one it is printing.
+  if (c.bonusMinDeposit) {
+    out.push(`${c.bonusMinDeposit} minimum bonus deposit`);
+  } else if (c.minDeposit) {
+    out.push(`${c.minDeposit} minimum crypto deposit`);
+  }
   // Payout currencies and lobby categories only where a source carries them.
   // Fifteen rows reading "See payout details" would be the wallpaper the
   // research disclaimer already had to be taken off the row for.
-  if (c.verified.payoutCoins?.length) {
-    // A count, not the first four of thirteen. A truncated list reads as the
-    // whole answer and is not one.
-    out.push(`Payouts in ${c.verified.payoutCoins.length} coins`);
+  const coins = c.verified.payoutCoins;
+  if (coins?.length) {
+    // Named where the list is short enough to print whole, counted where it is
+    // not. Four of thirteen reads as the whole answer and is not one.
+    out.push(
+      coins.length <= 6
+        ? `Crypto payouts: ${andList(coins)}`
+        : `Payouts in ${coins.length} coins`,
+    );
   }
   if (c.verified.gameTypes?.length) {
     out.push(c.verified.gameTypes.slice(0, 3).join(" · "));
   }
   return out.slice(0, 4);
+}
+
+/** "BTC, ETH and USDT". */
+function andList(items: string[]): string {
+  if (items.length < 2) return items.join("");
+  return `${items.slice(0, -1).join(", ")} and ${items[items.length - 1]}`;
 }
 
 /** Which of the four filters a row belongs to. */
@@ -488,10 +509,22 @@ export const BASIS_LABEL: Record<TurnoverRow["basis"], string> = {
  * one abbreviated figure beside four written out is harder to scan, not
  * easier.
  */
-export const amount = (n: number, unit: "USD" | "USDT") => {
+export const amount = (n: number, unit: TurnoverRow["unit"]) => {
   const digits = n.toLocaleString("en-US", { maximumFractionDigits: 0 });
   return unit === "USDT" ? `${digits} USDT` : `$${digits}`;
 };
+
+/**
+ * The unit a row's cap is printed in.
+ *
+ * Dollars unless the venue credits USDT. Three venues publish their cap in
+ * euros; the ranking and the summary compare in dollars, and the euro figure
+ * is recorded in each of those offers' details.
+ */
+function capUnit(c: Casino): TurnoverRow["unit"] {
+  if (c.verified.capUsd != null) return "USD";
+  return /USDT/i.test(c.bonusClaim ?? "") ? "USDT" : "USD";
+}
 
 /** Venues where both halves of the sum are known. Sorted by what they ask. */
 export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
@@ -511,12 +544,9 @@ export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
         minDeposit: c.minDeposit ?? null,
         note: c.termsNote ?? null,
         cashback: cashbackHeadline(c),
-        // USDT is treated as a dollar for ordering, and printed as USDT here,
-        // because that is the unit the reader will be credited in.
-        unit:
-          c.verified.capUsd == null && /USDT/i.test(c.bonusClaim ?? "")
-            ? "USDT"
-            : "USD",
+        // USDT and EUR are treated as dollars for ordering, and printed in
+        // their own unit here, because that is what the reader is credited in.
+        unit: capUnit(c),
         basis: c.verified.wageringBasis ?? "bonus-unconfirmed",
         stageOne: c.verified.stageOneUsd ?? null,
       };

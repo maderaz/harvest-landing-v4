@@ -62,8 +62,16 @@ export interface CasinoVerified {
   kyc: KycPolicy | null;
   withdrawal: WithdrawalSpeed | null;
   provablyFair: boolean | null;
+  /**
+   * The published withdrawal wording, where the four speed bands lose what it
+   * says. "Around five minutes, and up to 24 hours where a review applies" is
+   * a different promise from "under 1 hour", and the row prints this instead.
+   */
+  withdrawalNote?: string | null;
   /** Playthrough multiple on the headline bonus. */
   wagering: number | null;
+  /** Days the terms allow to complete the playthrough. */
+  wageringDays?: number | null;
   /**
    * The cap in dollars as the terms state it, where the headline does not.
    * Wild.io advertises "up to 350%" and caps the bonus at $1,000; the parser

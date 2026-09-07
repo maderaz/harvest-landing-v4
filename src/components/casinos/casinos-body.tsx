@@ -7,7 +7,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ReportToc, type TocItem } from "@/components/report/report-toc";
 import casinosHeader from "@/assets/icons/CryptoCasinos-Header.png";
 import type { HarvestRow } from "@/app/crypto-casinos/page";
 import { LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
@@ -71,24 +70,6 @@ import {
  * its length, and that length is a property of the data rather than of a
  * constant somebody has to remember to update.
  */
-// The rail, in the order the sections actually appear. Kept in step with the
-// DOM by hand, so a section that moves has to move here too.
-export const tocItems = (ranked: number): TocItem[] => [
-  { id: "ranking", label: `Compare ${ranked} offers` },
-  { id: "turnover", label: "How much to wager" },
-  { id: "bonus-calculator", label: "Bonus calculator" },
-  { id: "reviews", label: "Lucky Rollers review" },
-  { id: "games", label: "Games" },
-  { id: "bonuses", label: "Bonus terms" },
-  { id: "bankroll", label: "Put your crypto to work" },
-  { id: "payments", label: "Crypto payments" },
-  { id: "legality", label: "Availability" },
-  { id: "choosing", label: "Choosing a casino" },
-  { id: "responsible", label: "Responsible gambling" },
-  { id: "faq", label: "FAQ" },
-  { id: "disclosure", label: "Disclosure" },
-];
-
 const UPDATED = new Date().toLocaleDateString("en-US", {
   month: "long",
   day: "numeric",
@@ -311,408 +292,394 @@ export function CasinosBody({
         </div>
       </section>
 
+      {/* Centred, the way /xrp-rich-list is laid out: the sections are direct
+          children of the shell and the shell is the reading measure. The
+          report's two-column grid put a persistent "On this page" rail in the
+          margin, which suits a sixteen-section report and not a comparison
+          somebody scrolls once. */}
       <main className="uni-home-shell">
-        <div className="rp-doc">
-          <div className="rp-doc-main">
-            <Section
-              id="ranking"
-              eyebrow="Ranking"
-              title="Compare welcome bonuses, cashback and rakeback"
-            >
-              <p>{RANKING_INTRO}</p>
-              {/* Said here and nowhere else. The sort rule used to appear
-                  four times: the lead, above the table, a Ground rules
-                  section and the disclosure. */}
-              <p>{SORT_RULE}</p>
-              <p>{DISCLOSURE_SHORT}</p>
-              {/* What has to precede a sponsored click sits directly above
-                  it. The full legal and responsible-gambling blocks keep
-                  their sections further down. */}
-              <p className="cc-brief">
-                {LEGAL_SHORT}{" "}
-                <a href="#responsible">
-                  Responsible gambling information and support
-                </a>
-                .
-              </p>
-              <CasinoTable casinos={ranked} />
-            </Section>
+        <Section
+          id="ranking"
+          eyebrow="Ranking"
+          title="Compare welcome bonuses, cashback and rakeback"
+        >
+          <p>{RANKING_INTRO}</p>
+          {/* Said here and nowhere else. The sort rule used to appear
+              four times: the lead, above the table, a Ground rules
+              section and the disclosure. */}
+          <p>{SORT_RULE}</p>
+          <p>{DISCLOSURE_SHORT}</p>
+          {/* What has to precede a sponsored click sits directly above
+              it. The full legal and responsible-gambling blocks keep
+              their sections further down. */}
+          <p className="cc-brief">
+            {LEGAL_SHORT}{" "}
+            <a href="#responsible">
+              Responsible gambling information and support
+            </a>
+            .
+          </p>
+          <CasinoTable casinos={ranked} />
+        </Section>
 
-            <div className="uni-home-content cc-navwrap">
-              <nav className="rp-toc" aria-label="On this page">
-                <span className="rp-toc-label">On this page</span>
-                {tocItems(ranked.length).map((t) => (
-                  <a key={t.id} href={`#${t.id}`}>
-                    {t.label}
-                  </a>
+        <Section id="turnover" eyebrow="Bonus comparison" title="How much do you need to wager?">
+          {WAGERING_INTRO.map((p) => (
+            <p key={p.slice(0, 24)}>{p}</p>
+          ))}
+          {/* Deposit-match offers only. A cashback cap is not a bonus
+              you wager down, and printing Hyper Lucky's $10,000 with
+              "Nothing" to wager put a cashback rate in a deposit-bonus
+              comparison as if the two were the same product. */}
+          <div className="rp-dtable-wrap">
+            <table className="rp-dtable">
+              <thead>
+                <tr>
+                  <th>Casino</th>
+                  <th className="num">Bonus amount compared</th>
+                  <th className="num">Wagering requirement</th>
+                  <th className="num">Calculated wagering</th>
+                  <th className="num">Minimum crypto deposit</th>
+                </tr>
+              </thead>
+              <tbody>
+                {wagering.map((r) => (
+                  <tr key={r.slug}>
+                    <td className="strong">{r.name}</td>
+                    <td className="num">
+                      {amount(r.cap, r.unit)}
+                      {r.stageOne != null ? (
+                        <span className="cc-basis">
+                          package total across its stages
+                        </span>
+                      ) : null}
+                    </td>
+                    <td className="num">{r.wagering}×</td>
+                    <td className="num">
+                      {amount(r.turnover, r.unit)}
+                      <span className="cc-basis">{BASIS_LABEL[r.basis]}</span>
+                    </td>
+                    <td className="num">{r.minDeposit ?? "Not published"}</td>
+                  </tr>
                 ))}
-              </nav>
-            </div>
+              </tbody>
+            </table>
+          </div>
+          <p>{WAGERING_AFTER[0]}</p>
+          {/* Trimmed. The first half used to explain that Wild.io's
+              350% and its $1,000 cap are not a contradiction, which was a
+              correction of a claim this page made and no longer makes:
+              the row prints "Up to $1,000 per deposit" against "350%
+              across the first three deposits" and the reader can see it.
+              What is left is the part no template writes. */}
+          <p>{WAGERING_AFTER[1]}</p>
+        </Section>
 
-            <Section id="turnover" eyebrow="Bonus comparison" title="How much do you need to wager?">
-              {WAGERING_INTRO.map((p) => (
-                <p key={p.slice(0, 24)}>{p}</p>
-              ))}
-              {/* Deposit-match offers only. A cashback cap is not a bonus
-                  you wager down, and printing Hyper Lucky's $10,000 with
-                  "Nothing" to wager put a cashback rate in a deposit-bonus
-                  comparison as if the two were the same product. */}
+        <Section id="bonus-calculator" eyebrow="Bonus calculator" title="Explore the numbers behind your bonus">
+          <p>{CALC_INTRO}</p>
+          {/* Deposit-match offers only. A cashback or rakeback rate has no
+              deposit match to model, and the amount the playthrough
+              multiplies is one leg of a ladder offer rather than the
+              banner total, so the preset carries which stage it is. */}
+          <WageringCalculator
+            presets={wagering.map((r) => ({
+              slug: r.slug,
+              name: r.name,
+              // The stage a reader is actually offered on deposit one,
+              // where the compared figure is a package total.
+              bonus: r.stageOne ?? r.basisUsd,
+              wagering: r.wagering,
+              stage: r.stageOne != null ? "First-deposit bonus" : null,
+            }))}
+          />
+        </Section>
+
+        {/* Starts after the withdrawal has landed. Everything above this
+            point is about money still inside a casino account, and none
+            of it applies until the balance has left one. */}
+        {VENUE_REVIEWS.map((r) => (
+          <Section
+            key={r.slug}
+            id="reviews"
+            eyebrow="Casino review"
+            title={r.title}
+          >
+            <VenueReviewBody
+              review={r}
+              casino={ranked.find((c) => c.slug === r.slug)}
+              readOn={UPDATED}
+            />
+          </Section>
+        ))}
+
+        {/* Four sections became one.
+            The side-by-side table repeated the bonus, the playthrough and
+            the minimum deposit the ranking already carries, and counted
+            coins, which tells a reader nothing about whether their coin is
+            accepted. Its one useful column, the published withdrawal time,
+            is in each row's key details and expansion. What a crypto
+            casino is, and how provably fair works, are FAQ answers. What
+            is left is the question the page could not otherwise answer:
+            how to get money in and out without losing it. */}
+        <Section id="games" eyebrow="Games" title="Which games can you play at crypto casinos?">
+          <p>{GAMES_INTRO}</p>
+          <div className="rp-dtable-wrap">
+            <table className="rp-dtable cc-pay">
+              <thead>
+                <tr>
+                  <th>Game type</th>
+                  <th>What you&rsquo;ll find</th>
+                </tr>
+              </thead>
+              <tbody>
+                {GAME_TYPES.map((g) => (
+                  <tr key={g.type}>
+                    <td className="strong">{g.type}</td>
+                    <td>{g.body}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p>{GAMES_CLOSE}</p>
+          {/* The formats are documented. Which of them a given casino
+              actually runs is a question for its lobby, and no lobby here
+              has been read, so no row claims a category. */}
+          <p className="rp-fineprint">
+            The categories above follow{" "}
+            {GAME_SOURCES.map((src, i) => (
+              <span key={src.url}>
+                {i > 0 ? " and " : ""}
+                <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+                  {src.label}
+                </a>
+              </span>
+            ))}
+            . Availability at any particular casino is a separate check,
+            and none of the {ranked.length} here has had its lobby read.
+          </p>
+        </Section>
+
+        <Section id="bonuses" eyebrow="Bonus terms" title="What to check in a crypto casino bonus">
+          <p>{BONUS_TERMS_INTRO}</p>
+          <NamedList items={BONUS_TERMS} />
+          <h3>What different casino bonuses look like in practice</h3>
+          <p>{BONUS_EXAMPLES_INTRO}</p>
+          <div className="rp-dtable-wrap">
+            <table className="rp-dtable cc-pay">
+              <thead>
+                <tr>
+                  <th>Bonus type</th>
+                  <th>Example</th>
+                </tr>
+              </thead>
+              <tbody>
+                {BONUS_EXAMPLES.map((b) => (
+                  <tr key={b.type}>
+                    <td className="strong">{b.type}</td>
+                    <td>{b.example}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p>{BONUS_EXAMPLES_CLOSE}</p>
+        </Section>
+
+        <Section
+          id="bankroll"
+          eyebrow="Harvest"
+          title="Put your crypto to work with Harvest"
+        >
+          {HARVEST_INTRO.map((p) => (
+            <p key={p.slice(0, 24)}>{p}</p>
+          ))}
+          {harvest.length > 0 && (
+            <>
+              <p>{HARVEST_SELECTION(money(LOW_LIQUIDITY_TVL_THRESHOLD))}</p>
               <div className="rp-dtable-wrap">
-                <table className="rp-dtable">
+                <table className="rp-dtable cc-vaults">
                   <thead>
                     <tr>
-                      <th>Casino</th>
-                      <th className="num">Bonus amount compared</th>
-                      <th className="num">Wagering requirement</th>
-                      <th className="num">Calculated wagering</th>
-                      <th className="num">Minimum crypto deposit</th>
+                      <th>Strategy</th>
+                      <th>Asset</th>
+                      <th>Network</th>
+                      {/* The window is on the column, not in a footnote:
+                          a rate labelled "24h" reads as one day's return,
+                          and this figure is annualised. */}
+                      <th className="num">
+                        <abbr title={APY_NOTE}>APY</abbr>
+                      </th>
+                      <th className="num">Total deposits</th>
+                      <th />
                     </tr>
                   </thead>
                   <tbody>
-                    {wagering.map((r) => (
+                    {harvest.map((r) => (
                       <tr key={r.slug}>
                         <td className="strong">{r.name}</td>
+                        <td>{r.asset}</td>
+                        <td>{r.chain}</td>
+                        <td className="num">{r.apy.toFixed(2)}%</td>
+                        <td className="num">{money(r.tvl)}</td>
                         <td className="num">
-                          {amount(r.cap, r.unit)}
-                          {r.stageOne != null ? (
-                            <span className="cc-basis">
-                              package total across its stages
-                            </span>
-                          ) : null}
+                          <Link className="cc-viewlink" href={`/${r.slug}`}>
+                            View strategy
+                          </Link>
                         </td>
-                        <td className="num">{r.wagering}×</td>
-                        <td className="num">
-                          {amount(r.turnover, r.unit)}
-                          <span className="cc-basis">{BASIS_LABEL[r.basis]}</span>
-                        </td>
-                        <td className="num">{r.minDeposit ?? "Not published"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-              <p>{WAGERING_AFTER[0]}</p>
-              {/* Trimmed. The first half used to explain that Wild.io's
-                  350% and its $1,000 cap are not a contradiction, which was a
-                  correction of a claim this page made and no longer makes:
-                  the row prints "Up to $1,000 per deposit" against "350%
-                  across the first three deposits" and the reader can see it.
-                  What is left is the part no template writes. */}
-              <p>{WAGERING_AFTER[1]}</p>
-            </Section>
-
-            <Section id="bonus-calculator" eyebrow="Bonus calculator" title="Explore the numbers behind your bonus">
-              <p>{CALC_INTRO}</p>
-              {/* Deposit-match offers only. A cashback or rakeback rate has no
-                  deposit match to model, and the amount the playthrough
-                  multiplies is one leg of a ladder offer rather than the
-                  banner total, so the preset carries which stage it is. */}
-              <WageringCalculator
-                presets={wagering.map((r) => ({
-                  slug: r.slug,
-                  name: r.name,
-                  // The stage a reader is actually offered on deposit one,
-                  // where the compared figure is a package total.
-                  bonus: r.stageOne ?? r.basisUsd,
-                  wagering: r.wagering,
-                  stage: r.stageOne != null ? "First-deposit bonus" : null,
-                }))}
-              />
-            </Section>
-
-            {/* Starts after the withdrawal has landed. Everything above this
-                point is about money still inside a casino account, and none
-                of it applies until the balance has left one. */}
-            {VENUE_REVIEWS.map((r) => (
-              <Section
-                key={r.slug}
-                id="reviews"
-                eyebrow="Casino review"
-                title={r.title}
-              >
-                <VenueReviewBody
-                  review={r}
-                  casino={ranked.find((c) => c.slug === r.slug)}
-                  readOn={UPDATED}
-                />
-              </Section>
-            ))}
-
-            {/* Four sections became one.
-                The side-by-side table repeated the bonus, the playthrough and
-                the minimum deposit the ranking already carries, and counted
-                coins, which tells a reader nothing about whether their coin is
-                accepted. Its one useful column, the published withdrawal time,
-                is in each row's key details and expansion. What a crypto
-                casino is, and how provably fair works, are FAQ answers. What
-                is left is the question the page could not otherwise answer:
-                how to get money in and out without losing it. */}
-            <Section id="games" eyebrow="Games" title="Which games can you play at crypto casinos?">
-              <p>{GAMES_INTRO}</p>
-              <div className="rp-dtable-wrap">
-                <table className="rp-dtable cc-pay">
-                  <thead>
-                    <tr>
-                      <th>Game type</th>
-                      <th>What you&rsquo;ll find</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {GAME_TYPES.map((g) => (
-                      <tr key={g.type}>
-                        <td className="strong">{g.type}</td>
-                        <td>{g.body}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p>{GAMES_CLOSE}</p>
-              {/* The formats are documented. Which of them a given casino
-                  actually runs is a question for its lobby, and no lobby here
-                  has been read, so no row claims a category. */}
               <p className="rp-fineprint">
-                The categories above follow{" "}
-                {GAME_SOURCES.map((src, i) => (
-                  <span key={src.url}>
-                    {i > 0 ? " and " : ""}
-                    <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
-                      {src.label}
-                    </a>
-                  </span>
+                {APY_NOTE} Data updated {dataUpdated}.
+              </p>
+            </>
+          )}
+          <p>{HARVEST_RISK}</p>
+          <p className="cc-ctas">
+            <Link className="cc-cta" href="/usdc">
+              Explore USDC yields
+            </Link>
+            <Link href="/risk-framework">Understand the risks</Link>
+          </p>
+        </Section>
+
+        <Section id="payments" eyebrow="Crypto payments" title="Choosing a coin for deposits and withdrawals">
+          {PAYMENTS_INTRO.map((para) => (
+            <p key={para.slice(0, 24)}>{para}</p>
+          ))}
+          <div className="rp-dtable-wrap">
+            <table className="rp-dtable cc-pay">
+              <thead>
+                <tr>
+                  <th>Payment option</th>
+                  <th>What to check</th>
+                </tr>
+              </thead>
+              <tbody>
+                {PAYMENT_CHECKS.map((r) => (
+                  <tr key={r.option}>
+                    <td className="strong">{r.option}</td>
+                    <td>{r.check}</td>
+                  </tr>
                 ))}
-                . Availability at any particular casino is a separate check,
-                and none of the {ranked.length} here has had its lobby read.
-              </p>
-            </Section>
-
-            <Section id="bonuses" eyebrow="Bonus terms" title="What to check in a crypto casino bonus">
-              <p>{BONUS_TERMS_INTRO}</p>
-              <NamedList items={BONUS_TERMS} />
-              <h3>What different casino bonuses look like in practice</h3>
-              <p>{BONUS_EXAMPLES_INTRO}</p>
-              <div className="rp-dtable-wrap">
-                <table className="rp-dtable cc-pay">
-                  <thead>
-                    <tr>
-                      <th>Bonus type</th>
-                      <th>Example</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {BONUS_EXAMPLES.map((b) => (
-                      <tr key={b.type}>
-                        <td className="strong">{b.type}</td>
-                        <td>{b.example}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p>{BONUS_EXAMPLES_CLOSE}</p>
-            </Section>
-
-            <Section
-              id="bankroll"
-              eyebrow="Harvest"
-              title="Put your crypto to work with Harvest"
-            >
-              {HARVEST_INTRO.map((p) => (
-                <p key={p.slice(0, 24)}>{p}</p>
-              ))}
-              {harvest.length > 0 && (
-                <>
-                  <p>{HARVEST_SELECTION(money(LOW_LIQUIDITY_TVL_THRESHOLD))}</p>
-                  <div className="rp-dtable-wrap">
-                    <table className="rp-dtable cc-vaults">
-                      <thead>
-                        <tr>
-                          <th>Strategy</th>
-                          <th>Asset</th>
-                          <th>Network</th>
-                          {/* The window is on the column, not in a footnote:
-                              a rate labelled "24h" reads as one day's return,
-                              and this figure is annualised. */}
-                          <th className="num">
-                            <abbr title={APY_NOTE}>APY</abbr>
-                          </th>
-                          <th className="num">Total deposits</th>
-                          <th />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {harvest.map((r) => (
-                          <tr key={r.slug}>
-                            <td className="strong">{r.name}</td>
-                            <td>{r.asset}</td>
-                            <td>{r.chain}</td>
-                            <td className="num">{r.apy.toFixed(2)}%</td>
-                            <td className="num">{money(r.tvl)}</td>
-                            <td className="num">
-                              <Link className="cc-viewlink" href={`/${r.slug}`}>
-                                View strategy
-                              </Link>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="rp-fineprint">
-                    {APY_NOTE} Data updated {dataUpdated}.
-                  </p>
-                </>
-              )}
-              <p>{HARVEST_RISK}</p>
-              <p className="cc-ctas">
-                <Link className="cc-cta" href="/usdc">
-                  Explore USDC yields
-                </Link>
-                <Link href="/risk-framework">Understand the risks</Link>
-              </p>
-            </Section>
-
-            <Section id="payments" eyebrow="Crypto payments" title="Choosing a coin for deposits and withdrawals">
-              {PAYMENTS_INTRO.map((para) => (
-                <p key={para.slice(0, 24)}>{para}</p>
-              ))}
-              <div className="rp-dtable-wrap">
-                <table className="rp-dtable cc-pay">
-                  <thead>
-                    <tr>
-                      <th>Payment option</th>
-                      <th>What to check</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {PAYMENT_CHECKS.map((r) => (
-                      <tr key={r.option}>
-                        <td className="strong">{r.option}</td>
-                        <td>{r.check}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <h3>Choosing the right network</h3>
-              {NETWORK_CHOICE.map((para) => (
-                <p key={para.slice(0, 24)}>{para}</p>
-              ))}
-              <h3>Understanding withdrawal times</h3>
-              <p>{WITHDRAWAL_TIMES[0]}</p>
-              <p className="rp-fineprint">
-                Read on {UPDATED} from{" "}
-                {PAYMENT_SOURCES.map((src, i) => (
-                  <span key={src.url}>
-                    {i > 0 ? ", " : ""}
-                    <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
-                      {src.label}
-                    </a>
-                  </span>
-                ))}
-                .
-              </p>
-            </Section>
-
-            <Section id="legality" eyebrow="Availability" title="Can you use a crypto casino where you live?">
-              {AVAILABILITY.map((para) => (
-                <p key={para.slice(0, 24)}>{para}</p>
-              ))}
-            </Section>
-
-            {/* General guidance, applied to every venue the same way. The
-                finding about the venue at the top of the ranking lives in its
-                row and its review, where it informs that decision, and not in
-                a section that is supposed to read the same for all sixteen. */}
-            <Section id="choosing" eyebrow="Choosing a casino" title="What to look for before you register">
-              <p>{CHOOSING_INTRO}</p>
-              <NamedList items={CHOOSING} />
-              <p>{CHOOSING_CLOSE}</p>
-              <p className="rp-fineprint">
-                A public register carries more than a footer badge does. The UK
-                Gambling Commission&rsquo;s register lists licence status,
-                trading names and domains:{" "}
-                <a href={REGISTER_SOURCE.url} rel="nofollow noopener noreferrer" target="_blank">
-                  {REGISTER_SOURCE.label}
-                </a>
-                .
-              </p>
-            </Section>
-
-            {/* The anchor is load-bearing: the line above the ranking, which
-                has to precede a sponsored click, links to it. */}
-            <Section id="responsible" eyebrow="Responsible gambling" title="Set your limits before you play">
-              {RG_INTRO.map((para) => (
-                <p key={para.slice(0, 24)}>{para}</p>
-              ))}
-              <NamedList items={RG_TOOLS} flow />
-              <p>{RG_SUPPORT}</p>
-              <p>
-                <strong>Great Britain:</strong>{" "}
-                <a href="https://www.gambleaware.org/" rel="nofollow noopener noreferrer" target="_blank">
-                  GambleAware
-                </a>{" "}
-                provides information and routes to local support.
-              </p>
-              <p>
-                <strong>United States:</strong> Call or text 1-800-MY-RESET, or
-                visit the{" "}
-                <a href="https://www.ncpgambling.org/help-treatment/" rel="nofollow noopener noreferrer" target="_blank">
-                  National Problem Gambling Helpline
-                </a>{" "}
-                for support options.
-              </p>
-              <p>
-                For other locations, your local health service or gambling
-                regulator may list specialist support.
-              </p>
-              <p className="rp-fineprint">
-                Support links and the helpline number checked {RG_CHECKED}. The
-                guidance above follows{" "}
-                {RG_SOURCES.map((src, i) => (
-                  <span key={src.url}>
-                    {i > 0 ? " and " : ""}
-                    <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
-                      {src.label}
-                    </a>
-                  </span>
-                ))}
-                .
-              </p>
-            </Section>
-
-            <Section id="faq" eyebrow="FAQ" title="Crypto casino questions">
-              <div className="rp-faq">
-                {FAQS.map((f, i) => (
-                  <details className="rp-faq-item" key={f.q} open={i === 0}>
-                    <summary className="rp-faq-q">
-                      {f.q}
-                      <span className="rp-faq-mark" aria-hidden="true" />
-                    </summary>
-                    <p className="rp-faq-a">{f.a}</p>
-                  </details>
-                ))}
-              </div>
-            </Section>
-
-            <Section id="disclosure" eyebrow="Disclosure" title="Our research and commercial links">
-              {DISCLOSURE.map((para) => (
-                <p key={para.slice(0, 24)}>{para}</p>
-              ))}
-              <p>
-                If a figure here is wrong or out of date,{" "}
-                <Link href="/contact">tell us</Link> and we will correct it and
-                re-date the offer. For what Harvest otherwise does, see the{" "}
-                <Link href="/methodology">methodology</Link> behind the yield
-                rankings and the <Link href="/risk-framework">risk framework</Link>.
-              </p>
-            </Section>
+              </tbody>
+            </table>
           </div>
+          <h3>Choosing the right network</h3>
+          {NETWORK_CHOICE.map((para) => (
+            <p key={para.slice(0, 24)}>{para}</p>
+          ))}
+          <h3>Understanding withdrawal times</h3>
+          <p>{WITHDRAWAL_TIMES[0]}</p>
+          <p className="rp-fineprint">
+            Read on {UPDATED} from{" "}
+            {PAYMENT_SOURCES.map((src, i) => (
+              <span key={src.url}>
+                {i > 0 ? ", " : ""}
+                <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+                  {src.label}
+                </a>
+              </span>
+            ))}
+            .
+          </p>
+        </Section>
 
-          <aside className="rp-doc-aside" aria-label="On this page">
-            <ReportToc items={tocItems(ranked.length)} label="On this page" />
-          </aside>
-        </div>
+        <Section id="legality" eyebrow="Availability" title="Can you use a crypto casino where you live?">
+          {AVAILABILITY.map((para) => (
+            <p key={para.slice(0, 24)}>{para}</p>
+          ))}
+        </Section>
+
+        {/* General guidance, applied to every venue the same way. The
+            finding about the venue at the top of the ranking lives in its
+            row and its review, where it informs that decision, and not in
+            a section that is supposed to read the same for all sixteen. */}
+        <Section id="choosing" eyebrow="Choosing a casino" title="What to look for before you register">
+          <p>{CHOOSING_INTRO}</p>
+          <NamedList items={CHOOSING} />
+          <p>{CHOOSING_CLOSE}</p>
+          <p className="rp-fineprint">
+            A public register carries more than a footer badge does. The UK
+            Gambling Commission&rsquo;s register lists licence status,
+            trading names and domains:{" "}
+            <a href={REGISTER_SOURCE.url} rel="nofollow noopener noreferrer" target="_blank">
+              {REGISTER_SOURCE.label}
+            </a>
+            .
+          </p>
+        </Section>
+
+        {/* The anchor is load-bearing: the line above the ranking, which
+            has to precede a sponsored click, links to it. */}
+        <Section id="responsible" eyebrow="Responsible gambling" title="Set your limits before you play">
+          {RG_INTRO.map((para) => (
+            <p key={para.slice(0, 24)}>{para}</p>
+          ))}
+          <NamedList items={RG_TOOLS} flow />
+          <p>{RG_SUPPORT}</p>
+          <p>
+            <strong>Great Britain:</strong>{" "}
+            <a href="https://www.gambleaware.org/" rel="nofollow noopener noreferrer" target="_blank">
+              GambleAware
+            </a>{" "}
+            provides information and routes to local support.
+          </p>
+          <p>
+            <strong>United States:</strong> Call or text 1-800-MY-RESET, or
+            visit the{" "}
+            <a href="https://www.ncpgambling.org/help-treatment/" rel="nofollow noopener noreferrer" target="_blank">
+              National Problem Gambling Helpline
+            </a>{" "}
+            for support options.
+          </p>
+          <p>
+            For other locations, your local health service or gambling
+            regulator may list specialist support.
+          </p>
+          <p className="rp-fineprint">
+            Support links and the helpline number checked {RG_CHECKED}. The
+            guidance above follows{" "}
+            {RG_SOURCES.map((src, i) => (
+              <span key={src.url}>
+                {i > 0 ? " and " : ""}
+                <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+                  {src.label}
+                </a>
+              </span>
+            ))}
+            .
+          </p>
+        </Section>
+
+        <Section id="faq" eyebrow="FAQ" title="Crypto casino questions">
+          <div className="rp-faq">
+            {FAQS.map((f, i) => (
+              <details className="rp-faq-item" key={f.q} open={i === 0}>
+                <summary className="rp-faq-q">
+                  {f.q}
+                  <span className="rp-faq-mark" aria-hidden="true" />
+                </summary>
+                <p className="rp-faq-a">{f.a}</p>
+              </details>
+            ))}
+          </div>
+        </Section>
+
+        <Section id="disclosure" eyebrow="Disclosure" title="Our research and commercial links">
+          {DISCLOSURE.map((para) => (
+            <p key={para.slice(0, 24)}>{para}</p>
+          ))}
+          <p>
+            If a figure here is wrong or out of date,{" "}
+            <Link href="/contact">tell us</Link> and we will correct it and
+            re-date the offer. For what Harvest otherwise does, see the{" "}
+            <Link href="/methodology">methodology</Link> behind the yield
+            rankings and the <Link href="/risk-framework">risk framework</Link>.
+          </p>
+        </Section>
       </main>
     </div>
   );

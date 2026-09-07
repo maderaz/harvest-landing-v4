@@ -92,22 +92,29 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
 
   return (
     <div className="cc-rank">
-      <div className="cc-types" role="group" aria-label="Filter by offer type">
-        {OFFER_FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            className={`cc-type${kind === f.key ? " is-on" : ""}`}
-            aria-pressed={kind === f.key}
-            onClick={() => setKind(f.key)}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
-      <div className="cc-filters" role="group" aria-label="Filter by advertised feature">
-        <Toggle on={noKyc} set={setNoKyc} label="Advertised no KYC" />
-        <Toggle on={fast} set={setFast} label="Advertised instant withdrawal" />
+      {/* One bar, one control style. The offer types were filled pills on
+          their own line and the claim toggles outlined pills on another, so
+          six filters read as two unrelated sets. The groups keep their roles
+          for assistive tech and `display: contents` lets their buttons lay
+          out as one line. */}
+      <div className="cc-filterbar">
+        <div className="cc-fgroup" role="group" aria-label="Filter by offer type">
+          {OFFER_FILTERS.map((f) => (
+            <button
+              key={f.key}
+              type="button"
+              className={`cc-chipbtn${kind === f.key ? " is-on" : ""}`}
+              aria-pressed={kind === f.key}
+              onClick={() => setKind(f.key)}
+            >
+              {f.label}
+            </button>
+          ))}
+        </div>
+        <div className="cc-fgroup" role="group" aria-label="Filter by advertised feature">
+          <Toggle on={noKyc} set={setNoKyc} label="Advertised no KYC" />
+          <Toggle on={fast} set={setFast} label="Advertised instant withdrawal" />
+        </div>
         <span className="cc-count">
           Showing {rows.length} of {casinos.length}
         </span>
@@ -480,7 +487,7 @@ function Toggle({
   return (
     <button
       type="button"
-      className={`cc-toggle${on ? " is-on" : ""}`}
+      className={`cc-chipbtn${on ? " is-on" : ""}`}
       aria-pressed={on}
       onClick={() => set(!on)}
     >
