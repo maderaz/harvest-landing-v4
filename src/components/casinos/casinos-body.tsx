@@ -335,10 +335,10 @@ export function CasinosBody({
               <thead>
                 <tr>
                   <th>Casino</th>
-                  <th className="num">Bonus amount compared</th>
-                  <th className="num">Wagering requirement</th>
+                  <th className="num">Bonus compared</th>
+                  <th className="num">Wagering</th>
                   <th className="num">Calculated wagering</th>
-                  <th className="num">Minimum crypto deposit</th>
+                  <th className="num">Minimum deposit</th>
                 </tr>
               </thead>
               <tbody>
