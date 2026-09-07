@@ -117,6 +117,13 @@ export interface Casino {
   claims: string[];
   claimed: CasinoClaims;
   verified: CasinoVerified;
+  /**
+   * The operating company and its registration number, where the terms name
+   * one. Separate from `verified.licence`, which is the gambling authority:
+   * a venue can print a Curacao licence and still name no company, and the
+   * two questions have different answers often enough to keep two fields.
+   */
+  operator?: string | null;
   /** As published, in the venue's own unit. Free text because they all differ. */
   minDeposit?: string | null;
   /** The clause from the bonus terms that a reader would want quoted. */

@@ -316,22 +316,19 @@ export function CasinosBody({
                 </table>
               </div>
               <p>{WAGERING_AFTER[0]}</p>
+              {/* Trimmed. The first half used to explain that Wild.io's
+                  350% and its $1,000 cap are not a contradiction, which was a
+                  correction of a claim this page made and no longer makes:
+                  the row prints "Up to $1,000 per deposit" against "350%
+                  across the first three deposits" and the reader can see it.
+                  What is left is the part no template writes. */}
               <div className="rp-tip">
                 <div className="rp-callout-head">
                   <span className="rp-callout-ico" aria-hidden="true">!</span>
-                  <span className="rp-callout-title">A cap is per deposit, and a bonus is not clearable on every game</span>
+                  <span className="rp-callout-title">A bonus is not clearable on every game</span>
                 </div>
                 <p className="rp-tip-body">
-                  Wild.io advertises up to 350% across a three-deposit package.
-                  Each stage carries its own ceiling, and the site shows
-                  &ldquo;Receive 120% bonus up to $1,000&rdquo; and
-                  &ldquo;Receive 100% bonus up to $1,000&rdquo; on separate
-                  stages, so the dollar figure limits one deposit and not
-                  the package. The percentage and the cap describe different
-                  things and do not contradict each other.
-                </p>
-                <p className="rp-tip-body">
-                  The clause worth reading is 2.4:{" "}
+                  Wild.io&rsquo;s bonus terms 2.4:{" "}
                   <q cite="https://wild.io/bonus-terms">
                     Wagering can only be done in Slots. Jackpot Games,
                     Accumulator/Progressive Games, Table Games, Live Games,
@@ -340,8 +337,8 @@ export function CasinosBody({
                   </q>
                   . Table games are not discounted to 20% here, they are barred
                   outright, and 2.5 puts their contribution at nothing. A
-                  playthrough you cannot legally attempt on the game you wanted
-                  is worth more attention than the size of the cap.
+                  playthrough you cannot attempt on the game you wanted is
+                  worth more attention than the size of the cap.
                 </p>
               </div>
               <p>{WAGERING_AFTER[1]}</p>
