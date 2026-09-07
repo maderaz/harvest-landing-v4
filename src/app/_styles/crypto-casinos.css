@@ -170,6 +170,11 @@
 .cc-table .hub-row {
   grid-template-columns: 30px minmax(0, 1.35fr) minmax(0, 1fr) minmax(0, 1.05fr) 150px;
   align-items: start;
+  /* The badge strip is a second grid row, and the 24px gap globals.css sets
+     between columns opened a hole above it. Columns keep the gap; the rows
+     are spaced by the strip's own margin. */
+  column-gap: 24px;
+  row-gap: 0;
 }
 /* globals.css hides .hub-table cells nth-child(4), (5) and (6) below 1100px:
    generic rules for the vault tables, which drop Type/TVL there. This table
@@ -213,12 +218,17 @@
   line-height: 1.45;
   color: var(--uni-ink-3);
 }
-/* The venue's own words, marked as chips so they never read as our finding. */
-.cc-chips {
-  display: flex;
+/* The venue's own words, marked as chips so they never read as our finding.
+   A strip at the foot of the row, spanning from the Casino column across:
+   stacked under the venue name a long label wrapped and broke the row into
+   an uneven block. */
+.cc-table .hub-row .cc-chips {
+  grid-column: 2 / -1;
+  display: flex !important;
   flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 6px;
+  align-items: center;
+  gap: 5px;
+  margin-top: 12px;
 }
 .cc-chip {
   padding: 2px 7px;
@@ -228,9 +238,7 @@
   font-weight: 600;
   line-height: 1.5;
   color: var(--uni-ink-3);
-  /* Not nowrap. "Advertised instant withdrawal" is wider than the column,
-     and a nowrap chip ran under the offer beside it. */
-  overflow-wrap: anywhere;
+  white-space: nowrap;
 }
 
 /* The offer column. One figure, then what else the banner includes. The
@@ -330,17 +338,18 @@
    name says nothing about what opening it gets you. */
 .cc-details-btn {
   width: 100%;
-  padding: 6px 12px;
-  border: 1px solid var(--rp-card-border, #dedee6);
-  border-radius: 999px;
-  background: transparent;
+  padding: 4px 0 0;
+  border: 0;
+  background: none;
   font-family: inherit;
   font-size: 12.5px;
   font-weight: 600;
-  color: var(--uni-ink-2);
+  color: var(--uni-ink-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
 }
-.cc-details-btn:hover { border-color: var(--uni-ink); color: var(--uni-ink); }
+.cc-details-btn:hover { color: var(--uni-ink); }
 
 /* ---- offer-type filters ------------------------------------------------ */
 .cc-types {
@@ -625,27 +634,36 @@
   .cc-count { margin-left: 0; }
 }
 
-/* Phone: one card per venue, stacked in the order the questions come, with
-   the primary button full width inside it. No sideways scroll and no dropped
-   column, because every one of the four carries something a reader is
-   deciding on. */
+/* Phone: one card per venue. The rank sits on the same line as the wordmark
+   and the brand name, at a size worth reading; everything after it takes a
+   full line of its own, with the primary button full width. Flex rather than
+   block, so one DOM serves both layouts and the order is set here. */
 @media (max-width: 720px) {
   .cc-table { min-width: 0; }
   .cc-table .hub-thead { display: none !important; }
   .cc-table .hub-row {
-    display: block !important;
-    padding: 14px 12px;
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    column-gap: 10px;
+    padding: 16px 12px;
   }
   .cc-table .hub-row .hub-rank {
-    display: inline-block !important;
-    margin-bottom: 6px;
-    font-size: 12px;
+    order: 1;
+    flex: 0 0 auto;
+    min-width: 18px;
+    padding-top: 6px;
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.1;
     color: var(--uni-ink-3);
   }
-  .cc-table .hub-row .cc-venue { margin-bottom: 10px; }
-  .cc-table .hub-row .cc-offer { margin-bottom: 10px; }
-  .cc-table .hub-row .cc-keys { margin-bottom: 12px; }
-  .cc-table .hub-row .hub-cell.cc-keys { text-align: left; }
+  .cc-table .hub-row .cc-venue { order: 2; flex: 1 1 180px; }
+  .cc-table .hub-row .cc-chips { order: 3; flex: 0 0 100%; margin-top: 10px; }
+  .cc-table .hub-row .cc-offer { order: 4; flex: 0 0 100%; margin-top: 12px; }
+  .cc-table .hub-row .cc-keys { order: 5; flex: 0 0 100%; margin-top: 10px; }
+  .cc-table .hub-row .cc-action { order: 6; flex: 0 0 100%; margin-top: 14px; }
   .cc-chip { font-size: 10px; padding: 2px 6px; }
   .cc-page .uni-home-content a.cc-open,
   .cc-open { padding: 7px 11px; font-size: 12.5px; }
@@ -657,6 +675,7 @@
     font-size: 12.5px;
     letter-spacing: 0.05em;
   }
+  .cc-details-btn { padding-top: 8px; }
   .cc-detail { padding: 4px 12px 18px; }
 }
 

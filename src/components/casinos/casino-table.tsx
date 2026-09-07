@@ -18,7 +18,7 @@ import {
   LEAVE_SITE_BODY,
   OFFERS,
   OFFER_FILTERS,
-  ROW_NOTES,
+  rowNote,
   keyDetails,
   offerKinds,
   type OfferKind,
@@ -128,7 +128,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
             const headline = offer?.headline ?? fallbackHeadline(c);
             const support = offer?.support ?? c.bonusClaim;
             const details = keyDetails(c);
-            const note = ROW_NOTES[c.slug];
+            const note = rowNote(c);
             const badges = BADGES.filter((b) => c.claimed[b.key]).slice(0, BADGE_LIMIT);
             const logo = CASINO_LOGOS[c.slug];
             const isOpen = open === c.slug;
@@ -156,15 +156,6 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                       {offer ? (
                         <span className="cc-summary">{offer.summary}</span>
                       ) : null}
-                      {badges.length > 0 && (
-                        <span className="cc-chips">
-                          {badges.map((b) => (
-                            <span key={b.key} className="cc-chip">
-                              {b.label}
-                            </span>
-                          ))}
-                        </span>
-                      )}
                     </span>
                   </span>
 
@@ -218,6 +209,19 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                       {isOpen ? "Hide details" : "Offer details"}
                     </button>
                   </span>
+
+                  {/* One line at the foot of the row rather than two chips
+                      stacked under the venue name, which broke the row into
+                      an uneven block wherever a label was long. */}
+                  {badges.length > 0 && (
+                    <span className="hub-cell cc-chips">
+                      {badges.map((b) => (
+                        <span key={b.key} className="cc-chip">
+                          {b.label}
+                        </span>
+                      ))}
+                    </span>
+                  )}
                 </div>
 
                 {isOpen && <OfferDetails c={c} id={`cc-d-${c.slug}`} />}
@@ -290,10 +294,13 @@ function OfferDetails({ c, id }: { c: Casino; id: string }) {
       )}
 
       <Block title="Operator and sources">
+        {c.operator ? <p>Operating company: {c.operator}.</p> : null}
         <p>
           {v.licence
             ? `Licence: ${v.licence.authority}${v.licence.number ? ` · ${v.licence.number}` : ""}.`
-            : "No operating company or licence number has been confirmed for this venue yet."}
+            : c.operator
+              ? "No gambling licence number has been confirmed for this venue yet."
+              : "No operating company or licence number has been confirmed for this venue yet."}
         </p>
         <Src src={c.sources?.licence} />
         {v.chains?.length ? <p>Coins accepted: {v.chains.join(", ")}.</p> : null}

@@ -262,9 +262,20 @@ export const OFFERS: Record<string, OfferCopy> = {
  * "Operator not identified" chip wherever a licence was unread, which put the
  * same badge on fourteen of sixteen rows and turned a finding into wallpaper.
  */
-export const ROW_NOTES: Record<string, string> = {
+const ROW_NOTES: Record<string, string> = {
   "lucky-rollers": "Operator and licence details remain unverified.",
 };
+
+/**
+ * The one operator fact worth carrying in the row.
+ *
+ * Named where the terms name a company, unverified where a review looked and
+ * found none. Both are findings; neither is generated from an empty field.
+ */
+export function rowNote(c: Casino): string | null {
+  if (ROW_NOTES[c.slug]) return ROW_NOTES[c.slug];
+  return c.operator ? `Operated by ${c.operator}.` : null;
+}
 
 /** The two or three facts printed beside the offer, in ordinary text. */
 export function keyDetails(c: Casino): string[] {
