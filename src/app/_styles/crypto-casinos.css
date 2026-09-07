@@ -366,78 +366,107 @@
 }
 
 /* ---- expanded row -----------------------------------------------------
-   A grid of short blocks rather than one 900px column. Each answers one
-   question, so each gets a card and the eye can pick the one it wants. */
+   Two tables, side by side: the offer on the left, who is behind it and how
+   money moves on the right. Every fact is a label opposite a value, so a
+   reader scanning two venues for one number has a column to scan. */
 .cc-detail {
-  padding: 18px 16px 16px;
+  padding: 18px 16px 14px;
   background: var(--cc-inset);
 }
-.cc-blocks {
+.cc-panels {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 12px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
 }
-.cc-block {
+.cc-panel {
+  border: 1px solid var(--rp-card-border, #eeeef5);
+  border-radius: 14px;
+  background: var(--uni-bg, #fff);
+  overflow: hidden;
+}
+.cc-page .cc-panel-head {
+  margin: 0 !important;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rp-card-border, #eeeef5);
+  font-size: 13.5px !important;
+  font-weight: 700;
+  color: var(--uni-ink) !important;
+}
+.cc-panel-rows { margin: 0; padding: 0 16px; }
+.cc-panel-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px 20px;
+  padding: 11px 0;
+  border-top: 1px solid var(--rp-card-border, #f2f2f7);
+}
+.cc-panel-row:first-child { border-top: 0; }
+.cc-panel-row dt {
+  flex: 0 1 auto;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--uni-ink-3);
+}
+.cc-panel-row dd {
+  flex: 1 1 auto;
+  margin: 0;
+  min-width: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  font-weight: 650;
+  text-align: right;
+  color: var(--uni-ink);
+  font-feature-settings: "tnum";
+}
+/* A value too long to sit opposite its label takes the line under it, at
+   normal weight: a sentence set bold and right-aligned is unreadable. */
+.cc-panel-row.is-wide {
+  display: block;
+  padding: 12px 0;
+}
+.cc-panel-row.is-wide dd {
+  margin-top: 4px;
+  text-align: left;
+  font-weight: 400;
+  color: var(--uni-ink-2);
+}
+
+/* Where a value was read, and when. Under it, and never in the value's
+   weight or colour. */
+.cc-page .cc-detail-src {
+  display: block;
+  margin-top: 3px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  font-weight: 400;
+  color: var(--uni-ink-3);
+  /* Short enough to hold one line at the value's width. The sentence it
+     replaced wrapped to three right-ragged lines under a two-line label. */
+  white-space: nowrap;
+}
+.cc-panel-row.is-wide .cc-detail-src { white-space: normal; }
+.cc-page .uni-home-content .cc-detail-src a { color: inherit; }
+
+/* The prose the tables cannot hold: a clause worth quoting, and the
+   operator's own marketing line. Full measure, under both. */
+.cc-notes {
+  margin-top: 14px;
   padding: 14px 16px 12px;
   border: 1px solid var(--rp-card-border, #eeeef5);
   border-radius: 14px;
   background: var(--uni-bg, #fff);
 }
-.cc-detail-h {
-  margin: 0 0 8px !important;
-  font-size: 11px !important;
-  font-weight: 700;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--uni-ink-3) !important;
-}
-.cc-page .cc-block p {
-  margin: 0 0 6px;
+.cc-page .cc-notes p {
+  margin: 0 0 8px;
   font-size: 13.5px;
   line-height: 1.6;
   color: var(--uni-ink-2);
 }
-.cc-page .cc-block p:last-child { margin-bottom: 0; }
-.cc-page .cc-block strong { color: var(--uni-ink); font-weight: 650; }
+.cc-page .cc-notes p:last-child { margin-bottom: 0; }
+.cc-page .cc-notes strong { color: var(--uni-ink); font-weight: 650; }
 
-/* The operator's own bullets, with markers. They were rendering as an
-   indented run of lines that read as broken list styling. */
-.cc-page .cc-claimlist {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  display: grid;
-  gap: 6px;
-}
-.cc-page .cc-claimlist li {
-  position: relative;
-  padding-left: 15px;
-  font-size: 13.5px;
-  line-height: 1.55;
-  color: var(--uni-ink-2);
-}
-.cc-page .cc-claimlist li::before {
-  content: "";
-  position: absolute;
-  left: 2px;
-  top: 0.62em;
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--uni-gold, #ffb936);
-}
-
-/* Where a value was read, and when. Under the value, never beside it. */
-.cc-page .cc-detail-src {
-  margin: 8px 0 0 !important;
-  font-size: 11.5px !important;
-  line-height: 1.5 !important;
-  color: var(--uni-ink-3) !important;
-}
-.cc-page .uni-home-content .cc-detail-src a { color: inherit; }
-
-/* One line for the whole expansion, not one per block. */
+/* One line for the whole expansion, not one per table. */
 .cc-page .cc-detail-foot {
   margin: 12px 0 0 !important;
   font-size: 11.5px !important;
@@ -696,8 +725,8 @@
   }
   .cc-details-btn { padding-top: 8px; }
   .cc-detail { padding: 14px 12px 12px; }
-  .cc-blocks { grid-template-columns: minmax(0, 1fr); gap: 10px; }
-  .cc-block { padding: 12px 14px 10px; }
+  .cc-panels { gap: 10px; }
+  .cc-panel-rows { padding: 0 14px; }
 }
 
 /* The "nothing is verified yet" state. Says so in the reader's line of sight
@@ -803,12 +832,29 @@
   letter-spacing: 0;
 }
 
-/* h3 inside a section, for the sub-blocks in Bonuses and Getting started. */
+/* h3 inside a section.
+   18px semibold against 16px body was barely a step, so a subhead read as a
+   bolder sentence instead of as a way into the block under it. The display
+   face, more size and more air above than below tie it to what follows. */
 .cc-page .uni-home-content h3 {
-  margin: 28px 0 12px;
-  font-size: 18px;
-  line-height: 1.35;
+  margin: 34px 0 10px;
+  font-family: var(--display, var(--sans));
+  font-size: 22px;
+  line-height: 1.28;
+  font-weight: 700;
+  letter-spacing: -0.015em;
   color: var(--uni-ink);
+}
+/* Inside a review the subheads are the reader's entry points and there are
+   four of them, so they get a rule above to separate the blocks outright. */
+.cc-page .cc-review-body h3 {
+  margin-top: 32px;
+  padding-top: 22px;
+  border-top: 1px solid var(--rp-card-border, #eeeef5);
+}
+.cc-page .cc-review-body h3:first-of-type { border-top: 0; padding-top: 0; }
+@media (max-width: 640px) {
+  .cc-page .uni-home-content h3 { font-size: 19px; margin-top: 28px; }
 }
 
 /* The payments table. Two columns, and the second one is a sentence, so the
@@ -959,4 +1005,58 @@
   width: 100%;
   height: auto;
   max-width: 100%;
+}
+
+/* ---- header image and summary ------------------------------------------
+   Same shape /xrp-rich-list uses: the image carries the headline, and the
+   six bullets under it carry every figure the image asserts. */
+.cc-page .cc-figure {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 26px 0 0;
+  border-radius: var(--uni-radius, 20px);
+}
+.cc-page .cc-summary-h {
+  margin: 30px 0 0;
+  font-family: var(--display);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--uni-ink);
+}
+/* Gold markers: the summary is the block most likely to be read and nothing
+   else, so it carries the page's accent rather than the neutral marker the
+   other lists use. */
+.cc-page .cc-keyfind {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 13px;
+}
+.cc-page .cc-keyfind li {
+  position: relative;
+  padding-left: 24px;
+  font-size: 16px;
+  line-height: 25px;
+  color: var(--uni-ink-2);
+}
+.cc-page .cc-keyfind li strong { color: var(--uni-ink); font-weight: 700; }
+.cc-page .cc-keyfind li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--uni-gold, #ffb936);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--uni-gold, #ffb936) 22%, transparent);
+}
+@media (max-width: 640px) {
+  .cc-page .cc-figure { margin-top: 20px; border-radius: 14px; }
+  .cc-page .cc-summary-h { font-size: 17px; line-height: 23px; }
+  .cc-page .cc-keyfind li { font-size: 15px; line-height: 23px; padding-left: 20px; }
 }

@@ -33,9 +33,15 @@ export const spellOut = (n: number, cap = false) => {
 
 /* ---- the blocks above the table -------------------------------------- */
 
-/** The lead under the H1. The count is derived, so it cannot go stale. */
+/**
+ * The line under the H1, in the dateline position /xrp-rich-list uses.
+ *
+ * One sentence. The summary bullets under the image carry the substance now,
+ * and a paragraph between the headline and the image said the same things
+ * twice.
+ */
 export const LEAD = (ranked: number) =>
-  `We’ve compared welcome bonuses, cashback and rakeback from ${ranked} crypto casinos. Browse the offers below, then use the wagering comparison and calculator to see how the terms affect the bonus you’re considering.`;
+  `Welcome bonuses, cashback and rakeback from ${ranked} crypto casinos, ranked by the size of the offer.`;
 
 /** The byline strip under the lead. */
 export const BYLINE = (ranked: number) => `${ranked} casinos compared`;
@@ -89,6 +95,110 @@ export const HARVEST_RISK =
 /** Printed directly above the ranking. */
 export const SORT_RULE =
   "Offers with dollar caps appear first, highest to lowest. Offers capped in BTC or ETH follow, ordered by their advertised match percentage. Percentage-only rewards appear last. Offer descriptions and feature labels reflect each operator’s published claims.";
+
+/* ---- the summary, under the header image ------------------------------ */
+
+export interface SummaryPoint {
+  /** The figure, pulled out so the eye lands on it. */
+  lead: string;
+  /** The rest of the sentence. */
+  rest: string;
+}
+
+/**
+ * What a reader gets in six lines, every figure derived.
+ *
+ * Nothing here is typed by hand. The header image asserts "over $100,000 for
+ * newcomers", and the first bullet is the arithmetic behind that claim rather
+ * than a restatement of it: a reader who wants to check the number can add the
+ * comparison table up.
+ */
+export function summaryPoints(casinos: Casino[]): SummaryPoint[] {
+  const out: SummaryPoint[] = [];
+
+  const capped = casinos
+    .filter((c) => offerKinds(c).includes("welcome") && capOf(c) != null)
+    .map((c) => ({ c, cap: capOf(c) as number }))
+    .sort((a, b) => b.cap - a.cap);
+
+  if (capped.length > 0) {
+    out.push({
+      lead: money(capped.reduce((a, x) => a + x.cap, 0)),
+      rest: `of advertised welcome bonuses across ${casinos.length} tracked crypto casinos.`,
+    });
+    const top = capped[0];
+    out.push({
+      lead: OFFERS[top.c.slug]?.headline ?? money(top.cap),
+      rest: `is the largest single offer, at ${top.c.name}.`,
+    });
+  }
+
+  const instant = casinos.filter((c) => c.claimed.instantWithdrawal).length;
+  if (instant > 0) {
+    out.push({
+      lead: `${spellOut(instant, true)} crypto casinos`,
+      rest: "advertise instant withdrawals.",
+    });
+  }
+
+  const noKyc = casinos.filter((c) => c.claimed.noKyc).length;
+  if (noKyc > 0) {
+    out.push({ lead: spellOut(noKyc, true), rest: "advertise no KYC." });
+  }
+
+  const played = casinos
+    .filter((c) => (c.verified.wagering ?? 0) > 0)
+    .map((c) => c.verified.wagering as number)
+    .sort((a, b) => a - b);
+  if (played.length > 1) {
+    out.push({
+      lead: `${played[0]}× to ${played[played.length - 1]}×`,
+      rest: "playthroughs, priced for every offer in the comparison below.",
+    });
+  }
+
+  // The coins the most venues take, so the line names what a reader is likely
+  // to already hold instead of listing thirteen tickers.
+  const tally = new Map<string, number>();
+  for (const c of casinos) {
+    for (const coin of c.verified.chains ?? []) {
+      tally.set(coin, (tally.get(coin) ?? 0) + 1);
+    }
+  }
+  // Seven coins tie on venue count, so alphabetical order decided the line
+  // and it opened on LTC. Ties break toward what this audience actually
+  // holds; anything outside the list still sorts alphabetically.
+  const PREFERRED = ["BTC", "ETH", "USDT", "USDC", "SOL", "LTC"];
+  const rank = (coin: string) => {
+    const i = PREFERRED.indexOf(coin);
+    return i === -1 ? PREFERRED.length : i;
+  };
+  const common = [...tally.entries()]
+    .sort(
+      (a, b) => b[1] - a[1] || rank(a[0]) - rank(b[0]) || a[0].localeCompare(b[0]),
+    )
+    .slice(0, 4)
+    .map(([coin]) => coin);
+  if (common.length === 4) {
+    out.push({
+      lead: "Get started",
+      rest: `with ${common.slice(0, 3).join(", ")}, ${common[3]} and more.`,
+    });
+  }
+
+  return out;
+}
+
+/**
+ * The combined figure, rounded down to a thousand, for the title and the
+ * description. Both read off the same sum the first summary bullet prints, so
+ * a search result and the page cannot disagree about it.
+ */
+export function bonusTotalUsd(casinos: Casino[]): number {
+  return casinos
+    .filter((c) => offerKinds(c).includes("welcome"))
+    .reduce((a, c) => a + (capOf(c) ?? 0), 0);
+}
 
 /* ---- the wagering section and the calculator -------------------------- */
 
@@ -291,8 +401,19 @@ export function keyDetails(c: Casino): string[] {
   } else if (wr != null) {
     out.push(`${wr}× wagering`);
   }
-  if (c.minDeposit) out.push(`${c.minDeposit} minimum deposit`);
-  return out.slice(0, 3);
+  if (c.minDeposit) out.push(`${c.minDeposit} minimum crypto deposit`);
+  // Payout currencies and lobby categories only where a source carries them.
+  // Fifteen rows reading "See payout details" would be the wallpaper the
+  // research disclaimer already had to be taken off the row for.
+  if (c.verified.payoutCoins?.length) {
+    // A count, not the first four of thirteen. A truncated list reads as the
+    // whole answer and is not one.
+    out.push(`Payouts in ${c.verified.payoutCoins.length} coins`);
+  }
+  if (c.verified.gameTypes?.length) {
+    out.push(c.verified.gameTypes.slice(0, 3).join(" · "));
+  }
+  return out.slice(0, 4);
 }
 
 /** Which of the four filters a row belongs to. */
@@ -543,6 +664,52 @@ export const BONUS_TERMS_INTRO =
 export const BONUS_TERMS_CLOSE =
   "Consider these terms together when comparing offers. The bonus that fits your intended deposit, preferred games and planned playing time deserves a closer look than the headline amount alone can provide.";
 
+/* ---- what is in the lobby --------------------------------------------- */
+
+/**
+ * Game categories, explained once for the page.
+ *
+ * At page level, not per venue: which of these a given casino actually runs
+ * is a question for its lobby, and nothing here has been read off one. The
+ * per-venue field exists and stays empty until it has.
+ */
+export const GAMES_INTRO =
+  "Crypto casino lobbies bring together familiar games such as slots, blackjack and roulette with formats such as Crash, Mines and Plinko. The mix varies by operator, so the games available can be as useful a comparison point as the welcome offer.";
+
+export const GAME_TYPES: { type: string; body: string }[] = [
+  { type: "Slots", body: "Reel-based games with features such as free spins, multipliers and bonus rounds." },
+  { type: "Live casino", body: "Games hosted by live dealers, including versions of blackjack, roulette and baccarat." },
+  { type: "Table games", body: "Software-based versions of casino classics, with rules and betting limits that vary by title." },
+  { type: "Crash games", body: "Multiplier games in which a payout depends on cashing out before the round ends." },
+  { type: "Mines, Plinko and Dice", body: "Formats built around grid selections, falling-ball outcomes or numerical results. Operators may group these under “Originals” or “Instant games.”" },
+  { type: "Jackpot games", body: "Titles with an additional jackpot prize, which may be fixed or progressive." },
+];
+
+export const GAMES_CLOSE =
+  "A game appearing in the lobby tells you it is available to play. Its eligibility for a particular bonus is a separate condition: some games count fully toward wagering, some contribute less, and others are excluded.";
+
+/** The formats above are documented; availability at a venue is not. */
+export const GAME_SOURCES: { label: string; url: string }[] = [
+  { label: "Pragmatic Play’s game categories", url: "https://www.pragmaticplay.com/en/games/" },
+  { label: "Stake’s game documentation", url: "https://stake.com/provably-fair/game-events" },
+];
+
+/* ---- what a bonus looks like, worked ---------------------------------- */
+
+export const BONUS_EXAMPLES_INTRO =
+  "A deposit match, free spins and cashback reward different kinds of qualifying activity. These examples show how the arithmetic works; the amounts are illustrations, not offers from a particular casino.";
+
+export const BONUS_EXAMPLES: { type: string; example: string }[] = [
+  { type: "Deposit match", example: "A 100% match on a qualifying $100 deposit adds $100 in bonus funds." },
+  { type: "Free spins", example: "Twenty free spins at $0.10 per spin provide $2 in spin stakes. Any winnings depend on the results and the promotion’s terms." },
+  { type: "Cashback", example: "An offer paying 10% of eligible net losses would award $20 on $200 of qualifying losses." },
+  { type: "Rakeback", example: "An offer returning 20% of eligible rake would award $2 on a $10 rake amount." },
+  { type: "Reload bonus", example: "A 50% match on a qualifying $100 deposit from an existing player adds $50 in bonus funds." },
+];
+
+export const BONUS_EXAMPLES_CLOSE =
+  "The reward’s calculation and its withdrawal conditions are separate parts of the offer. Cashback may carry wagering requirements, and rakeback can use an operator-defined calculation base. The offer details explain which rules apply.";
+
 /* ---- availability ------------------------------------------------------ */
 
 /**
@@ -695,6 +862,8 @@ export interface VenueReview {
   sections: { h: string; body: string[] }[];
   /** The venue's own terms page, linked beside the outbound button. */
   termsUrl: string;
+  /** What that link says. */
+  termsLabel?: string;
   /** Said once, at the foot, in a full sentence. */
   scope: (readOn: string) => string;
 }
@@ -709,60 +878,61 @@ export interface VenueReview {
  */
 export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   slug: "lucky-rollers",
-  title: "Lucky Rollers review: welcome bonus, cashback and crypto payments",
+  title: "Lucky Rollers review: welcome bonus, cashback and crypto payouts",
   image: {
     src: "https://i.imgur.com/I3FQeji.png",
     alt: "Lucky Rollers",
   },
   intro:
-    "Lucky Rollers combines a deposit-match welcome bonus with free spins, a free bet and weekly cashback. We read its published terms and promotion pages to work out what each part of the package is worth and what it costs to clear.",
+    "Lucky Rollers combines a welcome package advertised at up to 30,000 USDT with weekly cashback and a choice of crypto payout currencies. The welcome bonus and cashback have different wagering conditions, so it helps to consider each reward separately.",
   features: [
-    {
-      label: "Welcome bonus",
-      value:
-        "100% match up to 30,000 USDT, plus 100 free spins and a free bet",
-    },
-    { label: "Bonus wagering", value: "40×" },
-    { label: "Minimum deposit", value: "5 USDT" },
-    {
-      label: "Crypto payments",
-      value: "13 currencies, including BTC, ETH, USDT, USDC, XRP and SOL",
-    },
+    { label: "Welcome offer", value: "Up to 30,000 USDT, plus 100 free spins and a free bet" },
+    { label: "Deposit match", value: "100%, as advertised" },
+    { label: "Welcome-bonus wagering", value: "40×" },
     {
       label: "Weekly cashback",
-      value: "Paid on Mondays, with no additional wagering requirement",
+      value: "Paid on Mondays, with no additional wagering on the credited cashback",
     },
+    { label: "Minimum crypto deposit", value: "5 USDT" },
+    {
+      label: "Crypto payouts",
+      value: "BTC, ETH, USDT, USDC, XRP and SOL among the listed currencies",
+    },
+    { label: "Withdrawal processing", value: "Advertised as instant" },
   ],
   sections: [
     {
-      h: "What the welcome bonus is worth",
+      h: "How the welcome bonus works",
       body: [
-        "The advertised 100% match makes the bonus equal to your qualifying deposit until the cap is reached. Receiving the full 30,000 USDT bonus would therefore require a qualifying deposit of 30,000 USDT. For a smaller deposit, compare the bonus you would actually receive with the wagering conditions attached to it.",
-        "At 40×, a bonus of 100 USDT carries 4,000 USDT of qualifying bets, and the full 30,000 USDT cap carries 1.2M USDT. The terms publish the multiplier but not the base it applies to, so those figures assume it applies to the bonus alone. If the deposit is included, each is roughly double.",
+        "A 100% match adds one unit of bonus funds for each qualifying unit deposited, up to the applicable cap. For example, a qualifying 100 USDT deposit at that rate would receive 100 USDT in bonus funds.",
+        "The advertised 40× wagering requirement determines how much qualifying play is needed to clear the bonus. Applied to a 100 USDT bonus alone, that would mean 4,000 USDT in qualifying bets. If the requirement includes the deposit as well, the same example would involve 8,000 USDT. The wagering basis remains an outstanding detail in our review.",
+        "The cashier’s 5 USDT minimum describes the amount needed to fund an account. Bonus eligibility can have a separate deposit threshold, so these amounts should be considered individually.",
       ],
     },
     {
-      h: "How the cashback differs from the bonus",
+      h: "What weekly cashback adds",
       body: [
-        "The weekly cashback is credited on Mondays with no additional wagering attached, which makes it the withdrawable part of the package and the welcome bonus the part that has to be played through. The rate, the activity it is calculated on and any payout cap are not published in the pages read here, so how much it comes to is not something we can state.",
+        "Lucky Rollers’ published cashback information describes Monday payments with no additional wagering requirement on the credited reward. That gives the cashback a different structure from the welcome bonus, which carries the advertised 40× requirement.",
+        "The amount received depends on the promotion’s calculation rules. Its percentage, qualifying activity and payout cap are the remaining details needed to put a value on this part of the offer.",
       ],
     },
     {
-      h: "Payments and withdrawals",
+      h: "Crypto payouts and withdrawal processing",
       body: [
-        "Thirteen currencies are listed for deposits and withdrawals, including BTC, ETH, USDT, USDC, XRP and SOL, and the minimum deposit is 5 USDT. Payouts are described as instant and no identity documents are advertised at standard withdrawal levels.",
-        "Both of those are the operator’s own descriptions. We have not deposited or withdrawn, so this review documents the claim and not the behaviour.",
+        "The listed payout currencies include Bitcoin, Ethereum, USDT, USDC, XRP and Solana. This gives players a choice between dollar-linked stablecoins and other crypto assets when withdrawing an eligible balance.",
+        "Lucky Rollers advertises instant withdrawals. Our review records that published claim; we have not completed a withdrawal test. Approval requirements and settlement on the selected network can affect when funds reach your wallet.",
       ],
     },
     {
-      h: "Our view",
+      h: "Harvest’s assessment",
       body: [
-        "The offer is the best documented on this page: the cap, the multiplier, the minimum deposit and the cashback schedule are all published in plain terms, which is more than most of the sixteen manage.",
-        "The operator is not documented at all. We could not establish the operating company or the licence from the terms and promotion pages reviewed, which leaves nobody to name in a complaint and no regulator to take it to. We would want those details confirmed before recommending Lucky Rollers.",
+        "The welcome package offers several rewards, while the weekly cashback has a simpler published wagering condition. For comparing the welcome bonus, the most useful next detail is the exact basis of its 40× requirement.",
+        "We could not establish the operating company or licence from the pages reviewed. We would want those details confirmed before recommending Lucky Rollers.",
       ],
     },
   ],
   termsUrl: "https://luckyrollers.io/terms-and-conditions",
+  termsLabel: "Read the published terms",
   scope: (readOn) =>
     `Review scope: Published terms and promotion information dated ${readOn}. This review covers the advertised offer; hands-on gameplay and withdrawal testing are outside its scope.`,
 };
