@@ -14,7 +14,15 @@ export interface TocItem {
   level?: number; // 0 = section, 1 = sub-section
 }
 
-export function ReportToc({ items }: { items: TocItem[] }) {
+export function ReportToc({
+  items,
+  label = "In this report",
+}: {
+  items: TocItem[];
+  /** The rail's heading. /report/* pages keep the default; a comparison page
+   *  is not a report and says so. */
+  label?: string;
+}) {
   const [active, setActive] = useState<string>(items[0]?.id ?? "");
 
   useEffect(() => {
@@ -53,8 +61,8 @@ export function ReportToc({ items }: { items: TocItem[] }) {
   }, [items]);
 
   return (
-    <nav className="rp-toc-tree" aria-label="In this report">
-      <p className="rp-toc-tree-head">In this report</p>
+    <nav className="rp-toc-tree" aria-label={label}>
+      <p className="rp-toc-tree-head">{label}</p>
       <ul>
         {items.map((it) => (
           <li

@@ -15,17 +15,16 @@ import { WageringCalculator } from "@/components/casinos/wagering-calculator";
 import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
 import type { Casino } from "@/lib/crypto-casinos";
 import {
-  BONUS_STAGES,
   AVAILABILITY,
+  BASIS_LABEL,
   BONUS_TERMS,
-  BONUS_TERMS_CLOSE,
   BONUS_TERMS_INTRO,
   BYLINE,
   CHOOSING,
   CHOOSING_CLOSE,
   CHOOSING_INTRO,
   CALC_INTRO,
-  CALC_NOTE,
+  DISCLOSURE,
   DISCLOSURE_SHORT,
   APY_NOTE,
   HARVEST_INTRO,
@@ -52,6 +51,7 @@ import {
   SORT_RULE,
   WAGERING_AFTER,
   WAGERING_INTRO,
+  amount,
   money,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
@@ -235,6 +235,8 @@ export function CasinosBody({
   // a reader meeting its name in the turnover table or the calculator has
   // nowhere to go with it.
   const turnover = turnoverRows(ranked);
+  // Deposit matches only, for the comparison and the calculator presets.
+  const wagering = turnover.filter((r) => !r.cashback);
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -303,36 +305,39 @@ export function CasinosBody({
               {WAGERING_INTRO.map((p) => (
                 <p key={p.slice(0, 24)}>{p}</p>
               ))}
+              {/* Deposit-match offers only. A cashback cap is not a bonus
+                  you wager down, and printing Hyper Lucky's $10,000 with
+                  "Nothing" to wager put a cashback rate in a deposit-bonus
+                  comparison as if the two were the same product. */}
               <div className="rp-dtable-wrap">
                 <table className="rp-dtable">
                   <thead>
                     <tr>
-                      <th>Venue</th>
-                      <th className="num">Advertised</th>
-                      <th className="num">Playthrough</th>
-                      <th className="num">You must wager</th>
-                      <th className="num">Min deposit</th>
+                      <th>Casino</th>
+                      <th className="num">Bonus amount compared</th>
+                      <th className="num">Wagering requirement</th>
+                      <th className="num">Calculated wagering</th>
+                      <th className="num">Minimum qualifying deposit</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {turnover.map((r) => (
+                    {wagering.map((r) => (
                       <tr key={r.slug}>
                         <td className="strong">{r.name}</td>
-                        <td className="num">{money(r.cap)}</td>
-                        {/* The basis is printed whenever it is not the
-                            headline cap, otherwise the row's arithmetic does
-                            not work in front of the reader: a ladder offer
-                            advertises a running total while its playthrough
-                            applies to one leg of it. */}
                         <td className="num">
-                          {r.wagering === 0
-                            ? "None"
-                            : r.basis !== r.cap
-                              ? `${r.wagering}x on ${money(r.basis)}`
-                              : `${r.wagering}x`}
+                          {amount(r.cap, r.unit)}
+                          {r.stageOne != null ? (
+                            <span className="cc-basis">
+                              package total across its stages
+                            </span>
+                          ) : null}
                         </td>
-                        <td className="num">{r.turnover === 0 ? "Nothing" : money(r.turnover)}</td>
-                        <td className="num">{r.minDeposit ?? "Not stated"}</td>
+                        <td className="num">{r.wagering}×</td>
+                        <td className="num">
+                          {amount(r.turnover, r.unit)}
+                          <span className="cc-basis">{BASIS_LABEL[r.basis]}</span>
+                        </td>
+                        <td className="num">{r.minDeposit ?? "Not published"}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -345,25 +350,6 @@ export function CasinosBody({
                   the row prints "Up to $1,000 per deposit" against "350%
                   across the first three deposits" and the reader can see it.
                   What is left is the part no template writes. */}
-              <div className="rp-tip">
-                <div className="rp-callout-head">
-                  <span className="rp-callout-ico" aria-hidden="true">!</span>
-                  <span className="rp-callout-title">A bonus is not clearable on every game</span>
-                </div>
-                <p className="rp-tip-body">
-                  Wild.io&rsquo;s bonus terms 2.4:{" "}
-                  <q cite="https://wild.io/bonus-terms">
-                    Wagering can only be done in Slots. Jackpot Games,
-                    Accumulator/Progressive Games, Table Games, Live Games,
-                    Sportsbook, or any other games can not be used to wager the
-                    bonus or while the bonus is active
-                  </q>
-                  . Table games are not discounted to 20% here, they are barred
-                  outright, and 2.5 puts their contribution at nothing. A
-                  playthrough you cannot attempt on the game you wanted is
-                  worth more attention than the size of the cap.
-                </p>
-              </div>
               <p>{WAGERING_AFTER[1]}</p>
             </Section>
 
@@ -374,26 +360,48 @@ export function CasinosBody({
                   multiplies is one leg of a ladder offer rather than the
                   banner total, so the preset carries which stage it is. */}
               <WageringCalculator
-                presets={turnover
-                  .filter((r) => !r.cashback)
-                  .map((r) => ({
-                    slug: r.slug,
-                    name: r.name,
-                    bonus: r.basis,
-                    wagering: r.wagering,
-                    stage: BONUS_STAGES[r.slug] ?? null,
-                  }))}
+                presets={wagering.map((r) => ({
+                  slug: r.slug,
+                  name: r.name,
+                  // The stage a reader is actually offered on deposit one,
+                  // where the compared figure is a package total.
+                  bonus: r.stageOne ?? r.basisUsd,
+                  wagering: r.wagering,
+                  stage: r.stageOne != null ? "First-deposit bonus" : null,
+                }))}
               />
-              <p className="rp-fineprint">{CALC_NOTE}</p>
             </Section>
 
             {/* Starts after the withdrawal has landed. Everything above this
                 point is about money still inside a casino account, and none
                 of it applies until the balance has left one. */}
+            {VENUE_REVIEWS.map((r) => (
+              <Section
+                key={r.slug}
+                id="reviews"
+                eyebrow="Casino review"
+                title={r.title}
+              >
+                <VenueReviewBody
+                  review={r}
+                  casino={ranked.find((c) => c.slug === r.slug)}
+                  readOn={UPDATED}
+                />
+              </Section>
+            ))}
+
+            {/* Four sections became one.
+                The side-by-side table repeated the bonus, the playthrough and
+                the minimum deposit the ranking already carries, and counted
+                coins, which tells a reader nothing about whether their coin is
+                accepted. Its one useful column, the published withdrawal time,
+                is in each row's key details and expansion. What a crypto
+                casino is, and how provably fair works, are FAQ answers. What
+                is left is the question the page could not otherwise answer:
+                how to get money in and out without losing it. */}
             <Section id="bonuses" eyebrow="Bonus terms" title="What to check in a crypto casino bonus">
               <p>{BONUS_TERMS_INTRO}</p>
               <NamedList items={BONUS_TERMS} />
-              <p>{BONUS_TERMS_CLOSE}</p>
             </Section>
 
             <Section
@@ -456,30 +464,6 @@ export function CasinosBody({
               </p>
             </Section>
 
-            {VENUE_REVIEWS.map((r) => (
-              <Section
-                key={r.slug}
-                id="reviews"
-                eyebrow="Casino review"
-                title={r.title}
-              >
-                <VenueReviewBody
-                  review={r}
-                  casino={ranked.find((c) => c.slug === r.slug)}
-                  readOn={UPDATED}
-                />
-              </Section>
-            ))}
-
-            {/* Four sections became one.
-                The side-by-side table repeated the bonus, the playthrough and
-                the minimum deposit the ranking already carries, and counted
-                coins, which tells a reader nothing about whether their coin is
-                accepted. Its one useful column, the published withdrawal time,
-                is in each row's key details and expansion. What a crypto
-                casino is, and how provably fair works, are FAQ answers. What
-                is left is the question the page could not otherwise answer:
-                how to get money in and out without losing it. */}
             <Section id="payments" eyebrow="Crypto payments" title="Choosing a coin for deposits and withdrawals">
               {PAYMENTS_INTRO.map((para) => (
                 <p key={para.slice(0, 24)}>{para}</p>
@@ -507,9 +491,7 @@ export function CasinosBody({
                 <p key={para.slice(0, 24)}>{para}</p>
               ))}
               <h3>Understanding withdrawal times</h3>
-              {WITHDRAWAL_TIMES.map((para) => (
-                <p key={para.slice(0, 24)}>{para}</p>
-              ))}
+              <p>{WITHDRAWAL_TIMES[0]}</p>
               <p className="rp-fineprint">
                 Read on {UPDATED} from{" "}
                 {PAYMENT_SOURCES.map((src, i) => (
@@ -540,8 +522,8 @@ export function CasinosBody({
               <p>{CHOOSING_CLOSE}</p>
               <p className="rp-fineprint">
                 A public register carries more than a footer badge does. The UK
-                Gambling Commission&rsquo;s lists licence status, trading names
-                and domains:{" "}
+                Gambling Commission&rsquo;s register lists licence status,
+                trading names and domains:{" "}
                 <a href={REGISTER_SOURCE.url} rel="nofollow noopener noreferrer" target="_blank">
                   {REGISTER_SOURCE.label}
                 </a>
@@ -587,8 +569,7 @@ export function CasinosBody({
                     </a>
                   </span>
                 ))}
-                . What a given exclusion covers depends on the scheme, so check
-                it for the one you use.
+                .
               </p>
             </Section>
 
@@ -606,33 +587,14 @@ export function CasinosBody({
               </div>
             </Section>
 
-            <Section id="disclosure" eyebrow="Disclosure" title="How this page is funded and how it is built">
+            <Section id="disclosure" eyebrow="Disclosure" title="Our research and commercial links">
+              {DISCLOSURE.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
               <p>
-                Links to the venues on this page are commercial. What that pays
-                for is the link, never a position: see{" "}
-                <a href="#faq">Does Harvest get paid?</a> for the long answer.
-              </p>
-              <p>
-                <strong>Where the numbers come from.</strong> Every figure in
-                the checked column is read off a venue&rsquo;s own terms page
-                or its regulator, and carries the date it was read. Where a
-                venue has not been read, the row says so instead of guessing.
-                Playthrough, minimum deposit and payout windows are quoted from
-                the published terms and not estimated.
-              </p>
-              <p>
-                <strong>Who is responsible for this page.</strong> It is
-                researched and edited by the Harvest research team, which also
-                writes the yield rankings elsewhere on this site. Every checked
-                figure carries the page it was read from and the date, in the
-                expanded row. If a figure here is wrong or out of date, tell us
-                and we will correct it and re-date the row.
-              </p>
-              <p>
-                Terms change without notice, and a date is the only claim this
-                page makes about how current a row is. Nothing here is a
-                recommendation to gamble or financial advice. For what Harvest
-                otherwise does, see the{" "}
+                If a figure here is wrong or out of date,{" "}
+                <Link href="/contact">tell us</Link> and we will correct it and
+                re-date the offer. For what Harvest otherwise does, see the{" "}
                 <Link href="/methodology">methodology</Link> behind the yield
                 rankings and the <Link href="/risk-framework">risk framework</Link>.
               </p>
@@ -640,7 +602,7 @@ export function CasinosBody({
           </div>
 
           <aside className="rp-doc-aside" aria-label="On this page">
-            <ReportToc items={tocItems(ranked.length)} />
+            <ReportToc items={tocItems(ranked.length)} label="On this page" />
           </aside>
         </div>
       </main>

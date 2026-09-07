@@ -26,7 +26,6 @@ const GAMES = [
   { label: "Baccarat", edge: 1.06, contrib: 20 },
   { label: "European roulette", edge: 2.7, contrib: 20 },
   { label: "American roulette", edge: 5.26, contrib: 20 },
-  { label: "Video poker", edge: 2, contrib: 20 },
 ];
 
 /** The game a venue's own terms name as the only eligible one. */
@@ -379,9 +378,16 @@ export function WageringCalculator({ presets = [] }: { presets?: CalcPreset[] })
                   ? ` ${shown.game} counts ${shown.contrib}%, so completing it takes ${money(res.volume)} of bets.`
                   : ""}
               </p>
+              {/* One explanation, not two saying the same thing. It also
+                  says what the figure is not: an estimated wagering cost is
+                  not the net value of taking the bonus, and completing the
+                  requirement is an assumption rather than an outcome. */}
               <p className="cc-calc-foot">
-                Based on completing the full wagering requirement with the
-                assumptions shown.
+                This estimate applies the selected house edge to the betting
+                volume needed to complete wagering. It assumes you finish the
+                requirement using the settings shown. Your balance may run out
+                earlier, and the result does not calculate the bonus&rsquo;s
+                overall net value.
               </p>
           </>
         )}

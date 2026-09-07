@@ -78,6 +78,21 @@ export interface CasinoVerified {
    */
   wageringBasisUsd?: number | null;
   /**
+   * The first deposit's ceiling, where the cap above is a package total.
+   * The calculator loads this and labels it, because a preset carrying the
+   * package total would price a playthrough nobody is asked for in one go.
+   */
+  stageOneUsd?: number | null;
+  /**
+   * What the playthrough multiplies, as the terms state it.
+   *
+   * "bonus-unconfirmed" is the honest third value: Lucky Rollers publishes 40x
+   * without saying whether it applies to the bonus alone or to the deposit
+   * with it, so the page computes on the bonus and labels the assumption
+   * instead of presenting one reading as the fact.
+   */
+  wageringBasis?: "bonus" | "deposit-and-bonus" | "bonus-unconfirmed" | null;
+  /**
    * What a search of the public complaint boards turned up.
    *
    * null is "not searched" and is a different claim from "searched, nothing

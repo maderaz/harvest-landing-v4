@@ -154,7 +154,7 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                     <span className="cc-venue-txt">
                       <span className="cc-name">{c.name}</span>
                       {offer ? (
-                        <span className="cc-summary">{offer.summary}</span>
+                        <span className="cc-summary">{offer.type}</span>
                       ) : null}
                     </span>
                   </span>
@@ -191,7 +191,15 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                         // rest. See dealStatus in the data.
                         keepHref
                         platform={c.name}
-                        source="crypto-casinos-row"
+                        // Affiliate rows and plain-domain rows are separate
+                        // events. With only some deals signed, total Play Now
+                        // clicks can rise without a single attributed one, and
+                        // one number would hide that.
+                        source={
+                          c.dealStatus === "live"
+                            ? "crypto-casinos-row-affiliate"
+                            : "crypto-casinos-row-plain"
+                        }
                         rank={i + 1}
                         ariaLabel={`Play Now at ${c.name}`}
                         body={LEAVE_SITE_BODY(c.name)}
@@ -257,7 +265,7 @@ function OfferDetails({ c, id }: { c: Casino; id: string }) {
     <div className="cc-detail" id={id}>
       {(offer || c.claims.length > 0) && (
         <Block title="How the offer works">
-          {offer ? <p>{offer.summary}. {offer.support}.</p> : null}
+          {offer ? <p>{offer.headline}. {offer.support}.</p> : null}
           {c.claims.length > 0 && (
             <ul className="cc-claimlist">
               {c.claims.map((t) => (
@@ -287,27 +295,44 @@ function OfferDetails({ c, id }: { c: Casino; id: string }) {
 
       {v.withdrawal && (
         <Block title="Withdrawal">
-          <p>Published payout window: {v.withdrawal}.</p>
+          <p>Published withdrawal time: {v.withdrawal}.</p>
+          {/* The badge beside the row is the operator's own wording. Where the
+              published figure disagrees with it, the row leads with the figure
+              and the disagreement is explained here rather than left for a
+              reader to spot. */}
+          {c.claimed.instantWithdrawal && v.withdrawal !== "instant" ? (
+            <p>
+              {c.name} also advertises instant withdrawals. Where an operator
+              advertises one thing and publishes another, the published figure
+              is the one on the row.
+            </p>
+          ) : null}
           {v.kyc ? <p>Identity checks: {KYC_LABEL[v.kyc]}.</p> : null}
           <Src src={c.sources?.withdrawal} />
         </Block>
       )}
 
-      <Block title="Operator and sources">
-        {c.operator ? <p>Operating company: {c.operator}.</p> : null}
+      <Block title="Operator and licence">
         <p>
+          <strong>Operating company.</strong>{" "}
+          {c.operator ?? "Not named in the pages read here."}
+        </p>
+        <p>
+          <strong>Licence.</strong>{" "}
           {v.licence
-            ? `Licence: ${v.licence.authority}${v.licence.number ? ` · ${v.licence.number}` : ""}.`
-            : c.operator
-              ? "No gambling licence number has been confirmed for this venue yet."
-              : "No operating company or licence number has been confirmed for this venue yet."}
+            ? `${v.licence.authority}${v.licence.number ? `, ${v.licence.number}` : ""}`
+            : "Not confirmed."}
         </p>
         <Src src={c.sources?.licence} />
         {v.chains?.length ? <p>Coins accepted: {v.chains.join(", ")}.</p> : null}
         {v.complaints ? <p>Complaints: {COMPLAINT_LABEL[v.complaints]}.</p> : null}
-        {c.lastChecked ? (
-          <p className="cc-detail-src">Terms last read {c.lastChecked}.</p>
-        ) : null}
+        {/* Said once, here, instead of on the row. A venue nobody has read
+            yet is a fact about our coverage, not a property of its offer. */}
+        <p className="cc-detail-src">
+          {c.lastChecked
+            ? `Terms last read ${c.lastChecked}.`
+            : "The terms behind this offer have not been read yet, so everything above is the operator’s own wording."}
+        </p>
       </Block>
     </div>
   );

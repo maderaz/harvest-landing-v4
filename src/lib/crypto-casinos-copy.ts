@@ -35,7 +35,7 @@ export const spellOut = (n: number, cap = false) => {
 
 /** The lead under the H1. The count is derived, so it cannot go stale. */
 export const LEAD = (ranked: number) =>
-  `We’ve compared the advertised offers from ${ranked} crypto casinos to help you narrow down your options. Browse welcome bonuses, cashback, and rakeback side by side, then take a closer look at the offers that interest you. Our selected casino reviews explain the key terms, and the wagering calculator helps you work out how much play a bonus requires before you commit to a deposit.`;
+  `We’ve compared welcome bonuses, cashback and rakeback from ${ranked} crypto casinos. Browse the offers below, then use the wagering comparison and calculator to see how the terms affect the bonus you’re considering.`;
 
 /** The byline strip under the lead. */
 export const BYLINE = (ranked: number) => `${ranked} casinos compared`;
@@ -71,8 +71,7 @@ export const LEAVE_SITE_BODY = (name: string) =>
  * left one, which is the only moment any of it applies.
  */
 export const HARVEST_INTRO = [
-  "Once your casino withdrawal reaches your wallet, you can explore other ways to use those funds. If you’re interested in earning yield on stablecoins, Harvest helps you compare USDC and USDT strategies across DeFi, with rates, networks and strategy details in one place.",
-  "You can explore how each strategy earns its yield, how its rate has changed over time and what to expect when depositing or withdrawing. That gives you a fuller picture when deciding where to put your funds.",
+  "Once your casino withdrawal reaches your wallet, Harvest compares USDC and USDT strategies across DeFi in one place: how each earns its yield, how its rate has moved, and what to expect on the way in and out.",
 ];
 
 /** What the table is a selection of. The floor is a criterion, not a badge. */
@@ -89,7 +88,7 @@ export const HARVEST_RISK =
 
 /** Printed directly above the ranking. */
 export const SORT_RULE =
-  "Offers with dollar caps appear first, highest to lowest. Crypto-denominated offers are followed by an advertised match percentage, with percentage-only rewards at the end. Offer descriptions and feature labels reflect each operator’s published claims.";
+  "Offers with dollar caps appear first, highest to lowest. Offers capped in BTC or ETH follow, ordered by their advertised match percentage. Percentage-only rewards appear last. Offer descriptions and feature labels reflect each operator’s published claims.";
 
 /* ---- the wagering section and the calculator -------------------------- */
 
@@ -108,10 +107,6 @@ export const WAGERING_AFTER = [
 /** Above the calculator. */
 export const CALC_INTRO =
   "Choose a casino offer or enter your own bonus amount to see how the wagering adds up. The calculator shows the total betting volume required and estimates the cost to complete it based on the game assumptions below. Try different amounts and settings to get a clearer picture of the offer you’re considering.";
-
-/** The one explanatory note under the calculator. */
-export const CALC_NOTE =
-  "The estimate combines total wagering with the assumed house edge and game contribution, assuming you complete the full requirement. Your actual results will vary, and each casino’s bonus terms determine which games qualify.";
 
 /**
  * Offers advertised as a running total across several deposits.
@@ -151,105 +146,113 @@ export const OFFER_FILTERS: { key: OfferKind | "all"; label: string }[] = [
  */
 export interface OfferCopy {
   kinds: OfferKind[];
-  summary: string;
+  /** What kind of offer this is. One label, not a restatement of the package. */
+  type: string;
   headline: string;
+  /** What the banner includes. Never repeats the headline figure. */
   support: string | null;
 }
 
 export const OFFERS: Record<string, OfferCopy> = {
   "lucky-rollers": {
     kinds: ["welcome", "cashback"],
-    summary: "Deposit match with spins and a free bet",
+    type: "Welcome bonus",
     headline: "Up to 30,000 USDT",
     support: "100% match, 100 free spins and one free bet",
   },
   "betpanda-io": {
     kinds: ["welcome", "cashback"],
-    summary: "Deposit match capped in bitcoin, with weekly cashback",
+    type: "Welcome bonus",
     headline: "Up to 1 BTC",
-    support: "100% match and 10% weekly cashback",
+    support: "100% match, with 10% weekly cashback",
   },
   "coin-casino": {
     kinds: ["welcome"],
-    summary: "200% deposit match",
+    type: "Welcome bonus",
     headline: "Up to $30,000",
-    support: "The bonus scales with the qualifying deposit",
+    support: "200% match on the qualifying deposit",
   },
   "hyper-lucky": {
     kinds: ["cashback"],
-    summary: "Daily cashback with free spins",
+    type: "Cashback",
     headline: "20% daily cashback",
     support: "Advertised up to $10,000, with 100 free spins",
   },
   casinopunkz: {
     kinds: ["welcome", "cashback"],
-    summary: "Welcome bonus with cashback",
+    type: "Welcome bonus",
     headline: "Up to 20,000 USDT",
     support: "Advertised alongside 15% cashback",
   },
   thrill: {
     kinds: ["rakeback", "cashback"],
-    summary: "Rakeback and cashback, with no deposit match advertised",
+    type: "Rakeback",
     headline: "Up to 70% rakeback",
-    support: "Advertised alongside 10% cashback",
+    // What the 70% is calculated on is not published in anything read here,
+    // and a rate with no base is not a figure a reader can use.
+    support: "Advertised alongside 10% cashback. The rate’s basis is not published",
   },
   "bc-game": {
     kinds: ["welcome"],
-    summary: "Welcome package across four deposits",
+    type: "Welcome package",
     headline: "Up to $4,000",
-    support: "Four match bonuses and 400 free spins",
+    support: "Four match bonuses across four deposits, with 400 free spins",
   },
   "wild-io": {
     kinds: ["welcome", "cashback"],
-    summary: "Welcome package across three deposits",
-    headline: "Up to $1,000 per deposit",
-    support: "350% across the first three deposits, with 200 free spins",
+    type: "Welcome package",
+    // Corrected. The row carried the first deposit's $1,000 ceiling as if it
+    // were the offer. Three stages cap at $1,000, $1,000 and $3,000, so the
+    // package maximum is $5,000 and no single deposit reaches it.
+    headline: "Up to $5,000",
+    support:
+      "350% across three deposits, capped at $1,000, $1,000 and $3,000, with 200 free spins",
   },
   cybet: {
     kinds: ["welcome"],
-    summary: "Deposit match with free spins",
+    type: "Welcome bonus",
     headline: "Up to $1,000",
     support: "100% match and 50 free spins",
   },
   "betplay-io": {
     kinds: ["welcome", "cashback", "rakeback"],
-    summary: "Deposit match in USDT",
+    type: "Welcome bonus",
     headline: "Up to 5,000 USDT",
     support: "100% match",
   },
   "lucky-block": {
     kinds: ["welcome"],
-    summary: "200% deposit match with free spins",
+    type: "Welcome bonus",
     headline: "Up to $25,000",
     support: "200% match and 50 free spins",
   },
   betninja: {
     kinds: ["welcome"],
-    summary: "Deposit match with free spins",
+    type: "Welcome bonus",
     headline: "Up to $2,500",
     support: "100% match and 100 free spins",
   },
   betfury: {
     kinds: ["welcome"],
-    summary: "Deposit match with free spins",
+    type: "Welcome bonus",
     headline: "Up to $10,500",
     support: "590% advertised match and 225 free spins",
   },
   "7bit-casino": {
     kinds: ["welcome", "cashback"],
-    summary: "Welcome bonus with free spins",
+    type: "Welcome bonus",
     headline: "Up to $5,400",
     support: "325% advertised match and 250 free spins",
   },
   "golden-panda": {
     kinds: ["welcome"],
-    summary: "200% welcome package with free spins",
+    type: "Welcome package",
     headline: "Up to $5,000",
     support: "200% match and 50 free spins",
   },
   "wsm-casino": {
     kinds: ["welcome", "cashback"],
-    summary: "200% deposit match with free spins",
+    type: "Welcome bonus",
     headline: "Up to $25,000",
     support: "200% match and 50 free spins",
   },
@@ -273,23 +276,38 @@ const ROW_NOTES: Record<string, string> = {
  * found none. Both are findings; neither is generated from an empty field.
  */
 export function rowNote(c: Casino): string | null {
-  if (ROW_NOTES[c.slug]) return ROW_NOTES[c.slug];
-  return c.operator ? `Operated by ${c.operator}.` : null;
+  return ROW_NOTES[c.slug] ?? null;
 }
 
-/** The two or three facts printed beside the offer, in ordinary text. */
+/**
+ * The terms printed beside the offer, in ordinary text.
+ *
+ * Published figures only. The row used to fall back to "Wagering and deposit
+ * terms not yet read", which appeared on nine of sixteen rows and recreated
+ * the wallpaper the operator chip had already been demoted for. What has not
+ * been read is said once, inside the expansion, where it belongs.
+ *
+ * The published withdrawal time leads where there is one, because it is the
+ * figure an advertised claim most often contradicts.
+ */
 export function keyDetails(c: Casino): string[] {
   const out: string[] = [];
-  const wr = c.verified.wagering;
-  if (wr === 0) out.push("No wagering requirement");
-  else if (wr != null) out.push(`${wr}× wagering`);
-  if (c.minDeposit) out.push(`${c.minDeposit} minimum deposit`);
-  if (out.length < 3 && c.verified.withdrawal) {
+  if (c.verified.withdrawal) {
     out.push(`Published withdrawal time: ${c.verified.withdrawal}`);
   }
-  // An empty cell in a four-column row reads as a broken page. One plain
-  // sentence, said where a reader is looking for the terms.
-  if (out.length === 0) return ["Wagering and deposit terms not yet read"];
+  const wr = c.verified.wagering;
+  if (wr === 0) {
+    // Scoped, not global: Hyper Lucky's zero is the cashback's, and free
+    // spins credited alongside it carry their own terms.
+    out.push(
+      offerKinds(c).includes("cashback") && !offerKinds(c).includes("welcome")
+        ? "No wagering on the cashback, as advertised"
+        : "No wagering requirement",
+    );
+  } else if (wr != null) {
+    out.push(`${wr}× wagering`);
+  }
+  if (c.minDeposit) out.push(`${c.minDeposit} minimum deposit`);
   return out.slice(0, 3);
 }
 
@@ -312,19 +330,24 @@ export interface TurnoverRow {
   /** The advertised headline cap, as the ranking prints it. */
   cap: number;
   /**
-   * What the playthrough actually multiplies. Equal to cap for every venue
-   * whose offer is a single match, and smaller where the headline is a
-   * running total across deposits.
+   * What the playthrough actually multiplies, in dollars. Equal to cap for
+   * every venue whose offer is a single match.
    */
-  basis: number;
+  basisUsd: number;
   wagering: number;
   turnover: number;
   minDeposit: string | null;
   note: string | null;
   /** True where the figure the row is ranked on is a cashback or rakeback
-   *  rate. It belongs in the turnover table and not in a deposit-bonus
-   *  preset, because there is no deposit match to model. */
+   *  rate. Neither the deposit-bonus table nor a calculator preset can model
+   *  one, because there is no deposit match underneath it. */
   cashback: boolean;
+  /** The unit the venue advertises the cap in, so a USDT offer stays USDT. */
+  unit: "USD" | "USDT";
+  /** What the multiplier is applied to, and whether the terms say so. */
+  basis: "bonus" | "deposit-and-bonus" | "bonus-unconfirmed";
+  /** The first deposit's ceiling, where the cap is a package total. */
+  stageOne: number | null;
 }
 
 /**
@@ -346,6 +369,25 @@ function cashbackHeadline(c: Casino): boolean {
   return seg != null && /\b(cash\s?back|rake\s?back)\b/i.test(seg);
 }
 
+/** How a calculated wagering total was arrived at, said beside the figure. */
+export const BASIS_LABEL: Record<TurnoverRow["basis"], string> = {
+  bonus: "on bonus funds, per the terms",
+  "deposit-and-bonus": "on deposit plus bonus, per the terms",
+  "bonus-unconfirmed": "on bonus funds; the terms do not state the basis",
+};
+
+/**
+ * An amount in the unit the venue advertises it in.
+ *
+ * Full digits, never the $1.8M shorthand: this is a comparison column, and
+ * one abbreviated figure beside four written out is harder to scan, not
+ * easier.
+ */
+export const amount = (n: number, unit: "USD" | "USDT") => {
+  const digits = n.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  return unit === "USDT" ? `${digits} USDT` : `$${digits}`;
+};
+
 /** Venues where both halves of the sum are known. Sorted by what they ask. */
 export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
   return casinos
@@ -358,12 +400,20 @@ export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
         slug: c.slug,
         name: c.name,
         cap,
-        basis: c.verified.wageringBasisUsd ?? cap,
+        basisUsd: c.verified.wageringBasisUsd ?? cap,
         wagering: wr,
         turnover: t,
         minDeposit: c.minDeposit ?? null,
         note: c.termsNote ?? null,
         cashback: cashbackHeadline(c),
+        // USDT is treated as a dollar for ordering, and printed as USDT here,
+        // because that is the unit the reader will be credited in.
+        unit:
+          c.verified.capUsd == null && /USDT/i.test(c.bonusClaim ?? "")
+            ? "USDT"
+            : "USD",
+        basis: c.verified.wageringBasis ?? "bonus-unconfirmed",
+        stageOne: c.verified.stageOneUsd ?? null,
       };
     })
     .filter((r): r is TurnoverRow => r != null)
@@ -608,11 +658,27 @@ export const FAQS: { q: string; a: string }[] = [
   { q: "Why does a bonus with a high wagering requirement cost money?", a: "A playthrough requirement obliges a multiple of the bonus to be wagered before any of it can be withdrawn, and every one of those wagers meets the game's house edge, so the turnover has an expected cost. A 200% bonus at 60x playthrough can be worth less than a 50% bonus at 20x once that cost is priced, which is what the calculator on this page works out." },
   { q: "Which crypto casinos do not require KYC?", a: "Some venues take no identity documents at sign-up and ask only above a withdrawal threshold; others ask for nothing at all. The policy is the operator's choice and it changes without notice, which is why each row here records the threshold and the date the terms were read. A venue advertising no KYC can still request documents on a large withdrawal." },
   { q: "What happens if I send crypto on the wrong network?", a: "The funds are usually gone. USDT exists as a separate token on Ethereum, Tron, BSC, Solana and Polygon, and sending the Ethereum version to a Tron address puts it somewhere neither you nor the casino can reach. Check the network on both sides before confirming, every time." },
-  { q: "How is this page ranked?", a: "By advertised welcome-bonus size, dollar caps first. That is a rule about advertising and not about which venue is safer or cheaper to clear. The Evidence column is separate: it counts how much of a venue we have read off its own terms, and it never moves a row. Venues without a wordmark are not listed at all." },
-  { q: "Does Harvest get paid?", a: "Yes, potentially. Harvest may earn a commission if you register through a link on this page. That payment does not change the sort order, which is fixed to the advertised bonus size by the rule printed above the table, and it does not change the Evidence column, which counts terms we have read. No venue has paid for a position here." },
+  { q: "How is this page ranked?", a: "By advertised welcome-bonus size, dollar caps first, then offers capped in BTC or ETH ordered by their advertised match percentage, with percentage-only rewards last. That is a rule about the advertising and not about which casino is safer or cheaper to clear. What we have read off each operator\u2019s own terms is shown in its offer details, and it never moves a row." },
+  { q: "Does Harvest get paid?", a: "Yes, potentially. Harvest may earn a commission when you register through a Play Now link. That payment does not change the sort order, which follows the rule printed above the comparison, and it does not change what we record from an operator\u2019s published terms. No casino has paid for its position here." },
   { q: "What is a good wagering requirement?", a: "The multiplier alone does not settle it. What matters alongside it is whether the playthrough applies to the bonus or to the deposit plus the bonus, which games count and at what rate, and how long you have. A 20x requirement on a base that includes your deposit, clearable only on slots, can oblige more turnover than a 40x on the bonus alone." },
 ];
 
+
+/* ---- disclosure -------------------------------------------------------- */
+
+/**
+ * What this page is and who pays for it.
+ *
+ * The version this replaces was written against an accusation. It explained
+ * that a commission "pays for the link, never a position", referred to a
+ * checked column the table no longer has, and closed on a date being the only
+ * claim the page makes. Stating the scope plainly does the same work.
+ */
+export const DISCLOSURE = [
+  "Harvest compares published casino offers and reviews the supporting terms where available. Source links and review dates appear in the offer details. Withdrawal times and feature descriptions reflect operators’ published information. This comparison covers offer research; we have not tested gameplay or withdrawals.",
+  "The wagering totals and calculator estimates are our calculations, with their assumptions shown alongside the results. Offers can change, so refer to the source date when assessing how recently a detail was reviewed.",
+  "Harvest may earn a commission when you register through a Play Now link. Our commercial relationship is disclosed above the comparison.",
+];
 
 /* ---- the reviews ------------------------------------------------------ */
 
@@ -652,7 +718,7 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   slug: "lucky-rollers",
   title: "Lucky Rollers review: welcome bonus, cashback and crypto payments",
   intro:
-    "Lucky Rollers combines a deposit-match welcome bonus with free spins, a free bet and weekly cashback. That gives you a few different parts of the offer to compare, especially if you’re interested in recurring rewards alongside the initial deposit bonus. We’ve looked at the published terms to explain how the package fits together.",
+    "Lucky Rollers combines a deposit-match welcome bonus with free spins, a free bet and weekly cashback. We read its published terms and promotion pages to work out what each part of the package is worth and what it costs to clear.",
   features: [
     {
       label: "Welcome bonus",
@@ -672,31 +738,30 @@ export const LUCKY_ROLLERS_REVIEW: VenueReview = {
   ],
   sections: [
     {
-      h: "How the welcome bonus works",
+      h: "What the welcome bonus is worth",
       body: [
-        "The 100% match means the bonus follows the size of your qualifying deposit, up to the advertised limit. When comparing this offer, start with the amount you expect to receive: the minimum deposit gives you an entry point, while reaching the headline cap requires a much larger deposit.",
-        "The next detail to consider is the 40× wagering requirement. For example, a 100 USDT bonus under a bonus-only 40× requirement would involve 4,000 USDT in qualifying bets. The applicable terms should establish whether wagering covers the bonus alone or the deposit as well, which games contribute and the deadline for completion.",
+        "The advertised 100% match makes the bonus equal to your qualifying deposit until the cap is reached. Receiving the full 30,000 USDT bonus would therefore require a qualifying deposit of 30,000 USDT. For a smaller deposit, compare the bonus you would actually receive with the wagering conditions attached to it.",
+        "At 40×, a bonus of 100 USDT carries 4,000 USDT of qualifying bets, and the full 30,000 USDT cap carries 1.2M USDT. The terms publish the multiplier but not the base it applies to, so those figures assume it applies to the bonus alone. If the deposit is included, each is roughly double.",
       ],
     },
     {
-      h: "What the weekly cashback adds",
+      h: "How the cashback differs from the bonus",
       body: [
-        "Weekly cashback is a separate part of the offer worth examining. According to the published promotion information, it is paid on Mondays without an additional wagering requirement attached to the credited cashback.",
-        "To judge its value, look at the qualifying activity, the cashback percentage and any payout cap. These details determine how much the reward could amount to for your own play.",
+        "The weekly cashback is credited on Mondays with no additional wagering attached, which makes it the withdrawable part of the package and the welcome bonus the part that has to be played through. The rate, the activity it is calculated on and any payout cap are not published in the pages read here, so how much it comes to is not something we can state.",
       ],
     },
     {
-      h: "Crypto payments and withdrawals",
+      h: "Payments and withdrawals",
       body: [
-        "Lucky Rollers lists 13 supported cryptocurrencies, giving you several payment options to compare. Before transferring funds, check that the cashier supports both your chosen asset and the network you intend to use.",
-        "The operator advertises instant withdrawals and document-free withdrawals at standard levels. Review the verification conditions for your intended withdrawal amount, as those conditions matter when assessing how the advertised payout process would apply to you.",
+        "Thirteen currencies are listed for deposits and withdrawals, including BTC, ETH, USDT, USDC, XRP and SOL, and the minimum deposit is 5 USDT. Payouts are described as instant and no identity documents are advertised at standard withdrawal levels.",
+        "Both of those are the operator’s own descriptions. We have not deposited or withdrawn, so this review documents the claim and not the behaviour.",
       ],
     },
     {
       h: "Our view",
       body: [
-        "Weekly cashback is the part of this offer we would examine alongside the welcome package. Its published terms describe a reward without additional wagering, while the deposit bonus carries a 40× requirement.",
-        "Our assessment also has an important outstanding point: we could not establish the operating company or licence from the terms and promotion pages reviewed. We would want those details confirmed before including Lucky Rollers among Harvest’s recommended casinos.",
+        "The offer is the best documented on this page: the cap, the multiplier, the minimum deposit and the cashback schedule are all published in plain terms, which is more than most of the sixteen manage.",
+        "The operator is not documented at all. We could not establish the operating company or the licence from the terms and promotion pages reviewed, which leaves nobody to name in a complaint and no regulator to take it to. We would want those details confirmed before recommending Lucky Rollers.",
       ],
     },
   ],
