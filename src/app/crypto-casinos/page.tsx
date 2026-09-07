@@ -1,7 +1,9 @@
+import { statSync } from "node:fs";
+import { join } from "node:path";
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
-import { FAQS, rankLabel } from "@/lib/crypto-casinos-copy";
+import { FAQS } from "@/lib/crypto-casinos-copy";
 import { CasinosBody } from "@/components/casinos/casinos-body";
 import { getLiveVaults } from "@/lib/data";
 import { LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
@@ -17,19 +19,20 @@ import "../_styles/crypto-casinos.css";
 const PAGE_URL = `${SITE_URL}/crypto-casinos`;
 
 /**
- * The stablecoin strategies Harvest tracks, for the section that says what to
- * do with a balance between sessions.
+ * The USDC strategies behind the Harvest section, read at build time.
  *
- * Two filters, and both matter. The low-liquidity floor is the site's own
- * threshold: the raw top of this list today is 53.41% on $106 of deposits, and
- * publishing that as an opportunity would be the same overclaim this page
- * spends its length arguing against. zkSync is excluded for the reason given
- * in usdc-hub.
+ * USDC alone, because the sentence above the table describes a USDC selection
+ * and the two have to agree. Two filters beyond that: the site's own
+ * low-liquidity floor, since the raw top of this list is a rate on a few
+ * hundred dollars of deposits and publishing that as an opportunity would be
+ * the overclaim this page spends its length arguing against, and the zkSync
+ * exclusion documented in usdc-hub.
  *
  * Returns empty when the feed is unreadable, and the section renders without a
- * table rather than inventing one.
+ * table instead of inventing one.
  */
 export interface HarvestRow {
+  slug: string;
   asset: string;
   name: string;
   chain: string;
@@ -43,16 +46,17 @@ async function harvestStables(): Promise<HarvestRow[]> {
     return vaults
       .filter(
         (v) =>
-          (v.asset === "USDC" || v.asset === "USDT") &&
+          v.asset === "USDC" &&
           v.tvl >= LOW_LIQUIDITY_TVL_THRESHOLD &&
           v.chain !== "zkSync",
       )
       .sort((a, b) => b.apy24h - a.apy24h)
       .slice(0, 6)
       .map((v) => ({
+        slug: v.slug,
         asset: v.asset,
-        // productName leads with the asset, and the row prints that as a tag
-        // beside it, so "USDC Alpha Prime V2 USDC" without this.
+        // productName leads with the asset, and the row prints that in its own
+        // column, so "USDC Alpha Prime V2" and not "USDC USDC Alpha Prime V2".
         name: v.productName.replace(new RegExp(`^${v.asset}\\s+`), ""),
         chain: v.chain,
         apy: v.apy24h,
@@ -60,6 +64,24 @@ async function harvestStables(): Promise<HarvestRow[]> {
       }));
   } catch {
     return [];
+  }
+}
+
+/** When the vault feed was last written, for the line under the table. */
+function dataUpdatedAt(): string {
+  try {
+    const mtime = statSync(join(process.cwd(), "data", "vaults.json")).mtime;
+    return mtime.toLocaleString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      timeZone: "UTC",
+      timeZoneName: "short",
+    });
+  } catch {
+    return "";
   }
 }
 
@@ -80,8 +102,8 @@ export function generateMetadata(): Metadata {
   // The count is a property of the data, not a constant: a venue joins the
   // ranking when it has both a wordmark and a link, and the title follows.
   const n = loadCasinos().casinos.filter(isRanked).length;
-  const TITLE = `Crypto Casinos: ${rankLabel(n)} Ranked by Welcome Bonus`;
-  const DESCRIPTION = `The ${n} largest advertised crypto casino welcome bonuses, ranked by the size of the offer, with the playthrough priced so you can see what each one is actually worth.`;
+  const TITLE = `Crypto Casinos: ${n} Bonuses & Offers Compared`;
+  const DESCRIPTION = `Welcome bonuses, cashback and rakeback from ${n} crypto casinos, compared side by side, with a calculator for the wagering each offer requires.`;
   return {
     title: TITLE,
     description: DESCRIPTION,
@@ -89,7 +111,7 @@ export function generateMetadata(): Metadata {
     robots: { index: false, follow: true },
     openGraph: {
       title: TITLE,
-      description: `The ${n} largest advertised crypto casino welcome bonuses, ranked by offer size, with the playthrough priced.`,
+      description: `Welcome bonuses, cashback and rakeback from ${n} crypto casinos, compared side by side.`,
       url: PAGE_URL,
       siteName: SITE_NAME,
       type: "website",
@@ -130,7 +152,7 @@ export default async function CryptoCasinosPage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <CasinosBody harvest={await harvestStables()} />
+      <CasinosBody harvest={await harvestStables()} dataUpdated={dataUpdatedAt()} />
     </>
   );
 }
