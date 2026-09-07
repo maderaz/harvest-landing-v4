@@ -16,9 +16,13 @@ const FIELDS = [
   "licence",
   "kyc",
   "withdrawal",
+  "withdrawalNote",
   "provablyFair",
   "wagering",
+  "wageringDays",
   "chains",
+  "payoutCoins",
+  "gameTypes",
   "games",
   "complaints",
 ];
