@@ -285,7 +285,13 @@ function OfferDetails({ c, id }: { c: Casino; id: string }) {
     });
   }
   if (c.minDeposit) {
-    terms.push({ k: "Qualifying deposit", v: c.minDeposit });
+    // Funding an account and triggering a bonus are two thresholds. Only the
+    // first is published for any venue here; the second gets its own row the
+    // day one of them states it.
+    terms.push({ k: "Minimum crypto deposit", v: c.minDeposit });
+  }
+  if (c.bonusMinDeposit) {
+    terms.push({ k: "Minimum deposit for this bonus", v: c.bonusMinDeposit });
   }
 
   const operator: Row[] = [
@@ -323,11 +329,52 @@ function OfferDetails({ c, id }: { c: Casino; id: string }) {
   if (v.kyc) {
     operator.push({ k: "Identity checks", v: KYC_LABEL[v.kyc], src: c.sources?.kyc });
   }
-  if (v.chains?.length) {
+  // Where the source says the same coins go in and out, one row says so.
+  // Two identical lists under two headings is the page answering one question
+  // twice and looking like it answered two.
+  const sameBothWays =
+    v.chains?.length &&
+    v.payoutCoins?.length &&
+    v.chains.length === v.payoutCoins.length &&
+    v.chains.every((x) => v.payoutCoins?.includes(x));
+  if (sameBothWays && v.chains) {
     operator.push({
-      k: `Coins accepted (${v.chains.length})`,
+      k: `Deposit and payout coins (${v.chains.length})`,
       v: v.chains.join(", "),
-      src: c.sources?.chains,
+      src: c.sources?.payoutCoins ?? c.sources?.chains,
+      wide: true,
+    });
+  } else {
+    if (v.chains?.length) {
+      operator.push({
+        k: `Deposit coins (${v.chains.length})`,
+        v: v.chains.join(", "),
+        src: c.sources?.chains,
+        wide: true,
+      });
+    }
+    // Always present, because "we have not looked" and "it pays out in
+    // nothing" are different answers and only one of them is ours to give.
+    operator.push(
+      v.payoutCoins?.length
+        ? {
+            k: `Crypto payouts (${v.payoutCoins.length})`,
+            v: v.payoutCoins.join(", "),
+            src: c.sources?.payoutCoins,
+            wide: true,
+          }
+        : {
+            k: "Crypto payouts",
+            v: "Withdrawal currencies have not been reviewed for this casino yet. A deposit coin is not automatically a payout coin.",
+            wide: true,
+          },
+    );
+  }
+  if (v.gameTypes?.length) {
+    operator.push({
+      k: "Games",
+      v: v.gameTypes.join(", "),
+      src: c.sources?.gameTypes,
       wide: true,
     });
   }
@@ -341,6 +388,9 @@ function OfferDetails({ c, id }: { c: Casino; id: string }) {
 
   return (
     <div className="cc-detail" id={id}>
+      {/* One column, full width. Two tables side by side halved the measure
+          a label and a value had to share, and left whichever table had fewer
+          rows sitting beside empty space. */}
       <div className="cc-panels">
         <FactTable title="Offer terms" rows={terms} />
         <FactTable title="Operator and payments" rows={operator} />

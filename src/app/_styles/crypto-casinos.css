@@ -375,9 +375,8 @@
 }
 .cc-panels {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 14px;
-  align-items: start;
 }
 .cc-panel {
   border: 1px solid var(--rp-card-border, #eeeef5);
@@ -726,7 +725,7 @@
   }
   .cc-details-btn { padding-top: 8px; }
   .cc-detail { padding: 14px 12px 12px; }
-  .cc-panels { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .cc-panels { gap: 10px; }
   .cc-panel-rows { padding: 0 14px; }
 }
 
@@ -989,4 +988,58 @@
   width: 100%;
   height: auto;
   max-width: 100%;
+}
+
+/* ---- header image and summary ------------------------------------------
+   Same shape /xrp-rich-list uses: the image carries the headline, and the
+   six bullets under it carry every figure the image asserts. */
+.cc-page .cc-figure {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 26px 0 0;
+  border-radius: var(--uni-radius, 20px);
+}
+.cc-page .cc-summary-h {
+  margin: 30px 0 0;
+  font-family: var(--display);
+  font-size: 20px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--uni-ink);
+}
+/* Gold markers: the summary is the block most likely to be read and nothing
+   else, so it carries the page's accent rather than the neutral marker the
+   other lists use. */
+.cc-page .cc-keyfind {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 13px;
+}
+.cc-page .cc-keyfind li {
+  position: relative;
+  padding-left: 24px;
+  font-size: 16px;
+  line-height: 25px;
+  color: var(--uni-ink-2);
+}
+.cc-page .cc-keyfind li strong { color: var(--uni-ink); font-weight: 700; }
+.cc-page .cc-keyfind li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--uni-gold, #ffb936);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--uni-gold, #ffb936) 22%, transparent);
+}
+@media (max-width: 640px) {
+  .cc-page .cc-figure { margin-top: 20px; border-radius: 14px; }
+  .cc-page .cc-summary-h { font-size: 17px; line-height: 23px; }
+  .cc-page .cc-keyfind li { font-size: 15px; line-height: 23px; padding-left: 20px; }
 }

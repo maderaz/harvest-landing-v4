@@ -100,7 +100,24 @@ export interface CasinoVerified {
    * none-found scores nothing rather than scoring well.
    */
   complaints?: ComplaintRecord | null;
+  /** Coins the cashier accepts for deposits. */
   chains: string[] | null;
+  /**
+   * Coins the cashier pays withdrawals in.
+   *
+   * Separate from `chains` on purpose: a venue can take a coin in and not pay
+   * it out, and "13 coins accepted" has been doing duty for both questions.
+   * Set only where the source says out as well as in.
+   */
+  payoutCoins?: string[] | null;
+  /**
+   * The lobby's game categories, from the operator's own published listing.
+   *
+   * Labels are fixed so two venues can be compared: Slots, Live casino, Table
+   * games, Crash, Originals, Jackpots. Unset until confirmed; a category is
+   * not inferred from a bonus clause that happens to name it.
+   */
+  gameTypes?: string[] | null;
   games: number | null;
   restricted: string[] | null;
 }
@@ -139,8 +156,17 @@ export interface Casino {
    * two questions have different answers often enough to keep two fields.
    */
   operator?: string | null;
-  /** As published, in the venue's own unit. Free text because they all differ. */
+  /**
+   * The cashier's minimum, in the venue's own unit. Free text because they
+   * all differ.
+   */
   minDeposit?: string | null;
+  /**
+   * The minimum that qualifies for the welcome offer, where the terms state
+   * one separately. Funding an account and triggering a bonus are two
+   * thresholds, and a venue can publish different figures for them.
+   */
+  bonusMinDeposit?: string | null;
   /** The clause from the bonus terms that a reader would want quoted. */
   termsNote?: string | null;
   lastChecked: string | null;

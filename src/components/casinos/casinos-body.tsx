@@ -5,8 +5,10 @@
 // keeps JSX, and lib/crypto-casinos-copy.ts keeps every figure so the same
 // number cannot differ between a table, a bullet and an FAQ answer.
 
+import Image from "next/image";
 import Link from "next/link";
 import { ReportToc, type TocItem } from "@/components/report/report-toc";
+import casinosHeader from "@/assets/icons/CryptoCasinos-Header.png";
 import type { HarvestRow } from "@/app/crypto-casinos/page";
 import { LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
 import { CasinoTable } from "@/components/casinos/casino-table";
@@ -17,6 +19,9 @@ import type { Casino } from "@/lib/crypto-casinos";
 import {
   AVAILABILITY,
   BASIS_LABEL,
+  BONUS_EXAMPLES,
+  BONUS_EXAMPLES_CLOSE,
+  BONUS_EXAMPLES_INTRO,
   BONUS_TERMS,
   BONUS_TERMS_INTRO,
   BYLINE,
@@ -31,6 +36,10 @@ import {
   HARVEST_RISK,
   HARVEST_SELECTION,
   FAQS,
+  GAMES_CLOSE,
+  GAMES_INTRO,
+  GAME_SOURCES,
+  GAME_TYPES,
   LEAD,
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
@@ -49,6 +58,7 @@ import {
   RG_SUPPORT,
   RG_TOOLS,
   SORT_RULE,
+  summaryPoints,
   WAGERING_AFTER,
   WAGERING_INTRO,
   amount,
@@ -61,13 +71,16 @@ import {
  * its length, and that length is a property of the data rather than of a
  * constant somebody has to remember to update.
  */
+// The rail, in the order the sections actually appear. Kept in step with the
+// DOM by hand, so a section that moves has to move here too.
 export const tocItems = (ranked: number): TocItem[] => [
   { id: "ranking", label: `Compare ${ranked} offers` },
   { id: "turnover", label: "How much to wager" },
   { id: "bonus-calculator", label: "Bonus calculator" },
+  { id: "reviews", label: "Lucky Rollers review" },
+  { id: "games", label: "Games" },
   { id: "bonuses", label: "Bonus terms" },
   { id: "bankroll", label: "Put your crypto to work" },
-  { id: "reviews", label: "Lucky Rollers review" },
   { id: "payments", label: "Crypto payments" },
   { id: "legality", label: "Availability" },
   { id: "choosing", label: "Choosing a casino" },
@@ -223,7 +236,7 @@ function VenueReviewBody({
           </OutboundLink>
         ) : null}
         <a href={review.termsUrl} rel="nofollow noopener noreferrer" target="_blank">
-          Read the casino&rsquo;s terms
+          {review.termsLabel ?? "Read the casino’s terms"}
         </a>
       </p>
       <p className="cc-scope">
@@ -273,6 +286,32 @@ export function CasinosBody({
             <span>{BYLINE(ranked.length)}</span>
             <span>Updated {UPDATED}</span>
           </p>
+          {/* Static import, so Next emits the intrinsic size and the slot
+              reserves its height before the file loads. priority because it
+              is the largest thing above the fold and is what LCP measures
+              here. Inside the head column, not outside it: at the section's
+              full width it ran 1256px against the H1's 780 and the ranking
+              table's 944, overshooting both.
+
+              Empty alt on purpose, the same call /xrp-rich-list makes. The
+              image repeats the headline in pixels and shows wordmarks the
+              summary underneath names in text, so a described alt would read
+              the page twice to anyone using a screen reader. */}
+          <Image
+            src={casinosHeader}
+            alt=""
+            className="cc-figure"
+            sizes="(max-width: 820px) 100vw, 780px"
+            priority
+          />
+          <h2 className="cc-summary-h">Summary</h2>
+          <ul className="cc-keyfind">
+            {summaryPoints(ranked).map((p) => (
+              <li key={p.lead}>
+                <strong>{p.lead}</strong> {p.rest}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -330,7 +369,7 @@ export function CasinosBody({
                       <th className="num">Bonus amount compared</th>
                       <th className="num">Wagering requirement</th>
                       <th className="num">Calculated wagering</th>
-                      <th className="num">Minimum qualifying deposit</th>
+                      <th className="num">Minimum crypto deposit</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -412,9 +451,69 @@ export function CasinosBody({
                 casino is, and how provably fair works, are FAQ answers. What
                 is left is the question the page could not otherwise answer:
                 how to get money in and out without losing it. */}
+            <Section id="games" eyebrow="Games" title="Which games can you play at crypto casinos?">
+              <p>{GAMES_INTRO}</p>
+              <div className="rp-dtable-wrap">
+                <table className="rp-dtable cc-pay">
+                  <thead>
+                    <tr>
+                      <th>Game type</th>
+                      <th>What you&rsquo;ll find</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {GAME_TYPES.map((g) => (
+                      <tr key={g.type}>
+                        <td className="strong">{g.type}</td>
+                        <td>{g.body}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p>{GAMES_CLOSE}</p>
+              {/* The formats are documented. Which of them a given casino
+                  actually runs is a question for its lobby, and no lobby here
+                  has been read, so no row claims a category. */}
+              <p className="rp-fineprint">
+                The categories above follow{" "}
+                {GAME_SOURCES.map((src, i) => (
+                  <span key={src.url}>
+                    {i > 0 ? " and " : ""}
+                    <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+                      {src.label}
+                    </a>
+                  </span>
+                ))}
+                . Availability at any particular casino is a separate check,
+                and none of the {ranked.length} here has had its lobby read.
+              </p>
+            </Section>
+
             <Section id="bonuses" eyebrow="Bonus terms" title="What to check in a crypto casino bonus">
               <p>{BONUS_TERMS_INTRO}</p>
               <NamedList items={BONUS_TERMS} />
+              <h3>What different casino bonuses look like in practice</h3>
+              <p>{BONUS_EXAMPLES_INTRO}</p>
+              <div className="rp-dtable-wrap">
+                <table className="rp-dtable cc-pay">
+                  <thead>
+                    <tr>
+                      <th>Bonus type</th>
+                      <th>Example</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {BONUS_EXAMPLES.map((b) => (
+                      <tr key={b.type}>
+                        <td className="strong">{b.type}</td>
+                        <td>{b.example}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p>{BONUS_EXAMPLES_CLOSE}</p>
             </Section>
 
             <Section
