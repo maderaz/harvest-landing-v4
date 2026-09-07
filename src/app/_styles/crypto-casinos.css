@@ -1010,6 +1010,11 @@
    read as a fact the terms stated. */
 .cc-page .cc-basis {
   display: block;
+  /* .rp-dtable's .num cell is nowrap so a figure never breaks, and this note
+     sits inside one and inherited it. "on bonus funds; the terms do not state
+     the basis" then set the column's minimum width and was most of the
+     table's inner scroll. */
+  white-space: normal;
   margin-top: 3px;
   font-size: 11px;
   line-height: 1.45;
@@ -1088,4 +1093,15 @@
   .cc-page .cc-figure { margin-top: 20px; border-radius: 14px; }
   .cc-page .cc-summary-h { font-size: 17px; line-height: 23px; }
   .cc-page .cc-keyfind li { font-size: 15px; line-height: 23px; padding-left: 20px; }
+}
+
+/* The wagering table has to fit the column, at every desktop width.
+   .rp-dtable holds its headers on one line, which sets a minimum width wider
+   than the 936px content column; the wrapper's overflow-x then hands a
+   1000px-wide monitor an inner scrollbar for one pixel of overflow. Letting
+   the five headers wrap costs a line of height and removes it. Cells keep
+   nowrap so a figure never breaks across lines. */
+.cc-page #turnover .rp-dtable th {
+  white-space: normal;
+  vertical-align: bottom;
 }
