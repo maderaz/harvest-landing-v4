@@ -258,26 +258,10 @@ export const OFFERS: Record<string, OfferCopy> = {
   },
 };
 
-/**
- * A material unresolved issue a review actually found, said once in the row.
- *
- * Not generated from an empty field. The rows used to carry an automatic
- * "Operator not identified" chip wherever a licence was unread, which put the
- * same badge on fourteen of sixteen rows and turned a finding into wallpaper.
- */
-const ROW_NOTES: Record<string, string> = {
-  "lucky-rollers": "Operator and licence details remain unverified.",
-};
-
-/**
- * The one operator fact worth carrying in the row.
- *
- * Named where the terms name a company, unverified where a review looked and
- * found none. Both are findings; neither is generated from an empty field.
- */
-export function rowNote(c: Casino): string | null {
-  return ROW_NOTES[c.slug] ?? null;
-}
+/* The row carried one finding, that Lucky Rollers publishes no operator or
+   licence. It is not on the row any more: the same fact is in that offer's
+   expansion, under Operator and licence, and in its review, which is where a
+   reader who wants it goes looking. */
 
 /**
  * The terms printed beside the offer, in ordinary text.
