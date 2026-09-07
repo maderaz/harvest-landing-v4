@@ -167,7 +167,7 @@ export const OFFERS: Record<string, OfferCopy> = {
     kinds: ["welcome", "cashback"],
     summary: "Deposit match capped in bitcoin, with weekly cashback",
     headline: "Up to 1 BTC",
-    support: "100% match, 10% weekly cashback and a $750k race",
+    support: "100% match and 10% weekly cashback",
   },
   "coin-casino": {
     kinds: ["welcome"],
@@ -285,7 +285,7 @@ export function keyDetails(c: Casino): string[] {
   else if (wr != null) out.push(`${wr}× wagering`);
   if (c.minDeposit) out.push(`${c.minDeposit} minimum deposit`);
   if (out.length < 3 && c.verified.withdrawal) {
-    out.push(`Published payout window: ${c.verified.withdrawal}`);
+    out.push(`Published withdrawal time: ${c.verified.withdrawal}`);
   }
   // An empty cell in a four-column row reads as a broken page. One plain
   // sentence, said where a reader is looking for the terms.
@@ -370,50 +370,67 @@ export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
     .sort((a, b) => a.turnover - b.turnover);
 }
 
-/** Venues with enough read off them to compare side by side. */
-export function compareRows(casinos: Casino[]) {
-  return casinos
-    .filter((c) => c.verified.chains?.length && c.verified.withdrawal)
-    .map((c) => ({
-      slug: c.slug,
-      name: c.name,
-      bonus: c.bonusClaim ?? "None",
-      wagering: c.verified.wagering,
-      coins: c.verified.chains as string[],
-      minDeposit: c.minDeposit ?? null,
-      withdrawal: c.verified.withdrawal as string,
-      games: c.verified.games,
-    }));
-}
-
 /* ---- editorial tables -------------------------------------------------- */
 
-export const COINS: {
-  name: string;
-  sym: string;
-  fee: string;
-  toWallet: string;
-  volatility: "Low" | "Medium" | "High";
-  note: string;
-}[] = [
-  { name: "Bitcoin", sym: "BTC", fee: "$1 to $10", toWallet: "10 to 60 min", volatility: "High", note: "Accepted everywhere. The slowest and priciest of the common options when the network is busy." },
-  { name: "Ethereum", sym: "ETH", fee: "$0.50 to $20", toWallet: "5 to 20 min", volatility: "High", note: "Widely accepted. Fees move with congestion, so a small withdrawal can cost a noticeable share of itself." },
-  { name: "Litecoin", sym: "LTC", fee: "about $0.10", toWallet: "5 to 30 min", volatility: "Medium", note: "Cheap and quick. A common pick for players moving money in and out often." },
-  { name: "Bitcoin Cash", sym: "BCH", fee: "$0.01 to $0.10", toWallet: "10 to 60 min", volatility: "High", note: "Larger blocks keep fees low. Support is thinner than BTC." },
-  { name: "Tether", sym: "USDT", fee: "$0.01 to $20", toWallet: "1 to 30 min", volatility: "Low", note: "Pegged to the dollar, so a balance holds its value between the deposit and the withdrawal. Fees depend entirely on the chain you send it over." },
-  { name: "TRON", sym: "TRX", fee: "about $0.10", toWallet: "1 to 5 min", volatility: "Medium", note: "Fast and cheap. Often the default chain for USDT at these venues." },
-  { name: "XRP", sym: "XRP", fee: "under $0.10", toWallet: "1 to 5 min", volatility: "Medium", note: "Settles in seconds for a fraction of a cent." },
-  { name: "Solana", sym: "SOL", fee: "under $0.10", toWallet: "1 to 5 min", volatility: "High", note: "Quick and cheap, and the price moves as much as the majors." },
-  { name: "Dogecoin", sym: "DOGE", fee: "about $0.10", toWallet: "5 to 30 min", volatility: "High", note: "Cheap transfers. Popular for small stakes." },
+/**
+ * The payments section, which asks what to check rather than printing numbers
+ * that go stale.
+ *
+ * The table it replaces quoted a fee range and a settlement time per coin with
+ * no date on either, and graded volatility "Medium" or "High" against nothing.
+ * A network fee moves with demand, a casino's processing time is not the
+ * chain's settlement time, and neither figure is ours to publish undated.
+ */
+export const PAYMENTS_INTRO = [
+  "Start with the currencies you already hold and the payment options available in the casino’s cashier. A useful comparison includes the supported network, the minimum deposit, withdrawal limits and the fees quoted for your transfer.",
+  "USDC and USDT are designed to track the US dollar, which can make balances easier to compare in dollar terms, although their market prices can move away from that target. With assets such as BTC and ETH, the dollar value of your balance also changes with the market.",
 ];
 
-export const NETWORKS: { coin: string; chains: string }[] = [
-  { coin: "Bitcoin", chains: "Bitcoin, Lightning" },
-  { coin: "Ethereum", chains: "Ethereum, Arbitrum, Optimism, Base" },
-  { coin: "Tether (USDT)", chains: "ERC20 (Ethereum), TRC20 (Tron), BEP20 (BSC), SPL (Solana), Polygon" },
-  { coin: "USD Coin (USDC)", chains: "Ethereum, Solana, Base, Polygon, Arbitrum, Optimism" },
+export const PAYMENT_CHECKS: { option: string; check: string }[] = [
+  {
+    option: "USDC or USDT",
+    check:
+      "Confirm the exact network supported for both deposits and withdrawals. Compare the quoted fees and minimum amounts for that network.",
+  },
+  {
+    option: "Bitcoin (BTC)",
+    check:
+      "Check the wallet’s transaction fee and the casino’s required confirmations before the deposit becomes available.",
+  },
+  {
+    option: "Ethereum (ETH)",
+    check:
+      "Confirm whether the cashier supports Ethereum mainnet or another specified network. Check the fee for the route you intend to use.",
+  },
+  {
+    option: "XRP",
+    check:
+      "Check whether the deposit instructions include a destination tag, which helps the operator assign the payment to your account.",
+  },
+  {
+    option: "Other supported coins",
+    check:
+      "For options such as SOL, LTC, BCH, DOGE or TRX, check the cashier’s deposit and withdrawal conditions individually.",
+  },
 ];
 
+export const WITHDRAWAL_TIMES = [
+  "A withdrawal involves the casino processing your request and the payment settling on the chosen network. When an operator advertises “instant withdrawals”, check whether that describes approval, sending the transaction or arrival in your wallet.",
+  "Before sending funds, match the coin and network shown in the cashier with those selected in your wallet. Include any required tag or memo, and check the minimum amount and quoted fee.",
+];
+
+/** Where the network-specific advice above comes from. */
+export const PAYMENT_SOURCES: { label: string; url: string }[] = [
+  { label: "Ethereum fees", url: "https://ethereum.org/developers/docs/gas/" },
+  {
+    label: "USDC networks",
+    url: "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+  },
+  {
+    label: "XRP destination tags",
+    url: "https://xrpl.org/docs/concepts/transactions/source-and-destination-tags",
+  },
+];
 
 export const BONUS_TERMS: { name: string; body: string }[] = [
   { name: "Playthrough", body: "How many times the bonus, and often the deposit with it, has to be wagered before any of it can be withdrawn. Twenty times is generous. Sixty times and above means the offer is closer to a marketing number than to money." },
@@ -450,7 +467,12 @@ export const RG_TOOLS: { name: string; body: string }[] = [
 // Eight, and every one of them answers something the page does not already
 // have a heading for. The list ran to sixteen, half of it restating an H2.
 export const FAQS: { q: string; a: string }[] = [
-  { q: "What is a crypto casino?", a: "An online casino that takes wagers in cryptocurrency, not in bank-processed money. Balances are funded by an onchain transfer and withdrawals are paid back to a wallet address. The games are the same ones a currency casino runs; what changes is the payment rail, and with it the speed of a withdrawal and how much identity checking sits in front of it." },
+  { q: "What is a crypto casino?", a: "A crypto casino is an online casino that accepts cryptocurrency for deposits and withdrawals. You fund your account using a supported coin and network, then play the games available through the site. The cashier lists payment options, minimum amounts and withdrawal conditions, including any verification requirements. Once a withdrawal is processed, the funds are sent to an eligible wallet address." },
+  // Replaces the Fairness section. The claim it drops is that the server seed
+  // is revealed after every round: Stake's published implementation reveals it
+  // on rotation, so "after every round" was too specific to be true of the
+  // category. "Only the originals" goes with it, for the same reason.
+  { q: "How does provably fair work?", a: "Provably fair games let you check how a recorded result was generated. In a common setup, the casino publishes a cryptographic commitment to its secret input before play. That input is combined with a player-controlled input and a bet number to calculate the outcome. Once the secret input is revealed, often after you rotate your seed settings, a verification tool lets you reproduce the calculation and compare it with the recorded result. When comparing casinos, look for an explanation of which games support verification and where to find the tool. The feature helps you inspect game results; the game’s house edge, the operator’s licence and its withdrawal practices are separate parts of your assessment." },
   { q: "Are crypto casinos legal?", a: "Crypto casino legality depends on where you live, not on the payment method. Online gambling is licensed in some jurisdictions, restricted to state operators in others, and prohibited in several. Most crypto casinos hold an offshore licence and block a list of countries at sign-up. Check the law where you live before you play, and check that list before you register." },
   { q: "Why does a bonus with a high wagering requirement cost money?", a: "A playthrough requirement obliges a multiple of the bonus to be wagered before any of it can be withdrawn, and every one of those wagers meets the game's house edge, so the turnover has an expected cost. A 200% bonus at 60x playthrough can be worth less than a 50% bonus at 20x once that cost is priced, which is what the calculator on this page works out." },
   { q: "Which crypto casinos do not require KYC?", a: "Some venues take no identity documents at sign-up and ask only above a withdrawal threshold; others ask for nothing at all. The policy is the operator's choice and it changes without notice, which is why each row here records the threshold and the date the terms were read. A venue advertising no KYC can still request documents on a large withdrawal." },

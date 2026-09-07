@@ -25,13 +25,15 @@ import {
   HARVEST_INTRO,
   HARVEST_RISK,
   HARVEST_SELECTION,
-  COINS,
   FAQS,
   LEAD,
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
-  NETWORKS,
+  PAYMENTS_INTRO,
+  PAYMENT_CHECKS,
+  PAYMENT_SOURCES,
   RANKING_INTRO,
+  WITHDRAWAL_TIMES,
   VENUE_REVIEWS,
   type VenueReview,
   RG_TOOLS,
@@ -39,7 +41,6 @@ import {
   SORT_RULE,
   WAGERING_AFTER,
   WAGERING_INTRO,
-  compareRows,
   money,
   spellOut,
   turnoverRows,
@@ -56,11 +57,7 @@ export const tocItems = (ranked: number): TocItem[] => [
   { id: "bonus-calculator", label: "Bonus calculator" },
   { id: "bankroll", label: "Put your crypto to work" },
   { id: "reviews", label: "Lucky Rollers review" },
-  { id: "compare", label: "Side by side" },
-  { id: "how-they-work", label: "How they work" },
-  { id: "provably-fair", label: "Provably fair" },
-  { id: "coins", label: "Coins and fees" },
-  { id: "networks", label: "Picking the network" },
+  { id: "payments", label: "Crypto payments" },
   { id: "bonuses", label: "Bonus terms" },
   { id: "legality", label: "Where this is legal" },
   { id: "scams", label: "Spotting a scam" },
@@ -211,7 +208,6 @@ export function CasinosBody({
   // a reader meeting its name in the turnover table or the calculator has
   // nowhere to go with it.
   const turnover = turnoverRows(ranked);
-  const compare = compareRows(ranked);
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -442,174 +438,73 @@ export function CasinosBody({
               </Section>
             ))}
 
-            {compare.length > 0 && (
-              <Section id="compare" eyebrow="Compare" title="The venues we have read, side by side">
-                <p>
-                  Only venues whose terms we have read. The ranking table above
-                  is larger and includes unread rows.
-                </p>
-                <p>
-                  Coins, minimum deposit, payout window and playthrough for the{" "}
-                  {compare.length} of them. Every payout window here is the one
-                  written in the terms, not the one on the banner, which is why
-                  a venue advertising instant can show a window measured in
-                  hours.
-                </p>
-                <div className="rp-dtable-wrap">
-                  <table className="rp-dtable cc-cmp">
-                    <thead>
-                      <tr>
-                        <th>Venue</th>
-                        <th>Welcome bonus</th>
-                        <th className="num">Playthrough</th>
-                        <th className="num">Min deposit</th>
-                        <th>Payout</th>
-                        <th className="num">Coins</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {compare.map((r) => (
-                        <tr key={r.slug}>
-                          <td className="strong cc-cmp-name">{r.name}</td>
-                          <td data-label="Welcome bonus">{r.bonus}</td>
-                          <td className="num" data-label="Playthrough">
-                            {r.wagering == null ? "Not stated" : r.wagering === 0 ? "None" : `${r.wagering}x`}
-                          </td>
-                          <td className="num" data-label="Min deposit">{r.minDeposit ?? "Not stated"}</td>
-                          <td data-label="Payout">{r.withdrawal}</td>
-                          <td className="num" data-label="Coins accepted">{r.coins.length}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Section>
-            )}
-
-            <Section id="how-they-work" eyebrow="Basics" title="What a crypto casino is, and how it works">
-              <div className="rp-article">
-                <p>
-                  Coins go from your wallet to an address the site generates,
-                  and withdrawals come back the same way, costing a few cents on
-                  Tron or Solana. Payouts are advertised in minutes. Of the four
-                  venues whose terms we have read, three say instant and one
-                  says one to twenty-four hours.
-                </p>
-                <p>
-                  The two things that card buys you are the ones you give up
-                  here. A card payment can be charged back; an onchain transfer
-                  cannot be reversed by anyone, in either direction. And in a
-                  dispute with the operator there is no bank in the middle, only
-                  whatever the licence in its footer is worth.
-                </p>
-              </div>
-            </Section>
-
-            <Section id="provably-fair" eyebrow="Fairness" title="Provably fair, and what it does not prove">
-              <div className="rp-article">
-                <p>
-                  The casino publishes a hash of its server seed before the
-                  round. You add a seed of your own. When the round ends the
-                  server seed is revealed, so you can hash it, match it against
-                  what was published, and recompute the result.
-                </p>
-                <p>
-                  It proves one narrow thing: the casino fixed its half before
-                  your bet and could not change it after. We have not run a seed
-                  verification on any venue on this page, so no row claims one.
-                </p>
-              </div>
-              <div className="rp-info">
-                <div className="rp-callout-head">
-                  <span className="rp-callout-ico" aria-hidden="true">i</span>
-                  <span className="rp-callout-title">Three things it does not prove</span>
-                </div>
-                <p className="rp-info-body">
-                  It does not lower the house edge, which is a property of the
-                  game and not of the shuffle. It says nothing about whether the
-                  operator is solvent or willing to pay a withdrawal. And it
-                  covers only the originals, not the thousands of third-party
-                  slots sitting beside them.
-                </p>
-              </div>
-            </Section>
-
-            <Section id="coins" eyebrow="Payments" title="Which coin to play with">
-              <p>
-                Fees and settlement times differ by an order of magnitude across
-                the coins these venues accept. If the balance is going to sit
-                for a while, a stablecoin holds its value between the deposit
-                and the withdrawal. If you move money often, the cheap fast
-                chains save more than the bonus does.
-              </p>
+            {/* Four sections became one.
+                The side-by-side table repeated the bonus, the playthrough and
+                the minimum deposit the ranking already carries, and counted
+                coins, which tells a reader nothing about whether their coin is
+                accepted. Its one useful column, the published withdrawal time,
+                is in each row's key details and expansion. What a crypto
+                casino is, and how provably fair works, are FAQ answers. What
+                is left is the question the page could not otherwise answer:
+                how to get money in and out without losing it. */}
+            <Section id="payments" eyebrow="Crypto payments" title="Choosing a coin for deposits and withdrawals">
+              {PAYMENTS_INTRO.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
               <div className="rp-dtable-wrap">
-                <table className="rp-dtable">
+                <table className="rp-dtable cc-pay">
                   <thead>
                     <tr>
-                      <th>Coin</th>
-                      <th className="num">Fee</th>
-                      <th className="num">To your wallet</th>
-                      <th className="num">Price swing</th>
+                      <th>Payment option</th>
+                      <th>What to check</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {COINS.map((c) => (
-                      <tr key={c.sym}>
-                        <td className="strong">{c.name} <span className="rp-dtag">{c.sym}</span></td>
-                        <td className="num">{c.fee}</td>
-                        <td className="num">{c.toWallet}</td>
-                        <td className="num">{c.volatility}</td>
+                    {PAYMENT_CHECKS.map((r) => (
+                      <tr key={r.option}>
+                        <td className="strong">{r.option}</td>
+                        <td>{r.check}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </Section>
-
-            <Section id="networks" eyebrow="Payments" title="Picking the network, and why it matters more than the coin">
+              <h3>Understanding withdrawal times</h3>
+              {WITHDRAWAL_TIMES.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
+              {/* Kept from the network section it absorbs. This is the one
+                  mistake on the page that cannot be undone by anybody. */}
               <div className="rp-tip">
                 <div className="rp-callout-head">
                   <span className="rp-callout-ico" aria-hidden="true">!</span>
-                  <span className="rp-callout-title">Send on the wrong chain and the money is gone</span>
+                  <span className="rp-callout-title">Send on the wrong network and the money is gone</span>
                 </div>
                 <p className="rp-tip-body">
-                  USDT is not one token. It exists separately on Ethereum, Tron,
-                  BSC, Solana and Polygon, and the versions cannot see each
-                  other. Send the Ethereum version to a Tron address and it
-                  lands somewhere neither you nor the casino can reach. There is
-                  no support ticket for this. Check the network on both sides,
-                  every single time.
+                  USDT and USDC each exist as separate tokens on several
+                  networks, and the versions cannot see each other. Send the
+                  Ethereum version to a Tron address and it lands somewhere
+                  neither you nor the casino can reach, and there is no support
+                  ticket for it. An XRP deposit to a shared address usually
+                  needs a destination tag, and a transfer that arrives without
+                  one is not credited automatically. Which networks a given
+                  casino accepts is a question for its cashier, not for this
+                  page.
                 </p>
               </div>
-              <div className="rp-dtable-wrap">
-                <table className="rp-dtable">
-                  <thead>
-                    <tr>
-                      <th>Coin</th>
-                      <th>Networks you will be offered</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {NETWORKS.map((n) => (
-                      <tr key={n.coin}>
-                        <td className="strong">{n.coin}</td>
-                        <td>{n.chains}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p>
-                The risk sits in the two stablecoins, and it is the same
-                mistake that loses money depositing into a vault: the token
-                exists on several chains, and the address you were given lives
-                on one of them. Single-chain coins remove that particular
-                choice without removing every one. XRP deposits at a shared
-                address usually need a destination tag, and a transfer that
-                arrives without it is not credited automatically.
+              <p className="rp-fineprint">
+                Read on {UPDATED} from{" "}
+                {PAYMENT_SOURCES.map((src, i) => (
+                  <span key={src.url}>
+                    {i > 0 ? ", " : ""}
+                    <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+                      {src.label}
+                    </a>
+                  </span>
+                ))}
+                .
               </p>
             </Section>
-
 
             <Section id="bonuses" eyebrow="Bonuses" title="The offers, and the terms underneath them">
               <h3>The terms that decide what an offer is worth</h3>

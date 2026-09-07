@@ -790,51 +790,28 @@
   color: var(--uni-ink);
 }
 
-/* The side-by-side table on a phone.
-   .rp-ref-table's reflow sets td to inline, which runs six values together
-   with nothing saying which is which. This one keeps a row per field and
-   prints the column name from data-label beside it. */
+/* The payments table. Two columns, and the second one is a sentence, so the
+   label column holds its width and the phone stacks them. */
+.cc-page .cc-pay td:first-child { white-space: nowrap; vertical-align: top; }
 @media (max-width: 640px) {
-  .cc-page .cc-cmp { min-width: 0; }
-  .cc-page .cc-cmp thead { display: none; }
-  .cc-page .cc-cmp,
-  .cc-page .cc-cmp tbody,
-  .cc-page .cc-cmp tr { display: block; width: 100%; }
-  .cc-page .cc-cmp tr {
-    padding: 14px 0;
+  .cc-page .cc-pay { min-width: 0; }
+  .cc-page .cc-pay thead { display: none; }
+  .cc-page .cc-pay,
+  .cc-page .cc-pay tbody,
+  .cc-page .cc-pay tr,
+  .cc-page .cc-pay td { display: block; width: 100%; }
+  .cc-page .cc-pay tr {
+    padding: 12px 0;
     border-top: 1px solid var(--rp-card-border, #eeeef5);
   }
-  .cc-page .cc-cmp tr:first-child { border-top: 0; }
-  .cc-page .cc-cmp td {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 3px 0;
-    border: 0;
-    text-align: right;
-    font-size: 13.5px;
-  }
-  .cc-page .cc-cmp td::before {
-    content: attr(data-label);
-    flex: 0 0 auto;
-    text-align: left;
-    font-size: 11.5px;
-    font-weight: 600;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: var(--uni-ink-3);
-  }
-  /* The venue name is the row's heading, so it keeps the full width. */
-  .cc-page .cc-cmp td.cc-cmp-name {
-    display: block;
-    text-align: left;
-    margin-bottom: 6px;
-    font-size: 15.5px;
+  .cc-page .cc-pay tr:first-child { border-top: 0; }
+  .cc-page .cc-pay td { border: 0; padding: 2px 0; }
+  .cc-page .cc-pay td:first-child {
+    white-space: normal;
+    font-size: 15px;
     font-weight: 650;
     color: var(--uni-ink);
   }
-  .cc-page .cc-cmp td.cc-cmp-name::before { content: none; }
 }
 
 /* ---- venue wordmarks ---------------------------------------------------
