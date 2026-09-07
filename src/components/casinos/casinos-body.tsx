@@ -16,8 +16,14 @@ import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
 import type { Casino } from "@/lib/crypto-casinos";
 import {
   BONUS_STAGES,
+  AVAILABILITY,
   BONUS_TERMS,
+  BONUS_TERMS_CLOSE,
+  BONUS_TERMS_INTRO,
   BYLINE,
+  CHOOSING,
+  CHOOSING_CLOSE,
+  CHOOSING_INTRO,
   CALC_INTRO,
   CALC_NOTE,
   DISCLOSURE_SHORT,
@@ -29,6 +35,7 @@ import {
   LEAD,
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
+  NETWORK_CHOICE,
   PAYMENTS_INTRO,
   PAYMENT_CHECKS,
   PAYMENT_SOURCES,
@@ -36,13 +43,16 @@ import {
   WITHDRAWAL_TIMES,
   VENUE_REVIEWS,
   type VenueReview,
+  REGISTER_SOURCE,
+  RG_CHECKED,
+  RG_INTRO,
+  RG_SOURCES,
+  RG_SUPPORT,
   RG_TOOLS,
-  SCAM_SIGNALS,
   SORT_RULE,
   WAGERING_AFTER,
   WAGERING_INTRO,
   money,
-  spellOut,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
 
@@ -55,13 +65,13 @@ export const tocItems = (ranked: number): TocItem[] => [
   { id: "ranking", label: `Compare ${ranked} offers` },
   { id: "turnover", label: "How much to wager" },
   { id: "bonus-calculator", label: "Bonus calculator" },
+  { id: "bonuses", label: "Bonus terms" },
   { id: "bankroll", label: "Put your crypto to work" },
   { id: "reviews", label: "Lucky Rollers review" },
   { id: "payments", label: "Crypto payments" },
-  { id: "bonuses", label: "Bonus terms" },
-  { id: "legality", label: "Where this is legal" },
-  { id: "scams", label: "Spotting a scam" },
-  { id: "responsible", label: "Staying in control" },
+  { id: "legality", label: "Availability" },
+  { id: "choosing", label: "Choosing a casino" },
+  { id: "responsible", label: "Responsible gambling" },
   { id: "faq", label: "FAQ" },
   { id: "disclosure", label: "Disclosure" },
 ];
@@ -108,12 +118,29 @@ function Section({
   );
 }
 
-function NamedList({ items }: { items: { name: string; body: string }[] }) {
+/**
+ * A labelled list.
+ *
+ * `flow` drops the full stop after the label, for entries written as one
+ * sentence that runs through it: "Deposit and loss limits help cap how much
+ * you can add", not "Deposit and loss limits. help cap how much you can add".
+ */
+function NamedList({
+  items,
+  flow = false,
+}: {
+  items: { name: string; body: string }[];
+  flow?: boolean;
+}) {
   return (
     <ul className="cc-risks">
       {items.map((r) => (
         <li key={r.name}>
-          <strong>{r.name}.</strong> {r.body}
+          <strong>
+            {r.name}
+            {flow ? "" : "."}
+          </strong>{" "}
+          {r.body}
         </li>
       ))}
     </ul>
@@ -363,6 +390,12 @@ export function CasinosBody({
             {/* Starts after the withdrawal has landed. Everything above this
                 point is about money still inside a casino account, and none
                 of it applies until the balance has left one. */}
+            <Section id="bonuses" eyebrow="Bonus terms" title="What to check in a crypto casino bonus">
+              <p>{BONUS_TERMS_INTRO}</p>
+              <NamedList items={BONUS_TERMS} />
+              <p>{BONUS_TERMS_CLOSE}</p>
+            </Section>
+
             <Section
               id="bankroll"
               eyebrow="Harvest"
@@ -469,29 +502,14 @@ export function CasinosBody({
                   </tbody>
                 </table>
               </div>
+              <h3>Choosing the right network</h3>
+              {NETWORK_CHOICE.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
               <h3>Understanding withdrawal times</h3>
               {WITHDRAWAL_TIMES.map((para) => (
                 <p key={para.slice(0, 24)}>{para}</p>
               ))}
-              {/* Kept from the network section it absorbs. This is the one
-                  mistake on the page that cannot be undone by anybody. */}
-              <div className="rp-tip">
-                <div className="rp-callout-head">
-                  <span className="rp-callout-ico" aria-hidden="true">!</span>
-                  <span className="rp-callout-title">Send on the wrong network and the money is gone</span>
-                </div>
-                <p className="rp-tip-body">
-                  USDT and USDC each exist as separate tokens on several
-                  networks, and the versions cannot see each other. Send the
-                  Ethereum version to a Tron address and it lands somewhere
-                  neither you nor the casino can reach, and there is no support
-                  ticket for it. An XRP deposit to a shared address usually
-                  needs a destination tag, and a transfer that arrives without
-                  one is not credited automatically. Which networks a given
-                  casino accepts is a question for its cashier, not for this
-                  page.
-                </p>
-              </div>
               <p className="rp-fineprint">
                 Read on {UPDATED} from{" "}
                 {PAYMENT_SOURCES.map((src, i) => (
@@ -506,72 +524,71 @@ export function CasinosBody({
               </p>
             </Section>
 
-            <Section id="bonuses" eyebrow="Bonuses" title="The offers, and the terms underneath them">
-              <h3>The terms that decide what an offer is worth</h3>
-              <NamedList items={BONUS_TERMS} />
+            <Section id="legality" eyebrow="Availability" title="Can you use a crypto casino where you live?">
+              {AVAILABILITY.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
             </Section>
 
-
-
-            <Section id="legality" eyebrow="Legal" title="Where this is legal">
-              <div className="rp-article">
-                <p>
-                  The question is whether online casino gambling is legal where
-                  you live. The coin does not change the answer, and neither
-                  does the licence in the footer: Anjouan and Curaçao are not
-                  the UK Gambling Commission and not a US state regulator.
-                  Almost none of the venues on this page accept US players in
-                  the first place.
-                </p>
-              </div>
-              <div className="rp-info">
-                <div className="rp-callout-head">
-                  <span className="rp-callout-ico" aria-hidden="true">i</span>
-                  <span className="rp-callout-title">What an offshore site does not give you</span>
-                </div>
-                <p className="rp-info-body">
-                  No complaints channel with any force behind it when a
-                  withdrawal is refused, and no link to a national
-                  self-exclusion register, so a block you set with one operator
-                  does not follow you anywhere else. Whether player funds are
-                  held separately is a per-operator question, and not one any
-                  venue on this page answers.
-                </p>
-              </div>
-            </Section>
-
-            <Section
-              id="scams"
-              eyebrow="Risk"
-              title={`${spellOut(SCAM_SIGNALS.length, true)} signals that a venue is not worth the deposit`}
-            >
-              <p>
-                An onchain transfer cannot be clawed back, so the checking has
-                to happen before the money moves. These are the signals that
-                cost nothing to look for.
-              </p>
-              <NamedList items={SCAM_SIGNALS} />
-              <p>
-                Applied honestly, the first of those disqualifies the venue at
-                the top of this table. Lucky Rollers names no operator and no
-                licence number. It sorts first because its advertised bonus is
-                the largest, and that is all a first position on this page has
-                ever meant.
+            {/* General guidance, applied to every venue the same way. The
+                finding about the venue at the top of the ranking lives in its
+                row and its review, where it informs that decision, and not in
+                a section that is supposed to read the same for all sixteen. */}
+            <Section id="choosing" eyebrow="Choosing a casino" title="What to look for before you register">
+              <p>{CHOOSING_INTRO}</p>
+              <NamedList items={CHOOSING} />
+              <p>{CHOOSING_CLOSE}</p>
+              <p className="rp-fineprint">
+                A public register carries more than a footer badge does. The UK
+                Gambling Commission&rsquo;s lists licence status, trading names
+                and domains:{" "}
+                <a href={REGISTER_SOURCE.url} rel="nofollow noopener noreferrer" target="_blank">
+                  {REGISTER_SOURCE.label}
+                </a>
+                .
               </p>
             </Section>
 
-            <Section id="responsible" eyebrow="Control" title="Staying in control">
+            {/* The anchor is load-bearing: the line above the ranking, which
+                has to precede a sponsored click, links to it. */}
+            <Section id="responsible" eyebrow="Responsible gambling" title="Set your limits before you play">
+              {RG_INTRO.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
+              <NamedList items={RG_TOOLS} flow />
+              <p>{RG_SUPPORT}</p>
               <p>
-                Every game on this page carries a house edge, so continued play
-                loses money on average. Every venue worth using ships the tools
-                below. Set them on the day you register.
+                <strong>Great Britain:</strong>{" "}
+                <a href="https://www.gambleaware.org/" rel="nofollow noopener noreferrer" target="_blank">
+                  GambleAware
+                </a>{" "}
+                provides information and routes to local support.
               </p>
-              <NamedList items={RG_TOOLS} />
               <p>
-                Free and confidential help:{" "}
-                <a href="https://www.begambleaware.org/" rel="nofollow noopener noreferrer" target="_blank">BeGambleAware</a>,{" "}
-                <a href="https://www.ncpgambling.org/help-treatment/about-the-national-problem-gambling-helpline/" rel="nofollow noopener noreferrer" target="_blank">the National Problem Gambling Helpline</a>{" "}
-                on 1-800-GAMBLER.
+                <strong>United States:</strong> Call or text 1-800-MY-RESET, or
+                visit the{" "}
+                <a href="https://www.ncpgambling.org/help-treatment/" rel="nofollow noopener noreferrer" target="_blank">
+                  National Problem Gambling Helpline
+                </a>{" "}
+                for support options.
+              </p>
+              <p>
+                For other locations, your local health service or gambling
+                regulator may list specialist support.
+              </p>
+              <p className="rp-fineprint">
+                Support links and the helpline number checked {RG_CHECKED}. The
+                guidance above follows{" "}
+                {RG_SOURCES.map((src, i) => (
+                  <span key={src.url}>
+                    {i > 0 ? " and " : ""}
+                    <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+                      {src.label}
+                    </a>
+                  </span>
+                ))}
+                . What a given exclusion covers depends on the scheme, so check
+                it for the one you use.
               </p>
             </Section>
 

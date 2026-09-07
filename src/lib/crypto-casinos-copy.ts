@@ -419,6 +419,20 @@ export const WITHDRAWAL_TIMES = [
   "Before sending funds, match the coin and network shown in the cashier with those selected in your wallet. Include any required tag or memo, and check the minimum amount and quoted fee.",
 ];
 
+/**
+ * Choosing a network, as instructions rather than a warning.
+ *
+ * The block this replaces was a red callout saying the money is gone. That is
+ * not always true: recovery is platform-specific and some platforms support it
+ * for selected assets and networks, so the last paragraph says what to do
+ * instead of closing the question.
+ */
+export const NETWORK_CHOICE = [
+  "When a coin is available on several networks, the network you select is part of the payment instructions. Start in the casino’s cashier, choose your asset and network, then use the same combination in your sending wallet. For example, a USDC deposit configured for Base should be sent as USDC on Base.",
+  "Copy the deposit address from the cashier and include any required destination tag or memo. Check the minimum deposit and quoted fee before confirming the transfer.",
+  "If you have already sent funds using a different network, contact the operator through its official support channel with the transaction hash, asset and network used. Recovery depends on the receiving platform and the transfer involved, and may be unavailable.",
+];
+
 /** Where the network-specific advice above comes from. */
 export const PAYMENT_SOURCES: { label: string; url: string }[] = [
   { label: "Ethereum fees", url: "https://ethereum.org/developers/docs/gas/" },
@@ -430,33 +444,150 @@ export const PAYMENT_SOURCES: { label: string; url: string }[] = [
     label: "XRP destination tags",
     url: "https://xrpl.org/docs/concepts/transactions/source-and-destination-tags",
   },
+  {
+    label: "recovering an unsupported transfer",
+    url: "https://help.coinbase.com/en/coinbase/trading-and-funding/sending-or-receiving-cryptocurrency/recover-unsupported-crypto",
+  },
 ];
 
+/** Cited where the section says to check a licence on a public register. */
+export const REGISTER_SOURCE = {
+  label: "Register of gambling businesses",
+  url: "https://www.gamblingcommission.gov.uk/public-register/businesses",
+};
+
+/** Support services, and the pages the wording above follows. */
+export const RG_SOURCES: { label: string; url: string }[] = [
+  {
+    label: "GambleAware advice",
+    url: "https://www.gambleaware.org/advice/for-your-gambling/advice-to-consider-if-you-re-gambling/",
+  },
+  {
+    label: "GamCare on self-exclusion",
+    url: "https://www.gamcare.org.uk/self-help/self-exclusion/",
+  },
+];
+
+/**
+ * The bonus glossary, beside the calculator that prices it.
+ *
+ * Descriptions of what a term does, not verdicts on what a number means. The
+ * list this replaces called twenty times generous and sixty times marketing,
+ * and named game categories as always excluded, none of which is true of every
+ * offer on the page or checkable against any of them.
+ */
 export const BONUS_TERMS: { name: string; body: string }[] = [
-  { name: "Playthrough", body: "How many times the bonus, and often the deposit with it, has to be wagered before any of it can be withdrawn. Twenty times is generous. Sixty times and above means the offer is closer to a marketing number than to money." },
-  { name: "Minimum deposit", body: "The smallest deposit that triggers the offer. Usually $5 to $20, and a small deposit still has to clear the full playthrough." },
-  { name: "Maximum bet", body: "A cap on the stake per spin or per hand while bonus funds are live. Going over it voids the bonus, and the venues enforce this strictly." },
-  { name: "Game contribution", body: "Slots usually count 100% toward the playthrough. Live tables and roulette often count 20%, so a 40x bonus is really 200x of blackjack. This is the term that quietly decides whether an offer is clearable." },
-  { name: "Excluded games", body: "Crash, Mines, Dice and the other provably fair originals are usually barred from bonus play, because their low house edge makes the playthrough too cheap to clear." },
-  { name: "Time limit", body: "Seven to thirty days to finish the playthrough. Whatever is left when the clock runs out goes, along with anything won from it." },
-  { name: "Maximum withdrawal", body: "A ceiling on what a bonus can pay out. Welcome offers often have none. No-deposit offers almost always do." },
+  {
+    name: "Wagering requirement",
+    body: "Also called playthrough, this sets the qualifying betting volume required to clear the bonus. Check the multiplier and whether it applies to the bonus alone or to your deposit as well.",
+  },
+  {
+    name: "Qualifying deposit",
+    body: "Check the amount needed to activate the offer and how the bonus scales with your deposit. A package spread across several deposits may have a separate minimum, match percentage and cap for each stage.",
+  },
+  {
+    name: "Eligible games and contribution",
+    body: "The terms specify which games count towards wagering and how much each bet contributes. At a 20% contribution rate, a $10 bet adds $2 towards the requirement. Excluded games contribute nothing and may also be prohibited while the bonus is active.",
+  },
+  {
+    name: "Maximum bet",
+    body: "Some offers limit the stake per spin, hand or round while bonus funds are active. Check the limit for your currency and the consequences of exceeding it.",
+  },
+  {
+    name: "Time limit",
+    body: "Look for both the activation deadline and the time allowed to complete wagering. Free spins and their winnings may have separate expiry rules.",
+  },
+  {
+    name: "Withdrawal conditions",
+    body: "Check whether the bonus itself becomes withdrawable, whether bonus-related winnings have a cashout cap and what happens if you request a withdrawal before completing the requirement.",
+  },
 ];
 
+export const BONUS_TERMS_INTRO =
+  "A welcome offer becomes easier to compare once you know how the bonus is credited, which bets count and what you can withdraw afterwards. These are the terms that have the biggest effect on how an offer works.";
 
-export const SCAM_SIGNALS: { name: string; body: string }[] = [
-  { name: "No licence on the page", body: "A legitimate operator prints its authority and licence number in the footer. If nothing is named, or the number does not appear on the regulator's own register, walk." },
-  { name: "Terms that stay vague", body: "Payout policy, verification triggers and maximum withdrawals should be written down and findable. Vagueness here is what a venue leans on when it declines to pay." },
-  { name: "No provably fair games", body: "A crypto-first venue with no verifiable originals and no explanation of how to check a seed has skipped the one thing that separates it from an ordinary casino." },
-  { name: "Withdrawal complaints in public", body: "This community is loud and fast. Search the venue name alongside the word withdrawal and read what comes back before depositing, not after." },
+export const BONUS_TERMS_CLOSE =
+  "Consider these terms together when comparing offers. The bonus that fits your intended deposit, preferred games and planned playing time deserves a closer look than the headline amount alone can provide.";
+
+/* ---- availability ------------------------------------------------------ */
+
+/**
+ * Eligibility, without claims about what an offshore licence does not give
+ * you. The section this replaces asserted that no venue here offers a
+ * complaints channel with force behind it, a link to a self-exclusion register
+ * or segregated player funds. None of the three was checked at any venue.
+ */
+export const AVAILABILITY = [
+  "The rules for online casino gambling depend on your location, the operator and the services it offers. Before registering, check the applicable minimum age and whether the casino is authorized to serve players where you will be playing.",
+  "You should also check the operator’s country restrictions and the eligibility rules for the specific promotion. Account access and welcome-bonus eligibility may have different conditions.",
+  "A licence applies within a particular regulatory framework. Using cryptocurrency as a payment method leaves the underlying gambling rules in place, so confirm local requirements through your gambling regulator or another official government source.",
 ];
 
+/* ---- choosing a casino ------------------------------------------------- */
+
+/**
+ * What to check, applied to every venue the same way.
+ *
+ * Replaces a disqualification checklist whose first signal the page then
+ * applied by name to the venue at the top of its own ranking. That finding
+ * belongs to that venue and stays in its review and its row; general guidance
+ * has to read the same for all sixteen.
+ */
+export const CHOOSING_INTRO =
+  "A useful casino review should help you understand who operates the site, how its offers work and what happens when you request a withdrawal. These four areas give you a practical starting point.";
+
+export const CHOOSING: { name: string; body: string }[] = [
+  {
+    name: "Operator and licence details",
+    body: "Look for the company name, licensing authority and licence reference. Where a public register is available, check that the record is current and corresponds to the business and domain you are considering.",
+  },
+  {
+    name: "Clear payment and bonus terms",
+    body: "Find the deposit minimums, withdrawal limits, verification requirements and bonus conditions. If an important term is unclear, ask support for a written explanation before funding the account.",
+  },
+  {
+    name: "Information about the games",
+    body: "Look for named game providers, published rules and information about how results are generated or tested. For games offering provably fair verification, check which titles are covered and how to use the verification tool.",
+  },
+  {
+    name: "How complaints are handled",
+    body: "Read recent, detailed reports about the exact casino and domain. Look at the operator’s response and whether the issue was resolved, as well as the original allegation. The published complaints procedure should explain how to raise a dispute and any available escalation route.",
+  },
+];
+
+export const CHOOSING_CLOSE =
+  "Where an important detail remains unresolved, keep it open in your assessment while you compare other options.";
+
+/* ---- responsible gambling ---------------------------------------------- */
+
+export const RG_INTRO = [
+  "Decide how much money and time you are comfortable spending before starting a session. Keep that budget separate from essential expenses, and take a break when you reach your limit. Trying to recover losses through further play can increase what you lose.",
+  "Check the account’s responsible gambling settings for the tools available:",
+];
+
+/**
+ * What the settings may offer, worded so it does not promise that every venue
+ * on this page ships all five. None of the sixteen has been checked for them.
+ */
 export const RG_TOOLS: { name: string; body: string }[] = [
-  { name: "Deposit and loss limits", body: "Caps what can go in, or what can be lost, over a day, a week or a month." },
-  { name: "Wager limits", body: "Caps total stakes over a period, which bites sooner than a loss limit does." },
-  { name: "Reality checks", body: "A pop-up showing how long the session has run and what it has cost so far." },
-  { name: "Time-outs", body: "Locks the account for a day up to several weeks. Everything stays where it is." },
-  { name: "Self-exclusion", body: "A long or permanent block that cannot be lifted early. The one tool built to survive a change of mind." },
+  { name: "Deposit and loss limits", body: "help cap how much you can add or lose over a defined period." },
+  { name: "Wagering limits", body: "cap the total amount you stake during that period." },
+  { name: "Session reminders", body: "help you keep track of time and, where provided, spending." },
+  { name: "Time-outs", body: "let you pause access for a chosen period." },
+  { name: "Self-exclusion", body: "provides a longer restriction on gambling access. Check which websites or operators it covers and the conditions that apply." },
 ];
+
+export const RG_SUPPORT =
+  "If gambling is becoming difficult to manage, support services can help you explore a break, blocking tools, self-exclusion or treatment. You can also contact them if you are concerned about someone else.";
+
+/**
+ * The date the helpline details and support links were last checked.
+ *
+ * Hardcoded, not the build date. UPDATED is new Date(), so stamping that here
+ * would re-date the claim on every deploy and assert a check nobody made.
+ */
+export const RG_CHECKED = "September 7, 2026";
+
 
 
 
