@@ -167,7 +167,7 @@ export const OFFERS: Record<string, OfferCopy> = {
     kinds: ["welcome", "cashback"],
     summary: "Deposit match capped in bitcoin, with weekly cashback",
     headline: "Up to 1 BTC",
-    support: "100% match, 10% weekly cashback and a $750k race",
+    support: "100% match and 10% weekly cashback",
   },
   "coin-casino": {
     kinds: ["welcome"],
@@ -285,7 +285,7 @@ export function keyDetails(c: Casino): string[] {
   else if (wr != null) out.push(`${wr}× wagering`);
   if (c.minDeposit) out.push(`${c.minDeposit} minimum deposit`);
   if (out.length < 3 && c.verified.withdrawal) {
-    out.push(`Published payout window: ${c.verified.withdrawal}`);
+    out.push(`Published withdrawal time: ${c.verified.withdrawal}`);
   }
   // An empty cell in a four-column row reads as a broken page. One plain
   // sentence, said where a reader is looking for the terms.
@@ -370,76 +370,224 @@ export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
     .sort((a, b) => a.turnover - b.turnover);
 }
 
-/** Venues with enough read off them to compare side by side. */
-export function compareRows(casinos: Casino[]) {
-  return casinos
-    .filter((c) => c.verified.chains?.length && c.verified.withdrawal)
-    .map((c) => ({
-      slug: c.slug,
-      name: c.name,
-      bonus: c.bonusClaim ?? "None",
-      wagering: c.verified.wagering,
-      coins: c.verified.chains as string[],
-      minDeposit: c.minDeposit ?? null,
-      withdrawal: c.verified.withdrawal as string,
-      games: c.verified.games,
-    }));
-}
-
 /* ---- editorial tables -------------------------------------------------- */
 
-export const COINS: {
-  name: string;
-  sym: string;
-  fee: string;
-  toWallet: string;
-  volatility: "Low" | "Medium" | "High";
-  note: string;
-}[] = [
-  { name: "Bitcoin", sym: "BTC", fee: "$1 to $10", toWallet: "10 to 60 min", volatility: "High", note: "Accepted everywhere. The slowest and priciest of the common options when the network is busy." },
-  { name: "Ethereum", sym: "ETH", fee: "$0.50 to $20", toWallet: "5 to 20 min", volatility: "High", note: "Widely accepted. Fees move with congestion, so a small withdrawal can cost a noticeable share of itself." },
-  { name: "Litecoin", sym: "LTC", fee: "about $0.10", toWallet: "5 to 30 min", volatility: "Medium", note: "Cheap and quick. A common pick for players moving money in and out often." },
-  { name: "Bitcoin Cash", sym: "BCH", fee: "$0.01 to $0.10", toWallet: "10 to 60 min", volatility: "High", note: "Larger blocks keep fees low. Support is thinner than BTC." },
-  { name: "Tether", sym: "USDT", fee: "$0.01 to $20", toWallet: "1 to 30 min", volatility: "Low", note: "Pegged to the dollar, so a balance holds its value between the deposit and the withdrawal. Fees depend entirely on the chain you send it over." },
-  { name: "TRON", sym: "TRX", fee: "about $0.10", toWallet: "1 to 5 min", volatility: "Medium", note: "Fast and cheap. Often the default chain for USDT at these venues." },
-  { name: "XRP", sym: "XRP", fee: "under $0.10", toWallet: "1 to 5 min", volatility: "Medium", note: "Settles in seconds for a fraction of a cent." },
-  { name: "Solana", sym: "SOL", fee: "under $0.10", toWallet: "1 to 5 min", volatility: "High", note: "Quick and cheap, and the price moves as much as the majors." },
-  { name: "Dogecoin", sym: "DOGE", fee: "about $0.10", toWallet: "5 to 30 min", volatility: "High", note: "Cheap transfers. Popular for small stakes." },
+/**
+ * The payments section, which asks what to check rather than printing numbers
+ * that go stale.
+ *
+ * The table it replaces quoted a fee range and a settlement time per coin with
+ * no date on either, and graded volatility "Medium" or "High" against nothing.
+ * A network fee moves with demand, a casino's processing time is not the
+ * chain's settlement time, and neither figure is ours to publish undated.
+ */
+export const PAYMENTS_INTRO = [
+  "Start with the currencies you already hold and the payment options available in the casino’s cashier. A useful comparison includes the supported network, the minimum deposit, withdrawal limits and the fees quoted for your transfer.",
+  "USDC and USDT are designed to track the US dollar, which can make balances easier to compare in dollar terms, although their market prices can move away from that target. With assets such as BTC and ETH, the dollar value of your balance also changes with the market.",
 ];
 
-export const NETWORKS: { coin: string; chains: string }[] = [
-  { coin: "Bitcoin", chains: "Bitcoin, Lightning" },
-  { coin: "Ethereum", chains: "Ethereum, Arbitrum, Optimism, Base" },
-  { coin: "Tether (USDT)", chains: "ERC20 (Ethereum), TRC20 (Tron), BEP20 (BSC), SPL (Solana), Polygon" },
-  { coin: "USD Coin (USDC)", chains: "Ethereum, Solana, Base, Polygon, Arbitrum, Optimism" },
+export const PAYMENT_CHECKS: { option: string; check: string }[] = [
+  {
+    option: "USDC or USDT",
+    check:
+      "Confirm the exact network supported for both deposits and withdrawals. Compare the quoted fees and minimum amounts for that network.",
+  },
+  {
+    option: "Bitcoin (BTC)",
+    check:
+      "Check the wallet’s transaction fee and the casino’s required confirmations before the deposit becomes available.",
+  },
+  {
+    option: "Ethereum (ETH)",
+    check:
+      "Confirm whether the cashier supports Ethereum mainnet or another specified network. Check the fee for the route you intend to use.",
+  },
+  {
+    option: "XRP",
+    check:
+      "Check whether the deposit instructions include a destination tag, which helps the operator assign the payment to your account.",
+  },
+  {
+    option: "Other supported coins",
+    check:
+      "For options such as SOL, LTC, BCH, DOGE or TRX, check the cashier’s deposit and withdrawal conditions individually.",
+  },
 ];
 
+export const WITHDRAWAL_TIMES = [
+  "A withdrawal involves the casino processing your request and the payment settling on the chosen network. When an operator advertises “instant withdrawals”, check whether that describes approval, sending the transaction or arrival in your wallet.",
+  "Before sending funds, match the coin and network shown in the cashier with those selected in your wallet. Include any required tag or memo, and check the minimum amount and quoted fee.",
+];
 
+/**
+ * Choosing a network, as instructions rather than a warning.
+ *
+ * The block this replaces was a red callout saying the money is gone. That is
+ * not always true: recovery is platform-specific and some platforms support it
+ * for selected assets and networks, so the last paragraph says what to do
+ * instead of closing the question.
+ */
+export const NETWORK_CHOICE = [
+  "When a coin is available on several networks, the network you select is part of the payment instructions. Start in the casino’s cashier, choose your asset and network, then use the same combination in your sending wallet. For example, a USDC deposit configured for Base should be sent as USDC on Base.",
+  "Copy the deposit address from the cashier and include any required destination tag or memo. Check the minimum deposit and quoted fee before confirming the transfer.",
+  "If you have already sent funds using a different network, contact the operator through its official support channel with the transaction hash, asset and network used. Recovery depends on the receiving platform and the transfer involved, and may be unavailable.",
+];
+
+/** Where the network-specific advice above comes from. */
+export const PAYMENT_SOURCES: { label: string; url: string }[] = [
+  { label: "Ethereum fees", url: "https://ethereum.org/developers/docs/gas/" },
+  {
+    label: "USDC networks",
+    url: "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+  },
+  {
+    label: "XRP destination tags",
+    url: "https://xrpl.org/docs/concepts/transactions/source-and-destination-tags",
+  },
+  {
+    label: "recovering an unsupported transfer",
+    url: "https://help.coinbase.com/en/coinbase/trading-and-funding/sending-or-receiving-cryptocurrency/recover-unsupported-crypto",
+  },
+];
+
+/** Cited where the section says to check a licence on a public register. */
+export const REGISTER_SOURCE = {
+  label: "Register of gambling businesses",
+  url: "https://www.gamblingcommission.gov.uk/public-register/businesses",
+};
+
+/** Support services, and the pages the wording above follows. */
+export const RG_SOURCES: { label: string; url: string }[] = [
+  {
+    label: "GambleAware advice",
+    url: "https://www.gambleaware.org/advice/for-your-gambling/advice-to-consider-if-you-re-gambling/",
+  },
+  {
+    label: "GamCare on self-exclusion",
+    url: "https://www.gamcare.org.uk/self-help/self-exclusion/",
+  },
+];
+
+/**
+ * The bonus glossary, beside the calculator that prices it.
+ *
+ * Descriptions of what a term does, not verdicts on what a number means. The
+ * list this replaces called twenty times generous and sixty times marketing,
+ * and named game categories as always excluded, none of which is true of every
+ * offer on the page or checkable against any of them.
+ */
 export const BONUS_TERMS: { name: string; body: string }[] = [
-  { name: "Playthrough", body: "How many times the bonus, and often the deposit with it, has to be wagered before any of it can be withdrawn. Twenty times is generous. Sixty times and above means the offer is closer to a marketing number than to money." },
-  { name: "Minimum deposit", body: "The smallest deposit that triggers the offer. Usually $5 to $20, and a small deposit still has to clear the full playthrough." },
-  { name: "Maximum bet", body: "A cap on the stake per spin or per hand while bonus funds are live. Going over it voids the bonus, and the venues enforce this strictly." },
-  { name: "Game contribution", body: "Slots usually count 100% toward the playthrough. Live tables and roulette often count 20%, so a 40x bonus is really 200x of blackjack. This is the term that quietly decides whether an offer is clearable." },
-  { name: "Excluded games", body: "Crash, Mines, Dice and the other provably fair originals are usually barred from bonus play, because their low house edge makes the playthrough too cheap to clear." },
-  { name: "Time limit", body: "Seven to thirty days to finish the playthrough. Whatever is left when the clock runs out goes, along with anything won from it." },
-  { name: "Maximum withdrawal", body: "A ceiling on what a bonus can pay out. Welcome offers often have none. No-deposit offers almost always do." },
+  {
+    name: "Wagering requirement",
+    body: "Also called playthrough, this sets the qualifying betting volume required to clear the bonus. Check the multiplier and whether it applies to the bonus alone or to your deposit as well.",
+  },
+  {
+    name: "Qualifying deposit",
+    body: "Check the amount needed to activate the offer and how the bonus scales with your deposit. A package spread across several deposits may have a separate minimum, match percentage and cap for each stage.",
+  },
+  {
+    name: "Eligible games and contribution",
+    body: "The terms specify which games count towards wagering and how much each bet contributes. At a 20% contribution rate, a $10 bet adds $2 towards the requirement. Excluded games contribute nothing and may also be prohibited while the bonus is active.",
+  },
+  {
+    name: "Maximum bet",
+    body: "Some offers limit the stake per spin, hand or round while bonus funds are active. Check the limit for your currency and the consequences of exceeding it.",
+  },
+  {
+    name: "Time limit",
+    body: "Look for both the activation deadline and the time allowed to complete wagering. Free spins and their winnings may have separate expiry rules.",
+  },
+  {
+    name: "Withdrawal conditions",
+    body: "Check whether the bonus itself becomes withdrawable, whether bonus-related winnings have a cashout cap and what happens if you request a withdrawal before completing the requirement.",
+  },
 ];
 
+export const BONUS_TERMS_INTRO =
+  "A welcome offer becomes easier to compare once you know how the bonus is credited, which bets count and what you can withdraw afterwards. These are the terms that have the biggest effect on how an offer works.";
 
-export const SCAM_SIGNALS: { name: string; body: string }[] = [
-  { name: "No licence on the page", body: "A legitimate operator prints its authority and licence number in the footer. If nothing is named, or the number does not appear on the regulator's own register, walk." },
-  { name: "Terms that stay vague", body: "Payout policy, verification triggers and maximum withdrawals should be written down and findable. Vagueness here is what a venue leans on when it declines to pay." },
-  { name: "No provably fair games", body: "A crypto-first venue with no verifiable originals and no explanation of how to check a seed has skipped the one thing that separates it from an ordinary casino." },
-  { name: "Withdrawal complaints in public", body: "This community is loud and fast. Search the venue name alongside the word withdrawal and read what comes back before depositing, not after." },
+export const BONUS_TERMS_CLOSE =
+  "Consider these terms together when comparing offers. The bonus that fits your intended deposit, preferred games and planned playing time deserves a closer look than the headline amount alone can provide.";
+
+/* ---- availability ------------------------------------------------------ */
+
+/**
+ * Eligibility, without claims about what an offshore licence does not give
+ * you. The section this replaces asserted that no venue here offers a
+ * complaints channel with force behind it, a link to a self-exclusion register
+ * or segregated player funds. None of the three was checked at any venue.
+ */
+export const AVAILABILITY = [
+  "The rules for online casino gambling depend on your location, the operator and the services it offers. Before registering, check the applicable minimum age and whether the casino is authorized to serve players where you will be playing.",
+  "You should also check the operator’s country restrictions and the eligibility rules for the specific promotion. Account access and welcome-bonus eligibility may have different conditions.",
+  "A licence applies within a particular regulatory framework. Using cryptocurrency as a payment method leaves the underlying gambling rules in place, so confirm local requirements through your gambling regulator or another official government source.",
 ];
 
+/* ---- choosing a casino ------------------------------------------------- */
+
+/**
+ * What to check, applied to every venue the same way.
+ *
+ * Replaces a disqualification checklist whose first signal the page then
+ * applied by name to the venue at the top of its own ranking. That finding
+ * belongs to that venue and stays in its review and its row; general guidance
+ * has to read the same for all sixteen.
+ */
+export const CHOOSING_INTRO =
+  "A useful casino review should help you understand who operates the site, how its offers work and what happens when you request a withdrawal. These four areas give you a practical starting point.";
+
+export const CHOOSING: { name: string; body: string }[] = [
+  {
+    name: "Operator and licence details",
+    body: "Look for the company name, licensing authority and licence reference. Where a public register is available, check that the record is current and corresponds to the business and domain you are considering.",
+  },
+  {
+    name: "Clear payment and bonus terms",
+    body: "Find the deposit minimums, withdrawal limits, verification requirements and bonus conditions. If an important term is unclear, ask support for a written explanation before funding the account.",
+  },
+  {
+    name: "Information about the games",
+    body: "Look for named game providers, published rules and information about how results are generated or tested. For games offering provably fair verification, check which titles are covered and how to use the verification tool.",
+  },
+  {
+    name: "How complaints are handled",
+    body: "Read recent, detailed reports about the exact casino and domain. Look at the operator’s response and whether the issue was resolved, as well as the original allegation. The published complaints procedure should explain how to raise a dispute and any available escalation route.",
+  },
+];
+
+export const CHOOSING_CLOSE =
+  "Where an important detail remains unresolved, keep it open in your assessment while you compare other options.";
+
+/* ---- responsible gambling ---------------------------------------------- */
+
+export const RG_INTRO = [
+  "Decide how much money and time you are comfortable spending before starting a session. Keep that budget separate from essential expenses, and take a break when you reach your limit. Trying to recover losses through further play can increase what you lose.",
+  "Check the account’s responsible gambling settings for the tools available:",
+];
+
+/**
+ * What the settings may offer, worded so it does not promise that every venue
+ * on this page ships all five. None of the sixteen has been checked for them.
+ */
 export const RG_TOOLS: { name: string; body: string }[] = [
-  { name: "Deposit and loss limits", body: "Caps what can go in, or what can be lost, over a day, a week or a month." },
-  { name: "Wager limits", body: "Caps total stakes over a period, which bites sooner than a loss limit does." },
-  { name: "Reality checks", body: "A pop-up showing how long the session has run and what it has cost so far." },
-  { name: "Time-outs", body: "Locks the account for a day up to several weeks. Everything stays where it is." },
-  { name: "Self-exclusion", body: "A long or permanent block that cannot be lifted early. The one tool built to survive a change of mind." },
+  { name: "Deposit and loss limits", body: "help cap how much you can add or lose over a defined period." },
+  { name: "Wagering limits", body: "cap the total amount you stake during that period." },
+  { name: "Session reminders", body: "help you keep track of time and, where provided, spending." },
+  { name: "Time-outs", body: "let you pause access for a chosen period." },
+  { name: "Self-exclusion", body: "provides a longer restriction on gambling access. Check which websites or operators it covers and the conditions that apply." },
 ];
+
+export const RG_SUPPORT =
+  "If gambling is becoming difficult to manage, support services can help you explore a break, blocking tools, self-exclusion or treatment. You can also contact them if you are concerned about someone else.";
+
+/**
+ * The date the helpline details and support links were last checked.
+ *
+ * Hardcoded, not the build date. UPDATED is new Date(), so stamping that here
+ * would re-date the claim on every deploy and assert a check nobody made.
+ */
+export const RG_CHECKED = "September 7, 2026";
+
 
 
 
@@ -450,7 +598,12 @@ export const RG_TOOLS: { name: string; body: string }[] = [
 // Eight, and every one of them answers something the page does not already
 // have a heading for. The list ran to sixteen, half of it restating an H2.
 export const FAQS: { q: string; a: string }[] = [
-  { q: "What is a crypto casino?", a: "An online casino that takes wagers in cryptocurrency, not in bank-processed money. Balances are funded by an onchain transfer and withdrawals are paid back to a wallet address. The games are the same ones a currency casino runs; what changes is the payment rail, and with it the speed of a withdrawal and how much identity checking sits in front of it." },
+  { q: "What is a crypto casino?", a: "A crypto casino is an online casino that accepts cryptocurrency for deposits and withdrawals. You fund your account using a supported coin and network, then play the games available through the site. The cashier lists payment options, minimum amounts and withdrawal conditions, including any verification requirements. Once a withdrawal is processed, the funds are sent to an eligible wallet address." },
+  // Replaces the Fairness section. The claim it drops is that the server seed
+  // is revealed after every round: Stake's published implementation reveals it
+  // on rotation, so "after every round" was too specific to be true of the
+  // category. "Only the originals" goes with it, for the same reason.
+  { q: "How does provably fair work?", a: "Provably fair games let you check how a recorded result was generated. In a common setup, the casino publishes a cryptographic commitment to its secret input before play. That input is combined with a player-controlled input and a bet number to calculate the outcome. Once the secret input is revealed, often after you rotate your seed settings, a verification tool lets you reproduce the calculation and compare it with the recorded result. When comparing casinos, look for an explanation of which games support verification and where to find the tool. The feature helps you inspect game results; the game’s house edge, the operator’s licence and its withdrawal practices are separate parts of your assessment." },
   { q: "Are crypto casinos legal?", a: "Crypto casino legality depends on where you live, not on the payment method. Online gambling is licensed in some jurisdictions, restricted to state operators in others, and prohibited in several. Most crypto casinos hold an offshore licence and block a list of countries at sign-up. Check the law where you live before you play, and check that list before you register." },
   { q: "Why does a bonus with a high wagering requirement cost money?", a: "A playthrough requirement obliges a multiple of the bonus to be wagered before any of it can be withdrawn, and every one of those wagers meets the game's house edge, so the turnover has an expected cost. A 200% bonus at 60x playthrough can be worth less than a 50% bonus at 20x once that cost is priced, which is what the calculator on this page works out." },
   { q: "Which crypto casinos do not require KYC?", a: "Some venues take no identity documents at sign-up and ask only above a withdrawal threshold; others ask for nothing at all. The policy is the operator's choice and it changes without notice, which is why each row here records the threshold and the date the terms were read. A venue advertising no KYC can still request documents on a large withdrawal." },

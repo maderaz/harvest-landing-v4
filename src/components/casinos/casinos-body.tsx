@@ -16,8 +16,14 @@ import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
 import type { Casino } from "@/lib/crypto-casinos";
 import {
   BONUS_STAGES,
+  AVAILABILITY,
   BONUS_TERMS,
+  BONUS_TERMS_CLOSE,
+  BONUS_TERMS_INTRO,
   BYLINE,
+  CHOOSING,
+  CHOOSING_CLOSE,
+  CHOOSING_INTRO,
   CALC_INTRO,
   CALC_NOTE,
   DISCLOSURE_SHORT,
@@ -25,23 +31,28 @@ import {
   HARVEST_INTRO,
   HARVEST_RISK,
   HARVEST_SELECTION,
-  COINS,
   FAQS,
   LEAD,
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
-  NETWORKS,
+  NETWORK_CHOICE,
+  PAYMENTS_INTRO,
+  PAYMENT_CHECKS,
+  PAYMENT_SOURCES,
   RANKING_INTRO,
+  WITHDRAWAL_TIMES,
   VENUE_REVIEWS,
   type VenueReview,
+  REGISTER_SOURCE,
+  RG_CHECKED,
+  RG_INTRO,
+  RG_SOURCES,
+  RG_SUPPORT,
   RG_TOOLS,
-  SCAM_SIGNALS,
   SORT_RULE,
   WAGERING_AFTER,
   WAGERING_INTRO,
-  compareRows,
   money,
-  spellOut,
   turnoverRows,
 } from "@/lib/crypto-casinos-copy";
 
@@ -54,17 +65,13 @@ export const tocItems = (ranked: number): TocItem[] => [
   { id: "ranking", label: `Compare ${ranked} offers` },
   { id: "turnover", label: "How much to wager" },
   { id: "bonus-calculator", label: "Bonus calculator" },
+  { id: "bonuses", label: "Bonus terms" },
   { id: "bankroll", label: "Put your crypto to work" },
   { id: "reviews", label: "Lucky Rollers review" },
-  { id: "compare", label: "Side by side" },
-  { id: "how-they-work", label: "How they work" },
-  { id: "provably-fair", label: "Provably fair" },
-  { id: "coins", label: "Coins and fees" },
-  { id: "networks", label: "Picking the network" },
-  { id: "bonuses", label: "Bonus terms" },
-  { id: "legality", label: "Where this is legal" },
-  { id: "scams", label: "Spotting a scam" },
-  { id: "responsible", label: "Staying in control" },
+  { id: "payments", label: "Crypto payments" },
+  { id: "legality", label: "Availability" },
+  { id: "choosing", label: "Choosing a casino" },
+  { id: "responsible", label: "Responsible gambling" },
   { id: "faq", label: "FAQ" },
   { id: "disclosure", label: "Disclosure" },
 ];
@@ -111,12 +118,29 @@ function Section({
   );
 }
 
-function NamedList({ items }: { items: { name: string; body: string }[] }) {
+/**
+ * A labelled list.
+ *
+ * `flow` drops the full stop after the label, for entries written as one
+ * sentence that runs through it: "Deposit and loss limits help cap how much
+ * you can add", not "Deposit and loss limits. help cap how much you can add".
+ */
+function NamedList({
+  items,
+  flow = false,
+}: {
+  items: { name: string; body: string }[];
+  flow?: boolean;
+}) {
   return (
     <ul className="cc-risks">
       {items.map((r) => (
         <li key={r.name}>
-          <strong>{r.name}.</strong> {r.body}
+          <strong>
+            {r.name}
+            {flow ? "" : "."}
+          </strong>{" "}
+          {r.body}
         </li>
       ))}
     </ul>
@@ -211,7 +235,6 @@ export function CasinosBody({
   // a reader meeting its name in the turnover table or the calculator has
   // nowhere to go with it.
   const turnover = turnoverRows(ranked);
-  const compare = compareRows(ranked);
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -367,6 +390,12 @@ export function CasinosBody({
             {/* Starts after the withdrawal has landed. Everything above this
                 point is about money still inside a casino account, and none
                 of it applies until the balance has left one. */}
+            <Section id="bonuses" eyebrow="Bonus terms" title="What to check in a crypto casino bonus">
+              <p>{BONUS_TERMS_INTRO}</p>
+              <NamedList items={BONUS_TERMS} />
+              <p>{BONUS_TERMS_CLOSE}</p>
+            </Section>
+
             <Section
               id="bankroll"
               eyebrow="Harvest"
@@ -442,241 +471,124 @@ export function CasinosBody({
               </Section>
             ))}
 
-            {compare.length > 0 && (
-              <Section id="compare" eyebrow="Compare" title="The venues we have read, side by side">
-                <p>
-                  Only venues whose terms we have read. The ranking table above
-                  is larger and includes unread rows.
-                </p>
-                <p>
-                  Coins, minimum deposit, payout window and playthrough for the{" "}
-                  {compare.length} of them. Every payout window here is the one
-                  written in the terms, not the one on the banner, which is why
-                  a venue advertising instant can show a window measured in
-                  hours.
-                </p>
-                <div className="rp-dtable-wrap">
-                  <table className="rp-dtable cc-cmp">
-                    <thead>
-                      <tr>
-                        <th>Venue</th>
-                        <th>Welcome bonus</th>
-                        <th className="num">Playthrough</th>
-                        <th className="num">Min deposit</th>
-                        <th>Payout</th>
-                        <th className="num">Coins</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {compare.map((r) => (
-                        <tr key={r.slug}>
-                          <td className="strong cc-cmp-name">{r.name}</td>
-                          <td data-label="Welcome bonus">{r.bonus}</td>
-                          <td className="num" data-label="Playthrough">
-                            {r.wagering == null ? "Not stated" : r.wagering === 0 ? "None" : `${r.wagering}x`}
-                          </td>
-                          <td className="num" data-label="Min deposit">{r.minDeposit ?? "Not stated"}</td>
-                          <td data-label="Payout">{r.withdrawal}</td>
-                          <td className="num" data-label="Coins accepted">{r.coins.length}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </Section>
-            )}
-
-            <Section id="how-they-work" eyebrow="Basics" title="What a crypto casino is, and how it works">
-              <div className="rp-article">
-                <p>
-                  Coins go from your wallet to an address the site generates,
-                  and withdrawals come back the same way, costing a few cents on
-                  Tron or Solana. Payouts are advertised in minutes. Of the four
-                  venues whose terms we have read, three say instant and one
-                  says one to twenty-four hours.
-                </p>
-                <p>
-                  The two things that card buys you are the ones you give up
-                  here. A card payment can be charged back; an onchain transfer
-                  cannot be reversed by anyone, in either direction. And in a
-                  dispute with the operator there is no bank in the middle, only
-                  whatever the licence in its footer is worth.
-                </p>
-              </div>
-            </Section>
-
-            <Section id="provably-fair" eyebrow="Fairness" title="Provably fair, and what it does not prove">
-              <div className="rp-article">
-                <p>
-                  The casino publishes a hash of its server seed before the
-                  round. You add a seed of your own. When the round ends the
-                  server seed is revealed, so you can hash it, match it against
-                  what was published, and recompute the result.
-                </p>
-                <p>
-                  It proves one narrow thing: the casino fixed its half before
-                  your bet and could not change it after. We have not run a seed
-                  verification on any venue on this page, so no row claims one.
-                </p>
-              </div>
-              <div className="rp-info">
-                <div className="rp-callout-head">
-                  <span className="rp-callout-ico" aria-hidden="true">i</span>
-                  <span className="rp-callout-title">Three things it does not prove</span>
-                </div>
-                <p className="rp-info-body">
-                  It does not lower the house edge, which is a property of the
-                  game and not of the shuffle. It says nothing about whether the
-                  operator is solvent or willing to pay a withdrawal. And it
-                  covers only the originals, not the thousands of third-party
-                  slots sitting beside them.
-                </p>
-              </div>
-            </Section>
-
-            <Section id="coins" eyebrow="Payments" title="Which coin to play with">
-              <p>
-                Fees and settlement times differ by an order of magnitude across
-                the coins these venues accept. If the balance is going to sit
-                for a while, a stablecoin holds its value between the deposit
-                and the withdrawal. If you move money often, the cheap fast
-                chains save more than the bonus does.
-              </p>
+            {/* Four sections became one.
+                The side-by-side table repeated the bonus, the playthrough and
+                the minimum deposit the ranking already carries, and counted
+                coins, which tells a reader nothing about whether their coin is
+                accepted. Its one useful column, the published withdrawal time,
+                is in each row's key details and expansion. What a crypto
+                casino is, and how provably fair works, are FAQ answers. What
+                is left is the question the page could not otherwise answer:
+                how to get money in and out without losing it. */}
+            <Section id="payments" eyebrow="Crypto payments" title="Choosing a coin for deposits and withdrawals">
+              {PAYMENTS_INTRO.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
               <div className="rp-dtable-wrap">
-                <table className="rp-dtable">
+                <table className="rp-dtable cc-pay">
                   <thead>
                     <tr>
-                      <th>Coin</th>
-                      <th className="num">Fee</th>
-                      <th className="num">To your wallet</th>
-                      <th className="num">Price swing</th>
+                      <th>Payment option</th>
+                      <th>What to check</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {COINS.map((c) => (
-                      <tr key={c.sym}>
-                        <td className="strong">{c.name} <span className="rp-dtag">{c.sym}</span></td>
-                        <td className="num">{c.fee}</td>
-                        <td className="num">{c.toWallet}</td>
-                        <td className="num">{c.volatility}</td>
+                    {PAYMENT_CHECKS.map((r) => (
+                      <tr key={r.option}>
+                        <td className="strong">{r.option}</td>
+                        <td>{r.check}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            </Section>
-
-            <Section id="networks" eyebrow="Payments" title="Picking the network, and why it matters more than the coin">
-              <div className="rp-tip">
-                <div className="rp-callout-head">
-                  <span className="rp-callout-ico" aria-hidden="true">!</span>
-                  <span className="rp-callout-title">Send on the wrong chain and the money is gone</span>
-                </div>
-                <p className="rp-tip-body">
-                  USDT is not one token. It exists separately on Ethereum, Tron,
-                  BSC, Solana and Polygon, and the versions cannot see each
-                  other. Send the Ethereum version to a Tron address and it
-                  lands somewhere neither you nor the casino can reach. There is
-                  no support ticket for this. Check the network on both sides,
-                  every single time.
-                </p>
-              </div>
-              <div className="rp-dtable-wrap">
-                <table className="rp-dtable">
-                  <thead>
-                    <tr>
-                      <th>Coin</th>
-                      <th>Networks you will be offered</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {NETWORKS.map((n) => (
-                      <tr key={n.coin}>
-                        <td className="strong">{n.coin}</td>
-                        <td>{n.chains}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              <p>
-                The risk sits in the two stablecoins, and it is the same
-                mistake that loses money depositing into a vault: the token
-                exists on several chains, and the address you were given lives
-                on one of them. Single-chain coins remove that particular
-                choice without removing every one. XRP deposits at a shared
-                address usually need a destination tag, and a transfer that
-                arrives without it is not credited automatically.
+              <h3>Choosing the right network</h3>
+              {NETWORK_CHOICE.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
+              <h3>Understanding withdrawal times</h3>
+              {WITHDRAWAL_TIMES.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
+              <p className="rp-fineprint">
+                Read on {UPDATED} from{" "}
+                {PAYMENT_SOURCES.map((src, i) => (
+                  <span key={src.url}>
+                    {i > 0 ? ", " : ""}
+                    <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+                      {src.label}
+                    </a>
+                  </span>
+                ))}
+                .
               </p>
             </Section>
 
-
-            <Section id="bonuses" eyebrow="Bonuses" title="The offers, and the terms underneath them">
-              <h3>The terms that decide what an offer is worth</h3>
-              <NamedList items={BONUS_TERMS} />
+            <Section id="legality" eyebrow="Availability" title="Can you use a crypto casino where you live?">
+              {AVAILABILITY.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
             </Section>
 
-
-
-            <Section id="legality" eyebrow="Legal" title="Where this is legal">
-              <div className="rp-article">
-                <p>
-                  The question is whether online casino gambling is legal where
-                  you live. The coin does not change the answer, and neither
-                  does the licence in the footer: Anjouan and Curaçao are not
-                  the UK Gambling Commission and not a US state regulator.
-                  Almost none of the venues on this page accept US players in
-                  the first place.
-                </p>
-              </div>
-              <div className="rp-info">
-                <div className="rp-callout-head">
-                  <span className="rp-callout-ico" aria-hidden="true">i</span>
-                  <span className="rp-callout-title">What an offshore site does not give you</span>
-                </div>
-                <p className="rp-info-body">
-                  No complaints channel with any force behind it when a
-                  withdrawal is refused, and no link to a national
-                  self-exclusion register, so a block you set with one operator
-                  does not follow you anywhere else. Whether player funds are
-                  held separately is a per-operator question, and not one any
-                  venue on this page answers.
-                </p>
-              </div>
-            </Section>
-
-            <Section
-              id="scams"
-              eyebrow="Risk"
-              title={`${spellOut(SCAM_SIGNALS.length, true)} signals that a venue is not worth the deposit`}
-            >
-              <p>
-                An onchain transfer cannot be clawed back, so the checking has
-                to happen before the money moves. These are the signals that
-                cost nothing to look for.
-              </p>
-              <NamedList items={SCAM_SIGNALS} />
-              <p>
-                Applied honestly, the first of those disqualifies the venue at
-                the top of this table. Lucky Rollers names no operator and no
-                licence number. It sorts first because its advertised bonus is
-                the largest, and that is all a first position on this page has
-                ever meant.
+            {/* General guidance, applied to every venue the same way. The
+                finding about the venue at the top of the ranking lives in its
+                row and its review, where it informs that decision, and not in
+                a section that is supposed to read the same for all sixteen. */}
+            <Section id="choosing" eyebrow="Choosing a casino" title="What to look for before you register">
+              <p>{CHOOSING_INTRO}</p>
+              <NamedList items={CHOOSING} />
+              <p>{CHOOSING_CLOSE}</p>
+              <p className="rp-fineprint">
+                A public register carries more than a footer badge does. The UK
+                Gambling Commission&rsquo;s lists licence status, trading names
+                and domains:{" "}
+                <a href={REGISTER_SOURCE.url} rel="nofollow noopener noreferrer" target="_blank">
+                  {REGISTER_SOURCE.label}
+                </a>
+                .
               </p>
             </Section>
 
-            <Section id="responsible" eyebrow="Control" title="Staying in control">
+            {/* The anchor is load-bearing: the line above the ranking, which
+                has to precede a sponsored click, links to it. */}
+            <Section id="responsible" eyebrow="Responsible gambling" title="Set your limits before you play">
+              {RG_INTRO.map((para) => (
+                <p key={para.slice(0, 24)}>{para}</p>
+              ))}
+              <NamedList items={RG_TOOLS} flow />
+              <p>{RG_SUPPORT}</p>
               <p>
-                Every game on this page carries a house edge, so continued play
-                loses money on average. Every venue worth using ships the tools
-                below. Set them on the day you register.
+                <strong>Great Britain:</strong>{" "}
+                <a href="https://www.gambleaware.org/" rel="nofollow noopener noreferrer" target="_blank">
+                  GambleAware
+                </a>{" "}
+                provides information and routes to local support.
               </p>
-              <NamedList items={RG_TOOLS} />
               <p>
-                Free and confidential help:{" "}
-                <a href="https://www.begambleaware.org/" rel="nofollow noopener noreferrer" target="_blank">BeGambleAware</a>,{" "}
-                <a href="https://www.ncpgambling.org/help-treatment/about-the-national-problem-gambling-helpline/" rel="nofollow noopener noreferrer" target="_blank">the National Problem Gambling Helpline</a>{" "}
-                on 1-800-GAMBLER.
+                <strong>United States:</strong> Call or text 1-800-MY-RESET, or
+                visit the{" "}
+                <a href="https://www.ncpgambling.org/help-treatment/" rel="nofollow noopener noreferrer" target="_blank">
+                  National Problem Gambling Helpline
+                </a>{" "}
+                for support options.
+              </p>
+              <p>
+                For other locations, your local health service or gambling
+                regulator may list specialist support.
+              </p>
+              <p className="rp-fineprint">
+                Support links and the helpline number checked {RG_CHECKED}. The
+                guidance above follows{" "}
+                {RG_SOURCES.map((src, i) => (
+                  <span key={src.url}>
+                    {i > 0 ? " and " : ""}
+                    <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
+                      {src.label}
+                    </a>
+                  </span>
+                ))}
+                . What a given exclusion covers depends on the scheme, so check
+                it for the one you use.
               </p>
             </Section>
 
