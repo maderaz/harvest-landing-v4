@@ -58,13 +58,26 @@
   border-left: 2px solid var(--uni-line, #e6e6ee);
 }
 
+/* ---- centred column ----------------------------------------------------
+   The page is laid out like /xrp-rich-list rather than like the report: one
+   centred measure, no rail. The report's grid reserved 280px of margin for a
+   persistent "On this page" list, which suits a sixteen-section report and
+   not a comparison somebody scrolls once. */
+.uni-home-test.cc-page { --uni-max: 1000px; }
+/* The sections were children of .rp-doc-main, which gave each of them
+   26px 0 (report.css:900). They are direct children of the shell now and
+   inherited none of it. */
+.cc-page .uni-home-shell > .uni-home-content { padding: 26px 0; }
+.cc-page .uni-home-shell > .uni-home-content:first-child { padding-top: 8px; }
+.cc-page .uni-home-shell > .uni-home-content:last-child { padding-bottom: 8px; }
+
 /* ---- page head --------------------------------------------------------
    Plain, not the site's gold hero. A ranking page has one job above the
    fold and it is not a 595px panel. */
 .cc-page .cc-head {
   padding: 34px 0 0;
 }
-.cc-page .cc-head-inner { max-width: 780px; }
+.cc-page .cc-head-inner { max-width: none; }
 .cc-page .cc-h1 {
   margin: 0 0 12px;
   font-family: var(--display, var(--sans));
@@ -110,52 +123,48 @@
   .cc-page .cc-h1 { font-size: 29px; }
 }
 
-/* ---- filters ---------------------------------------------------------- */
-.cc-filters {
+/* ---- filters -----------------------------------------------------------
+   Six controls, one style, one line on a desktop. They were two rows of two
+   different pills, which made one set of filters read as two. */
+.cc-filterbar {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
+  /* stretch, not center: where a long label wraps to two lines and the one
+     beside it does not, centred pills sit at different heights and read as
+     separate rows. */
+  align-items: stretch;
+  gap: 7px;
   margin: 0 0 16px;
 }
-.cc-select {
-  appearance: none;
-  padding: 8px 30px 8px 12px;
-  border: 1px solid var(--rp-card-border, #dedee6);
-  border-radius: 999px;
-  background: var(--uni-bg, #fff);
-  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-    linear-gradient(135deg, currentColor 50%, transparent 50%);
-  background-position: right 14px center, right 9px center;
-  background-size: 5px 5px, 5px 5px;
-  background-repeat: no-repeat;
-  font: inherit;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--uni-ink);
-  cursor: pointer;
-}
-.cc-toggle {
-  padding: 8px 14px;
+/* The groups keep their roles for assistive tech and stop existing for
+   layout, so their buttons are flex items of the bar itself. */
+.cc-fgroup { display: contents; }
+.cc-chipbtn {
+  box-sizing: border-box;
+  padding: 7px 12px;
   border: 1px solid var(--rp-card-border, #dedee6);
   border-radius: 999px;
   background: var(--uni-bg, #fff);
   font: inherit;
-  font-size: 13.5px;
+  font-size: 12.5px;
   font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
   color: var(--uni-ink-2);
   cursor: pointer;
   transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.cc-toggle:hover { border-color: var(--uni-ink); }
-.cc-toggle.is-on {
+.cc-chipbtn:hover { border-color: var(--uni-ink); color: var(--uni-ink); }
+.cc-chipbtn.is-on {
   background: var(--uni-gold, #ffb936);
   border-color: var(--uni-gold, #ffb936);
   color: #1a1a1a;
 }
 .cc-count {
+  align-self: center;
   margin-left: auto;
-  font-size: 12.5px;
+  font-size: 12px;
+  white-space: nowrap;
   color: var(--uni-ink-3);
 }
 
@@ -679,7 +688,27 @@
 @media (max-width: 800px) {
   .cc-calc { padding: 20px 18px 22px; }
   .cc-page .cc-guard { padding: 16px 16px; }
-  .cc-count { margin-left: 0; }
+}
+
+/* Phone: two filters a row, so a long label cannot leave one stranded, and
+   the count on a line of its own. */
+/* Below the width that holds all six on one line, they go to a fixed number
+   a row so none is left stranded. 820px gave five and one. Borders count
+   toward the basis, so the subtraction leaves more slack than the gap. */
+@media (max-width: 1000px) {
+  .cc-chipbtn {
+    flex: 1 1 calc(33.333% - 10px);
+    min-width: 0;
+    white-space: normal;
+  }
+  .cc-count { flex: 1 1 100%; margin-left: 0; }
+}
+@media (max-width: 720px) {
+  .cc-chipbtn {
+    flex: 1 1 calc(50% - 12px);
+    padding: 8px 10px;
+    font-size: 12px;
+  }
 }
 
 /* Phone: one card per venue. The rank sits on the same line as the wordmark
