@@ -247,96 +247,127 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
  * checked" and a paragraph explaining why, which spent a screen telling
  * somebody about our reading instead of about the offer.
  */
+/** One label-and-value row, and where the value was read. */
+interface Row {
+  k: string;
+  v: string;
+  src?: FieldSource | typeof UNCONFIRMED;
+  /** Stack the value under the label, for a value too long to sit opposite it. */
+  wide?: boolean;
+}
+
+/**
+ * The expansion: two tables, side by side.
+ *
+ * Six differently shaped blocks gave every fact its own layout and none of
+ * them a column to line up in. A reader comparing two venues is scanning for
+ * one value, and a label-and-value table is the shape that lets them.
+ *
+ * The left table is the offer, the right is who is behind it and how money
+ * moves. A row with no value is left out, except the operator and the licence,
+ * where the absence is the finding.
+ */
 function OfferDetails({ c, id }: { c: Casino; id: string }) {
   const v = c.verified;
   const offer = OFFERS[c.slug];
 
-  const wagering =
-    v.wagering === 0
-      ? "No playthrough on this offer."
-      : v.wagering != null
-        ? `${v.wagering}× the bonus before it can be withdrawn.`
-        : null;
+  const terms: Row[] = [];
+  if (offer) {
+    terms.push({ k: "Offer type", v: offer.type });
+    terms.push({ k: "Advertised amount", v: offer.headline });
+    if (offer.support) terms.push({ k: "Included", v: offer.support, wide: true });
+  }
+  if (v.wagering != null) {
+    terms.push({
+      k: "Wagering",
+      v: v.wagering === 0 ? "None on this offer" : `${v.wagering}× the bonus`,
+      src: c.sources?.wagering,
+    });
+  }
+  if (c.minDeposit) {
+    terms.push({ k: "Qualifying deposit", v: c.minDeposit });
+  }
+
+  const operator: Row[] = [
+    {
+      k: "Operating company",
+      v: c.operator ?? "Not named in the pages read here",
+      wide: c.operator == null,
+    },
+    {
+      k: "Licence",
+      v: v.licence
+        ? `${v.licence.authority}${v.licence.number ? `, ${v.licence.number}` : ""}`
+        : "Not confirmed",
+      src: c.sources?.licence,
+      wide: Boolean(v.licence),
+    },
+  ];
+  if (v.withdrawal) {
+    operator.push({
+      k: "Published withdrawal time",
+      v: v.withdrawal,
+      src: c.sources?.withdrawal,
+    });
+  }
+  // The badge on the row is the operator's own wording. Where the published
+  // figure disagrees with it, the row leads with the figure and the
+  // disagreement is recorded here rather than left for a reader to spot.
+  if (c.claimed.instantWithdrawal && v.withdrawal && v.withdrawal !== "instant") {
+    operator.push({
+      k: "Also advertises",
+      v: "Instant withdrawals. Where the published figure and the advertising disagree, the row shows the published one.",
+      wide: true,
+    });
+  }
+  if (v.kyc) {
+    operator.push({ k: "Identity checks", v: KYC_LABEL[v.kyc], src: c.sources?.kyc });
+  }
+  if (v.chains?.length) {
+    operator.push({
+      k: `Coins accepted (${v.chains.length})`,
+      v: v.chains.join(", "),
+      src: c.sources?.chains,
+      wide: true,
+    });
+  }
+  if (v.complaints) {
+    operator.push({
+      k: "Complaints",
+      v: COMPLAINT_LABEL[v.complaints],
+      src: c.sources?.complaints,
+    });
+  }
 
   return (
     <div className="cc-detail" id={id}>
-      {/* A grid, not a column. Five short blocks stacked full width made a
-          900px measure out of two-line answers, and the row above already
-          carries the offer, so the first block no longer repeats it. */}
-      <div className="cc-blocks">
-        {c.claims.length > 0 && (
-          <Block title={`What ${c.name} advertises`}>
-            <ul className="cc-claimlist">
-              {c.claims.map((t) => (
-                <li key={t}>{t}</li>
-              ))}
-            </ul>
-            <p className="cc-detail-src">The wording above is the operator’s own.</p>
-          </Block>
-        )}
-
-        {(c.minDeposit || offer) && (
-          <Block title="Qualifying deposit">
-            <p>
-              {c.minDeposit
-                ? `${c.minDeposit} to trigger the offer, as published.`
-                : "No minimum deposit is published in the pages read here."}
-            </p>
-          </Block>
-        )}
-
-        {(wagering || c.termsNote) && (
-          <Block title="Wagering and eligible games">
-            {wagering ? <p>{wagering}</p> : null}
-            {c.termsNote ? <p>{c.termsNote}</p> : null}
-            <Src src={c.sources?.wagering} />
-          </Block>
-        )}
-
-        {v.withdrawal && (
-          <Block title="Withdrawal">
-            <p>Published withdrawal time: {v.withdrawal}.</p>
-            {/* The badge beside the row is the operator's own wording. Where
-                the published figure disagrees with it, the row leads with the
-                figure and the disagreement is explained here rather than left
-                for a reader to spot. */}
-            {c.claimed.instantWithdrawal && v.withdrawal !== "instant" ? (
-              <p>
-                {c.name} also advertises instant withdrawals. Where an operator
-                advertises one thing and publishes another, the published
-                figure is the one on the row.
-              </p>
-            ) : null}
-            {v.kyc ? <p>Identity checks: {KYC_LABEL[v.kyc]}.</p> : null}
-            <Src src={c.sources?.withdrawal} />
-          </Block>
-        )}
-
-        {v.chains?.length ? (
-          <Block title="Coins accepted">
-            <p>{v.chains.join(", ")}</p>
-            <Src src={c.sources?.chains} />
-          </Block>
-        ) : null}
-
-        <Block title="Operator and licence">
-          <p>
-            <strong>Operating company.</strong>{" "}
-            {c.operator ?? "Not named in the pages read here."}
-          </p>
-          <p>
-            <strong>Licence.</strong>{" "}
-            {v.licence
-              ? `${v.licence.authority}${v.licence.number ? `, ${v.licence.number}` : ""}`
-              : "Not confirmed."}
-          </p>
-          {v.complaints ? <p>Complaints: {COMPLAINT_LABEL[v.complaints]}.</p> : null}
-          <Src src={c.sources?.licence} />
-        </Block>
+      <div className="cc-panels">
+        <FactTable title="Offer terms" rows={terms} />
+        <FactTable title="Operator and payments" rows={operator} />
       </div>
-
-      {/* Said once, at the foot, for the whole expansion. A venue nobody has
-          read yet is a fact about our coverage, not a property of its offer. */}
+      {/* Prose below the tables, not inside them. A paragraph in a value
+          column stretches its table to twice the height of the one beside it
+          and gets a third of the measure it needs. */}
+      {(c.termsNote || c.claims.length > 0) && (
+        <div className="cc-notes">
+          {c.termsNote ? (
+            <p>
+              {/* Whatever clause was worth quoting for that venue, and it is
+                  not the same subject twice: Wild.io's is the package scope
+                  and the slots-only rule, Lucky Rollers' is the cashback
+                  schedule. The label has to be true of all of them. */}
+              <strong>Noted in the terms.</strong> {c.termsNote}
+            </p>
+          ) : null}
+          {c.claims.length > 0 ? (
+            <p>
+              <strong>Also advertised.</strong> {c.claims.join(" · ")}
+            </p>
+          ) : null}
+        </div>
+      )}
+      {/* Said once, for the whole expansion. A venue nobody has read yet is a
+          fact about our coverage, not a property of its offer. */}
       <p className="cc-detail-foot">
         {c.lastChecked
           ? `Terms last read ${c.lastChecked}.`
@@ -346,12 +377,26 @@ function OfferDetails({ c, id }: { c: Casino; id: string }) {
   );
 }
 
-function Block({ title, children }: { title: string; children: React.ReactNode }) {
+function FactTable({ title, rows }: { title: string; rows: Row[] }) {
+  if (rows.length === 0) return null;
   return (
-    <div className="cc-block">
-      <p className="cc-detail-h">{title}</p>
-      {children}
-    </div>
+    <section className="cc-panel">
+      <p className="cc-panel-head">{title}</p>
+      <dl className="cc-panel-rows">
+        {rows.map((r) => (
+          <div
+            className={`cc-panel-row${r.wide ? " is-wide" : ""}`}
+            key={`${title}-${r.k}`}
+          >
+            <dt>{r.k}</dt>
+            <dd>
+              {r.v}
+              <Src src={r.src} />
+            </dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 
@@ -360,18 +405,16 @@ function Src({ src }: { src?: FieldSource | typeof UNCONFIRMED }) {
   if (!src) return null;
   if (src === UNCONFIRMED) {
     return (
-      <p className="cc-detail-src">
-        From the supplied list, not confirmed at the venue.
-      </p>
+      <span className="cc-detail-src">Not confirmed at the venue</span>
     );
   }
   return (
-    <p className="cc-detail-src">
+    <span className="cc-detail-src">
       <a href={src.url} rel="nofollow noopener noreferrer" target="_blank">
         {new URL(src.url).hostname.replace(/^www\./, "")}
       </a>
       , read {src.readOn}
-    </p>
+    </span>
   );
 }
 
