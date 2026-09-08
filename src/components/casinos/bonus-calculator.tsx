@@ -10,9 +10,11 @@
 //
 // Runs in the browser; nothing is sent anywhere.
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { OutboundLink } from "@/components/report/outbound-link";
+import { CASINO_LOGOS } from "@/lib/casino-logos";
 import { LEAVE_SITE_BODY, amount } from "@/lib/crypto-casinos-copy";
+import { trackCasinoCalculator } from "@/lib/casino-tracking";
 
 /**
  * The house edge the cost line assumes.
@@ -90,6 +92,13 @@ export function BonusCalculator({ offers }: { offers: CalcOffer[] }) {
 
   const stale = shown != null && shown.sig !== `${slug}|${num(budget)}`;
 
+  // One event when the tool first appears, so the panel can report the share
+  // of readers who reach it against the share who press the button.
+  useEffect(() => {
+    trackCasinoCalculator({ event: "view", venue: offers[0]?.slug ?? null });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const res = useMemo(() => {
     if (!shown) return null;
     const o = shown.offer;
@@ -106,6 +115,7 @@ export function BonusCalculator({ offers }: { offers: CalcOffer[] }) {
   if (!offer || !shown || !res) return null;
 
   const fmt = (n: number) => amount(Math.round(n), shown.offer.unit);
+  const logo = CASINO_LOGOS[shown.offer.slug];
 
   return (
     <div className="cc-bc">
@@ -149,7 +159,10 @@ export function BonusCalculator({ offers }: { offers: CalcOffer[] }) {
         <button
           type="button"
           className="cc-bc-go"
-          onClick={() => setShown(compute(offer, num(budget)))}
+          onClick={() => {
+            setShown(compute(offer, num(budget)));
+            trackCasinoCalculator({ event: "calculate", venue: offer.slug });
+          }}
         >
           Calculate
         </button>
@@ -162,7 +175,22 @@ export function BonusCalculator({ offers }: { offers: CalcOffer[] }) {
           </p>
         )}
 
-        <p className="cc-bc-venue">{shown.offer.name}</p>
+        <div className="cc-bc-head">
+          {logo && (
+            <span className="cc-bc-logo-box">
+              <img
+                className="cc-bc-logo"
+                src={logo.src}
+                alt=""
+                width={110}
+                height={47}
+                loading="lazy"
+                decoding="async"
+              />
+            </span>
+          )}
+          <p className="cc-bc-venue">{shown.offer.name}</p>
+        </div>
         <p className="cc-bc-big">{fmt(shown.bonus)}</p>
         <p className="cc-bc-sub">
           in bonus funds on a {amount(Math.round(shown.deposit), shown.offer.unit)}{" "}

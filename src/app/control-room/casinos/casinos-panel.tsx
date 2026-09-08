@@ -66,6 +66,18 @@ interface Visit {
   viewport_height: number | null;
 }
 
+/** One row of casino_calculator_events. See lib/casino-tracking. */
+interface CalcEvent {
+  created_at: string;
+  session_id: string | null;
+  event: string | null;
+  venue: string | null;
+  country: string | null;
+  device_type: string | null;
+  user_agent: string | null;
+  is_bot: boolean | null;
+}
+
 interface Click {
   id: string;
   created_at: string;
@@ -87,6 +99,9 @@ const VISIT_COLS =
   "created_at,session_id,source,referrer,country,city,device_type,is_entry_page,is_bot,user_agent,page_path,screen_width,screen_height,viewport_width,viewport_height";
 const CLICK_COLS =
   "id,created_at,session_id,event,platform,venue_ref,rank,target_url,source,country,city,device_type,user_agent,is_bot";
+
+const CALC_COLS =
+  "created_at,session_id,event,venue,country,device_type,user_agent,is_bot";
 
 const RECENT_LIMIT = 150;
 
@@ -132,6 +147,7 @@ const num = (n: number) => n.toLocaleString("en-US");
 export function CasinosPanel({ links }: { links: CasinoLink[] }) {
   const [visits, setVisits] = useState<Visit[] | null>(null);
   const [clicks, setClicks] = useState<Click[] | null>(null);
+  const [calc, setCalc] = useState<CalcEvent[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
   const [deal, setDeal] = useState<DealFilter>("all");
@@ -143,7 +159,7 @@ export function CasinosPanel({ links }: { links: CasinoLink[] }) {
       try {
         // Both scoped to this page in PostgREST, so the panel never pulls the
         // whole site's analytics to filter it in the browser.
-        const [v, c] = await Promise.all([
+        const [v, c, k] = await Promise.all([
           supabaseSelectAll<Visit>(
             "frontpage_visits",
             `select=${VISIT_COLS}&page_path=eq.${PAGE_PATH}&order=created_at.asc`,
@@ -152,10 +168,15 @@ export function CasinosPanel({ links }: { links: CasinoLink[] }) {
             "report_outbound_clicks",
             `select=${CLICK_COLS}&source_page=eq.${PAGE_PATH}&order=created_at.desc`,
           ),
+          supabaseSelectAll<CalcEvent>(
+            "casino_calculator_events",
+            `select=${CALC_COLS}&source_page=eq.${PAGE_PATH}&order=created_at.desc`,
+          ),
         ]);
         if (cancelled) return;
         setVisits(v);
         setClicks(c);
+        setCalc(k);
       } catch (e) {
         if (!cancelled) setError(String(e));
       }
@@ -228,6 +249,14 @@ export function CasinosPanel({ links }: { links: CasinoLink[] }) {
           : null,
     };
   }, [scopedVisits, scopedClicks]);
+
+  const scopedCalc = useMemo(
+    () =>
+      (calc ?? []).filter(
+        (e) => inWindow(e.created_at) && (showBots || !isBotRow(e)),
+      ),
+    [calc, showBots, cutoff],
+  );
 
   const loading = visits === null || clicks === null;
 
@@ -330,6 +359,15 @@ export function CasinosPanel({ links }: { links: CasinoLink[] }) {
             days={days}
             timeframe={timeframe}
             onTimeframe={setTimeframe}
+          />
+          <CalculatorSection
+            events={scopedCalc}
+            links={links}
+            clicks={(clicks ?? []).filter(
+              (c) => inWindow(c.created_at) && (showBots || !isBotRow(c)),
+            )}
+            landings={stats.landings}
+            days={days}
           />
           <VenueSection links={links} clicks={scopedClicks} dealFilter={deal} />
           <PlacementSection clicks={scopedClicks} />
@@ -753,6 +791,180 @@ function BreakdownBars({ rows }: { rows: Bar[] }) {
         </div>
       ))}
     </div>
+  );
+}
+
+
+/* ---- the calculator ---------------------------------------------------- */
+
+/**
+ * How many people use the bonus calculator, and which offers they price.
+ *
+ * Three steps, from three sources that already exist: the calculator's own
+ * view and calculate events, and the Play Now clicks whose venue_ref says they
+ * came from inside its result. The amount a reader types is never recorded, so
+ * there is no distribution of budgets here and there will not be one.
+ */
+function CalculatorSection({
+  events,
+  links,
+  clicks,
+  landings,
+  days,
+}: {
+  events: CalcEvent[];
+  links: CasinoLink[];
+  clicks: Click[];
+  landings: number;
+  days: number;
+}) {
+  const nameBySlug = useMemo(() => {
+    const m = new Map<string, CasinoLink>();
+    for (const l of links) m.set(l.slug, l);
+    return m;
+  }, [links]);
+
+  const stats = useMemo(() => {
+    const sess = (pred: (e: CalcEvent) => boolean) =>
+      new Set(events.filter(pred).map((e) => e.session_id).filter(Boolean)).size;
+    const saw = sess((e) => e.event === "view");
+    const used = sess((e) => e.event === "calculate");
+    const calculates = events.filter((e) => e.event === "calculate").length;
+    const left = new Set(
+      clicks
+        .filter(
+          (c) =>
+            c.event === "confirm" &&
+            (c.venue_ref === "crypto-casinos-calc-affiliate" ||
+              c.venue_ref === "crypto-casinos-calc-plain"),
+        )
+        .map((c) => c.session_id)
+        .filter(Boolean),
+    ).size;
+    return {
+      saw,
+      used,
+      calculates,
+      left,
+      // Of the sessions that scrolled the calculator into existence, how many
+      // pressed the button.
+      useRate: saw > 0 ? Math.round((used / saw) * 1000) / 10 : null,
+      // And of those, how many went on to the casino from inside the result.
+      ctaRate: used > 0 ? Math.round((left / used) * 1000) / 10 : null,
+      // Repeat presses per session that used it: a reader comparing offers.
+      perUser: used > 0 ? Math.round((calculates / used) * 10) / 10 : null,
+      reach: landings > 0 ? Math.round((saw / landings) * 1000) / 10 : null,
+    };
+  }, [events, clicks, landings]);
+
+  const venues = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const e of events) {
+      if (e.event !== "calculate" || !e.venue) continue;
+      m.set(e.venue, (m.get(e.venue) ?? 0) + 1);
+    }
+    const max = Math.max(1, ...m.values());
+    return Array.from(m.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 12)
+      .map(([slug, n]) => ({
+        slug,
+        label: nameBySlug.get(slug)?.name ?? slug,
+        stage: nameBySlug.get(slug)?.stage,
+        n,
+        pct: (n / max) * 100,
+      }));
+  }, [events, nameBySlug]);
+
+  const empty = events.length === 0;
+
+  return (
+    <section className="uni-hub-section">
+      <header className="uni-hub-section-head">
+        <h2 className="uni-hub-section-title">Bonus calculator</h2>
+        <span className="uni-hub-section-meta">
+          how many people use it, and what they price
+        </span>
+      </header>
+
+      <div className="aq-chart-card">
+        {empty ? (
+          <div className="uni-hub-empty">
+            No calculator events captured yet. Rows land here once a visitor
+            accepts the cookie banner and the calculator renders. If this stays
+            empty after real use, confirm the casino_calculator_events table
+            exists in Supabase; the SQL is supabase/casino_calculator_events.sql.
+          </div>
+        ) : (
+          <>
+            <div className="cr-cas-cov cr-cas-cov4">
+              <CovStat
+                value={num(stats.saw)}
+                label={`sessions reached the calculator${stats.reach != null ? `, ${stats.reach}% of everyone who landed` : ""}`}
+                tone="good"
+              />
+              <CovStat
+                value={num(stats.used)}
+                label={`pressed Calculate${stats.useRate != null ? `, ${stats.useRate}% of those who saw it` : ""}`}
+                tone="good"
+              />
+              <CovStat
+                value={stats.perUser == null ? "0" : `${stats.perUser}×`}
+                label="calculations per session that used it"
+                tone="good"
+              />
+              <CovStat
+                value={num(stats.left)}
+                label={`went through to a casino from the result${stats.ctaRate != null ? `, ${stats.ctaRate}%` : ""}`}
+                tone={stats.left === 0 ? "warn" : "good"}
+              />
+            </div>
+
+            <p className="cr-cas-note">
+              Counted over the last {days} days. The budget a reader types is
+              not recorded and no column here holds one.
+            </p>
+
+            {venues.length > 0 && (
+              <div className="cr-cas-lists" style={{ gridTemplateColumns: "1fr" }}>
+                <div>
+                  <h3 className="cr-cas-listh">Offers priced</h3>
+                  <div className="cr-cas-bars">
+                    {venues.map((v) => (
+                      <div key={v.slug} className="cr-cas-barrow">
+                        <div className="cr-cas-barhead">
+                          <span className="cr-cas-barlabel">
+                            {v.label}
+                            {v.stage && (
+                              <span
+                                className={`cr-cas-chip${v.stage !== "live" ? " is-plain" : ""}`}
+                              >
+                                {v.stage === "live"
+                                  ? "Attributed"
+                                  : STAGE_LABEL[v.stage]}
+                              </span>
+                            )}
+                          </span>
+                          <span className="cr-cas-barcounts">
+                            {num(v.n)} calculation{v.n === 1 ? "" : "s"}
+                          </span>
+                        </div>
+                        <div className="cr-cas-bartrack">
+                          <div
+                            className={`cr-cas-barfill${v.stage && v.stage !== "live" ? " is-plain" : ""}`}
+                            style={{ width: `${Math.max(v.pct, 4)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </section>
   );
 }
 
