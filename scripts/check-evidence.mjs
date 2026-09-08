@@ -1,4 +1,5 @@
-// Every verified figure on /crypto-casinos has to say where it came from.
+// Every verified figure on /best-crypto-casino-bonus has to say where it
+// came from.
 //
 // The page's argument is that its checked column is read off a venue's own
 // terms or its regulator, while the chips beside it are the venue's marketing.

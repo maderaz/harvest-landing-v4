@@ -1,4 +1,4 @@
-// /crypto-casinos types, score and bonus maths.
+// /best-crypto-casino-bonus types, score and bonus maths.
 //
 // CLAIMS AND VERIFIED FACTS ARE SEPARATE FIELDS, on purpose. What a venue
 // advertises ("instant withdrawals", "no KYC") is marketing copy; what it is
@@ -145,12 +145,17 @@ export interface Casino {
   /**
    * Whether the link above carries our affiliate token yet.
    *
-   * "live" means the deal is signed and the URL is the attributed one, which
-   * is why the outbound helper must pass it through untouched. "pending"
-   * means it is the venue's plain domain while the deal is being set up, and
-   * the row will be swapped when the real link arrives.
+   * "live" is the only value that means the URL is attributed, which is why
+   * the outbound helper must pass it through untouched. The other three are
+   * all a plain domain earning nothing, and they are kept apart because the
+   * work each one needs is different: "in-progress" is an application moving,
+   * "stuck" is one that has stopped and needs chasing, and "none" is a venue
+   * with no programme to apply to. Only the control room reads the
+   * difference; every public surface asks the one question, is this live.
    */
-  dealStatus?: "live" | "pending" | null;
+  dealStatus?: "live" | "in-progress" | "stuck" | "none" | null;
+  /** The affiliate network, or what the application is waiting on. */
+  dealNote?: string | null;
   /** Position in the supplied list. Commercial, and labelled as such. */
   order: number;
   bonusClaim: string | null;
@@ -327,6 +332,16 @@ export interface ParsedBonus {
   pct: number | null;
   cap: number | null;
   unit: "USD" | "EUR" | "BTC" | "ETH" | null;
+  /**
+   * Whether the headline itself joined that percentage to that cap.
+   *
+   * The difference matters to anything that multiplies the percentage by a
+   * deposit. Casino Punkz advertises "20,000 USDT Welcome Bonus + 15%
+   * Cashback": the fallback branch reads a cap of 20,000 and a percentage of
+   * 15, and the two describe different products. A caller pricing a deposit
+   * match has to require this.
+   */
+  paired: boolean;
 }
 
 const AMOUNT =
@@ -346,7 +361,7 @@ function readAmount(num: string, k?: string, unit?: string): Amount | null {
 }
 
 export function parseBonus(headline: string | null): ParsedBonus {
-  const empty: ParsedBonus = { pct: null, cap: null, unit: null };
+  const empty: ParsedBonus = { pct: null, cap: null, unit: null, paired: false };
   if (!headline) return empty;
   const t = headline.replace(/\u00a0/g, " ");
 
@@ -364,7 +379,7 @@ export function parseBonus(headline: string | null): ParsedBonus {
     const pct = Number(m[1]);
     if (!best || pct > best.pct) best = { pct, cap: amt.cap, unit: amt.unit };
   }
-  if (best) return { pct: best.pct, cap: best.cap, unit: best.unit };
+  if (best) return { pct: best.pct, cap: best.cap, unit: best.unit, paired: true };
 
   // No pair: take the headline percentage and, separately, a standalone
   // amount ("20,000 USDT Welcome Bonus + 15% Cashback").
@@ -387,7 +402,7 @@ export function parseBonus(headline: string | null): ParsedBonus {
     amt = readAmount(m[1], m[2], m[3]);
     if (amt) break;
   }
-  return { pct, cap: amt?.cap ?? null, unit: amt?.unit ?? null };
+  return { pct, cap: amt?.cap ?? null, unit: amt?.unit ?? null, paired: false };
 }
 
 /**

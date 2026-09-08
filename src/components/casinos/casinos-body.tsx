@@ -1,4 +1,4 @@
-// Everything visible on /crypto-casinos.
+// Everything visible on /best-crypto-casino-bonus.
 //
 // Split out of page.tsx the way usdc-hub-body.tsx is split out of
 // src/app/usdc/page.tsx: the route file keeps metadata and schemas, the body
@@ -8,11 +8,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import casinosHeader from "@/assets/icons/CryptoCasinos-Header.png";
-import type { HarvestRow } from "@/app/crypto-casinos/page";
+import type { HarvestRow } from "@/app/best-crypto-casino-bonus/page";
 import { LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
 import { CasinoTable } from "@/components/casinos/casino-table";
 import { OutboundLink } from "@/components/report/outbound-link";
-import { WageringCalculator } from "@/components/casinos/wagering-calculator";
+import { BonusCalculator } from "@/components/casinos/bonus-calculator";
 import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
 import type { Casino } from "@/lib/crypto-casinos";
 import {
@@ -24,6 +24,7 @@ import {
   BONUS_TERMS,
   BONUS_TERMS_INTRO,
   BYLINE,
+  calcOffers,
   CHOOSING,
   CHOOSING_CLOSE,
   CHOOSING_INTRO,
@@ -374,23 +375,12 @@ export function CasinosBody({
           <p>{WAGERING_AFTER[1]}</p>
         </Section>
 
-        <Section id="bonus-calculator" eyebrow="Bonus calculator" title="Explore the numbers behind your bonus">
+        <Section id="bonus-calculator" eyebrow="Bonus calculator" title="What is your deposit worth?">
           <p>{CALC_INTRO}</p>
-          {/* Deposit-match offers only. A cashback or rakeback rate has no
-              deposit match to model, and the amount the playthrough
-              multiplies is one leg of a ladder offer rather than the
-              banner total, so the preset carries which stage it is. */}
-          <WageringCalculator
-            presets={wagering.map((r) => ({
-              slug: r.slug,
-              name: r.name,
-              // The stage a reader is actually offered on deposit one,
-              // where the compared figure is a package total.
-              bonus: r.stageOne ?? r.basisUsd,
-              wagering: r.wagering,
-              stage: r.stageOne != null ? "First-deposit bonus" : null,
-            }))}
-          />
+          {/* Deposit-match offers only, in ranking order, so the tool opens
+              on the page's own top row. calcOffers explains what it takes
+              to qualify. */}
+          <BonusCalculator offers={calcOffers(ranked)} />
         </Section>
 
         {/* Starts after the withdrawal has landed. Everything above this

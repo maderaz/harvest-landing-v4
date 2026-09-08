@@ -1,4 +1,4 @@
-// Every figure and every editorial table on /crypto-casinos, in one place.
+// Every figure and every editorial table on the casino page, in one place.
 //
 // Same reason lib/usdc-hub.ts exists: a number that appears in the hero, a
 // table, a bullet and an FAQ answer has four chances to disagree with itself
@@ -216,7 +216,7 @@ export const WAGERING_AFTER = [
 
 /** Above the calculator. */
 export const CALC_INTRO =
-  "Choose a casino offer or enter your own bonus amount to see how the wagering adds up. The calculator shows the total betting volume required and estimates the cost to complete it based on the game assumptions below. Try different amounts and settings to get a clearer picture of the offer you’re considering.";
+  "Enter what you plan to deposit, pick a casino, and see the bonus that deposit earns at the advertised match. The result also carries the playthrough attached to it: the qualifying bets the terms ask for, and what that volume is likely to cost.";
 
 /**
  * Offers advertised as a running total across several deposits.
@@ -553,6 +553,74 @@ export function turnoverRows(casinos: Casino[]): TurnoverRow[] {
     })
     .filter((r): r is TurnoverRow => r != null)
     .sort((a, b) => a.turnover - b.turnover);
+}
+
+
+/* ---- what the calculator offers ---------------------------------------- */
+
+/**
+ * The offers a deposit can be priced against.
+ *
+ * A deposit match and a cap in dollars are both required, because the tool
+ * answers one question: what does my deposit turn into here. A cashback rate
+ * has no match to apply, a rakeback rate has no deposit behind it, and a cap
+ * in BTC needs a price feed this page does not have. Those venues stay out of
+ * the dropdown instead of appearing with an estimate nobody can stand behind.
+ *
+ * The cap is the ceiling on the deposit the reader is about to make, so a
+ * ladder offer contributes its first stage and carries the package total
+ * separately. Ranking order is preserved, which is what makes the first entry
+ * the page's own top row.
+ */
+export interface CalcOfferSeed {
+  slug: string;
+  name: string;
+  rank: number;
+  matchPct: number;
+  capUsd: number;
+  packageUsd: number | null;
+  unit: "USD" | "USDT";
+  wagering: number | null;
+  wagersDeposit: boolean;
+  minDeposit: string | null;
+  url: string;
+  attributed: boolean;
+}
+
+export function calcOffers(casinos: Casino[]): CalcOfferSeed[] {
+  const out: CalcOfferSeed[] = [];
+  casinos.forEach((c, i) => {
+    if (!c.url) return;
+    if (!offerKinds(c).includes("welcome")) return;
+    const parsed = parseBonus(c.bonusClaim);
+    const pct = parsed.pct;
+    const cap = capOf(c);
+    if (pct == null || pct <= 0 || cap == null) return;
+    // The percentage has to belong to the cap. Where the headline did not
+    // join them, only a cap read off the terms makes the pair trustworthy:
+    // Wild.io's "Up to 350%" against the $5,000 its terms state is a match,
+    // and Casino Punkz's 15% beside a 20,000 USDT bonus is its cashback.
+    if (!parsed.paired && c.verified.capUsd == null) return;
+    const stage = c.verified.stageOneUsd ?? null;
+    out.push({
+      slug: c.slug,
+      name: c.name,
+      rank: i + 1,
+      matchPct: pct,
+      capUsd: stage ?? cap,
+      packageUsd: stage != null ? cap : null,
+      unit:
+        c.verified.capUsd == null && /USDT/i.test(c.bonusClaim ?? "")
+          ? "USDT"
+          : "USD",
+      wagering: c.verified.wagering,
+      wagersDeposit: c.verified.wageringBasis === "deposit-and-bonus",
+      minDeposit: c.minDeposit ?? null,
+      url: c.url,
+      attributed: c.dealStatus === "live",
+    });
+  });
+  return out;
 }
 
 /* ---- editorial tables -------------------------------------------------- */
