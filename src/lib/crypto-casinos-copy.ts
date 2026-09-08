@@ -385,6 +385,41 @@ export const OFFERS: Record<string, OfferCopy> = {
     headline: "Up to $5,000",
     support: "200% match and 50 free spins, alongside 10% weekly cashback",
   },
+  // The five below joined the ranking when the wordmark stopped gating it.
+  // Every line is a restatement of the operator's own headline, same as the
+  // rest; nothing has been read off their terms, and their rows say so.
+  "crypto-games": {
+    kinds: ["welcome"],
+    type: "Welcome bonus",
+    headline: "Up to $20,000",
+    support: "200% advertised match",
+  },
+  coinpoker: {
+    kinds: ["welcome"],
+    type: "Welcome bonus",
+    headline: "Up to $2,000",
+    support: "150% advertised match",
+  },
+  casinok: {
+    kinds: ["welcome", "cashback"],
+    type: "Welcome bonus",
+    headline: "Up to $6,000",
+    support: "300% match and 777 free spins, alongside 10% cashback",
+  },
+  "block-spins": {
+    kinds: ["welcome", "cashback"],
+    type: "Welcome bonus",
+    headline: "Up to $1,000",
+    support: "100% match, advertised with up to 15% cashback",
+  },
+  // Rakeback, not a deposit match. Classified as such so the welcome-bonus
+  // total does not absorb a figure that is not one.
+  rakebit: {
+    kinds: ["rakeback", "cashback"],
+    type: "Rakeback",
+    headline: "Up to $1,000 rakeback",
+    support: "100% rakeback, advertised with cashback up to 25%",
+  },
   "wsm-casino": {
     kinds: ["welcome", "cashback"],
     type: "Welcome bonus",

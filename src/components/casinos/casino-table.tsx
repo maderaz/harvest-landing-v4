@@ -143,8 +143,8 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                   <span className="hub-cell hub-rank">{i + 1}</span>
 
                   <span className="hub-cell cc-venue">
-                    {logo ? (
-                      <span className="cc-logo-box">
+                    <span className="cc-logo-box">
+                      {logo ? (
                         <img
                           className="cc-logo"
                           src={logo.src}
@@ -154,8 +154,13 @@ export function CasinoTable({ casinos }: { casinos: Casino[] }) {
                           loading="lazy"
                           decoding="async"
                         />
-                      </span>
-                    ) : null}
+                      ) : (
+                        // No wordmark on file. A plate with the venue's name
+                        // keeps the column even, and is not an imitation of a
+                        // logo nobody has supplied.
+                        <span className="cc-namemark">{c.name}</span>
+                      )}
+                    </span>
                     <span className="cc-venue-txt">
                       <span className="cc-name">{c.name}</span>
                       {offer ? (

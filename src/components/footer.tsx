@@ -37,6 +37,10 @@ const REPORTS = [
   // footer link naming the old thing sends a different signal than the page
   // it points at.
   { label: "XRP Staking", href: "/report/xrp-yield-ranking" },
+  // Exact-match anchor for /best-crypto-casino-bonus: the label is the phrase
+  // the page targets and the slug spells. Note the page is noindex today, so
+  // this link is navigation and nothing more until that comes off.
+  { label: "Best Crypto Casino Bonus", href: "/best-crypto-casino-bonus" },
   { label: "Stablecoin Yield", href: "/report/stablecoin-yield-ranking" },
   { label: "Aerodrome LP Yield", href: "/report/aerodrome" },
 ];
