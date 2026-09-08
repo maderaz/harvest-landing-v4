@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
+import { hasLogo } from "@/lib/casino-logos";
 import { OFFERS } from "@/lib/crypto-casinos-copy";
 import { CasinosPanel, type CasinoLink } from "./casinos-panel";
 
@@ -42,9 +43,35 @@ function looksAttributed(url: string | null): boolean {
 }
 
 export default function CasinosControlRoomPage() {
+  const all = loadCasinos().casinos;
   // The same ranking the public page renders, in the same order, so a rank in
   // the click data lines up with a row here.
-  const ranked = loadCasinos().casinos.filter(isRanked);
+  const ranked = all.filter(isRanked);
+
+  /*
+   * Signed deals the page does not carry.
+   *
+   * isRanked wants a wordmark and a link. A venue with a live affiliate URL
+   * and no committed wordmark is therefore invisible to every surface here,
+   * which is the one case where counting only ranked rows under-reports the
+   * business: those links can be paid for and are earning nothing, not
+   * because a deal is missing but because a PNG is.
+   */
+  const offPage: CasinoLink[] = all
+    .filter((c) => c.dealStatus === "live" && !isRanked(c) && c.url)
+    .map((c) => ({
+      slug: c.slug,
+      name: c.name,
+      rank: 0,
+      url: c.url as string,
+      host: hostOf(c.url),
+      deal: "affiliate" as const,
+      stage: "live" as const,
+      dealNote: c.dealNote ?? null,
+      tokenInUrl: looksAttributed(c.url),
+      offer: null,
+      reason: hasLogo(c.slug) ? "no link on file" : "no wordmark committed",
+    }));
   const links: CasinoLink[] = ranked.map((c, i) => ({
     slug: c.slug,
     name: c.name,
@@ -66,5 +93,5 @@ export default function CasinosControlRoomPage() {
     tokenInUrl: looksAttributed(c.url),
     offer: OFFERS[c.slug]?.headline ?? null,
   }));
-  return <CasinosPanel links={links} />;
+  return <CasinosPanel links={links} offPage={offPage} />;
 }

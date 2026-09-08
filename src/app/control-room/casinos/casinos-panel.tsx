@@ -46,6 +46,8 @@ export interface CasinoLink {
   /** What the URL itself carries. Disagreement with `deal` is a finding. */
   tokenInUrl: boolean;
   offer: string | null;
+  /** Set only on off-page deals: why the venue is not in the ranking. */
+  reason?: string;
 }
 
 interface Visit {
@@ -144,7 +146,14 @@ function countryName(code: string | null): string {
 const DAY_MS = 86_400_000;
 const num = (n: number) => n.toLocaleString("en-US");
 
-export function CasinosPanel({ links }: { links: CasinoLink[] }) {
+export function CasinosPanel({
+  links,
+  offPage = [],
+}: {
+  links: CasinoLink[];
+  /** Live deals whose venue is not in the ranking. See the page component. */
+  offPage?: CasinoLink[];
+}) {
   const [visits, setVisits] = useState<Visit[] | null>(null);
   const [clicks, setClicks] = useState<Click[] | null>(null);
   const [calc, setCalc] = useState<CalcEvent[] | null>(null);
@@ -348,6 +357,7 @@ export function CasinosPanel({ links }: { links: CasinoLink[] }) {
         <>
           <CoverageSection
             links={links}
+            offPage={offPage}
             clicks={(clicks ?? []).filter(
               (c) => inWindow(c.created_at) && (showBots || !isBotRow(c)),
             )}
@@ -422,10 +432,12 @@ function Stat({
  */
 function CoverageSection({
   links,
+  offPage,
   clicks,
   days,
 }: {
   links: CasinoLink[];
+  offPage: CasinoLink[];
   clicks: Click[];
   days: number;
 }) {
@@ -457,7 +469,11 @@ function CoverageSection({
         <div className="cr-cas-cov">
           <CovStat
             value={`${affiliate.length} of ${links.length}`}
-            label="links carry an affiliate token"
+            label={
+              offPage.length === 0
+                ? "ranked links carry an affiliate token"
+                : `ranked links carry an affiliate token, of ${affiliate.length + offPage.length} deals signed`
+            }
             tone="good"
           />
           <CovStat
@@ -493,6 +509,19 @@ function CoverageSection({
             </>
           )}
         </p>
+
+        {offPage.length > 0 && (
+          <p className="cr-cas-note cr-cas-warn">
+            {offPage.length} signed deal{offPage.length === 1 ? " is" : "s are"}{" "}
+            not on the page at all, so {offPage.length === 1 ? "it earns" : "they earn"}{" "}
+            nothing:{" "}
+            {offPage
+              .map((l) => `${l.name} (${l.host}, ${l.reason ?? "not ranked"})`)
+              .join("; ")}
+            . A venue joins the ranking when it has a committed wordmark and a
+            link, so this is the cheapest revenue on the page to recover.
+          </p>
+        )}
 
         {mismatched.length > 0 && (
           <p className="cr-cas-note cr-cas-warn">
