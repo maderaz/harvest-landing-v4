@@ -190,9 +190,32 @@ export function summaryPoints(casinos: Casino[]): SummaryPoint[] {
 }
 
 /**
- * The combined figure, rounded down to a thousand, for the title and the
- * description. Both read off the same sum the first summary bullet prints, so
- * a search result and the page cannot disagree about it.
+ * The combined figure as the title, the description and the social card all
+ * print it.
+ *
+ * Rounded DOWN to ten thousand, not to a thousand. $168,400 is the exact sum
+ * and the first summary bullet prints it; a headline is not the place for a
+ * figure that reads as a measurement. $160,000+ is rounder, still true, and
+ * stays true as offers move by a few thousand either way, so a search result
+ * does not go stale between deploys. Rounding down is the direction that keeps
+ * the claim honest: the total can only be larger than what the plus sign
+ * promises.
+ *
+ * One function, because the title, the description, the OpenGraph card and the
+ * image on it all quote this and disagreeing about their own headline number
+ * is the defect this page has been corrected for twice.
+ */
+export function bonusHeadline(casinos: Casino[]): { compact: string; full: string } {
+  const tenK = Math.floor(bonusTotalUsd(casinos) / 10_000) * 10_000;
+  return {
+    compact: `$${tenK / 1000}K+`,
+    full: `$${tenK.toLocaleString("en-US")}+`,
+  };
+}
+
+/**
+ * The exact sum, off the same caps the ranking prints. Everything above
+ * rounds this; nothing else recomputes it.
  */
 export function bonusTotalUsd(casinos: Casino[]): number {
   return casinos
@@ -928,6 +951,21 @@ export const DISCLOSURE = [
   "The wagering totals and calculator estimates are our calculations, with their assumptions shown alongside the results. Offers can change, so refer to the source date when assessing how recently a detail was reviewed.",
   "Harvest may earn a commission when you register through a Play Now link. Our commercial relationship is disclosed above the comparison.",
 ];
+
+/**
+ * Where an operator writes in, and what the page will and will not sell.
+ *
+ * It sits under the disclosure on purpose. An invitation to buy a placement
+ * reads very differently three paragraphs after the page has said the sort
+ * order is not for sale, and the two belong together for the reader as much as
+ * for the operator: this is the page saying the same thing to both.
+ */
+export const PARTNER_HEADING = "Operators: get listed";
+
+export const PARTNER_BODY =
+  "Running a casino you would like compared here? Write to marketing@harvest.finance with your brand, the offer you want listed and your affiliate programme. Every venue is ranked by the size of its advertised offer under the rule printed above the comparison, and a commercial arrangement does not move a row or change what we record from published terms.";
+
+export const PARTNER_EMAIL = "marketing@harvest.finance";
 
 /* ---- the reviews ------------------------------------------------------ */
 
