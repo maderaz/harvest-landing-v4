@@ -285,7 +285,9 @@ export function CasinosBody({
               the page twice to anyone using a screen reader. */}
           <Image
             src={casinosHeader}
-            alt=""
+            // Not decorative. The image is the page's subject and it carries
+            // every venue's wordmark, so it says what it shows.
+            alt={`Wordmarks of the ${ranked.length} crypto casinos compared on this page, with the combined size of their advertised welcome bonuses`}
             className="cc-figure"
             sizes="(max-width: 820px) 100vw, 780px"
             priority
@@ -677,6 +679,13 @@ export function CasinosBody({
             re-date the offer. For what Harvest otherwise does, see the{" "}
             <Link href="/methodology">methodology</Link> behind the yield
             rankings and the <Link href="/risk-framework">risk framework</Link>.
+          </p>
+          <p>
+            The comparison is published as data as well as a table:{" "}
+            <a href="/data/crypto-casinos/index.json">index.json</a> carries
+            every venue with the source URL and read date behind each figure,
+            and <a href="/data/crypto-casinos/offers.csv">offers.csv</a> is the
+            same rows flat. Both are CC BY 4.0.
           </p>
           <p className="cc-partner">
             {PARTNER_LINE}{" "}
