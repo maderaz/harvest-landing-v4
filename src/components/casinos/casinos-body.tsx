@@ -44,9 +44,8 @@ import {
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
   NETWORK_CHOICE,
-  PARTNER_BODY,
   PARTNER_EMAIL,
-  PARTNER_HEADING,
+  PARTNER_LINE,
   PAYMENTS_INTRO,
   PAYMENT_CHECKS,
   PAYMENT_SOURCES,
@@ -672,13 +671,10 @@ export function CasinosBody({
             <Link href="/methodology">methodology</Link> behind the yield
             rankings and the <Link href="/risk-framework">risk framework</Link>.
           </p>
-          <div className="cc-partner">
-            <h3 className="cc-partner-h">{PARTNER_HEADING}</h3>
-            <p className="cc-partner-b">{PARTNER_BODY}</p>
-            <a className="cc-partner-a" href={`mailto:${PARTNER_EMAIL}`}>
-              {PARTNER_EMAIL}
-            </a>
-          </div>
+          <p className="cc-partner">
+            {PARTNER_LINE}{" "}
+            <a href={`mailto:${PARTNER_EMAIL}`}>{PARTNER_EMAIL}</a>
+          </p>
         </Section>
       </main>
     </div>

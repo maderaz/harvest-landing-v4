@@ -1088,33 +1088,19 @@
 }
 
 /* ---- the operator invitation ------------------------------------------- */
-/* Under the disclosure on purpose: an invitation to buy a placement reads
-   very differently three paragraphs after the page has said the sort order is
-   not for sale. */
-.cc-page .cc-partner {
-  margin: 22px 0 0;
-  padding: 20px 22px;
+/* One line, under the disclosure. Small print, because it is addressed to
+   people who do not read this page and would be noise to those who do. */
+.cc-page .uni-home-content p.cc-partner {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin: 20px 0 0;
+  padding: 10px 14px;
   border: 1px solid var(--rp-card-border, #e4e4ec);
-  border-radius: 12px;
+  border-radius: 9px;
   background: var(--uni-card-2, #fbfbfd);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--uni-ink-3);
 }
-.cc-page .cc-partner-h {
-  margin: 0 0 8px;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: -0.005em;
-  color: var(--uni-ink);
-}
-.cc-page .uni-home-content p.cc-partner-b {
-  margin: 0;
-  font-size: 14.5px;
-  line-height: 1.65;
-  color: var(--uni-ink-2);
-}
-.cc-page .cc-partner-a {
-  display: inline-block;
-  margin-top: 12px;
-  font-size: 14.5px;
-  font-weight: 600;
-  color: var(--uni-ink);
-}
+.cc-page .cc-partner a { font-weight: 600; color: var(--uni-ink-2); }
