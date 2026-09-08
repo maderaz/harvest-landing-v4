@@ -893,7 +893,7 @@ function CalculatorSection({
             No calculator events captured yet. Rows land here once a visitor
             accepts the cookie banner and the calculator renders. If this stays
             empty after real use, confirm the casino_calculator_events table
-            exists in Supabase; lib/casino-tracking.ts carries its schema.
+            exists in Supabase; the SQL is supabase/casino_calculator_events.sql.
           </div>
         ) : (
           <>

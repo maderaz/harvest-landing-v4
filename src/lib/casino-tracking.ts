@@ -20,27 +20,13 @@
 // different kind of data from "somebody used the calculator". The venue slug
 // goes in, because which offers people price is a question about the ranking.
 //
-// SCHEMA NOTE. This needs a table before any of it lands:
+// SCHEMA NOTE. The table has to exist before any of this lands. The SQL is
+// supabase/casino_calculator_events.sql, kept as a file so it can be run
+// as-is; it also sets the row-level security every other analytics table
+// here uses, anon inserts and authenticated reads.
 //
-//   create table casino_calculator_events (
-//     id uuid primary key default gen_random_uuid(),
-//     created_at timestamptz not null default now(),
-//     session_id text,
-//     event text,
-//     venue text,
-//     source_page text,
-//     source text,
-//     country text,
-//     city text,
-//     device_type text,
-//     os text,
-//     browser text,
-//     user_agent text,
-//     is_bot boolean
-//   );
-//
-// Until it exists the insert fails silently and the control room section
-// reads empty, which is the same behaviour every other tracker here has.
+// Until the table exists the insert fails silently and the control room
+// section says so by name, which is how the other trackers behave.
 
 import { supabaseInsert } from "@/lib/supabase";
 import {
