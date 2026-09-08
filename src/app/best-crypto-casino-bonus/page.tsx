@@ -8,15 +8,43 @@ import { CasinosBody } from "@/components/casinos/casinos-body";
 import { getLiveVaults } from "@/lib/data";
 import { LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
 import {
+  articleSchema,
   breadcrumbSchema,
   faqPageSchema,
+  reportDatasetSchema,
   reportItemListSchema,
+  reportWebPageSchema,
 } from "@/lib/jsonld";
+import { SITE_AUTHOR } from "@/lib/author";
 import "../_styles/home.css";
 import "../_styles/report.css";
 import "../_styles/crypto-casinos.css";
 
 const PAGE_URL = `${SITE_URL}/best-crypto-casino-bonus`;
+
+/**
+ * First publication, fixed.
+ *
+ * Separate from dateModified on purpose: a page whose two dates always match
+ * looks republished rather than maintained, and never builds a history.
+ */
+const PUBLISHED = "2026-09-08";
+
+/**
+ * When the venue data itself last changed, as an ISO date.
+ *
+ * The file's mtime, not the build clock. Every deploy would otherwise stamp a
+ * fresh dateModified and claim a revision nobody made.
+ */
+function dataModifiedIso(): string {
+  try {
+    return statSync(join(process.cwd(), "data", "crypto-casinos.json"))
+      .mtime.toISOString()
+      .slice(0, 10);
+  } catch {
+    return PUBLISHED;
+  }
+}
 
 /**
  * The USDC strategies behind the Harvest section, read at build time.
@@ -85,36 +113,26 @@ function dataUpdatedAt(): string {
   }
 }
 
-// Held at noindex on purpose.
-//
-// The reason is quality, not commerce. This page carried a comparison error
-// until it was corrected: it presented Wild.io's percentage and its dollar cap
-// as a contradiction when they describe different things, and its evidence
-// column showed a composite score that read as a rating of the venue. Both are
-// fixed, and the page stays out of the index until the fixes have been
-// reviewed and more than two of the sixteen venues carry a documented source.
-//
-// The affiliate links being plain domains today is a business reason to wait,
-// and it is a weaker one. Lift this by deleting the robots line, and add
-// /best-crypto-casino-bonus to sitemap.ts and to the llms.txt list in
-// scripts/build-seo-static.mjs in the same commit.
+// Indexed. The page was held at noindex while a comparison error was
+// corrected and while almost none of the sixteen venues carried a documented
+// source. Both are addressed: the Wild.io package scope is right, the evidence
+// gate fails the build on any figure without a URL and a read date, and the
+// route is in sitemap.ts and the llms.txt list beside it.
 export function generateMetadata(): Metadata {
   // The count is a property of the data, not a constant: a venue joins the
   // ranking when it has both a wordmark and a link, and the title follows.
   const ranked = loadCasinos().casinos.filter(isRanked);
-  const n = ranked.length;
   // One source for the figure, shared with the social card. See bonusHeadline
   // for why it rounds down to ten thousand.
-  const { compact, full } = bonusHeadline(ranked);
-  const TITLE = `Best Crypto Casino Bonus 2026: ${compact} Across ${n} Sites`;
+  const { compact, full, sites } = bonusHeadline(ranked);
+  const TITLE = `Best Crypto Casino Bonus 2026: ${compact} Across ${sites} Sites`;
   // Value first, then what the page lets you do with it, then the tool.
-  // 156 characters, inside the width a result actually renders.
-  const DESCRIPTION = `${full} in welcome bonuses across ${n} crypto casinos, ranked by offer size. Compare wagering, deposits and payout terms, then price your own bonus.`;
+  // Inside the width a result actually renders.
+  const DESCRIPTION = `${full} in welcome bonuses across ${sites} crypto casinos, ranked by offer size. Compare wagering, deposits and payout terms, then price your own bonus.`;
   return {
     title: TITLE,
     description: DESCRIPTION,
     alternates: { canonical: PAGE_URL },
-    robots: { index: false, follow: true },
     openGraph: {
       title: TITLE,
       description: DESCRIPTION,
@@ -130,11 +148,68 @@ export default async function CryptoCasinosPage() {
   // Same membership rule the table uses. See lib/casino-logos.
   const ranked = casinos.filter(isRanked);
 
+  const { compact, full, sites } = bonusHeadline(ranked);
+  const TITLE = `Best Crypto Casino Bonus 2026: ${compact} Across ${sites} Sites`;
+  const DESCRIPTION = `${full} in welcome bonuses across ${sites} crypto casinos, ranked by offer size. Compare wagering, deposits and payout terms, then price your own bonus.`;
+  // The data file's own mtime, not the build clock. A dateModified that moves
+  // on every deploy claims a revision nobody made, and an answer engine
+  // weighing freshness is entitled to a date that means something.
+  const modified = dataModifiedIso();
+
   const jsonLd: object[] = [
     breadcrumbSchema([
       { name: "Home", url: SITE_URL },
-      { name: "Crypto Casinos", url: PAGE_URL },
+      { name: "Best Crypto Casino Bonus", url: PAGE_URL },
     ]),
+    reportWebPageSchema({
+      name: TITLE,
+      url: PAGE_URL,
+      description: DESCRIPTION,
+      datePublished: PUBLISHED,
+      dateModified: modified,
+    }),
+    // Named author, site as publisher: the E-E-A-T shape for an editorial page
+    // that makes money-adjacent claims about third parties.
+    articleSchema({
+      title: TITLE,
+      description: DESCRIPTION,
+      url: PAGE_URL,
+      datePublished: PUBLISHED,
+      dateModified: modified,
+      author: SITE_AUTHOR,
+    }),
+    // The ranking is a dataset, and it ships as one: every figure with the URL
+    // it was read from, downloadable, rather than only an HTML table an agent
+    // has to scrape. scripts/build-casino-export.mjs writes both files.
+    reportDatasetSchema({
+      name: "Crypto casino welcome bonuses, ranked by offer size",
+      description:
+        "Advertised welcome bonuses, cashback and rakeback at tracked crypto casinos, with the playthrough each attaches, the qualifying deposit, published withdrawal wording, payout coins and lobby categories. Each verified figure carries the operator URL it was read from and the date, or is marked unconfirmed.",
+      url: PAGE_URL,
+      dateModified: modified,
+      numberOfItems: ranked.length,
+      keywords: [
+        "crypto casino",
+        "welcome bonus",
+        "wagering requirement",
+        "playthrough",
+        "no KYC",
+        "bitcoin casino",
+      ],
+      sources: ranked
+        .flatMap((c) =>
+          Object.values(c.sources ?? {})
+            .filter((x): x is { url: string; readOn: string } =>
+              typeof x === "object" && x != null && "url" in x,
+            )
+            .map((x) => x.url),
+        )
+        .filter((u, i, a) => a.indexOf(u) === i),
+      distribution: [
+        { format: "application/json", url: `${SITE_URL}/data/crypto-casinos/index.json` },
+        { format: "text/csv", url: `${SITE_URL}/data/crypto-casinos/offers.csv` },
+      ],
+    }),
     faqPageSchema(FAQS),
   ];
   // Plain name+url ListItems. These are third-party venues and not products

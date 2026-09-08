@@ -1014,12 +1014,19 @@
   overflow: hidden;
   background: var(--cc-inset);
   line-height: 0;
+  /* The slot is reserved before the file arrives. This image is hosted
+     off-site, so the build knows no intrinsic size and the browser would
+     otherwise reserve nothing and shift the page when it loads. contain
+     inside a fixed ratio letterboxes on the figure's own background rather
+     than distorting anything. */
+  aspect-ratio: 16 / 9;
 }
 .cc-page .cc-review-img img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   max-width: 100%;
+  object-fit: contain;
 }
 
 /* ---- header image and summary ------------------------------------------

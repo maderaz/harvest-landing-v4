@@ -10,12 +10,15 @@ import { capOf, parseBonus, type Casino, type CasinoData } from "@/lib/crypto-ca
 /**
  * Whether a venue appears in the ranking.
  *
- * Two halves. A wordmark, because a column of logos with one row of bare text
- * reads as a mistake. And a link, because the loudest control on the page is
- * Play now, and a ranked row that cannot be acted on is a dead end wearing a
+ * Two halves. A wordmark, and a link, because the loudest control on the page
+ * is Play now and a ranked row that cannot be acted on is a dead end wearing a
  * position it did not earn.
  *
- * Both are recoverable: a venue returns the day its missing half arrives.
+ * The wordmark half was dropped for a day, on the reasoning that a missing PNG
+ * had kept two signed affiliate deals off the page entirely. The marks were
+ * supplied instead, which is the better answer: it recovers those two rows
+ * without admitting three venues nobody has a brand asset for. A venue joins
+ * the day its missing half arrives.
  */
 export function isRanked(c: Casino): boolean {
   return hasLogo(c.slug) && Boolean(c.url);

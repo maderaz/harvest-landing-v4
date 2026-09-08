@@ -190,26 +190,46 @@ export function summaryPoints(casinos: Casino[]): SummaryPoint[] {
 }
 
 /**
- * The combined figure as the title, the description and the social card all
- * print it.
+ * The floors the title, the description and the social card advertise.
  *
- * Rounded DOWN to ten thousand, not to a thousand. $168,400 is the exact sum
- * and the first summary bullet prints it; a headline is not the place for a
- * figure that reads as a measurement. $160,000+ is rounder, still true, and
- * stays true as offers move by a few thousand either way, so a search result
- * does not go stale between deploys. Rounding down is the direction that keeps
- * the claim honest: the total can only be larger than what the plus sign
- * promises.
+ * Fixed, not derived, and deliberately below what the page currently holds.
+ * An exact count in a title has to be re-earned every time a venue joins or
+ * leaves, and a search result that says sixteen while the page shows eighteen
+ * is the defect this page has been corrected for twice. A floor with a plus
+ * sign stays true through both.
+ *
+ * They are claims, so bonusHeadline will not print one the data cannot carry:
+ * if the real figure ever falls below a floor, the real figure is printed
+ * instead. The page can undersell itself; it cannot overstate.
+ */
+const SEO_MIN_TOTAL_USD = 160_000;
+const SEO_MIN_SITES = 15;
+
+/**
+ * The headline figures, as every surface prints them.
  *
  * One function, because the title, the description, the OpenGraph card and the
- * image on it all quote this and disagreeing about their own headline number
+ * image on it all quote these and disagreeing about their own headline number
  * is the defect this page has been corrected for twice.
  */
-export function bonusHeadline(casinos: Casino[]): { compact: string; full: string } {
-  const tenK = Math.floor(bonusTotalUsd(casinos) / 10_000) * 10_000;
+export function bonusHeadline(casinos: Casino[]): {
+  compact: string;
+  full: string;
+  sites: string;
+} {
+  const total = bonusTotalUsd(casinos);
+  // Rounded down to ten thousand where the floor is met, so the claim tracks
+  // the data upward without ever running ahead of it.
+  const usd = total >= SEO_MIN_TOTAL_USD
+    ? SEO_MIN_TOTAL_USD
+    : Math.floor(total / 10_000) * 10_000;
   return {
-    compact: `$${tenK / 1000}K+`,
-    full: `$${tenK.toLocaleString("en-US")}+`,
+    compact: `$${usd / 1000}K+`,
+    full: `$${usd.toLocaleString("en-US")}+`,
+    sites:
+      casinos.length >= SEO_MIN_SITES
+        ? `${SEO_MIN_SITES}+`
+        : String(casinos.length),
   };
 }
 
@@ -384,6 +404,41 @@ export const OFFERS: Record<string, OfferCopy> = {
     type: "Welcome package",
     headline: "Up to $5,000",
     support: "200% match and 50 free spins, alongside 10% weekly cashback",
+  },
+  // The five below joined the ranking when the wordmark stopped gating it.
+  // Every line is a restatement of the operator's own headline, same as the
+  // rest; nothing has been read off their terms, and their rows say so.
+  "crypto-games": {
+    kinds: ["welcome"],
+    type: "Welcome bonus",
+    headline: "Up to $20,000",
+    support: "200% advertised match",
+  },
+  coinpoker: {
+    kinds: ["welcome"],
+    type: "Welcome bonus",
+    headline: "Up to $2,000",
+    support: "150% advertised match",
+  },
+  casinok: {
+    kinds: ["welcome", "cashback"],
+    type: "Welcome bonus",
+    headline: "Up to $6,000",
+    support: "300% match and 777 free spins, alongside 10% cashback",
+  },
+  "block-spins": {
+    kinds: ["welcome", "cashback"],
+    type: "Welcome bonus",
+    headline: "Up to $1,000",
+    support: "100% match, advertised with up to 15% cashback",
+  },
+  // Rakeback, not a deposit match. Classified as such so the welcome-bonus
+  // total does not absorb a figure that is not one.
+  rakebit: {
+    kinds: ["rakeback", "cashback"],
+    type: "Rakeback",
+    headline: "Up to $1,000 rakeback",
+    support: "100% rakeback, advertised with cashback up to 25%",
   },
   "wsm-casino": {
     kinds: ["welcome", "cashback"],

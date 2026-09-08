@@ -138,6 +138,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9,
     },
     {
+      url: `${SITE_URL}/best-crypto-casino-bonus`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.8,
+    },
+    {
       url: `${SITE_URL}/report/aerodrome`,
       lastModified: new Date(),
       changeFrequency: "daily" as const,
