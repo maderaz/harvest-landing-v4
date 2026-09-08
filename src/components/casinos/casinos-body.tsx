@@ -23,7 +23,9 @@ import {
   BONUS_EXAMPLES_INTRO,
   BONUS_TERMS,
   BONUS_TERMS_INTRO,
+  bestTermsSlug,
   BYLINE,
+  CALC_DEFAULT_DEPOSIT,
   calcOffers,
   CHOOSING,
   CHOOSING_CLOSE,
@@ -44,6 +46,8 @@ import {
   LEAVE_SITE_BODY,
   LEGAL_SHORT,
   NETWORK_CHOICE,
+  PARTNER_EMAIL,
+  PARTNER_LINE,
   PAYMENTS_INTRO,
   PAYMENT_CHECKS,
   PAYMENT_SOURCES,
@@ -245,6 +249,10 @@ export function CasinosBody({
   const turnover = turnoverRows(ranked);
   // Deposit matches only, for the comparison and the calculator presets.
   const wagering = turnover.filter((r) => !r.cashback);
+  // The calculator's offers and the one it opens on, in ranking order. The
+  // default is the offer with the best terms, not the biggest headline.
+  const calcOfferList = calcOffers(ranked);
+  const bestSlug = bestTermsSlug(calcOfferList, CALC_DEFAULT_DEPOSIT);
 
   return (
     <div className="uni-home-test rp-page cc-page">
@@ -323,6 +331,14 @@ export function CasinosBody({
           <CasinoTable casinos={ranked} />
         </Section>
 
+        <Section id="bonus-calculator" eyebrow="Bonus calculator" title="What is your deposit worth?">
+          <p>{CALC_INTRO}</p>
+          {/* Deposit-match offers only, in ranking order, so the tool opens
+              on the page's own top row. calcOffers explains what it takes
+              to qualify. */}
+          <BonusCalculator offers={calcOfferList} defaultSlug={bestSlug} />
+        </Section>
+
         <Section id="turnover" eyebrow="Bonus comparison" title="How much do you need to wager?">
           {WAGERING_INTRO.map((p) => (
             <p key={p.slice(0, 24)}>{p}</p>
@@ -375,13 +391,6 @@ export function CasinosBody({
           <p>{WAGERING_AFTER[1]}</p>
         </Section>
 
-        <Section id="bonus-calculator" eyebrow="Bonus calculator" title="What is your deposit worth?">
-          <p>{CALC_INTRO}</p>
-          {/* Deposit-match offers only, in ranking order, so the tool opens
-              on the page's own top row. calcOffers explains what it takes
-              to qualify. */}
-          <BonusCalculator offers={calcOffers(ranked)} />
-        </Section>
 
         {/* Starts after the withdrawal has landed. Everything above this
             point is about money still inside a casino account, and none
@@ -668,6 +677,10 @@ export function CasinosBody({
             re-date the offer. For what Harvest otherwise does, see the{" "}
             <Link href="/methodology">methodology</Link> behind the yield
             rankings and the <Link href="/risk-framework">risk framework</Link>.
+          </p>
+          <p className="cc-partner">
+            {PARTNER_LINE}{" "}
+            <a href={`mailto:${PARTNER_EMAIL}`}>{PARTNER_EMAIL}</a>
           </p>
         </Section>
       </main>

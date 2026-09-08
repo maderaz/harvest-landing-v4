@@ -13,7 +13,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { OutboundLink } from "@/components/report/outbound-link";
 import { CASINO_LOGOS } from "@/lib/casino-logos";
-import { LEAVE_SITE_BODY, amount } from "@/lib/crypto-casinos-copy";
+import {
+  CALC_DEFAULT_DEPOSIT,
+  LEAVE_SITE_BODY,
+  amount,
+} from "@/lib/crypto-casinos-copy";
 import { trackCasinoCalculator } from "@/lib/casino-tracking";
 
 /**
@@ -54,7 +58,7 @@ export interface CalcOffer {
 
 const num = (s: string) => Number(s.replace(/[,\s$]/g, "")) || 0;
 
-const DEFAULT_BUDGET = "100";
+const DEFAULT_BUDGET = String(CALC_DEFAULT_DEPOSIT);
 
 interface Result {
   sig: string;
@@ -64,11 +68,17 @@ interface Result {
   capped: boolean;
 }
 
-export function BonusCalculator({ offers }: { offers: CalcOffer[] }) {
+export function BonusCalculator({
+  offers,
+  defaultSlug,
+}: {
+  offers: CalcOffer[];
+  /** The offer with the best terms. See bestTermsSlug. */
+  defaultSlug?: string | null;
+}) {
+  const first = offers.find((o) => o.slug === defaultSlug) ?? offers[0];
   const [budget, setBudget] = useState(DEFAULT_BUDGET);
-  // The top of the ranking, so a reader who changes nothing still gets the
-  // offer the page leads with.
-  const [slug, setSlug] = useState(offers[0]?.slug ?? "");
+  const [slug, setSlug] = useState(first?.slug ?? "");
 
   const offer = offers.find((o) => o.slug === slug) ?? offers[0];
   const sig = `${slug}|${budget}`;
@@ -87,7 +97,7 @@ export function BonusCalculator({ offers }: { offers: CalcOffer[] }) {
   // Worked on load. An empty result panel above a Calculate button asks the
   // reader to guess what the tool does before it will tell them.
   const [shown, setShown] = useState<Result | null>(() =>
-    offers[0] ? compute(offers[0], num(DEFAULT_BUDGET)) : null,
+    first ? compute(first, num(DEFAULT_BUDGET)) : null,
   );
 
   const stale = shown != null && shown.sig !== `${slug}|${num(budget)}`;
@@ -95,7 +105,7 @@ export function BonusCalculator({ offers }: { offers: CalcOffer[] }) {
   // One event when the tool first appears, so the panel can report the share
   // of readers who reach it against the share who press the button.
   useEffect(() => {
-    trackCasinoCalculator({ event: "view", venue: offers[0]?.slug ?? null });
+    trackCasinoCalculator({ event: "view", venue: first?.slug ?? null });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

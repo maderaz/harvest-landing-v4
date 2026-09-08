@@ -3,7 +3,7 @@ import { join } from "node:path";
 import type { Metadata } from "next";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { isRanked, loadCasinos } from "@/lib/crypto-casinos-data";
-import { FAQS, bonusTotalUsd } from "@/lib/crypto-casinos-copy";
+import { FAQS, bonusHeadline } from "@/lib/crypto-casinos-copy";
 import { CasinosBody } from "@/components/casinos/casinos-body";
 import { getLiveVaults } from "@/lib/data";
 import { LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
@@ -103,12 +103,13 @@ export function generateMetadata(): Metadata {
   // ranking when it has both a wordmark and a link, and the title follows.
   const ranked = loadCasinos().casinos.filter(isRanked);
   const n = ranked.length;
-  // Rounded down to a thousand, off the same sum the first summary bullet
-  // prints. A title and a description that disagree with the page about its
-  // own headline number is the defect this page has been corrected for twice.
-  const k = `$${Math.floor(bonusTotalUsd(ranked) / 1000)}K+`;
-  const TITLE = `Best Crypto Casino Bonus 2026: ${k} Across ${n} Sites`;
-  const DESCRIPTION = `${k.replace("K+", ",000+")} in combined welcome bonuses across ${n} tracked crypto casinos, ranked by offer size. Wagering, KYC and withdrawal terms where published. Compare all ${n}.`;
+  // One source for the figure, shared with the social card. See bonusHeadline
+  // for why it rounds down to ten thousand.
+  const { compact, full } = bonusHeadline(ranked);
+  const TITLE = `Best Crypto Casino Bonus 2026: ${compact} Across ${n} Sites`;
+  // Value first, then what the page lets you do with it, then the tool.
+  // 156 characters, inside the width a result actually renders.
+  const DESCRIPTION = `${full} in welcome bonuses across ${n} crypto casinos, ranked by offer size. Compare wagering, deposits and payout terms, then price your own bonus.`;
   return {
     title: TITLE,
     description: DESCRIPTION,
@@ -116,7 +117,7 @@ export function generateMetadata(): Metadata {
     robots: { index: false, follow: true },
     openGraph: {
       title: TITLE,
-      description: `${k.replace("K+", ",000+")} in combined welcome bonuses across ${n} tracked crypto casinos, ranked by offer size.`,
+      description: DESCRIPTION,
       url: PAGE_URL,
       siteName: SITE_NAME,
       type: "website",
