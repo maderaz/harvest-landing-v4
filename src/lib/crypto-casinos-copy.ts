@@ -190,26 +190,46 @@ export function summaryPoints(casinos: Casino[]): SummaryPoint[] {
 }
 
 /**
- * The combined figure as the title, the description and the social card all
- * print it.
+ * The floors the title, the description and the social card advertise.
  *
- * Rounded DOWN to ten thousand, not to a thousand. $168,400 is the exact sum
- * and the first summary bullet prints it; a headline is not the place for a
- * figure that reads as a measurement. $160,000+ is rounder, still true, and
- * stays true as offers move by a few thousand either way, so a search result
- * does not go stale between deploys. Rounding down is the direction that keeps
- * the claim honest: the total can only be larger than what the plus sign
- * promises.
+ * Fixed, not derived, and deliberately below what the page currently holds.
+ * An exact count in a title has to be re-earned every time a venue joins or
+ * leaves, and a search result that says sixteen while the page shows eighteen
+ * is the defect this page has been corrected for twice. A floor with a plus
+ * sign stays true through both.
+ *
+ * They are claims, so bonusHeadline will not print one the data cannot carry:
+ * if the real figure ever falls below a floor, the real figure is printed
+ * instead. The page can undersell itself; it cannot overstate.
+ */
+const SEO_MIN_TOTAL_USD = 160_000;
+const SEO_MIN_SITES = 15;
+
+/**
+ * The headline figures, as every surface prints them.
  *
  * One function, because the title, the description, the OpenGraph card and the
- * image on it all quote this and disagreeing about their own headline number
+ * image on it all quote these and disagreeing about their own headline number
  * is the defect this page has been corrected for twice.
  */
-export function bonusHeadline(casinos: Casino[]): { compact: string; full: string } {
-  const tenK = Math.floor(bonusTotalUsd(casinos) / 10_000) * 10_000;
+export function bonusHeadline(casinos: Casino[]): {
+  compact: string;
+  full: string;
+  sites: string;
+} {
+  const total = bonusTotalUsd(casinos);
+  // Rounded down to ten thousand where the floor is met, so the claim tracks
+  // the data upward without ever running ahead of it.
+  const usd = total >= SEO_MIN_TOTAL_USD
+    ? SEO_MIN_TOTAL_USD
+    : Math.floor(total / 10_000) * 10_000;
   return {
-    compact: `$${tenK / 1000}K+`,
-    full: `$${tenK.toLocaleString("en-US")}+`,
+    compact: `$${usd / 1000}K+`,
+    full: `$${usd.toLocaleString("en-US")}+`,
+    sites:
+      casinos.length >= SEO_MIN_SITES
+        ? `${SEO_MIN_SITES}+`
+        : String(casinos.length),
   };
 }
 

@@ -51,7 +51,7 @@ function headerDataUri(): string | null {
 export default async function Og() {
   const [fonts] = await Promise.all([loadOgFonts()]);
   const ranked = loadCasinos().casinos.filter(isRanked);
-  const { compact } = bonusHeadline(ranked);
+  const { compact, sites } = bonusHeadline(ranked);
   const hero = headerDataUri();
 
   return new ImageResponse(
@@ -152,7 +152,7 @@ export default async function Og() {
               {compact}
             </div>
             <div style={{ fontSize: 23, color: "rgba(25,23,23,0.72)" }}>
-              {`in welcome bonuses across ${ranked.length} casinos`}
+              {`in welcome bonuses across ${sites} crypto casinos`}
             </div>
           </div>
           <div style={{ fontSize: 19, color: "rgba(25,23,23,0.62)" }}>

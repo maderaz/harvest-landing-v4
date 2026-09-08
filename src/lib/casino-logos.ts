@@ -15,8 +15,10 @@ import betfury from "../betfury.png";
 import betninja from "../betninja.png";
 import betpanda from "../betpanda.png";
 import betplay from "../betplay.png";
+import blockSpins from "../assets/icons/blockspins.png";
 import casinoPunkz from "../casino punkz.png";
 import coinCasino from "../coincasino.png";
+import cryptoGames from "../assets/icons/crypto games.png";
 import cryptorino from "../cryptorino.png";
 import cybet from "../cybet casino.png";
 import goldenPanda from "../goldenpanda.png";
@@ -35,12 +37,14 @@ export const CASINO_LOGOS: Record<string, StaticImageData> = {
   betninja,
   "betpanda-io": betpanda,
   "betplay-io": betplay,
+  "block-spins": blockSpins,
   // casino-crypto is deliberately absent. Its wordmark is committed at
   // src/casino crypto.png and the venue stays in the data; the domain behind
   // the brand is unconfirmed, and this list is what puts a row in front of a
   // reader with a Play now button on it. It comes back when the domain does.
   casinopunkz: casinoPunkz,
   "coin-casino": coinCasino,
+  "crypto-games": cryptoGames,
   cryptorino,
   cybet,
   "golden-panda": goldenPanda,

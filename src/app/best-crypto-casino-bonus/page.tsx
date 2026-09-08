@@ -85,36 +85,26 @@ function dataUpdatedAt(): string {
   }
 }
 
-// Held at noindex on purpose.
-//
-// The reason is quality, not commerce. This page carried a comparison error
-// until it was corrected: it presented Wild.io's percentage and its dollar cap
-// as a contradiction when they describe different things, and its evidence
-// column showed a composite score that read as a rating of the venue. Both are
-// fixed, and the page stays out of the index until the fixes have been
-// reviewed and more than two of the sixteen venues carry a documented source.
-//
-// The affiliate links being plain domains today is a business reason to wait,
-// and it is a weaker one. Lift this by deleting the robots line, and add
-// /best-crypto-casino-bonus to sitemap.ts and to the llms.txt list in
-// scripts/build-seo-static.mjs in the same commit.
+// Indexed. The page was held at noindex while a comparison error was
+// corrected and while almost none of the sixteen venues carried a documented
+// source. Both are addressed: the Wild.io package scope is right, the evidence
+// gate fails the build on any figure without a URL and a read date, and the
+// route is in sitemap.ts and the llms.txt list beside it.
 export function generateMetadata(): Metadata {
   // The count is a property of the data, not a constant: a venue joins the
   // ranking when it has both a wordmark and a link, and the title follows.
   const ranked = loadCasinos().casinos.filter(isRanked);
-  const n = ranked.length;
   // One source for the figure, shared with the social card. See bonusHeadline
   // for why it rounds down to ten thousand.
-  const { compact, full } = bonusHeadline(ranked);
-  const TITLE = `Best Crypto Casino Bonus 2026: ${compact} Across ${n} Sites`;
+  const { compact, full, sites } = bonusHeadline(ranked);
+  const TITLE = `Best Crypto Casino Bonus 2026: ${compact} Across ${sites} Sites`;
   // Value first, then what the page lets you do with it, then the tool.
-  // 156 characters, inside the width a result actually renders.
-  const DESCRIPTION = `${full} in welcome bonuses across ${n} crypto casinos, ranked by offer size. Compare wagering, deposits and payout terms, then price your own bonus.`;
+  // Inside the width a result actually renders.
+  const DESCRIPTION = `${full} in welcome bonuses across ${sites} crypto casinos, ranked by offer size. Compare wagering, deposits and payout terms, then price your own bonus.`;
   return {
     title: TITLE,
     description: DESCRIPTION,
     alternates: { canonical: PAGE_URL },
-    robots: { index: false, follow: true },
     openGraph: {
       title: TITLE,
       description: DESCRIPTION,

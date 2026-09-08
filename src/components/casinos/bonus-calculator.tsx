@@ -186,8 +186,8 @@ export function BonusCalculator({
         )}
 
         <div className="cc-bc-head">
-          <span className="cc-bc-logo-box">
-            {logo ? (
+          {logo && (
+            <span className="cc-bc-logo-box">
               <img
                 className="cc-bc-logo"
                 src={logo.src}
@@ -197,10 +197,8 @@ export function BonusCalculator({
                 loading="lazy"
                 decoding="async"
               />
-            ) : (
-              <span className="cc-bc-namemark">{shown.offer.name}</span>
-            )}
-          </span>
+            </span>
+          )}
           <p className="cc-bc-venue">{shown.offer.name}</p>
         </div>
         <p className="cc-bc-big">{fmt(shown.bonus)}</p>

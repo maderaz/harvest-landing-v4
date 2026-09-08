@@ -4,25 +4,24 @@
 
 import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { hasLogo } from "@/lib/casino-logos";
 import { capOf, parseBonus, type Casino, type CasinoData } from "@/lib/crypto-casinos";
 
 /**
  * Whether a venue appears in the ranking.
  *
- * One test: a link. The loudest control on the page is Play now, and a ranked
- * row that cannot be acted on is a dead end wearing a position it did not
- * earn.
+ * Two halves. A wordmark, and a link, because the loudest control on the page
+ * is Play now and a ranked row that cannot be acted on is a dead end wearing a
+ * position it did not earn.
  *
- * A committed wordmark used to be the second test, on the reasoning that a
- * column of logos with one row of bare text reads as a mistake. That was a
- * presentation problem wearing an editorial rule, and it cost more than it
- * was worth: two venues with signed affiliate deals were absent from the page
- * entirely because nobody had exported a PNG. The column renders a name plate
- * where there is no wordmark, and membership turns on the one thing that
- * decides whether a row is any use to a reader.
+ * The wordmark half was dropped for a day, on the reasoning that a missing PNG
+ * had kept two signed affiliate deals off the page entirely. The marks were
+ * supplied instead, which is the better answer: it recovers those two rows
+ * without admitting three venues nobody has a brand asset for. A venue joins
+ * the day its missing half arrives.
  */
 export function isRanked(c: Casino): boolean {
-  return Boolean(c.url);
+  return hasLogo(c.slug) && Boolean(c.url);
 }
 
 export function loadCasinos(): CasinoData {
