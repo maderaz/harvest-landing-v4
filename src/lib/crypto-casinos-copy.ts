@@ -228,18 +228,18 @@ export function bonusTotalUsd(casinos: Casino[]): number {
 /** Above the turnover table. */
 export const WAGERING_INTRO = [
   "When you’re comparing welcome bonuses, it helps to look at the wagering requirement alongside the amount on offer. A $100 bonus with a 40x requirement on bonus funds means placing $4,000 in qualifying bets before you can withdraw the bonus and eligible winnings.",
-  "The table below puts the listed bonus amounts alongside their wagering requirements, so you can see how the figures add up. Your own requirement will depend on the bonus you receive and the terms attached to it.",
+  "The table below puts every listed bonus alongside its wagering requirement at the full advertised cap, so the offers can be compared on the same basis. Your own requirement will depend on the bonus you receive and the terms attached to it.",
 ];
 
 /** Below the turnover table, and the handover to the calculator. */
 export const WAGERING_AFTER = [
   "The wagering total adds up your qualifying bets throughout play. The same funds can contribute to several bets, while wins and losses change your available balance along the way. Each offer also has its own rules about which games count and how long you have to complete the requirement.",
-  "For a closer look at the numbers, try the calculator below. You can enter a bonus amount and explore how wagering requirements, game contribution, and house edge affect the estimated cost of playing it through.",
+  "The calculator above prices one offer against a deposit you choose. The table here does the same arithmetic across every offer at once, at the full advertised cap, so the requirements can be compared side by side.",
 ];
 
 /** Above the calculator. */
 export const CALC_INTRO =
-  "Enter what you plan to deposit, pick a casino, and see the bonus that deposit earns at the advertised match. The result also carries the playthrough attached to it: the qualifying bets the terms ask for, and what that volume is likely to cost.";
+  "Enter what you plan to deposit, pick a casino, and see the bonus that deposit earns at the advertised match. The result also carries the playthrough attached to it: the qualifying bets the terms ask for, and what that volume is likely to cost. It opens on the offer asking the least playthrough per unit of bonus.";
 
 /**
  * Offers advertised as a running total across several deposits.
@@ -608,6 +608,57 @@ export interface CalcOfferSeed {
   minDeposit: string | null;
   url: string;
   attributed: boolean;
+}
+
+/**
+ * What the calculator opens on, and the deposit bestTermsSlug compares at.
+ *
+ * Declared here rather than in the calculator, which is a client component:
+ * Next hands a server component a client reference for anything imported
+ * across that boundary, so a number defined there arrives as a proxy and every
+ * sum touching it becomes NaN.
+ */
+export const CALC_DEFAULT_DEPOSIT = 100;
+
+/**
+ * Which offer the calculator opens on.
+ *
+ * Not the top of the ranking. The ranking sorts on the size of the advertised
+ * offer, which is a fact about the advertising, and the biggest headline is
+ * routinely the most expensive bonus to clear.
+ *
+ * The measure is the playthrough per unit of bonus credited: the multiple
+ * itself, scaled up where the terms apply it to the deposit as well, since
+ * that asks more turnover for the same bonus. Lowest wins.
+ *
+ * Deliberately NOT the estimated cash outcome. Net value is bonus times
+ * (1 - playthrough x edge), and above roughly 25x that bracket is negative, so
+ * ranking on it makes a larger bonus score worse and quietly selects whichever
+ * venue offers the least. That is a fact about the arithmetic, not about the
+ * terms.
+ *
+ * A published playthrough is required. An offer whose terms do not state one
+ * cannot be the venue with the best terms, whatever its headline says, so it
+ * stays in the dropdown and is never the default. Ties break toward the higher
+ * ranked row. Null when nothing qualifies, and the component falls back to the
+ * first offer.
+ */
+export function bestTermsSlug(
+  offers: CalcOfferSeed[],
+  deposit: number,
+): string | null {
+  let best: { slug: string; cost: number; rank: number } | null = null;
+  for (const o of offers) {
+    if (o.wagering == null || o.wagering <= 0) continue;
+    const bonus = Math.min((deposit * o.matchPct) / 100, o.capUsd);
+    if (bonus <= 0) continue;
+    const base = o.wagersDeposit ? deposit + bonus : bonus;
+    const cost = (o.wagering * base) / bonus;
+    if (!best || cost < best.cost || (cost === best.cost && o.rank < best.rank)) {
+      best = { slug: o.slug, cost, rank: o.rank };
+    }
+  }
+  return best?.slug ?? null;
 }
 
 export function calcOffers(casinos: Casino[]): CalcOfferSeed[] {
