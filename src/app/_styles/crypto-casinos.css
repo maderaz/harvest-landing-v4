@@ -495,198 +495,149 @@
 .cc-page .cc-method { display: grid; gap: 10px; margin: 0 0 18px; }
 .cc-page .cc-method li { line-height: 1.65; }
 
-/* ---- bonus calculator ------------------------------------------------- */
-.cc-calc {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 24px;
-  margin: 4px 0 0;
-  padding: 26px 28px 28px;
-  border: 1px solid var(--rp-card-border, #eeeef5);
-  border-radius: var(--uni-radius, 20px);
-  background: var(--uni-card-2, #fff);
+/* ---- bonus calculator -------------------------------------------------- */
+/* Two inputs, a button and a result. The panel it replaces had six controls
+   above the answer, and a reader arriving with "what do I get for $100" had
+   to fill in a playthrough before the tool would say. */
+.cc-bc {
+  border: 1px solid var(--rp-card-border, #e4e4ec);
+  border-radius: 14px;
+  background: var(--uni-card-2, #fbfbfd);
+  overflow: hidden;
+  margin: 6px 0 4px;
 }
-@media (min-width: 900px) {
-  .cc-calc {
-    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-    gap: 34px;
-    align-items: start;
-  }
-  .cc-calc-res {
-    border-left: 1px solid var(--uni-line);
-    padding-left: 34px;
-    min-height: 210px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
+.cc-bc-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 20px 22px;
+  border-bottom: 1px solid var(--rp-card-border, #e4e4ec);
 }
-.cc-calc > * { min-width: 0; }
-.cc-calc-label {
+.cc-bc-field { flex: 1 1 190px; min-width: 0; }
+.cc-bc-label {
   display: block;
-  margin: 0 0 7px;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--uni-ink-2);
-}
-.cc-calc-field {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 16px;
-  padding: 0 14px;
-  border: 1px solid var(--rp-card-border, #eeeef5);
-  border-radius: 12px;
-  background: var(--uni-bg, #fff);
-}
-.cc-calc-field:focus-within { border-color: var(--uni-ink); }
-.cc-calc-input {
-  flex: 1 1 auto;
-  min-width: 0;
-  padding: 13px 0;
-  border: 0;
-  outline: none;
-  background: none;
-  font-family: inherit;
-  font-size: 16px;
-  color: var(--uni-ink);
-  font-feature-settings: "tnum";
-}
-.cc-calc-field--select .cc-calc-input {
-  appearance: none;
-  cursor: pointer;
-  font-size: 15px;
-}
-.cc-calc-unit {
-  flex: 0 0 auto;
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--uni-ink-2);
-}
-.cc-calc-go {
-  width: 100%;
-  padding: 13px 18px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--uni-ink);
-  color: var(--uni-bg, #fff);
-  font-family: inherit;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.15s ease;
-}
-.cc-calc-go:hover { opacity: 0.85; }
-
-/* The line under the game name: what the calculation is assuming, and the
-   control that opens those numbers for editing. */
-.cc-calc-assum {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 6px 14px;
-  margin: -8px 0 16px !important;
-  font-size: 12.5px !important;
-  line-height: 1.5 !important;
-  color: var(--uni-ink-3) !important;
-}
-.cc-calc-edit {
-  flex: 0 0 auto;
-  padding: 0;
-  border: 0;
-  background: none;
-  font-family: inherit;
-  font-size: 12.5px;
-  font-weight: 600;
-  color: var(--uni-ink-2);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.cc-calc-edit:hover { color: var(--uni-ink); }
-.cc-calc-panel {
-  margin: 0 0 16px;
-  padding: 16px 16px 4px;
-  border-radius: 12px;
-  background: var(--cc-inset);
-}
-.cc-calc-hint {
-  margin: -8px 0 16px !important;
-  font-size: 12.5px !important;
-  line-height: 1.55 !important;
-  color: var(--uni-ink-3) !important;
-}
-.cc-calc-panel .cc-calc-hint { margin-bottom: 14px !important; }
-
-/* What the panel is a calculation of, and whether it still matches the
-   inputs beside it. */
-.cc-calc-scen {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 14px !important;
-}
-.cc-calc-scen-tag {
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--cc-inset);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--uni-ink-2);
-}
-.cc-calc-stale {
+  margin: 0 0 6px;
   font-size: 12px;
   font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--uni-ink-2);
+}
+.cc-bc-input-wrap { position: relative; }
+.cc-bc-prefix {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 15px;
   color: var(--uni-ink-3);
+  pointer-events: none;
 }
+.cc-bc-input {
+  box-sizing: border-box;
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--rp-card-border, #dedee6);
+  border-radius: 9px;
+  background: var(--uni-bg, #fff);
+  color: var(--uni-ink);
+  font: inherit;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+.cc-bc-input-wrap .cc-bc-input { padding-left: 26px; }
+.cc-bc-select { cursor: pointer; }
+.cc-bc-input:focus-visible {
+  outline: 2px solid var(--uni-gold, #ffb936);
+  outline-offset: 1px;
+}
+.cc-bc-go {
+  flex: 0 0 auto;
+  height: 44px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--uni-gold, #ffb936);
+  color: #1a1a1a;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.cc-bc-go:hover { filter: brightness(0.95); }
 
-/* The two figures the tool exists to print. */
-.cc-calc-out {
-  display: grid;
-  gap: 14px;
-  margin: 0 0 16px;
-}
-.cc-calc-out dt {
-  margin: 0 0 2px;
+.cc-bc-out { padding: 22px; }
+.cc-bc-out.is-stale { opacity: 0.55; }
+.cc-page .uni-home-content p.cc-bc-stale {
+  margin: 0 0 14px;
   font-size: 12.5px;
   font-weight: 600;
+  color: var(--uni-ink-2);
+}
+.cc-page .uni-home-content p.cc-bc-venue {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: var(--uni-ink-3);
 }
-.cc-calc-out dd {
-  margin: 0;
-  font-family: var(--display);
-  font-size: 27px;
-  line-height: 1.15;
+.cc-page .uni-home-content p.cc-bc-big {
+  margin: 4px 0 0;
+  font-family: var(--display, inherit);
+  font-size: 40px;
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   color: var(--uni-ink);
-  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
 }
-.cc-calc-headline {
-  margin: 0 0 6px !important;
-  font-family: var(--display);
-  font-size: 19px !important;
-  line-height: 1.35 !important;
-  color: var(--uni-ink) !important;
-  font-feature-settings: "tnum";
+.cc-page .uni-home-content p.cc-bc-sub {
+  margin: 8px 0 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
 }
-.cc-calc-detail {
-  margin: 0 0 16px !important;
-  font-size: 13.5px !important;
-  line-height: 1.6 !important;
-  color: var(--uni-ink-3) !important;
+.cc-bc-rows {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 24px;
+  margin: 18px 0 0;
 }
-.cc-calc-foot {
-  margin: 0 !important;
-  font-size: 12.5px !important;
-  line-height: 1.6 !important;
-  color: var(--uni-ink-3) !important;
+.cc-bc-rows > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--rp-card-border, #eeeef5);
 }
+.cc-bc-rows dt { font-size: 13.5px; color: var(--uni-ink-2); }
+.cc-bc-rows dd {
+  margin: 0;
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--uni-ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.cc-page .uni-home-content p.cc-bc-note {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--uni-ink-3);
+}
+.cc-bc-cta { margin-top: 18px; }
+.cc-bc-cta .cc-play { display: inline-flex; }
 
-@media (max-width: 800px) {
-  .cc-calc { padding: 20px 18px 22px; }
+@media (max-width: 700px) {
+  .cc-bc-form { padding: 16px; gap: 10px; }
+  .cc-bc-field { flex: 1 1 100%; }
+  .cc-bc-go { width: 100%; }
+  .cc-bc-out { padding: 18px 16px; }
+  .cc-page .uni-home-content p.cc-bc-big { font-size: 32px; }
+  .cc-bc-rows { grid-template-columns: minmax(0, 1fr); }
   .cc-page .cc-guard { padding: 16px 16px; }
 }
 
@@ -1010,6 +961,11 @@
    read as a fact the terms stated. */
 .cc-page .cc-basis {
   display: block;
+  /* .rp-dtable's .num cell is nowrap so a figure never breaks, and this note
+     sits inside one and inherited it. "on bonus funds; the terms do not state
+     the basis" then set the column's minimum width and was most of the
+     table's inner scroll. */
+  white-space: normal;
   margin-top: 3px;
   font-size: 11px;
   line-height: 1.45;
@@ -1088,4 +1044,15 @@
   .cc-page .cc-figure { margin-top: 20px; border-radius: 14px; }
   .cc-page .cc-summary-h { font-size: 17px; line-height: 23px; }
   .cc-page .cc-keyfind li { font-size: 15px; line-height: 23px; padding-left: 20px; }
+}
+
+/* The wagering table has to fit the column, at every desktop width.
+   .rp-dtable holds its headers on one line, which sets a minimum width wider
+   than the 936px content column; the wrapper's overflow-x then hands a
+   1000px-wide monitor an inner scrollbar for one pixel of overflow. Letting
+   the five headers wrap costs a line of height and removes it. Cells keep
+   nowrap so a figure never breaks across lines. */
+.cc-page #turnover .rp-dtable th {
+  white-space: normal;
+  vertical-align: bottom;
 }

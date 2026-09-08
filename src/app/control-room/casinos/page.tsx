@@ -52,6 +52,17 @@ export default function CasinosControlRoomPage() {
     url: c.url ?? "",
     host: hostOf(c.url),
     deal: c.dealStatus === "live" ? "affiliate" : "plain",
+    // Three ways to not be attributed, and they need different work: an
+    // application moving, one that has stopped, or a venue with no programme.
+    stage:
+      c.dealStatus === "live"
+        ? "live"
+        : c.dealStatus === "stuck"
+          ? "stuck"
+          : c.dealStatus === "none"
+            ? "none"
+            : "in-progress",
+    dealNote: c.dealNote ?? null,
     tokenInUrl: looksAttributed(c.url),
     offer: OFFERS[c.slug]?.headline ?? null,
   }));

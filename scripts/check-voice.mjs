@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PUBLIC_DIR = path.join(path.resolve(__dirname, ".."), "public");
 
-const PAGES = ["crypto-casinos"];
+const PAGES = ["best-crypto-casino-bonus"];
 
 const BANNED = [
   { name: "rather than", re: /\brather than\b/i },

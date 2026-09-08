@@ -29,7 +29,7 @@ import {
 } from "@/components/admin/timeframe-selector";
 import "../../_styles/asset-hub.css";
 
-export const PAGE_PATH = "/crypto-casinos";
+export const PAGE_PATH = "/best-crypto-casino-bonus";
 
 export interface CasinoLink {
   slug: string;
@@ -39,6 +39,10 @@ export interface CasinoLink {
   host: string;
   /** What the data says the deal is. */
   deal: "affiliate" | "plain";
+  /** The deal's actual state, for the three ways a link can be unattributed. */
+  stage: DealStage;
+  /** The affiliate network, or what the application is waiting on. */
+  dealNote: string | null;
   /** What the URL itself carries. Disagreement with `deal` is a finding. */
   tokenInUrl: boolean;
   offer: string | null;
@@ -91,6 +95,15 @@ const PLACEMENT: Record<string, string> = {
   "crypto-casinos-row-affiliate": "Ranking row, attributed link",
   "crypto-casinos-row-plain": "Ranking row, plain domain",
   "crypto-casinos-review": "Lucky Rollers review",
+};
+
+export type DealStage = "live" | "in-progress" | "stuck" | "none";
+
+const STAGE_LABEL: Record<DealStage, string> = {
+  live: "Live",
+  "in-progress": "In progress",
+  stuck: "Stuck",
+  none: "No programme",
 };
 
 type DealFilter = "all" | "affiliate" | "plain";
@@ -411,7 +424,11 @@ function CoverageSection({
           />
           <CovStat
             value={String(plain.length)}
-            label="still point at a plain domain"
+            label={
+              plain.length === 0
+                ? "still point at a plain domain"
+                : `still point at a plain domain: ${stageBreakdown(plain)}`
+            }
             tone={plain.length > 0 ? "warn" : "good"}
           />
           <CovStat
@@ -460,15 +477,57 @@ function CoverageSection({
             links={affiliate}
             empty="No deal is live yet."
           />
-          <LinkList
-            title={`Plain domain (${plain.length})`}
-            links={plain}
-            empty="Every link is attributed."
-          />
+          <div>
+            <h3 className="cr-cas-listh">Plain domain ({plain.length})</h3>
+            {plain.length === 0 ? (
+              <p className="cr-cas-note">Every link is attributed.</p>
+            ) : (
+              (["in-progress", "stuck", "none"] as DealStage[])
+                .map((st) => ({ st, rows: plain.filter((l) => l.stage === st) }))
+                .filter((g) => g.rows.length > 0)
+                .map((g) => (
+                  <div key={g.st} className="cr-cas-stage">
+                    <h4 className="cr-cas-stageh">
+                      {STAGE_LABEL[g.st]} ({g.rows.length})
+                    </h4>
+                    <ul className="cr-cas-list">
+                      {g.rows.map((l) => (
+                        <li key={l.slug}>
+                          <span className="cr-cas-rank">#{l.rank}</span>
+                          <span className="cr-cas-name">{l.name}</span>
+                          {l.dealNote && (
+                            <span className="cr-cas-dealnote">{l.dealNote}</span>
+                          )}
+                          <a
+                            className="cr-cas-host"
+                            href={l.url}
+                            target="_blank"
+                            rel="noopener noreferrer nofollow"
+                            title={l.url}
+                          >
+                            {l.host}
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))
+            )}
+          </div>
         </div>
       </div>
     </section>
   );
+}
+
+/** "8 in progress, 2 stuck, 1 with no programme". */
+function stageBreakdown(links: CasinoLink[]): string {
+  const parts: string[] = [];
+  const n = (st: DealStage) => links.filter((l) => l.stage === st).length;
+  if (n("in-progress")) parts.push(`${n("in-progress")} in progress`);
+  if (n("stuck")) parts.push(`${n("stuck")} stuck`);
+  if (n("none")) parts.push(`${n("none")} with no programme`);
+  return parts.join(", ");
 }
 
 function CovStat({
@@ -656,7 +715,7 @@ interface Bar {
   key: string;
   label: string;
   note?: string;
-  tag?: "affiliate" | "plain";
+  stage?: DealStage;
   opens: number;
   confirms: number;
   total: number;
@@ -671,11 +730,11 @@ function BreakdownBars({ rows }: { rows: Bar[] }) {
           <div className="cr-cas-barhead">
             <span className="cr-cas-barlabel">
               {r.label}
-              {r.tag && (
+              {r.stage && (
                 <span
-                  className={`cr-cas-chip${r.tag === "plain" ? " is-plain" : ""}`}
+                  className={`cr-cas-chip${r.stage !== "live" ? " is-plain" : ""}`}
                 >
-                  {r.tag === "affiliate" ? "Attributed" : "Plain"}
+                  {r.stage === "live" ? "Attributed" : STAGE_LABEL[r.stage]}
                 </span>
               )}
               {r.note && <span className="cr-cas-barnote">{r.note}</span>}
@@ -687,7 +746,7 @@ function BreakdownBars({ rows }: { rows: Bar[] }) {
           </div>
           <div className="cr-cas-bartrack">
             <div
-              className={`cr-cas-barfill${r.tag === "plain" ? " is-plain" : ""}`}
+              className={`cr-cas-barfill${r.stage && r.stage !== "live" ? " is-plain" : ""}`}
               style={{ width: `${pct(r.total, max)}%` }}
             />
           </div>
@@ -715,7 +774,7 @@ function VenueSection({
         key: l.slug,
         label: l.name,
         note: `#${l.rank}${l.offer ? ` · ${l.offer}` : ""}`,
-        tag: l.deal,
+        stage: l.stage,
         opens: 0,
         confirms: 0,
         total: 0,

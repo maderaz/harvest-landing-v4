@@ -16,7 +16,7 @@ import "../_styles/home.css";
 import "../_styles/report.css";
 import "../_styles/crypto-casinos.css";
 
-const PAGE_URL = `${SITE_URL}/crypto-casinos`;
+const PAGE_URL = `${SITE_URL}/best-crypto-casino-bonus`;
 
 /**
  * The USDC strategies behind the Harvest section, read at build time.
@@ -96,7 +96,7 @@ function dataUpdatedAt(): string {
 //
 // The affiliate links being plain domains today is a business reason to wait,
 // and it is a weaker one. Lift this by deleting the robots line, and add
-// /crypto-casinos to sitemap.ts and to the llms.txt list in
+// /best-crypto-casino-bonus to sitemap.ts and to the llms.txt list in
 // scripts/build-seo-static.mjs in the same commit.
 export function generateMetadata(): Metadata {
   // The count is a property of the data, not a constant: a venue joins the
