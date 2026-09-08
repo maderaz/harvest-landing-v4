@@ -952,18 +952,8 @@ export const DISCLOSURE = [
   "Harvest may earn a commission when you register through a Play Now link. Our commercial relationship is disclosed above the comparison.",
 ];
 
-/**
- * Where an operator writes in, and what the page will and will not sell.
- *
- * It sits under the disclosure on purpose. An invitation to buy a placement
- * reads very differently three paragraphs after the page has said the sort
- * order is not for sale, and the two belong together for the reader as much as
- * for the operator: this is the page saying the same thing to both.
- */
-export const PARTNER_HEADING = "Operators: get listed";
-
-export const PARTNER_BODY =
-  "Running a casino you would like compared here? Write to marketing@harvest.finance with your brand, the offer you want listed and your affiliate programme. Every venue is ranked by the size of its advertised offer under the rule printed above the comparison, and a commercial arrangement does not move a row or change what we record from published terms.";
+/** One line under the disclosure, for operators who want to be listed. */
+export const PARTNER_LINE = "Are you operating a crypto casino? Get in touch:";
 
 export const PARTNER_EMAIL = "marketing@harvest.finance";
 
