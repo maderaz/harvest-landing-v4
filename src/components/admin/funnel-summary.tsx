@@ -1201,13 +1201,20 @@ type ChartDimension = "engine" | "landing";
 const TOP_LANDINGS = 12;
 const OTHER = "Other";
 
-// Friendly names for report landings so they read as a product in the legend,
-// and are recognisable when isolated from the rest of the SEO breakdown.
+// Friendly names for editorial landings so they read as a product in the
+// legend, and are recognisable when isolated from the rest of the breakdown.
 const LANDING_LABELS: Record<string, string> = {
   "/report/xrp-yield-ranking": "XRP Yield Report",
   "/report/aerodrome": "Aerodrome LP Report",
+  "/best-crypto-casino-bonus": "Crypto Casino Bonus",
 };
-const isReportLanding = (k: string) => k.startsWith("/report/");
+// Editorial landings that are never folded into "Other" and are listed in the
+// legend even with no sessions in the window, so their traffic stays one click
+// from isolation regardless of how they rank against the product pages that
+// day. Reports match by prefix; anything else is named here.
+const PINNED_LANDINGS: readonly string[] = ["/best-crypto-casino-bonus"];
+const isPinnedLanding = (k: string) =>
+  k.startsWith("/report/") || PINNED_LANDINGS.includes(k);
 
 // Legend/tooltip label: friendly name for report landings, otherwise strip the
 // leading slash off landing paths so they read compactly; engines and "Other"
@@ -1251,16 +1258,21 @@ function buildCategories(
     const present = [...counts.keys()].sort(
       (a, b) => (counts.get(b) || 0) - (counts.get(a) || 0),
     );
-    // Always draw report landings individually (never fold into "Other"), so
+    // Always draw pinned landings individually (never fold into "Other"), so
     // they stay isolatable even at low volume; fill the rest of the top slots by
     // volume, then sort the drawn set by volume for a clean legend.
-    const pinned = present.filter(isReportLanding);
-    const rest = present.filter((k) => !isReportLanding(k));
+    const pinned = present.filter(isPinnedLanding);
+    const rest = present.filter((k) => !isPinnedLanding(k));
     const room = Math.max(0, TOP_LANDINGS - pinned.length);
-    const shown = [...new Set([...pinned, ...rest.slice(0, room)])].sort(
+    const drawn = new Set([...pinned, ...rest.slice(0, room)]);
+    const shown = [...drawn].sort(
       (a, b) => (counts.get(b) || 0) - (counts.get(a) || 0),
     );
-    ordered = shown.length < present.length ? [...shown, OTHER] : shown;
+    // A pinned landing with nothing in the window still gets a legend entry,
+    // so "no traffic" is distinguishable from "folded into Other".
+    const quiet = PINNED_LANDINGS.filter((k) => !drawn.has(k));
+    const folded = present.some((k) => !drawn.has(k));
+    ordered = [...shown, ...quiet, ...(folded ? [OTHER] : [])];
   }
   const color: Record<string, string> = {};
   ordered.forEach(
