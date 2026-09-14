@@ -285,18 +285,10 @@
   color: color-mix(in srgb, var(--uni-ink) 52%, transparent);
 }
 
-/* ---- "Go to Calculator", under the header image on a phone -------------
-   Hidden by default and shown below 640px. On a wide screen the calculator
-   is one screen down with the table of contents pinned in the margin beside
-   it; on a phone it is several thousand pixels past six summary bullets with
-   nothing announcing it, which is the only place this button earns its
-   space. Full width, because a button that is not the width of the column it
-   sits in reads as an aside rather than as the way on. */
+/* "Go to Calculator" under the header image. Phone only: on a wide screen
+   the calculator is one screen down with the TOC beside it. */
 .uni-home-test .rl-figure-cta { display: none; }
-/* The section it jumps to clears the sticky header, so the badge above the
-   heading arrives on screen rather than under the bar. The header measures
-   53px; the rest is the gap that makes the landing look deliberate instead
-   of flush against the bar. */
+/* Clears the 53px sticky header so the badge lands with the heading. */
 .uni-home-test #calculator-section { scroll-margin-top: 64px; }
 
 .uni-home-test .rl-figure {
