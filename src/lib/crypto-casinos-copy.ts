@@ -106,7 +106,7 @@ export interface SummaryPoint {
 }
 
 /**
- * What a reader gets in six lines, every figure derived.
+ * What a reader gets in five lines, every figure derived.
  *
  * Nothing here is typed by hand. The header image asserts "over $100,000 for
  * newcomers", and the first bullet is the arithmetic behind that claim rather
@@ -139,11 +139,6 @@ export function summaryPoints(casinos: Casino[]): SummaryPoint[] {
       lead: `${spellOut(instant, true)} crypto casinos`,
       rest: "advertise instant withdrawals.",
     });
-  }
-
-  const noKyc = casinos.filter((c) => c.claimed.noKyc).length;
-  if (noKyc > 0) {
-    out.push({ lead: spellOut(noKyc, true), rest: "advertise no KYC." });
   }
 
   const played = casinos
