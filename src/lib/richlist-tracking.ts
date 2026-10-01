@@ -1,51 +1,33 @@
 // Calculator tracking, kept as its own channel.
 //
-// TWO CALCULATORS, ONE TABLE. This started as the tracker for the percentile
-// calculator on /xrp-rich-list and now also carries the XRP staking calculator
-// on /report/xrp-yield-ranking. They are the same three events over the same
-// columns, and every row already records `source_page`, so a second table
-// would duplicate a schema to hold the same shape of interaction. The control
-// room scopes by `source_page`, which is what keeps one tool's completion rate
-// out of the other's.
+// TWO CALCULATORS, THREE SURFACES, ONE TABLE. The percentile calculator on
+// /xrp-rich-list, and the XRP staking calculator on /report/xrp-yield-ranking
+// and again behind the switch on /xrp-rich-list. Same events, same columns,
+// and every row records `source_page`, so the control room tells them apart
+// by scoping on it rather than by reading three tables.
 //
 // On the staking calculator `tier` carries the selected product's venue slug
-// rather than a percentile band. It is the same kind of value: a coarse label
-// for which answer the visitor was shown, not anything about the visitor.
+// rather than a percentile band. A tool embedded off its own page overrides
+// `source_page`; see `sourcePage` below.
 //
-// A tool can override `source_page` when it is embedded somewhere other than
-// its own page; see `sourcePage` below.
+// Its own table, not a column on an existing one: `outbound_clicks` is the
+// visit -> app funnel and `report_outbound_clicks` is the report -> venue
+// funnel, and a calculator interaction is neither.
 //
-// The build spec asked for two numbers before launch: the calculator's
-// completion rate, and the click-through from a result into the XRP yield
-// report. The report gets few sessions and almost no onward clicks, so whether
-// this page feeds it is the whole question of whether the page was worth
-// building. Neither number existed until this file.
-//
-// A separate table rather than a column on an existing one. `outbound_clicks`
-// is the visit -> app.harvest.finance funnel and `report_outbound_clicks` is
-// the report -> third-party-venue funnel; a calculator interaction is neither,
-// and folding it into either would move numbers an operator reads as
-// acquisition.
-//
-// Four events, which is the smallest set that answers the questions asked of
-// these tools:
-//   - "switch"  the visitor flipped the calculator switch on /xrp-rich-list
-//   - "start"   the visitor pressed the calculate button with an amount typed
+// Four events:
+//   - "switch"  flipped the calculator switch on /xrp-rich-list
+//   - "start"   pressed calculate with an amount typed
 //   - "result"  an answer was shown
-//   - "cta"     the visitor clicked the box under the result
+//   - "cta"     clicked the box under the result
 //
-// start -> result is the completion rate and result -> cta is the
-// click-through. switch -> start is the third: of the people who flip to the
-// staking calculator, how many actually use it. A flip that leads nowhere is
-// the failure mode worth seeing, and it is invisible without its own event
-// because a visitor who flips and leaves produces nothing else at all.
+// start -> result is the completion rate, result -> cta the click-through,
+// and switch -> start says whether a flip leads anywhere. A visitor who
+// flips and leaves produces nothing else at all, which is why the flip needs
+// its own event.
 //
-// WHAT IS DELIBERATELY NOT SENT: the balance. The visitor types a number that
-// is nobody's business, the lookup runs entirely in the browser against a
-// build-time ladder, and there is no version of this feature worth having that
-// changes either of those. What lands is the percentile band the result fell
-// into, which is coarse enough that it describes an audience rather than a
-// person, and is the only shape of that answer an operator can act on anyway.
+// THE BALANCE IS NEVER SENT. The lookup runs in the browser against a
+// build-time ladder. What lands is the percentile band, which describes an
+// audience rather than a person.
 //
 // SCHEMA. Create before deploying, or PostgREST rejects every insert and the
 // events are silently lost.
@@ -125,34 +107,26 @@ export type CalculatorCta = "top-accounts" | "earn-on-xrp" | "see-ranking";
 export interface RichListCalculatorEvent {
   event: "switch" | "start" | "result" | "cta";
   /**
-   * What the answer was. A percentile band on the rich list calculator, the
-   * selected product's venue slug on the staking calculator, and on "switch"
-   * the tool being switched TO, so a flip and a flip back are separable.
+   * What the answer was: a percentile band on the rich list calculator, the
+   * product's venue slug on the staking calculator, and on "switch" the tool
+   * switched TO, so a flip and a flip back are separable.
    */
   tier?: string | null;
   /** Which onward click. Only on "cta". */
   cta?: CalculatorCta | null;
   targetUrl?: string | null;
   /**
-   * What to record as `source_page`, when the tool is not the page it sits on.
-   *
-   * The staking calculator also appears on /xrp-rich-list, behind a switch
-   * above the rich list calculator. Left to default, its events would report
-   * the rich list's path and land in the rich list's completion rate, which is
-   * the one number that page exists to measure. It reports
-   * "/xrp-rich-list#staking-calculator" instead: still the page it is on, but
-   * distinguishable, and no new column to add to a live table.
+   * `source_page` override for a tool embedded off its own page. The staking
+   * calculator behind the switch on /xrp-rich-list reports
+   * "/xrp-rich-list#staking-calculator" so its events stay out of the rich
+   * list calculator's completion rate.
    */
   sourcePage?: string;
 }
 
 /**
- * The percentile band a result gets recorded as.
- *
- * Bands, not the percentage, and certainly not the balance. "top 1%" describes
- * a segment of an audience; "top 0.8431%" plus a timestamp and a session id
- * starts describing one person's wallet, which is not a trade this page is
- * willing to make for an analytics chart.
+ * The percentile band a result gets recorded as. Bands, not the percentage:
+ * "top 0.8431%" with a timestamp and a session id describes one wallet.
  */
 export function calculatorTier(topPct: number): string {
   if (!Number.isFinite(topPct)) return "unknown";
