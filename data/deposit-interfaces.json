@@ -1,24 +1,31 @@
 {
-  "generatedAt": "2026-10-06T09:31:08.475Z",
+  "generatedAt": "2026-10-06T09:59:15.067Z",
   "chains": {
     "Ethereum": {
       "chainId": 1,
-      "rpcs": [],
-      "block": null,
+      "rpcs": [
+        "https://ethereum-rpc.publicnode.com",
+        "https://eth.blockscout.com/api/eth-rpc"
+      ],
+      "block": 26132589,
       "vaults": 29
     },
     "Base": {
       "chainId": 8453,
       "rpcs": [
-        "https://mainnet.base.org"
+        "https://mainnet.base.org",
+        "https://base-rpc.publicnode.com"
       ],
-      "block": 52244858,
+      "block": 52245747,
       "vaults": 72
     },
     "Arbitrum": {
       "chainId": 42161,
-      "rpcs": [],
-      "block": null,
+      "rpcs": [
+        "https://arb1.arbitrum.io/rpc",
+        "https://arbitrum-one-rpc.publicnode.com"
+      ],
+      "block": 512212410,
       "vaults": 22
     },
     "Polygon": {
@@ -26,7 +33,7 @@
       "rpcs": [
         "https://polygon-bor-rpc.publicnode.com"
       ],
-      "block": 95049507,
+      "block": 95050573,
       "vaults": 12
     },
     "zkSync": {
@@ -37,8 +44,10 @@
     },
     "HyperEVM": {
       "chainId": 999,
-      "rpcs": [],
-      "block": null,
+      "rpcs": [
+        "https://rpc.hyperliquid.xyz/evm"
+      ],
+      "block": 47808151,
       "vaults": 7
     }
   },
@@ -56,8 +65,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "cbbtc-aerodrome-champ-base",
@@ -72,8 +81,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "cbbtc-aerodrome-virtual-base",
@@ -88,8 +97,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "cbbtc-arcadia-lend-base",
@@ -104,8 +113,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "cbbtc-autopilot-base",
@@ -119,8 +128,8 @@
       "shareDecimals": 10,
       "interface": "erc4626",
       "depositsOpen": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "cbbtc-extrafi-lend-base",
@@ -135,8 +144,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "cbbtc-morpho-gauntlet-core-base",
@@ -151,8 +160,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "cbbtc-morpho-moonwell-frontier-v2-base",
@@ -167,8 +176,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aave-arbitrum",
@@ -176,10 +185,15 @@
       "chainId": 42161,
       "vault": "0x30ca32d06e47B6a23C159E7Ca3950B2CcaB8E3e8",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "eth-aave-base",
@@ -194,8 +208,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-aero-base",
@@ -210,8 +224,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-cbbtc-base",
@@ -226,8 +240,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-champ-base",
@@ -242,8 +256,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-eurc-base",
@@ -258,8 +272,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-genome-base",
@@ -274,8 +288,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-ion-base",
@@ -290,8 +304,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-klima-base",
@@ -306,8 +320,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-mseth-base",
@@ -322,8 +336,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-tbtc-base",
@@ -338,8 +352,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-usdbc-base",
@@ -354,8 +368,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-virtual-base",
@@ -370,8 +384,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-vvv-base",
@@ -386,8 +400,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-well-base",
@@ -402,8 +416,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-well-old-base",
@@ -418,8 +432,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-aerodrome-wels-base",
@@ -434,8 +448,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-arcadia-lend-base",
@@ -450,8 +464,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-baseswap-bswap-base",
@@ -466,8 +480,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-compound-v3-arbitrum",
@@ -475,10 +489,15 @@
       "chainId": 42161,
       "vault": "0xF5431bdcb688D1E261Cb4cddC5AD6f2713d79Ac5",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "eth-compound-v3-base",
@@ -493,8 +512,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-dolomite-arbitrum",
@@ -502,10 +521,15 @@
       "chainId": 42161,
       "vault": "0x11F629445C55BbCb03EbE7cB15Bcf770eB006917",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "eth-euler-alterscope-lrt-base",
@@ -520,8 +544,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-euler-clearstar-fusion-base",
@@ -536,8 +560,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-euler-frontier-yo-base",
@@ -552,8 +576,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-extrafi-lend-base",
@@ -568,8 +592,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-extrafi-lend-pool-2-base",
@@ -584,8 +608,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-fluid-arbitrum",
@@ -593,10 +617,15 @@
       "chainId": 42161,
       "vault": "0xE351c30c1B7Da09df89D1C8528ce7110D0702d23",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "eth-fluid-base",
@@ -611,8 +640,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-fluid-ethereum",
@@ -620,10 +649,15 @@
       "chainId": 1,
       "vault": "0xf1203b6154e856557cBd97A38B6d0587232E3Fb9",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "eth-ipor-base-eth-lending-optimizer-base",
@@ -638,8 +672,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-morpho-clearstar-reactor-v2-base",
@@ -654,8 +688,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-morpho-gauntlet-balanced-v2-base",
@@ -670,8 +704,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-morpho-gauntlet-prime-v2-ethereum",
@@ -679,10 +713,15 @@
       "chainId": 1,
       "vault": "0x73515227DB81b4F506cb24f077d391886DA789c9",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "eth-morpho-kpk-prime-v2-ethereum",
@@ -690,10 +729,15 @@
       "chainId": 1,
       "vault": "0xaFE99218186DF27a44F40Da4249e9E5cbDf712A8",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "eth-morpho-kpk-yield-v2-ethereum-2",
@@ -701,10 +745,15 @@
       "chainId": 1,
       "vault": "0xFE09e53A81Fe2808bc493ea64319109B5bAa573e",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "eth-morpho-moonwell-flagship-v2-base",
@@ -719,8 +768,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-morpho-steakhouse-prime-v2-base",
@@ -735,8 +784,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-morpho-steakhouse-prime-v2-ethereum",
@@ -744,10 +793,15 @@
       "chainId": 1,
       "vault": "0xbf4C718EAEf89bA7ba330a256533d381EeD09Fe3",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "eth-morpho-yearn-og-v2-base",
@@ -762,8 +816,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "eth-quickswap-matic-polygon",
@@ -778,8 +832,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": false,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "eth-quickswap-usdc-e-polygon",
@@ -794,8 +848,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": false,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "eth-quickswap-wbtc-polygon",
@@ -810,8 +864,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "eth-quickswap-wbtc-polygon-2",
@@ -826,8 +880,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "eth-stake-dao-onlyboost-ethereum",
@@ -835,10 +889,15 @@
       "chainId": 1,
       "vault": "0x549fAd7794d331eA0E1675CD7e60cE6931914457",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x3A283D9c08E8b55966afb64C515f5143cf907611",
+      "depositTokenSymbol": "crvCVXETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "eth-venus-core-arbitrum",
@@ -846,10 +905,15 @@
       "chainId": 42161,
       "vault": "0x9351fAFEd159BD51d74e4Bbc5Cbc57785888778F",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "steth-stake-dao-onlyboost-ethereum",
@@ -857,10 +921,15 @@
       "chainId": 1,
       "vault": "0xc27bfE32E0a934a12681C1b35acf0DBA0e7460Ba",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x21E27a5E5513D6e65C4f830167390997aA84843a",
+      "depositTokenSymbol": "stETH-ng-f",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "tbtc-aerodrome-usdbc-base",
@@ -875,8 +944,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-40-acres-base",
@@ -891,8 +960,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-aave-arbitrum",
@@ -900,10 +969,15 @@
       "chainId": 42161,
       "vault": "0x803Ae650Bc7c40b03Fe1C33F2a787E81f1c4819c",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-aave-base",
@@ -918,8 +992,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-aave-ethereum",
@@ -927,10 +1001,15 @@
       "chainId": 1,
       "vault": "0x0135d7Cf6C90A562BA533AdEb4Ca6CA2370071ab",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-aave-polygon",
@@ -945,8 +1024,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "usdc-aave-prime-ethereum",
@@ -954,10 +1033,15 @@
       "chainId": 1,
       "vault": "0xB35e6C3c1147897B264642AECE0740870c81CA3f",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-aerodrome-aero-base",
@@ -972,8 +1056,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-aerodrome-eth-base",
@@ -988,8 +1072,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-aerodrome-klima-base",
@@ -1004,8 +1088,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-aerodrome-star-base",
@@ -1020,8 +1104,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-arcadia-lend-base",
@@ -1036,8 +1120,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-autopilot-arbitrum",
@@ -1045,10 +1129,14 @@
       "chainId": 42161,
       "vault": "0x407D3d942d0911a2fEA7E22417f81E27c02D6c6F",
       "vaultType": "Autopilot",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 8,
+      "interface": "erc4626",
+      "depositsOpen": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-autopilot-base",
@@ -1062,8 +1150,8 @@
       "shareDecimals": 8,
       "interface": "erc4626",
       "depositsOpen": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-autopilot-ethereum",
@@ -1071,10 +1159,14 @@
       "chainId": 1,
       "vault": "0x3151cEE0cdb517C0E7Db2B55FF5085e7D1809d90",
       "vaultType": "Autopilot",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 8,
+      "interface": "erc4626",
+      "depositsOpen": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-autopilot-morpho-base",
@@ -1088,8 +1180,8 @@
       "shareDecimals": 8,
       "interface": "erc4626",
       "depositsOpen": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-compound-v3-arbitrum",
@@ -1097,10 +1189,15 @@
       "chainId": 42161,
       "vault": "0x7b33c028fdcd6425c60b7d2A1a54eC10bFdF14B8",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-compound-v3-base",
@@ -1115,8 +1212,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-curve-usdbc-axlusdc-crvusd-base",
@@ -1131,8 +1228,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-dolomite-arbitrum",
@@ -1140,10 +1237,15 @@
       "chainId": 42161,
       "vault": "0xB01a958d8e9dBA566c6D71f66ef566ccf5Fac859",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-euler-clearstar-noon-base",
@@ -1158,8 +1260,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-euler-euler-base-base",
@@ -1174,8 +1276,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-euler-openeden-ethereum",
@@ -1183,10 +1285,15 @@
       "chainId": 1,
       "vault": "0x4092E082Ec9565a5545a7663AFb01D0a35897F2D",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-euler-theo-frontier-arbitrum",
@@ -1194,10 +1301,15 @@
       "chainId": 42161,
       "vault": "0x857a6072754532Ae77AdA617a7d0900B63c1e2A1",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-extrafi-lend-base",
@@ -1212,8 +1324,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-extrafi-lend-pool-2-base",
@@ -1228,8 +1340,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-fluid-arbitrum",
@@ -1237,10 +1349,15 @@
       "chainId": 42161,
       "vault": "0x58677351d11F8941c7199c49aa7379A156404972",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-fluid-base",
@@ -1255,8 +1372,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-fluid-ethereum",
@@ -1264,10 +1381,15 @@
       "chainId": 1,
       "vault": "0xfc1c3E7b62181f9A66AEc94C9bE54dc525e2838F",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-hypurr-hyperevm",
@@ -1275,10 +1397,15 @@
       "chainId": 999,
       "vault": "0xb79Fd5D6772F06Ed0DF784e6f247f6eC0457CDde",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no HyperEVM RPC reachable with chain ID 999",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 47808151
     },
     {
       "slug": "usdc-ipor-base-usdc-lending-optimizer-base",
@@ -1293,8 +1420,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-ipor-bitcoin-dollar-usdc-ethereum",
@@ -1302,10 +1429,15 @@
       "chainId": 1,
       "vault": "0xBcE1B3aC78b895c69f91E446c8f654BC1C40A3b8",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 0,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-alpha-prime-v2-base",
@@ -1320,8 +1452,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-alpha-prime-v2-ethereum",
@@ -1329,10 +1461,15 @@
       "chainId": 1,
       "vault": "0x32DE5CC930A193bdd130E377c38c7053c90EB360",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-api3-dcomp-v2-ethereum",
@@ -1340,10 +1477,15 @@
       "chainId": 1,
       "vault": "0x47B8cdAe3BcEb0DA3236ACF2B288A01A81672AcC",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-clearstar-core-v2-ethereum",
@@ -1351,10 +1493,15 @@
       "chainId": 1,
       "vault": "0x99671dbf3D87C0b8f23E7Ea5B20CFAA6175578ca",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-clearstar-reactor-arbitrum",
@@ -1362,10 +1509,15 @@
       "chainId": 42161,
       "vault": "0x4A8e91248E5602d0D34a5E86A9f1B60E8F2dC721",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-morpho-clearstar-reactor-v2-base",
@@ -1380,8 +1532,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-clearstar-yield-v2-base",
@@ -1396,8 +1548,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-compound-polygon",
@@ -1412,8 +1564,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "usdc-morpho-felix-hyperevm",
@@ -1421,10 +1573,15 @@
       "chainId": 999,
       "vault": "0xE4BdD09b17e21612717bb0aE9e372Fe9F543620A",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no HyperEVM RPC reachable with chain ID 999",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 47808151
     },
     {
       "slug": "usdc-morpho-gauntlet-balanced-v2-arbitrum",
@@ -1432,10 +1589,15 @@
       "chainId": 42161,
       "vault": "0x34E2110F8C9a635477EFf75FDBe73251Fe02ae4a",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-morpho-gauntlet-frontier-v2-base",
@@ -1450,8 +1612,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-gauntlet-frontier-v2-ethereum-2",
@@ -1459,10 +1621,15 @@
       "chainId": 1,
       "vault": "0x6D84799f874918A7762625805d68Cf3181d8d5f2",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-gauntlet-hyperevm",
@@ -1470,10 +1637,15 @@
       "chainId": 999,
       "vault": "0xe5e22bf58Af97cd21138AF8Af06AC70b25204454",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no HyperEVM RPC reachable with chain ID 999",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xb88339CB7199b77E23DB6E890353E22632Ba630f",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 47808151
     },
     {
       "slug": "usdc-morpho-gauntlet-prime-v2-arbitrum",
@@ -1481,10 +1653,15 @@
       "chainId": 42161,
       "vault": "0xE6e61bF3Ec29b4ab1846EA2851FA021C0BE886BA",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-morpho-gauntlet-prime-v2-base",
@@ -1499,8 +1676,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-hyperithm-apex-v2-ethereum",
@@ -1508,10 +1685,15 @@
       "chainId": 1,
       "vault": "0xD02daFa6E9145ce1FAA786F80A50202E8a4255f8",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-hyperithm-arbitrum",
@@ -1519,10 +1701,15 @@
       "chainId": 42161,
       "vault": "0xAcb760D36236b487aB4ec48932746844b6339bB5",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-morpho-kpk-prime-v2-ethereum",
@@ -1530,10 +1717,15 @@
       "chainId": 1,
       "vault": "0x4292059EA6de854733C38f65259b9e8516FEB214",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-kpk-yield-v2-ethereum",
@@ -1541,10 +1733,15 @@
       "chainId": 1,
       "vault": "0x180f6E72A19dA2A791d40433c619C553FE268d94",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-market-cbbtc-base",
@@ -1559,8 +1756,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-market-cbeth-base",
@@ -1575,8 +1772,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-market-weth-base",
@@ -1591,8 +1788,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-market-wsteth-base",
@@ -1607,8 +1804,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-moonwell-flagship-v2-base",
@@ -1623,8 +1820,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-pendle-ecosystem-v2-ethereum",
@@ -1632,10 +1829,15 @@
       "chainId": 1,
       "vault": "0xf0358e8c3CD5Fa238a29301d0bEa3D63A17bEdBE",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-stakedao-v2-ethereum",
@@ -1643,10 +1845,15 @@
       "chainId": 1,
       "vault": "0x4E7996aaA1aa8e56017FeFc41CF17D3A244f901f",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-steakhouse-high-yield-v2-arbitrum",
@@ -1654,10 +1861,15 @@
       "chainId": 42161,
       "vault": "0xedE9330Aa169f0fEca59E2e62fF443682862a0a4",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdc-morpho-steakhouse-high-yield-v2-base",
@@ -1672,8 +1884,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-steakhouse-high-yield-v2-ethereum",
@@ -1681,10 +1893,15 @@
       "chainId": 1,
       "vault": "0x67735DC14F14deb8d1acdFf09a41e6bDA7234EBB",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-morpho-steakhouse-prime-v2-base",
@@ -1699,8 +1916,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-yearn-og-v2-base",
@@ -1715,8 +1932,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "usdc-morpho-yearn-og-v2-ethereum",
@@ -1724,10 +1941,15 @@
       "chainId": 1,
       "vault": "0x7dd768bc86bE6ff410Da79F3E7AEc4cE4c144fCc",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "depositTokenSymbol": "USDC",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdc-quickswap-eth-polygon",
@@ -1742,8 +1964,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "usdt-aave-polygon",
@@ -1758,8 +1980,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "usdt-compound-v3-arbitrum",
@@ -1767,10 +1989,15 @@
       "chainId": 42161,
       "vault": "0x16A70933c3ea281d7A8A30349808a4C50e81E377",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+      "depositTokenSymbol": "USD₮0",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdt-dolomite-arbitrum",
@@ -1778,10 +2005,15 @@
       "chainId": 42161,
       "vault": "0x95e96DaDe6cc960F3cbE3a71CAE8413AF5a3d9F4",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+      "depositTokenSymbol": "USD₮0",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdt-fluid-arbitrum",
@@ -1789,10 +2021,15 @@
       "chainId": 42161,
       "vault": "0x5189dcB7CDAB823915865817778032d2a6fC8108",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+      "depositTokenSymbol": "USD₮0",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "usdt-fluid-ethereum",
@@ -1800,10 +2037,15 @@
       "chainId": 1,
       "vault": "0x555495529852821368d3D4ee677914B3Dbc3ed63",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "depositTokenSymbol": "USDT",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdt-hypurr-usdt0-hyperevm",
@@ -1811,10 +2053,15 @@
       "chainId": 999,
       "vault": "0xC37a8629C1032319D4EFF0Ff781a1cfFf3E96271",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no HyperEVM RPC reachable with chain ID 999",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb",
+      "depositTokenSymbol": "USD₮0",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 47808151
     },
     {
       "slug": "usdt-morpho-compound-polygon",
@@ -1829,8 +2076,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "usdt-morpho-felix-frontier-hyperevm",
@@ -1838,10 +2085,15 @@
       "chainId": 999,
       "vault": "0x4A630faEc2EB8F9EC2E7077Da6eF86588e5C9998",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no HyperEVM RPC reachable with chain ID 999",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb",
+      "depositTokenSymbol": "USD₮0",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 47808151
     },
     {
       "slug": "usdt-morpho-felix-hyperevm",
@@ -1849,10 +2101,15 @@
       "chainId": 999,
       "vault": "0xe5641F9894BF8D6025233eEA6C804a311bA26371",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no HyperEVM RPC reachable with chain ID 999",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb",
+      "depositTokenSymbol": "USD₮0",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 47808151
     },
     {
       "slug": "usdt-morpho-gauntlet-hyperevm",
@@ -1860,10 +2117,15 @@
       "chainId": 999,
       "vault": "0x8478B5a20939948Ce064c0F44962004ED08B7DdB",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no HyperEVM RPC reachable with chain ID 999",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xB8CE59FC3717ada4C02eaDF9682A9e934F625ebb",
+      "depositTokenSymbol": "USD₮0",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 47808151
     },
     {
       "slug": "usdt-morpho-steakhouse-prime-v2-ethereum",
@@ -1871,10 +2133,15 @@
       "chainId": 1,
       "vault": "0x053c80eA73Dc6941F518a68E2FC52Ac45BDE7c9C",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "depositTokenSymbol": "USDT",
+      "depositTokenDecimals": 6,
+      "shareDecimals": 6,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "usdt-quickswap-eth-polygon",
@@ -1889,8 +2156,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "usdt-quickswap-matic-polygon",
@@ -1905,8 +2172,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "wbtc-autopilot-arbitrum",
@@ -1914,10 +2181,14 @@
       "chainId": 42161,
       "vault": "0x49b2248f7a7a703731852db0b2217f40da75B8aB",
       "vaultType": "Autopilot",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+      "depositTokenSymbol": "WBTC",
+      "depositTokenDecimals": 8,
+      "shareDecimals": 10,
+      "interface": "erc4626",
+      "depositsOpen": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "wbtc-dolomite-arbitrum",
@@ -1925,10 +2196,15 @@
       "chainId": 42161,
       "vault": "0xf54537b19796d2c75EcB6760a299B8482eA717fB",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f",
+      "depositTokenSymbol": "WBTC",
+      "depositTokenDecimals": 8,
+      "shareDecimals": 8,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "wbtc-ipor-dollar-carry-ethereum",
@@ -1936,10 +2212,15 @@
       "chainId": 1,
       "vault": "0x0d39D6ef06a3a5c2408db195D9Af2eA7a8D52B92",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "depositTokenSymbol": "WBTC",
+      "depositTokenDecimals": 8,
+      "shareDecimals": 0,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "wbtc-morpho-gauntlet-core-ethereum",
@@ -1947,10 +2228,15 @@
       "chainId": 1,
       "vault": "0x5d9d25c7C457dD82fc8668FFC6B9746b674d4EcB",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+      "depositTokenSymbol": "WBTC",
+      "depositTokenDecimals": 8,
+      "shareDecimals": 8,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "wbtc-quickswap-usdc-e-polygon",
@@ -1965,8 +2251,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 95049507
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 95050573
     },
     {
       "slug": "wbtc-stake-dao-onlyboost-ethereum",
@@ -1974,10 +2260,15 @@
       "chainId": 1,
       "vault": "0x745cA7DBfe786c58d31d8E142e04308Cd1F38f5f",
       "vaultType": "Autocompounder",
-      "interface": "unverified",
-      "reason": "no Ethereum RPC reachable with chain ID 1",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x66039342C66760874047c36943B1e2d8300363BB",
+      "depositTokenSymbol": "HemiCbWBTC",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 18,
+      "interface": "harvest-vault",
+      "depositsOpen": null,
+      "alsoErc4626": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 26132589
     },
     {
       "slug": "weth-aave-looping-base",
@@ -1992,8 +2283,8 @@
       "interface": "harvest-vault",
       "depositsOpen": null,
       "alsoErc4626": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     },
     {
       "slug": "weth-autopilot-arbitrum",
@@ -2001,10 +2292,14 @@
       "chainId": 42161,
       "vault": "0xcE4D997A3B404F9Eaa796F89DEae40747D3647B7",
       "vaultType": "Autopilot",
-      "interface": "unverified",
-      "reason": "no Arbitrum RPC reachable with chain ID 42161",
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": null
+      "depositToken": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+      "depositTokenSymbol": "WETH",
+      "depositTokenDecimals": 18,
+      "shareDecimals": 20,
+      "interface": "erc4626",
+      "depositsOpen": true,
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 512212410
     },
     {
       "slug": "weth-autopilot-base",
@@ -2018,8 +2313,8 @@
       "shareDecimals": 20,
       "interface": "erc4626",
       "depositsOpen": true,
-      "checkedAt": "2026-10-06T09:31:08.475Z",
-      "checkedBlock": 52244858
+      "checkedAt": "2026-10-06T09:59:15.067Z",
+      "checkedBlock": 52245747
     }
   ]
 }
