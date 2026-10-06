@@ -42,13 +42,9 @@
   margin-top: 1px;
 }
 
-/* ---- The hero's two buttons -------------------------------------------
-   .uni-home-cta-secondary is a gold pill, which is a filled button on the
-   homepage's pale hero and a button-shaped hole on this one, where the hero
-   itself is gold: all that survives is the hairline border. White fill
-   instead, the same pairing the rich list calculator uses for a secondary
-   action on gold, and stated in literals rather than tokens because the card
-   is gold in both themes and the tokens are not. */
+/* Hero CTAs. .uni-home-cta-secondary is gold, and so is this hero, so the
+   secondary needs a white fill. Literals, not tokens: the card is gold in
+   both themes. */
 .rp-page .rp-hero .uni-home-cta-secondary {
   background: #ffffff;
   border-color: rgba(25, 23, 23, 0.18);
@@ -58,9 +54,8 @@
   background: #f4f2ee;
   border-color: rgba(25, 23, 23, 0.32);
 }
-/* Stacked on a phone rather than two half-width pills. "View Opportunities"
-   is nineteen characters and nowrap, so side by side it fills its half to
-   the millimetre and reads as text that only just escaped being clipped. */
+/* Stacked on a phone: "View Opportunities" is nowrap and does not fit half
+   a 390px row. */
 @media (max-width: 560px) {
   .rp-page .rp-hero .uni-home-hero-actions {
     display: flex;
@@ -77,12 +72,8 @@
   }
 }
 
-/* Anchor landings clear the sticky header.
-   Every heading on this page with an id is a jump target: the table of
-   contents links to them, the hero's two buttons link to them, and answer
-   engines deep-link to them. The header is sticky and 53px tall, so without
-   this every one of those jumps put the heading it was aimed at underneath
-   the bar and the reader arrived at the paragraph below the answer. */
+/* Jump targets clear the 53px sticky header. Without this the TOC, the hero
+   buttons and any deep link land the heading under the bar. */
 .rp-page .uni-home-content h2[id],
 .rp-page .uni-home-content h3[id],
 .rp-page [id="calculator"],
@@ -563,8 +554,7 @@
 @media (max-width: 640px) {
   .rp-rank .hub-thead,
   .rp-rank .hub-row {
-    /* Last track widened from 38px, which was sized for a bare arrow in a
-       circle. It holds the word now. */
+    /* Last track holds the "Open" pill; was 38px for the arrow circle. */
     grid-template-columns: 18px minmax(0, 1fr) 58px 62px;
     gap: 8px;
   }
@@ -582,17 +572,9 @@
   }
   /* Position number sized down so it doesn't overpower the token icon. */
   .rp-page .rp-rank .hub-rank { font-size: 10.5px; }
-  /* "Open", the same word the button carries at every other width.
-     
-     It used to be a 36px circle with the label hidden and a bare arrow
-     inside, and on a phone that read as an empty outlined element: a 15px
-     glyph centred in a 36px ring is mostly ring. The flagship-yellow fill
-     that was meant to carry it never painted either, because
-     `.rp-page .uni-home-content a.rp-discover` further down this file
-     outranks `.rp-page .rp-rank .rp-discover` on its element selector, so
-     the circle came out white on white. Rather than win that fight for a
-     circle, the button says what it does. The anchor-specificity twin below
-     is what makes the fill stick this time. */
+  /* "Open", not a bare arrow in a circle. The second selector is needed
+     because `.rp-page .uni-home-content a.rp-discover` below outranks
+     `.rp-page .rp-rank .rp-discover` and was killing the gold fill. */
   .rp-page .rp-rank .rp-discover,
   .rp-page .uni-home-content .rp-rank a.rp-discover {
     padding: 6px 11px;
@@ -614,8 +596,6 @@
     border-color: #f5a623;
     color: #191717;
   }
-  /* The arrow was the mobile stand-in for the label. With the label back it
-     is one glyph of width bought for nothing. */
   .rp-page .rp-rank .rp-discover-arrow { display: none; }
   /* Tighten the row + product name so the three items fit one clean line. */
   .rp-rank .hub-row { padding: 14px 14px; }
