@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { productMetaDescription } from "@/lib/product-meta";
 import type { Metadata } from "next";
 import {
   getVaultBySlug,
@@ -11,7 +12,7 @@ import {
 import { isCanonicalSlug } from "@/lib/canonical-vaults";
 import { formatAPY, formatTVL } from "@/lib/format";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { productPageTitle, productPageDescription, productPageCrumbs, comboKey } from "@/lib/seo";
+import { productPageTitle, productPageCrumbs, comboKey } from "@/lib/seo";
 import {
   financialProductSchema,
   breadcrumbSchema,
@@ -69,9 +70,7 @@ export async function generateMetadata({
   // Both branches stay free of dynamic data (no APY %, no month/year)
   // so the indexed snippet never drifts from the live page between the
   // hourly static rebuilds.
-  const description = lpPair
-    ? `Autocompounding LP yield on the ${vault.asset}/${lpPair.counterpart} pair on ${lpPair.platform} (${vault.chain}). ${lpPair.rewardToken ?? "Platform-native"} rewards are claimed and added back to the position automatically.`
-    : productPageDescription(vault);
+  const description = productMetaDescription(vault);
 
   // Single robots gate, shared with sitemap.ts so we never advertise a
   // URL we noindex. canonical de-dupes asset/protocol/network repeats;

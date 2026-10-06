@@ -248,10 +248,37 @@ async function main() {
     }
   }
 
+  // Product Markdown pages (public/<slug>.md) carry the product page's prose
+  // and are held to the same list, matching this gate's HTML scope (products
+  // only). Their technical and legal sections are exempt the way the footer
+  // disclaimer is on the HTML page: the deposit and withdrawal steps name
+  // contract functions (`deposit(uint256)`), and the agent notes are a
+  // disclaimer.
+  const MD_EXEMPT = ["## Contracts", "## How to deposit", "## How to withdraw", "## Notes for AI agents"];
+  const productSlugs = new Set(slugs);
+  let mdScanned = 0;
+  for (const filename of (await fs.readdir(PUBLIC_DIR)).filter((f) => f.endsWith(".md"))) {
+    if (!productSlugs.has(filename.slice(0, -3))) continue;
+    const raw = await fs.readFile(path.join(PUBLIC_DIR, filename), "utf8");
+    const text = raw
+      .split(/\n(?=## )/)
+      .filter((s) => !MD_EXEMPT.some((h) => s.startsWith(h)))
+      .join("\n");
+    mdScanned++;
+    const violations = [];
+    for (const rule of BANNED) {
+      for (const h of checkText(text, rule)) violations.push({ rule: rule.name, ...h, section: "markdown" });
+    }
+    if (violations.length > 0) {
+      fileReports.push({ filename, violations });
+      totalViolations += violations.length;
+    }
+  }
+
   if (totalViolations === 0) {
     const ms = Date.now() - t0;
     console.log(
-      `[OK] banned-word check passed (${filesScanned} product pages scanned, 0 violations, ${ms}ms)`,
+      `[OK] banned-word check passed (${filesScanned} product pages and ${mdScanned} Markdown pages scanned, 0 violations, ${ms}ms)`,
     );
     process.exit(0);
   }

@@ -11,6 +11,7 @@ import { networkHubH1, networkHubCrumbs } from "@/lib/seo";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { NETWORK_BLURBS, NETWORKS } from "@/lib/networks";
 import { HubTable } from "@/components/hub-table";
+import { networkHubRows } from "@/lib/hub-rows";
 import { RankingDataNote } from "@/components/ranking-data-note";
 import { HomeCrumb } from "@/components/home-crumb";
 
@@ -40,9 +41,7 @@ export async function NetworkHubBody({
 }: Props) {
   const allVaults = await getLiveVaults();
   const sparklines = await getAllSparklines();
-  const vaults = allVaults
-    .filter((v) => v.chain === chain)
-    .sort((a, b) => b.apy24h - a.apy24h);
+  const vaults = networkHubRows(allVaults, chain);
 
   const bestApy = vaults.reduce((b, v) => (v.apy24h > b ? v.apy24h : b), 0);
   const avgApy =

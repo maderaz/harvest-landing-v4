@@ -13,7 +13,8 @@ import { SITE_URL } from "@/lib/constants";
 import { platformHubH1, platformHubCrumbs } from "@/lib/seo";
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { NETWORKS } from "@/lib/networks";
-import { getPlatform, platformVaults, PLATFORMS } from "@/lib/platforms";
+import { getPlatform, PLATFORMS } from "@/lib/platforms";
+import { platformHubRows } from "@/lib/hub-rows";
 import { HubTable } from "@/components/hub-table";
 import { RankingDataNote } from "@/components/ranking-data-note";
 import { HomeCrumb } from "@/components/home-crumb";
@@ -47,9 +48,7 @@ export async function PlatformHubBody({ platformSlug, livePlatformSlugs }: Props
 
   const allVaults = await getLiveVaults();
   const sparklines = await getAllSparklines();
-  const vaults = platformVaults(allVaults, platform).sort(
-    (a, b) => b.apy24h - a.apy24h,
-  );
+  const vaults = platformHubRows(allVaults, platform);
 
   const bestApy = vaults.reduce((b, v) => (v.apy24h > b ? v.apy24h : b), 0);
   const avgApy =

@@ -157,6 +157,36 @@ for (const slug of PAGES) {
   }
 }
 
+// Agent Markdown pages (public/*.md): the copy written for them, which is the
+// steps, contracts, risks, notes, ranking intros and agents.md. Text quoted
+// from the HTML page (a product's description line and Overview, the Polygon
+// operator note) is left to the gates that govern that page, as it is on the
+// page itself.
+const QUOTED_SECTIONS = ["## Overview"];
+let mdScanned = 0;
+for (const name of (await fs.readdir(PUBLIC_DIR)).filter((f) => f.endsWith(".md"))) {
+  const raw = await fs.readFile(path.join(PUBLIC_DIR, name), "utf8");
+  const text = raw
+    .split(/\n(?=## )/)
+    .filter((s) => !QUOTED_SECTIONS.some((h) => s.startsWith(h)))
+    .join("\n")
+    .split("\n")
+    .filter((l) => !l.startsWith("> ") && !l.startsWith("This page mixes two operator types."))
+    .join(" ")
+    .replace(/\s+/g, " ");
+  mdScanned++;
+  for (const b of BANNED) {
+    const re = new RegExp(b.re.source, b.re.flags.includes("g") ? b.re.flags : b.re.flags + "g");
+    for (const m of text.matchAll(re)) {
+      findings++;
+      console.log(`\n  /${name}`);
+      console.log(`    [X] ${b.name}`);
+      console.log(`        ${excerpt(text, m.index, m[0].length)}`);
+    }
+  }
+}
+if (mdScanned) scanned += mdScanned;
+
 const ms = Date.now() - t0;
 if (findings > 0) {
   console.log(

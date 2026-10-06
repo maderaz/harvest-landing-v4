@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { getLiveVaults, getAllSparklines } from "@/lib/data";
+import { networkHubRows } from "@/lib/hub-rows";
 import { AssetIcon, ChainIcon } from "@/components/token-icons";
 import { formatAPY, formatTVL } from "@/lib/format";
 import { SITE_URL, SITE_NAME } from "@/lib/constants";
@@ -86,9 +87,7 @@ export async function PolygonHubBody() {
     getAllSparklines(),
     Promise.resolve(getPolygonVenues()),
   ]);
-  const harvestVaults = allVaults
-    .filter((v) => v.chain === "Polygon")
-    .sort((a, b) => b.apy24h - a.apy24h);
+  const harvestVaults = networkHubRows(allVaults, "Polygon");
 
   const groups = groupPolygonVenuesByAsset(externalVenues);
   const bestExternalApy = externalVenues.reduce((m, v) => (v.apy != null && v.apy > m ? v.apy : m), 0);

@@ -14,6 +14,7 @@ import {
 import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
 import { platformForVenue } from "@/lib/platforms";
 import { isLowLiquidityTvl, LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
+import { CHAIN_EXPLORERS } from "@/lib/explorers";
 import type { FullVaultHistory } from "@/lib/history-api";
 import { trackedDays as vaultTrackedDays } from "@/lib/vault-age";
 import { productPageCrumbs } from "@/lib/seo";
@@ -51,14 +52,6 @@ import { SimilarVaults } from "@/components/similar-vaults";
 import { HomeCrumb } from "@/components/home-crumb";
 import type { YieldVault } from "@/lib/types";
 
-const CHAIN_EXPLORERS: Record<string, string> = {
-  Ethereum: "https://etherscan.io/address/",
-  Polygon: "https://polygonscan.com/address/",
-  Arbitrum: "https://arbiscan.io/address/",
-  Base: "https://basescan.org/address/",
-  zkSync: "https://explorer.zksync.io/address/",
-  HyperEVM: "https://hyperscan.xyz/address/",
-};
 
 function shortAddress(a: string): string {
   if (a.length < 12) return a;

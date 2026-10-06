@@ -5,6 +5,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { getLiveVaults, getAllSparklines } from "@/lib/data";
+import { homeRows } from "@/lib/hub-rows";
 import { formatAPY, formatTVL } from "@/lib/format";
 import { SITE_NAME, SITE_URL, SITE_DESCRIPTION } from "@/lib/constants";
 import { AssetIcon, ChainIcon } from "@/components/token-icons";
@@ -129,7 +130,7 @@ export default async function HomePage() {
           <SponsoredRow />
 
           <HubTable
-            vaults={vaults}
+            vaults={homeRows(vaults)}
             sparklines={sparklines}
             pageSize={50}
             showAssetFilter

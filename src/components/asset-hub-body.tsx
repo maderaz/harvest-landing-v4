@@ -15,6 +15,7 @@ import {
 import { breadcrumbSchema, itemListSchema } from "@/lib/jsonld";
 import { getSubAsset } from "@/lib/sub-asset";
 import { HubTable } from "@/components/hub-table";
+import { assetHubRows } from "@/lib/hub-rows";
 import { RankingDataNote } from "@/components/ranking-data-note";
 import { HomeCrumb } from "@/components/home-crumb";
 
@@ -190,9 +191,7 @@ function buildBlock<T>(
 export async function AssetHubBody({ asset }: Props) {
   const allVaults = await getLiveVaults();
   const sparklines = await getAllSparklines();
-  const vaults = allVaults
-    .filter((v) => v.asset === asset)
-    .sort((a, b) => b.apy24h - a.apy24h);
+  const vaults = assetHubRows(allVaults, asset);
 
   const copy = COPY[asset];
   const bestApy = vaults.reduce((b, v) => (v.apy24h > b ? v.apy24h : b), 0);
