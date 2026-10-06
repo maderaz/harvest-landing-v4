@@ -348,6 +348,10 @@ export async function walkLedger({
   deadline = Infinity,
   pageLimit = 2048,
   maxFailures = 25,
+  maxShardFailures = 5,
+  // Retry pacing, adjustable so the self-test does not wait out real backoff.
+  rpcTries = 8,
+  retryDelayMs = 5_000,
 }) {
   let failures = 0;
   let fatal = null;
@@ -367,7 +371,7 @@ export async function walkLedger({
           const res = await xrplRpc(
             "ledger_data",
             { ledger_index: ledgerIndex, binary: true, limit: pageLimit, ...(shard.marker ? { marker: shard.marker } : {}) },
-            { endpoints: CLIO_ENDPOINTS },
+            { endpoints: CLIO_ENDPOINTS, tries: rpcTries },
           );
           if (Number(res.ledger_index) !== ledgerIndex) {
             throw new Error(`asked for ledger ${ledgerIndex}, got ${res.ledger_index}`);
@@ -381,18 +385,33 @@ export async function walkLedger({
             shard.done = true;
             shard.marker = null;
           } else {
-            shard.marker = res.marker;
+            // Resume after the last object served, not from the marker Clio
+            // returns. When a page's final slot is an object deleted in this
+            // ledger, Clio drops the object but still returns its key as the
+            // marker, then rejects that key with markerDoesNotExist. Seen on
+            // ledger 107466542: 2,047 objects, last C5955FFC.., marker
+            // C5956391.., which does not exist. The last object served always
+            // exists, and nothing lies between it and the dropped key.
+            shard.marker = last ?? res.marker;
           }
           failures = 0;
+          shard.failures = 0;
           onPage();
           if (shard.done) break;
         }
       } catch (e) {
         failures++;
-        console.error(`[xrpl] shard ${shard.start?.slice(0, 8) ?? "start"} page failed (${failures} in a row): ${e?.message ?? e}`);
+        shard.failures = (shard.failures ?? 0) + 1;
+        console.error(
+          `[xrpl] shard ${shard.start?.slice(0, 8) ?? "start"} page failed ` +
+            `(${shard.failures} in a row on this shard, ${failures} overall): ${e?.message ?? e}`,
+        );
         queue.push(shard);
-        if (failures >= maxFailures) fatal = e;
-        else await sleep(5_000);
+        // Two limits. The overall one catches an outage. The per-shard one
+        // catches a shard stuck on one page while every other shard succeeds,
+        // which resets the overall count and would otherwise retry forever.
+        if (failures >= maxFailures || shard.failures >= maxShardFailures) fatal = e;
+        else await sleep(retryDelayMs);
       }
     }
   }
