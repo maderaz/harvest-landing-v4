@@ -38,6 +38,7 @@ const SECTIONS: Section[] = [
       { label: "Live Feed", href: "/control-room/live-feed", icon: "activity" },
       { label: "SEO Summary", href: "/control-room/seo", icon: "globe" },
       { label: "AI Summary", href: "/control-room/ai", icon: "sparkles" },
+      { label: "AI Traffic", href: "/control-room/ai-traffic", icon: "trending" },
       {
         label: "Deposit Activity",
         href: "/control-room/deposit-activity",
