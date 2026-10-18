@@ -1959,6 +1959,16 @@ body:has(.uni-hub-test) {
   }
 }
 
+/* AI Traffic tables: every column carries the finding, so none may hide.
+   The ranking rules that hide columns 4-6 weigh five classes, more than the
+   rule above, so this one is scoped and weighted to win on that page only. */
+@media (max-width: 1100px) {
+  .uni-hub-test .hub-table.aq-recent-table.ai-traffic-table .hub-thead .hub-th:nth-child(n),
+  .uni-hub-test .hub-table.aq-recent-table.ai-traffic-table .hub-row .hub-cell:nth-child(n) {
+    display: revert;
+  }
+}
+
 /* App Clicks + recent-events tables: show the FULL value in every
    cell - no ellipsis. Long source_page paths, vault slugs and
    target URLs wrap onto multiple lines inside their column instead
