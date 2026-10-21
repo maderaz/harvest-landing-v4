@@ -469,13 +469,17 @@ export async function EthHubBody() {
         <p className="uh-updated" data-dateline="">
           Rates last recorded {c.asOf}, and refreshed hourly.
         </p>
-        <ul className="eh-jumps" aria-label="Jump to an answer">
-          {jumps.map((j) => (
-            <li key={j.label}>
-              <a href={j.href}>{j.label}</a>
-            </li>
-          ))}
-        </ul>
+        {/* A <nav>, since it is navigation: the labels are link text, not
+            claims, and the atomicity gate strips <nav> like any other chrome. */}
+        <nav aria-label="Jump to an answer">
+          <ul className="eh-jumps">
+            {jumps.map((j) => (
+              <li key={j.label}>
+                <a href={j.href}>{j.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
 
       <section className="uh-summary" aria-labelledby="summary" data-asof={c.asOfIso}>
@@ -532,9 +536,12 @@ export async function EthHubBody() {
                 {`${n.count} ${plural(n.count, "strategy", "strategies")}, ${tvl(n.tvl)} tracked`}
               </p>
               {n.picks.length ? (
-                <ol className="eh-picks">
+                // ARIA list roles rather than <ol>/<li>: each pick is a
+                // name, a rate and a size, a data row rather than a sentence,
+                // and the bullet-fragment rule rightly reserves <li> for prose.
+                <div className="eh-picks" role="list">
                   {n.picks.map((v) => (
-                    <li key={v.slug}>
+                    <div role="listitem" className="eh-pick" key={v.slug}>
                       <Link href={`/${v.slug}`} className="eh-pick-name">
                         {v.productName.replace(/\s*\([^)]*\)$/, "")}
                       </Link>
@@ -542,9 +549,9 @@ export async function EthHubBody() {
                       <span className="eh-pick-sub">
                         {`${cap(SINGULAR[strategyTypeOf(v)])} · ${tvl(v.tvl)}`}
                       </span>
-                    </li>
+                    </div>
                   ))}
-                </ol>
+                </div>
               ) : (
                 <p className="eh-net-empty">{networkSentence(n, c)}</p>
               )}
@@ -781,7 +788,7 @@ export async function EthHubBody() {
           {c.byVenue.map((v) => (
             <li key={v.venue}>
               {v.count === 1
-                ? `${v.venue} ETH paid ${apy(v.medianApy)} on ${listOf(v.chains)}, holding ${tvl(v.tvl)}.`
+                ? `${v.venue} ETH paid ${apy(v.medianApy)} on ${listOf(v.chains)} and held ${tvl(v.tvl)}.`
                 : `${v.venue} ETH paid a median of ${apy(v.medianApy)} across ${v.count} ` +
                   `strategies on ${listOf(v.chains)}, holding ${tvl(v.tvl)}` +
                   (v.minApy.toFixed(2) === v.maxApy.toFixed(2)
