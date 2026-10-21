@@ -18,11 +18,15 @@
 //   Scope "deep" - only sessions whose first touch was NOT the homepage, i.e.
 //                  exactly what the "Isolate direct" toggle shows.
 //
-// BOTS ARE ALWAYS EXCLUDED, in both scopes and every format, regardless of the
-// page's "Show bots" toggle. The raw table is mostly crawler traffic, so an
-// export that included it would poison any downstream analysis. Bot detection
-// is the same logic the funnel itself uses (isBotRow + spoofed-fingerprint
-// cluster detection), applied upstream in funnel-summary.
+// BOTS ARE EXCLUDED from all of the above, in both scopes and every format,
+// regardless of the page's "Show bots" toggle. The raw table is mostly crawler
+// traffic, so an export that included it would poison any downstream analysis.
+// Bot detection is the same logic the funnel itself uses (isBotRow +
+// spoofed-fingerprint cluster detection), applied upstream in funnel-summary.
+//
+// The one exception is opt-in: when the caller passes `withBots` (the AI
+// Summary does while "Show bots" is ticked), a separate "CSV with bots" button
+// exports every session including bots, with an is_bot column to filter on.
 
 import type { SeoSession } from "./funnel-summary";
 
@@ -156,10 +160,14 @@ function download(filename: string, mime: string, body: string) {
 export function SeoExport({
   sessions,
   group,
+  withBots,
 }: {
   // Every session in the group with bots ALREADY removed by the caller.
   sessions: SeoSession[];
   group: string;
+  // Every session in the group INCLUDING bots. When given, a separate
+  // "CSV with bots" button renders; the exports above stay bot-free.
+  withBots?: SeoSession[];
 }) {
   const slug = group.toLowerCase();
   const stamp = new Date().toISOString().slice(0, 10);
@@ -258,7 +266,23 @@ export function SeoExport({
     download(name(scope, "context", "json"), "application/json", JSON.stringify(payload, null, 2));
   };
 
+  const botsCsv = (list: SeoSession[]) => {
+    const rows = list
+      .slice()
+      .sort((a, b) => a.firstVisitMs - b.firstVisitMs)
+      .map((s) => {
+        const r = sessionRow(s);
+        return [r[0], s.bot, ...r.slice(1)];
+      });
+    download(
+      `harvest-${slug}-all-sessions-with-bots-${stamp}.csv`,
+      "text/csv",
+      toCsv([SESSION_HEADER[0], "is_bot", ...SESSION_HEADER.slice(1)], rows),
+    );
+  };
+
   const deepCount = sessions.filter((s) => s.entryPage !== "/").length;
+  const botCount = withBots ? withBots.filter((s) => s.bot).length : 0;
 
   return (
     <div className="sx-wrap">
@@ -302,6 +326,26 @@ export function SeoExport({
             </span>
           </div>
         ))}
+        {withBots && (
+          <div className="sx-row">
+            <span className="sx-label">
+              With bots
+              <em>
+                {withBots.length.toLocaleString("en-US")} sessions, {botCount.toLocaleString("en-US")} bots
+              </em>
+            </span>
+            <span className="sx-btns">
+              <button
+                type="button"
+                className="sx-btn sx-btn-primary"
+                onClick={() => botsCsv(withBots)}
+                title="Every session in the default view, bots included, one row per session. The is_bot column marks which rows are bots."
+              >
+                Download CSV with bots
+              </button>
+            </span>
+          </div>
+        )}
       </div>
       <p className="sx-note">
         Sessions CSV is one row per session. Actions CSV is one row per event

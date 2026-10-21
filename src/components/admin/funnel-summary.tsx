@@ -427,9 +427,12 @@ function coalesceVisitors(sessions: SeoSession[]): SeoSession[] {
 export function FunnelSummary({
   group,
   copy,
+  botExport = false,
 }: {
   group: FunnelGroup;
   copy: FunnelCopy;
+  // Offer a "CSV with bots" export while "Show bots" is ticked.
+  botExport?: boolean;
 }) {
   const [visits, setVisits] = useState<VisitRow[] | null>(null);
   const [clicks, setClicks] = useState<ClickRow[] | null>(null);
@@ -1095,11 +1098,17 @@ export function FunnelSummary({
             setHidden={setHidden}
           />
 
-          {/* Downloads. Fed the whole group with bots stripped unconditionally
-              (never the showBots toggle): the raw table is mostly crawlers, so
-              an export carrying them would poison downstream analysis. The
-              component derives the "Isolate direct" scope itself. */}
-          <SeoExport sessions={sessions.filter((s) => !s.bot)} group={group} />
+          {/* Downloads. The standard exports get the whole group with bots
+              stripped, whatever the showBots toggle says: the raw table is
+              mostly crawlers, so an export carrying them would poison
+              downstream analysis. Pages that opt in with botExport also get a
+              separate CSV including bots, shown only while Show bots is on.
+              The component derives the "Isolate direct" scope itself. */}
+          <SeoExport
+            sessions={sessions.filter((s) => !s.bot)}
+            group={group}
+            withBots={botExport && showBots ? sessions : undefined}
+          />
 
           {(() => {
             const totalPages = Math.max(
