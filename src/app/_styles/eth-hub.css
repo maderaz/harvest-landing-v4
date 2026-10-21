@@ -249,3 +249,295 @@
   .uni-hub-test.eh-page .eh-net,
   .uni-hub-test.eh-page .eh-type { padding: 16px; }
 }
+
+/* === Reading rhythm ==================================================
+   A long answer-first page reads well when each section is visibly its own
+   unit: a hairline and generous air between sections, the opening answer set
+   off from the prose under it, figures in bold so a skimming eye lands on
+   them, and short paragraphs. */
+.uni-hub-test.eh-page .uh-block {
+  margin-top: 0;
+  padding-top: 64px;
+  margin-bottom: 64px;
+}
+.uni-hub-test.eh-page .uh-block + .uh-block,
+.uni-hub-test.eh-page .uh-block + .eh-qindex {
+  border-top: 1px solid var(--uni-line);
+}
+.uni-hub-test.eh-page .uh-summary + .uh-block {
+  padding-top: 56px;
+}
+.uni-hub-test.eh-page .uh-block h2 {
+  margin-bottom: 20px;
+}
+/* The answer under each heading: one step larger, with a gold rule so it reads
+   as the takeaway of the section rather than its first paragraph. */
+.uni-hub-test.eh-page .uh-block > .uh-lead {
+  padding-left: 18px;
+  border-left: 3px solid var(--uni-gold, #ffb936);
+  margin-bottom: 28px !important;
+}
+.uni-hub-test.eh-page .uh-block p {
+  margin-bottom: 20px;
+}
+.uni-hub-test.eh-page strong {
+  font-weight: 650;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page .uh-findings strong {
+  color: #1a1a1a;
+}
+.uni-hub-test.eh-page .uh-answer strong {
+  color: var(--uni-ink);
+}
+
+/* === Questions in place ==============================================
+   The questions a reader has at this point, answered under the section that
+   raises them. A tinted panel so they read as an aside, not more body text. */
+.uni-hub-test.eh-page .eh-ask {
+  margin: 32px 0 0;
+  padding: 6px 22px 8px;
+  border-radius: var(--uni-radius-sm, 14px);
+  background: var(--uni-tint, rgba(127, 127, 127, 0.06));
+  border: 1px solid var(--uni-line);
+}
+.uni-hub-test.eh-page .uh-block .eh-ask-h {
+  margin: 14px 0 2px;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page .eh-ask .uh-faq-item:last-child {
+  border-bottom: 0;
+}
+.uni-hub-test.eh-page .eh-ask .uh-faq-q {
+  font-weight: 600;
+}
+
+/* === Definitions under the safety table ============================== */
+.uni-hub-test.eh-page .eh-defs {
+  display: grid;
+  grid-template-columns: minmax(120px, 160px) 1fr;
+  gap: 12px 24px;
+  margin: 8px 0 0;
+}
+.uni-hub-test.eh-page .eh-defs dt {
+  font-weight: 650;
+  color: var(--uni-ink);
+  font-size: 15.5px;
+}
+.uni-hub-test.eh-page .eh-defs dd {
+  margin: 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.uni-hub-test.eh-page .eh-defs dd a {
+  color: var(--uni-ink);
+  font-weight: 500;
+}
+
+/* === Question index ================================================== */
+.uni-hub-test.eh-page .eh-qlist {
+  margin: 0;
+  padding: 0 0 0 1.4em;
+  columns: 2;
+  column-gap: 40px;
+}
+.uni-hub-test.eh-page .eh-qlist li {
+  break-inside: avoid;
+  margin: 0 0 12px;
+  font-size: 16px;
+  line-height: 1.5;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page .eh-qlist a {
+  color: var(--uni-ink);
+  text-decoration: none;
+  background: linear-gradient(transparent 70%, rgba(255, 185, 54, 0.35) 70%);
+}
+.uni-hub-test.eh-page .eh-qlist a:hover {
+  background: linear-gradient(transparent 0, rgba(255, 185, 54, 0.45) 0);
+}
+.uni-hub-test.eh-page details.uh-faq-item {
+  scroll-margin-top: 80px;
+}
+
+@media (max-width: 800px) {
+  .uni-hub-test.eh-page .uh-block { padding-top: 44px; margin-bottom: 44px; }
+  .uni-hub-test.eh-page .uh-block > .uh-lead { padding-left: 14px; }
+  .uni-hub-test.eh-page .eh-ask { padding: 4px 16px 6px; }
+  .uni-hub-test.eh-page .eh-defs { grid-template-columns: 1fr; gap: 4px; }
+  .uni-hub-test.eh-page .eh-defs dd { margin-bottom: 12px; }
+  .uni-hub-test.eh-page .eh-qlist { columns: 1; }
+}
+
+/* === Animated figure ================================================
+   A dark card with a light display title and an "Illustrative" caption,
+   holding an SVG that builds itself when scrolled into view. Dark in both
+   themes on purpose: the figure is an object on the page, like a chart
+   card, not part of the prose surface. */
+.uni-hub-test.eh-page .eh-fig {
+  position: relative;
+  margin: 36px 0 8px;
+  padding: 28px 32px 22px;
+  border-radius: 22px;
+  background:
+    radial-gradient(120% 90% at 85% 0%, rgba(59, 108, 255, 0.16), transparent 60%),
+    #0b1020;
+  color: #e9ecf5;
+  overflow: hidden;
+}
+.uni-hub-test.eh-page .eh-fig-head h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1.15;
+  font-weight: 450;
+  letter-spacing: -0.015em;
+  color: #f4f6fb;
+}
+.uni-hub-test.eh-page .eh-fig-head figcaption {
+  margin-top: 8px;
+  font-size: 14.5px;
+  color: rgba(233, 236, 245, 0.62);
+}
+.uni-hub-test.eh-page .eh-fig-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-top: 8px;
+  font-family: var(--sans, inherit);
+}
+.uni-hub-test.eh-page .eh-fig-replay {
+  position: absolute;
+  top: 26px;
+  right: 28px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(233, 236, 245, 0.22);
+  background: transparent;
+  color: rgba(233, 236, 245, 0.8);
+  font-size: 13px;
+  cursor: pointer;
+}
+.uni-hub-test.eh-page .eh-fig-replay:hover {
+  border-color: rgba(233, 236, 245, 0.5);
+  color: #fff;
+}
+
+/* the loop */
+.eh-fig .lf-arc {
+  fill: none;
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  transition: stroke-dashoffset 1.05s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.eh-fig .lf-arc.is-drawn { stroke-dashoffset: 0; }
+.eh-fig .lf-flow {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.75);
+  stroke-width: 2;
+  stroke-dasharray: 0.012 0.02;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+}
+.eh-fig .lf-flow.is-drawn {
+  opacity: 1;
+  transition-delay: 0.9s;
+  animation: lf-flow 2.4s linear infinite;
+}
+@keyframes lf-flow { to { stroke-dashoffset: -0.256; } }
+.eh-fig .lf-glow { opacity: 0; transition: opacity 0.8s ease; }
+.eh-fig .lf-cycle.is-on .lf-glow { opacity: 1; }
+.eh-fig .lf-node {
+  fill: #f4f6fb;
+  font-size: 21px;
+  font-weight: 500;
+  text-anchor: middle;
+}
+.eh-fig .lf-node-sub {
+  fill: rgba(233, 236, 245, 0.6);
+  font-size: 15px;
+  text-anchor: middle;
+}
+.eh-fig .lf-lev {
+  fill: #ffb936;
+  font-size: 46px;
+  font-weight: 600;
+  text-anchor: middle;
+  font-family: var(--mono, ui-monospace, monospace);
+}
+.eh-fig .lf-lev-sub {
+  fill: rgba(233, 236, 245, 0.6);
+  font-size: 15px;
+  text-anchor: middle;
+}
+
+/* the position */
+.eh-fig .lf-col-h {
+  fill: rgba(233, 236, 245, 0.62);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.eh-fig .lf-axis { stroke: rgba(233, 236, 245, 0.25); stroke-width: 1; }
+.eh-fig .lf-legend { fill: rgba(233, 236, 245, 0.5); font-size: 14px; }
+.eh-fig .lf-layer {
+  opacity: 0;
+  transform: translateY(-26px);
+  transition: opacity 0.55s ease, transform 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+.eh-fig .lf-layer.is-in { opacity: 1; transform: none; }
+.eh-fig .lf-layer rect { fill: #ffb936; transition: fill 0.6s ease; }
+.eh-fig .lf-layer.is-borrowed rect { fill: #4b6bff; }
+.eh-fig.is-spiked .lf-layer.is-borrowed rect { fill: #e5484d; }
+.eh-fig .lf-layer-t {
+  fill: #0b1020;
+  font-size: 16px;
+  font-weight: 650;
+  font-family: var(--mono, ui-monospace, monospace);
+}
+.eh-fig .lf-layer.is-borrowed .lf-layer-t { fill: #fff; }
+
+/* the arithmetic */
+.eh-fig .lf-net {
+  fill: #ffb936;
+  font-size: 58px;
+  font-weight: 600;
+  font-family: var(--mono, ui-monospace, monospace);
+  transition: fill 0.5s ease;
+}
+.eh-fig .lf-net.is-neg { fill: #ff6369; }
+.eh-fig .lf-math-row {
+  fill: rgba(233, 236, 245, 0.78);
+  font-size: 17px;
+  font-family: var(--mono, ui-monospace, monospace);
+  transition: fill 0.5s ease;
+}
+.eh-fig .lf-borrow-row.is-hot { fill: #ff8a8f; }
+.eh-fig .lf-spike,
+.eh-fig .lf-verdict {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.eh-fig .lf-spike.is-in,
+.eh-fig .lf-verdict.is-in { opacity: 1; transform: none; }
+.eh-fig .lf-spike-t { fill: #ff8a8f; font-size: 18px; font-weight: 600; }
+.eh-fig .lf-verdict-t { fill: #f4f6fb; font-size: 19px; font-weight: 500; }
+
+.eh-fig.is-static * { transition: none !important; animation: none !important; }
+
+@media (max-width: 700px) {
+  .uni-hub-test.eh-page .eh-fig { padding: 22px 0 18px 18px; }
+  .uni-hub-test.eh-page .eh-fig-head { padding-right: 18px; }
+  .uni-hub-test.eh-page .eh-fig-head h3 { font-size: 23px; padding-right: 64px; }
+  .uni-hub-test.eh-page .eh-fig-svg { width: 760px; max-width: none; }
+  .uni-hub-test.eh-page .eh-fig { overflow-x: auto; }
+  .uni-hub-test.eh-page .eh-fig-replay { top: 20px; right: 16px; }
+}

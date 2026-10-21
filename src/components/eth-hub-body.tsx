@@ -33,6 +33,7 @@ import { HubTable } from "@/components/hub-table";
 import { HomeCrumb } from "@/components/home-crumb";
 import { RankingDataNote } from "@/components/ranking-data-note";
 import { UsdcCalculator, type CalcProduct } from "@/components/usdc-calculator";
+import { EthLoopFigure } from "@/components/eth-loop-figure";
 import { harvestAppUrl } from "@/lib/harvest-app";
 import {
   proseName,
@@ -63,6 +64,64 @@ const HUB_URL = `${SITE_URL}/eth`;
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** "WETH Autopilot", without the "(Base)" the cohort appends for tables. */
+type FaqSpot = "top" | "network" | "types" | "safety" | "calc" | "staking" | "risk";
+interface Faq {
+  q: string;
+  at: FaqSpot;
+  a: string;
+}
+
+/** Stable anchor for a question, so the index at the foot can link to it. */
+const qid = (q: string) =>
+  "q-" +
+  q
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "")
+    .slice(0, 60);
+
+// Bold the figures in a generated sentence. Rates, dollar sizes and counts of
+// strategies are what a skimming reader's eye is hunting for, so they carry
+// the weight; the words around them stay regular. Wrapping in <strong> leaves
+// the extracted text identical, so nothing an answer engine lifts changes.
+const FIGURE =
+  /(\$[\d.,]+[KMB]?|\d+(?:\.\d+)?%(?: APY)?|\b\d+ of (?:the )?\d+\b|\b\d+ (?:ETH |WETH )?strateg(?:y|ies)\b)/g;
+function Em({ text }: { text: string }) {
+  const parts = text.split(FIGURE);
+  return (
+    <>
+      {parts.map((part, i) => (i % 2 === 1 ? <strong key={i}>{part}</strong> : part))}
+    </>
+  );
+}
+
+/**
+ * The questions a reader tends to have at this point in the page, answered in
+ * place. Same <details> pattern as the FAQ on /usdc, so every answer is in the
+ * HTML whether or not it is open, and the FAQPage schema still lists them all.
+ */
+function Ask({ items }: { items: Faq[] }) {
+  if (!items.length) return null;
+  return (
+    <aside className="eh-ask" aria-label="Questions on this section">
+      <p className="eh-ask-h">Questions readers ask here</p>
+      <div className="uh-faq">
+        {items.map((f, i) => (
+          <details className="uh-faq-item" key={f.q} id={qid(f.q)} open={i === 0}>
+            <summary className="uh-faq-q">
+              <span>{f.q}</span>
+              <Chevron />
+            </summary>
+            <p className="uh-faq-a">
+              <Em text={f.a} />
+            </p>
+          </details>
+        ))}
+      </div>
+    </aside>
+  );
+}
+
 const article = (w: string) => (/^[aeiou]/i.test(w) ? "an" : "a");
 
 const bare = (v: { productName: string }) => v.productName.replace(/\s*\([^)]*\)$/, "");
@@ -96,7 +155,11 @@ function Block({
         )}
       </p>
       <h2 id={id}>{title}</h2>
-      {lead && <p className="uh-lead">{lead}</p>}
+      {lead && (
+        <p className="uh-lead">
+          <Em text={lead} />
+        </p>
+      )}
       {children}
     </section>
   );
@@ -169,7 +232,7 @@ function buildFaqs(
   c: EthCohort,
   nets: EthNetworkPicks[],
   types: EthTypeRow[],
-): { q: string; a: string }[] {
+): Faq[] {
   if (!c.best) return [];
   const base = nets.find((n) => n.chain === "Base");
   const l2Best = c.funded.find((v) => isL2(v.chain)) ?? null;
@@ -184,9 +247,10 @@ function buildFaqs(
     .sort((a, b) => b.tvl - a.tvl)
     .slice(0, 3);
 
-  return [
+  const list: Faq[] = [
     {
       q: "What is the best ETH yield right now?",
+      at: "top",
       a:
         `${apy(c.best.apy24h)} APY, paid in ETH by ${proseName(c.best)}, as of ${c.asOf}. That is ` +
         `the highest 24-hour rate among the ${c.count} ETH strategies tracked here once a ` +
@@ -196,14 +260,16 @@ function buildFaqs(
     },
     {
       q: "Where can I earn yield on ETH on Base?",
+      at: "network",
       a: base?.picks.length
         ? `${networkSentence(base, c)} Base carried ${base.count} of the ${c.count} ETH ` +
           `strategies tracked here as of ${c.asOf}, more than any other network, and Base ` +
-          `transactions cost cents rather than mainnet gas.`
+          `transactions cost a few cents.`
         : "",
     },
     {
       q: "Which protocols pay the highest ETH yield on an L2?",
+      at: "network",
       a: l2Best
         ? `Among strategies holding at least ${tvl(c.fundedFloor)} as of ${c.asOf}, the highest ` +
           `ETH rate on a layer 2 was ${apy(l2Best.apy24h)} on ${proseName(l2Best)}, ` +
@@ -217,6 +283,7 @@ function buildFaqs(
     },
     {
       q: "What can I do with wrapped ETH (WETH) on Base to earn yield?",
+      at: "types",
       a:
         `WETH is ETH wrapped one-to-one into an ERC-20 token so that lending contracts can hold ` +
         `it, and every ETH strategy on Base takes it. As of ${c.asOf} there were four ways to put ` +
@@ -228,9 +295,10 @@ function buildFaqs(
     },
     {
       q: "Which ETH yield options on Base are the safest to use?",
+      at: "safety",
       a:
-        `No ETH yield is risk-free, and this page does not score safety. What it measures is the ` +
-        `evidence a reader would weigh: how much ETH a strategy holds, how long it has been ` +
+        `Every ETH yield carries risk, so instead of a safety score this page lists four ` +
+        `measurements: how much ETH a strategy holds, how long it has been ` +
         `tracked, how far its rate moved over 30 days, and how many contract layers it adds. ` +
         (baseLargest.length
           ? `On size, the largest ETH strategies on Base as of ${c.asOf} were ` +
@@ -241,9 +309,10 @@ function buildFaqs(
     },
     {
       q: "What are the best options for ETH yield with cheap gas?",
+      at: "network",
       a:
         `Base and Arbitrum, the two layer 2 networks in this index, settle transactions for ` +
-        `cents rather than the dollars a busy Ethereum mainnet can cost, which matters most on ` +
+        `cents, while a busy Ethereum mainnet can cost dollars, which matters most on ` +
         `a small position where gas would eat a year of yield. ` +
         (l2Best
           ? `The best funded ETH rate on a layer 2 was ${apy(l2Best.apy24h)} on ` +
@@ -252,6 +321,7 @@ function buildFaqs(
     },
     {
       q: "What are the best ETH vaults for passive income?",
+      at: "types",
       a: allocator?.bestFunded
         ? `Allocators and autocompounders need nothing done after entry: they harvest and ` +
           `compound on their own schedule. The best funded allocator was ` +
@@ -262,6 +332,7 @@ function buildFaqs(
     },
     {
       q: "Which DeFi vaults pay the best yield on WETH?",
+      at: "types",
       a: (() => {
         const w = wethRows.filter((v) => v.tvl >= c.fundedFloor);
         const top = w[0] ?? wethRows[0];
@@ -280,6 +351,7 @@ function buildFaqs(
     },
     {
       q: "Can I earn a higher yield on ETH than regular staking?",
+      at: "staking",
       a:
         `Staking pays validators newly issued ETH plus transaction fees, and this index does not ` +
         `measure it. What it does measure is the lending side: as of ${c.asOf}, strategies holding ` +
@@ -293,8 +365,9 @@ function buildFaqs(
     },
     {
       q: "Can I earn yield on ETH without lockups or a withdrawal queue?",
+      at: "staking",
       a:
-        `Yes, in the sense that matters: none of the ${c.count} strategies here is a validator ` +
+        `Yes. None of the ${c.count} strategies here is a validator ` +
         `position, so none waits in Ethereum's validator exit queue. A lending position can be ` +
         `withdrawn whenever the market underneath has unborrowed ETH to pay it out, which is ` +
         `nearly always and not guaranteed. When a market is fully borrowed, suppliers wait until ` +
@@ -302,6 +375,7 @@ function buildFaqs(
     },
     {
       q: "How much can I earn on 1 ETH or 10 ETH?",
+      at: "calc",
       a:
         `At the top funded rate of ${apy(c.best.apy24h)} as of ${c.asOf}, 1 ETH would earn about ` +
         `${onOne(c.best.apy24h)} ETH over a year and 10 ETH about ${onTen(c.best.apy24h)} ETH, ` +
@@ -311,6 +385,7 @@ function buildFaqs(
     },
     {
       q: "Is the APY paid in ETH or in dollars?",
+      at: "calc",
       a:
         `In ETH. Every rate on this page is earned on an ETH balance and paid in ETH, so a 3% ` +
         `APY means the ETH balance grows by about 3% over a year. Whether that is worth more or ` +
@@ -318,6 +393,7 @@ function buildFaqs(
     },
     {
       q: "Where does ETH yield come from?",
+      at: "staking",
       a:
         `Mostly from borrowers. Traders borrow ETH to sell it short or to loop staked-ETH ` +
         `positions, and the interest they pay is what an ETH lender earns. Allocators and curated ` +
@@ -326,8 +402,9 @@ function buildFaqs(
     },
     {
       q: "Is ETH yield safe?",
+      at: "risk",
       a:
-        `No ETH yield is risk-free. Every strategy here carries smart-contract risk on the vault ` +
+        `Every strategy here carries smart-contract risk on the vault ` +
         `and on the protocol under it, oracle risk on the price feeds those contracts trust, and ` +
         `liquidity risk when a market runs fully borrowed. Strategies that accept staked or ` +
         `restaked ETH as collateral add the risk that those tokens trade below ETH, which ` +
@@ -335,7 +412,8 @@ function buildFaqs(
         `strategies held under ${tvl(c.fundedFloor)}, so their rates have not been tested by ` +
         `much liquidity.`,
     },
-  ].filter((f) => f.a);
+  ];
+  return list.filter((f) => f.a);
 }
 
 export async function EthHubBody() {
@@ -360,6 +438,7 @@ export async function EthHubBody() {
   const types = byStrategyType(c);
   const evidence = evidenceRows(c, history);
   const faqs = buildFaqs(c, nets, types);
+  const asks = (at: FaqSpot) => faqs.filter((f) => f.at === at);
   const base = nets.find((n) => n.chain === "Base");
   const l2Count = c.all.filter((v) => isL2(v.chain)).length;
   const fundedL2 = c.funded.filter((v) => isL2(v.chain)).length;
@@ -460,11 +539,11 @@ export async function EthHubBody() {
           <h1 className="uni-hub-h1">{assetHubH1("ETH")}</h1>
         </div>
         <p className="uh-answer">
-          {`The best ETH yield in Harvest's index is ${apy(c.best.apy24h)} APY, paid in ETH by ` +
+          <Em text={`The best ETH yield in Harvest's index is ${apy(c.best.apy24h)} APY, paid in ETH by ` +
             `${proseName(c.best, true)}, as of ${c.asOf}. That is the highest rate among ` +
             `strategies holding at least ${tvl(c.fundedFloor)}, against a median of ` +
             `${apy(c.medianApy)} across all ${c.count} ETH strategies tracked on ` +
-            `${c.chainCount} ${plural(c.chainCount, "network", "networks")}.`}
+            `${c.chainCount} ${plural(c.chainCount, "network", "networks")}.`} />
         </p>
         <p className="uh-updated" data-dateline="">
           Rates last recorded {c.asOf}, and refreshed hourly.
@@ -491,7 +570,9 @@ export async function EthHubBody() {
         </p>
         <ul className="uh-findings">
           {findings.map((f) => (
-            <li key={f}>{f}</li>
+            <li key={f}>
+              <Em text={f} />
+            </li>
           ))}
         </ul>
       </section>
@@ -514,6 +595,7 @@ export async function EthHubBody() {
             `few hundred dollars of ETH. The headline figure uses a ${tvl(c.fundedFloor)} floor ` +
             `for that reason, and ${c.fundedCount} of the ${c.count} strategies cleared it.`}
         </p>
+        <Ask items={asks("top")} />
       </Block>
 
       <Block
@@ -563,13 +645,20 @@ export async function EthHubBody() {
           ))}
         </div>
         <p>
-          {`Layer 2 networks matter for ETH yield for a reason beyond the rate. Base and Arbitrum ` +
-            `settle a transaction for cents, while Ethereum mainnet can cost several dollars when ` +
-            `it is busy, and on a position of a few ETH that difference decides whether entering ` +
-            `and leaving is worth it at all. Of the ${c.count} ETH strategies tracked, ${l2Count} ` +
-            `run on a layer 2, and the network pages linked from each card cut the full ranking ` +
-            `down to one chain.`}
+          <strong>Gas decides more than the rate on a small position.</strong>{" "}
+          {`Base and Arbitrum settle a transaction for cents, while Ethereum mainnet can cost ` +
+            `several dollars when it is busy. On a position of a few ETH, that difference decides ` +
+            `whether entering and leaving is worth it at all.`}
         </p>
+        <p>
+          <Em
+            text={
+              `Of the ${c.count} ETH strategies tracked, ${l2Count} run on a layer 2. Each card ` +
+              `links to its network page, which cuts the full ranking down to that chain.`
+            }
+          />
+        </p>
+        <Ask items={asks("network")} />
       </Block>
 
       <Block
@@ -619,18 +708,24 @@ export async function EthHubBody() {
           ))}
         </div>
         <p>
-          {`WETH and ETH are the same asset in every row. Wrapped ETH is ETH locked one-to-one in ` +
-            `a contract that issues an ERC-20 token, because lending contracts can hold ERC-20 ` +
-            `tokens and cannot hold native ETH, and it unwraps back to ETH at any time. On Base ` +
-            `every strategy takes WETH, so wrapping is the first step, a single transaction.`}
+          <strong>WETH and ETH are the same asset in every row.</strong>{" "}
+          {`Wrapped ETH is ETH locked one-to-one in a contract that issues an ERC-20 token, ` +
+            `because lending contracts can hold ERC-20 tokens and cannot hold native ETH. It ` +
+            `unwraps back to ETH at any time, and on Base every strategy takes it, so wrapping is ` +
+            `the first step and a single transaction.`}
         </p>
         <p>
-          The four groups trade rate against layers. A money market is one protocol and one rate
-          curve. A curated vault adds the curator&rsquo;s choices about which markets to lend into.
-          An allocator adds a contract that moves the position. Looping adds leverage, which is
-          the only one of the four with a liquidation path, and it charges an entry cost the app
-          shows before a position opens because building the loop costs fees.
+          <strong>A money market has the fewest layers, and every step up adds one.</strong> A
+          money market is one protocol and one rate curve. A curated vault adds the curator&rsquo;s choice of markets. An allocator
+          adds a contract that moves the position between venues.
         </p>
+        <p>
+          <strong>Looping adds leverage</strong>, the only one of the four with a liquidation
+          path. Building the loop costs fees, so it charges an entry cost the app shows before a
+          position opens.
+        </p>
+        <EthLoopFigure />
+        <Ask items={asks("types")} />
       </Block>
 
       <Block
@@ -640,10 +735,10 @@ export async function EthHubBody() {
         asOf={c.asOf}
         asOfIso={c.asOfIso}
         lead={
-          `No ETH yield is risk-free, so the table below scores nothing and instead lists the ` +
-          `four readings a careful reader weighs for each of the ${c.fundedCount} ETH strategies ` +
-          `holding at least ${tvl(c.fundedFloor)}: size, track record, rate steadiness and ` +
-          `strategy type.`
+          `Four measurements help judge the risk of an ETH strategy: how much it holds, how long ` +
+          `it has been tracked, how steady its rate has been and what kind of strategy it is, and ` +
+          `the table lists all four for the ${c.fundedCount} ETH strategies holding at least ` +
+          `${tvl(c.fundedFloor)}.`
         }
       >
         <div className="eh-evidence-wrap" data-nosnippet="">
@@ -678,19 +773,29 @@ export async function EthHubBody() {
           <p>
             {`The largest funded ETH strategy was ${proseName(evidence[0].vault)}, holding ` +
               `${tvl(evidence[0].vault.tvl)} and tracked for ` +
-              `${trackedLabel(evidence[0].trackedDays)}. Size is evidence rather than proof: a ` +
-              `strategy holding millions has had its rate tested by real withdrawals, and it is ` +
-              `also a larger target.`}
+              `${trackedLabel(evidence[0].trackedDays)}. A strategy that size has had its rate ` +
+              `tested by real withdrawals, and it is also a larger target for attackers.`}
           </p>
         ) : null}
-        <p>
-          Track record counts the days of readings held for a strategy, not the age of the
-          protocol underneath, which is usually older. The 30-day swing is the standard deviation
-          of the daily rate: a fraction of a point means the rate has been steady all month, and
-          several points means the headline is a moment rather than a level. The fewest layers sit
-          with a plain money market, and the full set of exposures is on the{" "}
-          <Link href="/risk-framework">risk framework page</Link>.
-        </p>
+        <dl className="eh-defs">
+          <dt>Tracked for</dt>
+          <dd>
+            Counts the days of readings held for the strategy. The protocol underneath is usually
+            older.
+          </dd>
+          <dt>30-day swing</dt>
+          <dd>
+            Measures the standard deviation of the daily rate. Under one point means the rate held
+            steady all month; several points means the headline figure is a spike.
+          </dd>
+          <dt>Type</dt>
+          <dd>
+            Shows how many contracts sit between the ETH and the borrower. A plain money market
+            has the fewest, and the{" "}
+            <Link href="/risk-framework">risk framework page</Link> covers every exposure.
+          </dd>
+        </dl>
+        <Ask items={asks("safety")} />
       </Block>
 
       <Block
@@ -705,11 +810,14 @@ export async function EthHubBody() {
         }
       >
         <UsdcCalculator products={calcProducts} asOf={c.asOf} asset="ETH" defaultAmount={1} />
+        <Ask items={asks("calc")} />
       </Block>
 
       <Block
         id="vs-staking"
         eyebrow="Mechanism"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
         title="ETH yield versus ETH staking"
         lead="ETH staking pays validators newly issued ETH for securing Ethereum, while the ETH yield ranked on this page is interest paid by borrowers of ETH, which is a different source with a different set of risks."
       >
@@ -723,8 +831,8 @@ export async function EthHubBody() {
         <p>
           A lending position earns from borrowers. People borrow ETH to sell it short, to pay for
           a leveraged staking position, or to fund a trade, and the rate they pay rises when ETH
-          is in demand and falls when it is not. Nothing here is staked, so nothing waits in the
-          exit queue. A withdrawal waits only if the market underneath has lent out all of its ETH,
+          is in demand and falls when it is not.{" "}
+          <strong>Nothing here is staked, so nothing waits in the exit queue.</strong> A withdrawal waits only if the market underneath has lent out all of its ETH,
           which happens rarely and briefly, and the rate climbs until supply returns.
         </p>
         <p>
@@ -732,6 +840,7 @@ export async function EthHubBody() {
           staking rate on any given day. When the lending rate is higher, it is usually because
           leveraged traders are paying up for ETH, and that demand can disappear quickly.
         </p>
+        <Ask items={asks("staking")} />
       </Block>
 
       <Block
@@ -831,7 +940,7 @@ export async function EthHubBody() {
             pays for all of them at once.
           </li>
           <li>
-            <strong>Staked-ETH collateral risk</strong> is the one specific to ETH lending. Much of
+            <strong>Staked-ETH collateral risk</strong> applies to ETH lending in particular. Much of
             the ETH borrowed on these markets is borrowed against staked or restaked ETH, and if
             that collateral trades below ETH faster than liquidations can keep up, lenders take
             the loss. The{" "}
@@ -857,7 +966,7 @@ export async function EthHubBody() {
             liquidation that should have protected the lender fires.
           </li>
           <li>
-            <strong>Liquidity risk</strong> is the one a lender feels first. A market keeps only
+            <strong>Liquidity risk</strong> usually shows up first. A market keeps only
             its unborrowed ETH available to withdraw, so when borrowing spikes toward the limit the
             exit narrows for every supplier at once, until borrowers repay or the rising rate
             pulls new supply in.
@@ -868,21 +977,36 @@ export async function EthHubBody() {
           <Link href="/risk-framework">risk framework page</Link>. The vault page for any row names
           the contracts a position touches.
         </p>
+        <Ask items={asks("risk")} />
       </Block>
 
-      <Block id="faq" eyebrow="Questions" title="ETH yield questions, answered" asOf={c.asOf} asOfIso={c.asOfIso}>
-        <div className="uh-faq">
-          {faqs.map((f, i) => (
-            <details className="uh-faq-item" name="uh-faq" key={f.q} open={i === 0}>
-              <summary className="uh-faq-q">
-                <span>{f.q}</span>
-                <Chevron />
-              </summary>
-              <p className="uh-faq-a">{f.a}</p>
-            </details>
-          ))}
-        </div>
-      </Block>
+      {/* The questions are answered in the sections they belong to, where a
+          reader meets them. This is the index: one list a reader can scan, each
+          link opening its answer in place. A <nav>, because it is navigation and
+          the answers already sit in the page once. */}
+      <section className="uh-block eh-qindex" aria-labelledby="faq">
+        <p className="rp-eyebrow">Questions</p>
+        <h2 id="faq">Every ETH yield question on this page</h2>
+        <nav aria-label="Questions answered on this page">
+          <ol className="eh-qlist">
+            {faqs.map((f) => (
+              <li key={f.q}>
+                <a href={`#${qid(f.q)}`}>{f.q}</a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+        {/* Opens the <details> a question link points at; without it the page
+            scrolls to a closed answer. Plain script, no client bundle. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "(function(){function o(){var h=location.hash.slice(1);if(!h)return;" +
+              "var d=document.getElementById(h);if(d&&d.tagName==='DETAILS')d.open=true;}" +
+              "addEventListener('hashchange',o);o();})();",
+          }}
+        />
+      </section>
 
       <Block
         id="full-index"
@@ -901,8 +1025,8 @@ export async function EthHubBody() {
       <Block
         id="scope"
         eyebrow="Scope"
-        title="What this page is, and what it is not"
-        lead="This page is a curated index of ETH yield strategies, not a census of every place ETH can earn yield."
+        title="Which strategies this ranking includes"
+        lead="The ranking covers the ETH yield strategies Harvest has vetted and integrated, which is a subset of the places ETH can earn yield."
       >
         <p>
           Strategies are added as they are vetted and integrated, and dropped when the product
