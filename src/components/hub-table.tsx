@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { YieldVault } from "@/lib/types";
 import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
-import { isLowLiquidityTvl, LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
 import { isLpPairVault, getCanonicalDisplayName } from "@/lib/lp-pair";
 import { AssetIcon, ChainIcon } from "./token-icons";
 import { LpBadge } from "./lp-badge";
@@ -399,7 +398,18 @@ function Row({
       <span className="hub-cell hub-vault">
         <AssetIcon asset={vault.asset} size={28} />
         <span className="hub-vault-name">
-          {getCanonicalDisplayName(vault)}
+          {metrics ? (
+            // The network sits under the name instead of in brackets after it,
+            // so the name column reads as product, then where it runs.
+            <>
+              <span className="hub-vault-title">
+                {getCanonicalDisplayName(vault).replace(/\s*\([^)]*\)$/, "")}
+              </span>
+              <span className="hub-vault-net">{vault.chain}</span>
+            </>
+          ) : (
+            getCanonicalDisplayName(vault)
+          )}
           {isLpPairVault(vault) && <LpBadge />}
         </span>
       </span>
@@ -437,13 +447,7 @@ function Row({
         )}
       </span>
       {metrics && (
-        <span className="hub-cell hub-num hub-tvl">
-          {formatTVL(vault.tvl)}
-          {/* Same text node run as the figure, so a parser reading the cell
-              gets "$28K (below $50K)" and not a second, empty-looking cell. */}
-          {isLowLiquidityTvl(vault.tvl) &&
-            ` (below ${formatTVL(LOW_LIQUIDITY_TVL_THRESHOLD)})`}
-        </span>
+        <span className="hub-cell hub-num hub-tvl">{formatTVL(vault.tvl)}</span>
       )}
       {metrics && <span className="hub-cell hub-num hub-apy30">{formatAPY(vault.apy30d)}</span>}
     </>

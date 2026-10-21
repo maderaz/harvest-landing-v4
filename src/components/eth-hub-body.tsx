@@ -41,7 +41,7 @@ import { strategyTypeOf, isL2 } from "@/lib/eth-hub";
 import {
   ethPageModel,
   networkSentence,
-  seasonedSentence,
+  safetyFraming,
   stakingReferenceText,
   stakingSourceUrl,
   bare,
@@ -216,7 +216,7 @@ export async function EthHubBody() {
     { href: "#by-network", label: "ETH yield on Base" },
     { href: "#by-network", label: "Base vs Arbitrum vs mainnet" },
     { href: "#strategy-types", label: "What to do with WETH" },
-    { href: "#safest", label: "Safest options" },
+    { href: "#safest", label: "Risk and safety" },
     { href: "#vs-staking", label: "Yield vs staking" },
     { href: "#calculator", label: "Earnings calculator" },
     { href: "#how-to-start", label: "How to start" },
@@ -503,8 +503,7 @@ export async function EthHubBody() {
         asOf={c.asOf}
         asOfIso={c.asOfIso}
         lead={
-          `${seasonedSentence(c, evidence)} The table lists those readings and the strategy ` +
-          `type for all ${c.fundedCount} ETH strategies holding at least ${tvl(c.fundedFloor)}.`
+          safetyFraming(c)
         }
       >
         <div className="eh-evidence-wrap" data-nosnippet="">
@@ -523,7 +522,8 @@ export async function EthHubBody() {
               {evidence.map((r) => (
                 <tr key={r.vault.slug}>
                   <th scope="row">
-                    <Link href={`/${r.vault.slug}`}>{r.vault.productName}</Link>
+                    <Link href={`/${r.vault.slug}`}>{bare(r.vault)}</Link>
+                    <span className="eh-net">{r.vault.chain}</span>
                   </th>
                   <td>{cap(SINGULAR[r.type])}</td>
                   <td>{tvl(r.vault.tvl)}</td>

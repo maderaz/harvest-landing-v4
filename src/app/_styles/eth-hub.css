@@ -645,6 +645,22 @@
 .hub-table--metrics.hub-table--links .hub-row {
   grid-template-columns: 46px minmax(190px, 2fr) 0.8fr 0.9fr 0.4fr 110px 0.8fr 0.7fr 74px;
 }
+.hub-table--metrics .hub-vault-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.hub-table--metrics .hub-vault-net,
+.eh-evidence .eh-net {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--hub-ink-2, inherit);
+}
+.eh-evidence th[scope="row"] .eh-net {
+  display: block;
+  margin-top: 2px;
+}
 .hub-table--metrics .hub-apy30 {
   color: var(--hub-ink-2, inherit);
 }

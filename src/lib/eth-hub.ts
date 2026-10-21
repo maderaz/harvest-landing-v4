@@ -230,19 +230,6 @@ export function trackedLabel(days: number): string {
     : `${years} ${years === 1 ? "year" : "years"}`;
 }
 
-// "Safest" is answered with the funded strategies that clear every measured
-// bar at once, not with the largest: size alone is what the floor already
-// checks, and a five-month-old vault with a wide swing is not a safe answer.
-export const SEASONED_DAYS = 365;
-export const STEADY_STDEV = 1;
-
-/** Funded rows with a year of history and a 30-day swing under one point. */
-export function seasonedRows(rows: EthEvidenceRow[]): EthEvidenceRow[] {
-  return rows.filter(
-    (r) => r.trackedDays >= SEASONED_DAYS && r.stdev != null && r.stdev < STEADY_STDEV,
-  );
-}
-
 /** Median 24h APY across strategies clearing the liquidity floor. */
 export function fundedMedian(c: EthCohort): number {
   return median(c.funded.map((v) => v.apy24h).sort((a, b) => a - b));

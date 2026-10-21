@@ -19,7 +19,6 @@ import {
   byStrategyType,
   networkPicks,
   evidenceRows,
-  seasonedRows,
   strategyTypeOf,
   tokenOf,
   isL2,
@@ -53,34 +52,20 @@ export const DUST_TVL = 1_000;
 export const aprToApy = (apr: number) => ((1 + apr / 100 / 365) ** 365 - 1) * 100;
 
 /**
- * The measured answer to "which is safest": the funded strategies that clear
- * size, track record and steadiness together. Shared by the safety section
- * and the Base safety FAQ so the two never name different vaults.
+ * The answer to "which is safest". Harvest does not score or pick products for
+ * safety, on this page or in its Markdown twin: every strategy carries risk,
+ * and the page states that once, in general, then shows the measured facts
+ * per row (size, history, swing, type) without ranking them. Shared by the
+ * safety section and the Base safety FAQ so the two say the same thing.
  */
-export function seasonedSentence(
-  c: EthCohort,
-  evidence: EthEvidenceRow[],
-  chain?: string,
-): string {
-  const rows = seasonedRows(chain ? evidence.filter((r) => r.vault.chain === chain) : evidence);
+export function safetyFraming(c: EthCohort, chain?: string): string {
   const scope = chain ? ` on ${chain}` : "";
-  const bars =
-    `at least ${tvl(c.fundedFloor)}, a year or more of vault history and a 30-day swing ` +
-    `under one point`;
-  if (!rows.length) {
-    return `No ETH strategy${scope} cleared all three measured bars as of ${c.asOf}: ${bars}.`;
-  }
   return (
-    `Measured on size, track record and rate steadiness, the ETH ` +
-    `${rows.length === 1 ? "strategy" : "strategies"}${scope} clearing all three bars as of ` +
-    `${c.asOf} (${bars}) ${rows.length === 1 ? "was" : "were"} ` +
-    `${listOf(
-      rows.map(
-        (r) =>
-          `${chain ? bare(r.vault) : proseName(r.vault)} (${tvl(r.vault.tvl)}, ` +
-          `${r.ageLabel}, ±${r.stdev!.toFixed(2)} pts)`,
-      ),
-    )}.`
+    `This page does not score or rank ETH strategies for safety, and no strategy${scope} is ` +
+    `free of risk: every one carries smart-contract, oracle and liquidity risk, and the risk ` +
+    `framework covers the rest. What can be measured is size, track record, rate steadiness ` +
+    `and strategy type, and as of ${c.asOf} the safety table lists all four for the ` +
+    `${c.fundedCount} ETH strategies holding at least ${tvl(c.fundedFloor)}.`
   );
 }
 
@@ -210,18 +195,24 @@ export function buildFaqs(
   const onTen = (rate: number) => ((10 * rate) / 100).toFixed(3);
   const allocator = types.find((t) => t.type === "allocator");
   const wethRows = c.all.filter((v) => tokenOf(v) === "WETH");
+  const top = c.all[0];
   const smallCount = c.count - c.fundedCount;
 
   const list: Faq[] = [
     {
       q: "What is the best ETH yield right now?",
       at: "top",
+      // Leads with the top 24-hour rate in the index, whatever its size, and
+      // states its TVL; the best rate above the liquidity floor follows.
       a:
-        `${apy(c.best.apy24h)} APY, paid in ETH by ${proseName(c.best)}, as of ${c.asOf}. That is ` +
-        `the highest 24-hour rate among the ${c.count} ETH strategies tracked here once a ` +
-        `${tvl(c.fundedFloor)} liquidity floor is applied. The floor matters on ETH more than ` +
-        `on most assets: ${smallCount} of the ${c.count} strategies held less than that, and ` +
-        `a small vault can print a high rate that nobody is earning at size.`,
+        `${apy(top.apy24h)} APY, paid in ETH by ${proseName(top)}, as of ${c.asOf}, the ` +
+        `highest 24-hour rate among the ${c.count} ETH strategies tracked here` +
+        (top.slug === c.best.slug
+          ? `, holding ${tvl(top.tvl)}.`
+          : `. It is ${article(SINGULAR[strategyTypeOf(top)])} ` +
+            `${SINGULAR[strategyTypeOf(top)]} holding ${tvl(top.tvl)}. Among strategies ` +
+            `holding at least ${tvl(c.fundedFloor)}, the highest was ${apy(c.best.apy24h)} on ` +
+            `${proseName(c.best)}, holding ${tvl(c.best.tvl)}.`),
     },
     {
       q: "Where can I earn yield on ETH on Base?",
@@ -262,10 +253,7 @@ export function buildFaqs(
       q: "Which ETH yield options on Base are the safest to use?",
       at: "safety",
       a:
-        `${seasonedSentence(c, evidence, "Base")} ` +
-        `No ETH yield is free of risk, so these are measurements rather than a safety score, ` +
-        `and the safety section lists every ` +
-        `funded strategy with all four readings.`,
+        safetyFraming(c, "Base"),
     },
     {
       q: "What are the best options for ETH yield with cheap gas?",
