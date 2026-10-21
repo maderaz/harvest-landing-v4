@@ -1020,9 +1020,9 @@ export async function EthHubBody() {
           {c.byVenue.map((v) => (
             <li key={v.venue}>
               {v.count === 1
-                ? `The ${v.venue} ETH vault paid ${apy(v.medianApy)} on ${listOf(v.chains)} and held ${tvl(v.tvl)}.`
-                : `The ${v.count} ${v.venue} ETH vaults paid a median of ${apy(v.medianApy)} on ` +
-                  `${listOf(v.chains)}, holding ${tvl(v.tvl)}` +
+                ? `The ${v.venue} ETH vault held ${tvl(v.tvl)} on ${listOf(v.chains)} and paid ${apy(v.medianApy)}.`
+                : `The ${v.count} ${v.venue} ETH vaults held ${tvl(v.tvl)} on ${listOf(v.chains)} ` +
+                  `and paid a median of ${apy(v.medianApy)}` +
                   (v.minApy.toFixed(2) === v.maxApy.toFixed(2)
                     ? "."
                     : `, within ${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}.`)}
