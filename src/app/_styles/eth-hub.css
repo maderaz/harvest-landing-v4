@@ -541,3 +541,92 @@
   .uni-hub-test.eh-page .eh-fig { overflow-x: auto; }
   .uni-hub-test.eh-page .eh-fig-replay { top: 20px; right: 16px; }
 }
+
+/* === Less grey ========================================================
+   The shared hub palette fills every panel with --uni-card, a cool grey,
+   and sets helper text in --uni-ink-3. Stacked down a long page that read
+   as a wall of grey. On /eth panels are white cards on the page with a
+   light hairline, the question panels carry a gold edge instead of a fill,
+   and helper text is a step darker. Dark theme keeps its own surfaces. */
+.uni-hub-test.eh-page {
+  --uni-ink-3: #57554f;
+}
+:root[data-theme="dark"] .uni-hub-test.eh-page {
+  --uni-ink-3: #a9a7a0;
+}
+.uni-hub-test.eh-page .eh-net,
+.uni-hub-test.eh-page .eh-type,
+.uni-hub-test.eh-page .eh-evidence-wrap,
+.uni-hub-test.eh-page .uh-calc {
+  background: var(--uni-card-2, #fff);
+  border-color: var(--uni-line-2, #ebebe7);
+  box-shadow: 0 1px 2px rgba(25, 23, 23, 0.04), 0 8px 24px -16px rgba(25, 23, 23, 0.12);
+}
+:root[data-theme="dark"] .uni-hub-test.eh-page .eh-net,
+:root[data-theme="dark"] .uni-hub-test.eh-page .eh-type,
+:root[data-theme="dark"] .uni-hub-test.eh-page .eh-evidence-wrap,
+:root[data-theme="dark"] .uni-hub-test.eh-page .uh-calc {
+  box-shadow: none;
+}
+.uni-hub-test.eh-page .eh-evidence thead th {
+  background: transparent;
+  border-bottom: 2px solid var(--uni-gold, #ffb936);
+}
+.uni-hub-test.eh-page .eh-evidence th,
+.uni-hub-test.eh-page .eh-evidence td,
+.uni-hub-test.eh-page .eh-picks .eh-pick,
+.uni-hub-test.eh-page .eh-type-stats {
+  border-color: var(--uni-line-2, #ebebe7);
+}
+.uni-hub-test.eh-page .eh-ask {
+  background: transparent;
+  border: 0;
+  border-left: 3px solid var(--uni-gold, #ffb936);
+  border-radius: 0;
+  padding: 2px 0 2px 22px;
+}
+.uni-hub-test.eh-page .uh-block .eh-ask-h {
+  color: #a36b00;
+  font-weight: 600;
+}
+:root[data-theme="dark"] .uni-hub-test.eh-page .uh-block .eh-ask-h {
+  color: var(--uni-gold, #ffb936);
+}
+.uni-hub-test.eh-page .eh-ask .uh-faq-item {
+  border-color: var(--uni-line-2, #ebebe7);
+}
+.uni-hub-test.eh-page .eh-jumps a {
+  background: var(--uni-card-2, #fff);
+  border-color: var(--uni-line-2, #ebebe7);
+}
+
+/* === Figure: comparison ============================================= */
+.eh-fig .lf-compare {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.eh-fig .lf-compare.is-in { opacity: 1; transform: none; }
+.eh-fig .lf-compare-h {
+  fill: rgba(233, 236, 245, 0.66);
+  font-size: 15px;
+}
+.eh-fig .lf-bar-plain { fill: rgba(233, 236, 245, 0.28); }
+.eh-fig .lf-bar-loop { fill: #ffb936; }
+.eh-fig .lf-compare .lf-bar-plain,
+.eh-fig .lf-compare .lf-bar-loop {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s;
+}
+.eh-fig .lf-compare.is-in .lf-bar-plain,
+.eh-fig .lf-compare.is-in .lf-bar-loop { transform: none; }
+.eh-fig .lf-compare.is-in .lf-bar-loop { transition-delay: 0.45s; }
+.eh-fig .lf-bar-t {
+  fill: rgba(233, 236, 245, 0.85);
+  font-size: 16px;
+  font-weight: 600;
+  font-family: var(--mono, ui-monospace, monospace);
+}
+.eh-fig .lf-bar-t-hi { fill: #ffb936; }
