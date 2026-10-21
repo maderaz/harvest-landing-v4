@@ -34,7 +34,27 @@ export function buildEthCohort(
   ethVaults: YieldVault[],
   history: Record<string, FullVaultHistory> | null,
 ): EthCohort {
-  return buildUsdcCohort(ethVaults, history);
+  return buildUsdcCohort(ethNamed(ethVaults), history);
+}
+
+// Names a reader can tell apart.
+//
+// Two different products on Base are both called "ETH Lend" (one on Arcadia,
+// one on ExtraFi), and a parser reading both rows merges them into one. Where
+// a name repeats on the same network, the protocol goes in front of it. And
+// "ETH Base ETH Lending Optimizer" says ETH twice, so the leading token is
+// dropped when the rest of the name already carries it.
+function ethNamed(vaults: YieldVault[]): YieldVault[] {
+  const key = (v: YieldVault) => `${v.chain}|${v.productName}`;
+  const seen = new Map<string, number>();
+  for (const v of vaults) seen.set(key(v), (seen.get(key(v)) ?? 0) + 1);
+  return vaults.map((v) => {
+    let name = v.productName;
+    if ((seen.get(key(v)) ?? 0) > 1) name = `${venueOf(v)} ${name}`;
+    const rest = name.replace(/^ETH\s+/, "");
+    if (rest !== name && /\bETH\b/.test(rest)) name = rest;
+    return name === v.productName ? v : { ...v, productName: name };
+  });
 }
 
 // ---- strategy types -------------------------------------------------------

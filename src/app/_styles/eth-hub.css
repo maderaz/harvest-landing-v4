@@ -630,3 +630,172 @@
   font-family: var(--mono, ui-monospace, monospace);
 }
 .eh-fig .lf-bar-t-hi { fill: #ffb936; }
+
+/* === Ranking table with TVL and 30-day mean ===========================
+   DOM order: # | Vault | 24h APY | Protocol | Network | trend | TVL | 30d avg
+   [| Link]. The base responsive rules still drop Protocol, then Network,
+   then the trend; the 30-day mean goes with Network, and TVL stays to the
+   narrowest width because it is what qualifies the rate beside it. */
+.hub-table--metrics .hub-thead,
+.hub-table--metrics .hub-row {
+  grid-template-columns: 46px minmax(190px, 2fr) 0.8fr 0.9fr 0.4fr 110px 0.8fr 0.7fr;
+  gap: 20px;
+}
+.hub-table--metrics.hub-table--links .hub-thead,
+.hub-table--metrics.hub-table--links .hub-row {
+  grid-template-columns: 46px minmax(190px, 2fr) 0.8fr 0.9fr 0.4fr 110px 0.8fr 0.7fr 74px;
+}
+.hub-table--metrics .hub-tvl {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+.hub-table--metrics .hub-lowliq {
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #8a5a00;
+  background: rgba(255, 185, 54, 0.22);
+}
+:root[data-theme="dark"] .hub-table--metrics .hub-lowliq {
+  color: #ffcf75;
+  background: rgba(255, 185, 54, 0.14);
+}
+.hub-table--metrics .hub-apy30 {
+  color: var(--hub-ink-2, inherit);
+}
+@media (max-width: 1100px) {
+  .hub-table--metrics .hub-thead,
+  .hub-table--metrics .hub-row {
+    grid-template-columns: 40px minmax(140px, 1.6fr) 80px 44px 96px 84px 70px;
+    gap: 16px;
+  }
+  .hub-table--metrics.hub-table--links .hub-thead,
+  .hub-table--metrics.hub-table--links .hub-row {
+    grid-template-columns: 40px minmax(140px, 1.6fr) 80px 44px 96px 84px 70px 70px;
+  }
+}
+@media (max-width: 800px) {
+  .hub-table--metrics .hub-thead .hub-th:nth-child(8),
+  .hub-table--metrics .hub-row .hub-cell:nth-child(8) { display: none; }
+  .hub-table--metrics .hub-thead,
+  .hub-table--metrics .hub-row {
+    grid-template-columns: 32px minmax(110px, 1.6fr) 72px 90px 84px;
+    gap: 12px;
+  }
+  .hub-table--metrics.hub-table--links .hub-thead,
+  .hub-table--metrics.hub-table--links .hub-row {
+    grid-template-columns: 32px minmax(110px, 1.6fr) 72px 90px 84px 66px;
+  }
+}
+@media (max-width: 540px) {
+  .hub-table--metrics .hub-thead,
+  .hub-table--metrics .hub-row {
+    grid-template-columns: 22px minmax(0, 1fr) 54px 70px;
+    gap: 8px;
+  }
+  .hub-table--metrics.hub-table--links .hub-thead,
+  .hub-table--metrics.hub-table--links .hub-row {
+    grid-template-columns: 22px minmax(0, 1fr) 54px 70px 58px;
+  }
+  .hub-table--metrics .hub-lowliq { display: none; }
+}
+
+/* === Whose rates, earnings table, steps =========================== */
+.uni-hub-test.eh-page .eh-whose {
+  margin: 14px 0 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+  max-width: none;
+}
+.uni-hub-test.eh-page .eh-earn {
+  width: 100%;
+  margin: 22px 0 0;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+.uni-hub-test.eh-page .eh-earn caption {
+  caption-side: top;
+  text-align: left;
+  padding-bottom: 10px;
+  font-weight: 600;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page .eh-earn th,
+.uni-hub-test.eh-page .eh-earn td {
+  padding: 10px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--uni-line-2, #ebebe7);
+}
+.uni-hub-test.eh-page .eh-earn thead th {
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--uni-ink-3);
+  border-bottom: 2px solid var(--uni-gold, #ffb936);
+}
+.uni-hub-test.eh-page .eh-earn td {
+  font-family: var(--mono, ui-monospace, monospace);
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page .eh-steps {
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+  display: grid;
+  gap: 14px;
+}
+.uni-hub-test.eh-page .eh-steps li {
+  counter-increment: step;
+  position: relative;
+  padding-left: 48px;
+  font-size: 16.5px;
+  line-height: 1.6;
+  color: var(--uni-ink-2);
+}
+.uni-hub-test.eh-page .eh-steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 650;
+  font-size: 15px;
+  color: #1a1a1a;
+  background: var(--uni-gold, #ffb936);
+}
+
+/* Row cells are shown and hidden by class, not position, on the metrics
+   table. In the Link variant each row starts with an absolutely positioned
+   row link, which shifts every cell's nth-child by one, so the shared
+   position-based rules hid the wrong cells on narrow screens (the trend
+   rendered under "24h APY"). The header has no row link, so its
+   position-based rules stay correct. */
+@media (max-width: 1100px) {
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-rank,
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-apy,
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-apy30 { display: block; }
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-vault,
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-network,
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-spark,
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-tvl,
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-linkcell { display: flex; }
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-strategy { display: none; }
+}
+@media (max-width: 800px) {
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-network,
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-apy30 { display: none; }
+}
+@media (max-width: 540px) {
+  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-spark { display: none; }
+}

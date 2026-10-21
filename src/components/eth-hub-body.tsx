@@ -57,6 +57,7 @@ import {
   type EthCohort,
   type EthNetworkPicks,
   type EthTypeRow,
+  type EthEvidenceRow,
 } from "@/lib/eth-hub";
 
 const HUB_URL = `${SITE_URL}/eth`;
@@ -232,6 +233,7 @@ function buildFaqs(
   c: EthCohort,
   nets: EthNetworkPicks[],
   types: EthTypeRow[],
+  evidence: EthEvidenceRow[],
 ): Faq[] {
   if (!c.best) return [];
   const base = nets.find((n) => n.chain === "Base");
@@ -242,10 +244,9 @@ function buildFaqs(
   const allocator = types.find((t) => t.type === "allocator");
   const wethRows = c.all.filter((v) => tokenOf(v) === "WETH");
   const smallCount = c.count - c.fundedCount;
-  const baseLargest = c.funded
-    .filter((v) => v.chain === "Base")
-    .sort((a, b) => b.tvl - a.tvl)
-    .slice(0, 3);
+  const baseSafest = evidence
+    .filter((r) => r.vault.chain === "Base")
+    .slice(0, 2);
 
   const list: Faq[] = [
     {
@@ -297,14 +298,20 @@ function buildFaqs(
       q: "Which ETH yield options on Base are the safest to use?",
       at: "safety",
       a:
-        `Every ETH yield carries risk, so instead of a safety score this page lists four ` +
-        `measurements: how much ETH a strategy holds, how long it has been ` +
-        `tracked, how far its rate moved over 30 days, and how many contract layers it adds. ` +
-        (baseLargest.length
-          ? `On size, the largest ETH strategies on Base as of ${c.asOf} were ` +
-            `${listOf(baseLargest.map((v) => `${proseName(v)} (${tvl(v.tvl)})`))}. `
+        (baseSafest.length
+          ? `By size, track record and rate steadiness, the strongest ETH options on Base as of ` +
+            `${c.asOf} were ` +
+            `${listOf(
+              baseSafest.map(
+                (r) =>
+                  `${bare(r.vault)} (${tvl(r.vault.tvl)}` +
+                  (r.stdev != null ? `, ±${r.stdev.toFixed(2)} pts over 30 days` : "") +
+                  `)`,
+              ),
+            )}. `
           : "") +
-        `The fewest-layer option is a plain money market, and the safety section lists every ` +
+        `No ETH yield is free of risk, so these are measurements rather than a safety score, ` +
+        `and the safety section lists every ` +
         `funded strategy with all four readings.`,
     },
     {
@@ -434,10 +441,17 @@ export async function EthHubBody() {
   }
 
   const crumbs = assetHubCrumbs("ETH");
+  const asOfTime = new Date(c.asOfIso).toISOString().slice(11, 16);
   const nets = ETH_NETWORKS.map((ch) => networkPicks(c, ch)).filter((n) => n.count > 0);
   const types = byStrategyType(c);
   const evidence = evidenceRows(c, history);
-  const faqs = buildFaqs(c, nets, types);
+  // 0xFE09…573e is the fWETH vault Harvest launched on Ethereum in October 2020;
+  // its history is real and long, and the strategy behind it is newer.
+  const hasOriginalVault = evidence.some(
+    (r) => r.vault.contractAddress.toLowerCase() === "0xfe09e53a81fe2808bc493ea64319109b5baa573e",
+  );
+  const mmFunded = c.funded.filter((v) => strategyTypeOf(v) === "money-market").length;
+  const faqs = buildFaqs(c, nets, types, evidence);
   const asks = (at: FaqSpot) => faqs.filter((f) => f.at === at);
   const base = nets.find((n) => n.chain === "Base");
   const l2Count = c.all.filter((v) => isL2(v.chain)).length;
@@ -462,6 +476,7 @@ export async function EthHubBody() {
     { href: "#safest", label: "Safest options" },
     { href: "#vs-staking", label: "Yield vs staking" },
     { href: "#calculator", label: "Earnings calculator" },
+    { href: "#how-to-start", label: "How to start" },
     { href: "#faq", label: "All questions" },
   ];
 
@@ -507,6 +522,20 @@ export async function EthHubBody() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            "@id": HUB_URL,
+            url: HUB_URL,
+            name: "Best ETH yield: live ranking of ETH lending and vault rates",
+            dateModified: c.asOfIso,
+            inLanguage: "en",
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
           __html: JSON.stringify(
             reportDatasetSchema({
               name: "ETH yield strategies tracked by Harvest",
@@ -539,14 +568,31 @@ export async function EthHubBody() {
           <h1 className="uni-hub-h1">{assetHubH1("ETH")}</h1>
         </div>
         <p className="uh-answer">
-          <Em text={`The best ETH yield in Harvest's index is ${apy(c.best.apy24h)} APY, paid in ETH by ` +
-            `${proseName(c.best, true)}, as of ${c.asOf}. That is the highest rate among ` +
-            `strategies holding at least ${tvl(c.fundedFloor)}, against a median of ` +
-            `${apy(c.medianApy)} across all ${c.count} ETH strategies tracked on ` +
-            `${c.chainCount} ${plural(c.chainCount, "network", "networks")}.`} />
+          <Em
+            text={
+              `The best ETH yield in Harvest's index is ${apy(c.best.apy24h)} APY, paid in ETH by ` +
+              `${proseName(c.best, true)}, as of ${c.asOf}, among ETH lending and vault ` +
+              `strategies holding at least ${tvl(c.fundedFloor)}. ` +
+              (c.bestRaw && c.bestRaw.slug !== c.best.slug
+                ? `The highest raw rate on that date, ${apy(c.bestRaw.apy24h)} on ` +
+                  `${proseName(c.bestRaw)}, ` +
+                  `belongs to a ${SINGULAR[strategyTypeOf(c.bestRaw)]} holding ` +
+                  `${tvl(c.bestRaw.tvl)}, and the median across all ${c.count} ETH strategies ` +
+                  `was ${apy(c.medianApy)}.`
+                : `The median across all ${c.count} ETH strategies on that date was ` +
+                  `${apy(c.medianApy)}.`)
+            }
+          />
         </p>
         <p className="uh-updated" data-dateline="">
-          Rates last recorded {c.asOf}, and refreshed hourly.
+          Rates last recorded {c.asOf} at {asOfTime} UTC, and refreshed hourly.
+        </p>
+        <p className="eh-whose">
+          Every rate here is the APY of a Harvest vault built on the named protocol, after the
+          vault&rsquo;s fees, so it can differ from the rate in that protocol&rsquo;s own app.{" "}
+          <strong>Autopilot is Harvest&rsquo;s own allocator</strong>, which moves ETH between
+          lending venues as their rates change. Liquid staking tokens such as stETH and rETH are
+          not ranked here.
         </p>
         {/* A <nav>, since it is navigation: the labels are link text, not
             claims, and the atomicity gate strips <nav> like any other chrome. */}
@@ -589,7 +635,14 @@ export async function EthHubBody() {
           `${listOf([...new Set(c.top10.map((v) => v.chain))])}.`
         }
       >
-        <HubTable vaults={c.top10} sparklines={sparklines} scopeLabel="ETH strategies" openLinks />
+        <HubTable
+          vaults={c.top10}
+          sparklines={sparklines}
+          scopeLabel="ETH strategies"
+          openLinks
+          metrics
+          venueLabel="Protocol"
+        />
         <p className="uh-note">
           {`Sorted on the 24-hour rate with no floor applied, so a row near the top can sit on a ` +
             `few hundred dollars of ETH. The headline figure uses a ${tvl(c.fundedFloor)} floor ` +
@@ -748,7 +801,7 @@ export async function EthHubBody() {
                 <th scope="col">Strategy</th>
                 <th scope="col">Type</th>
                 <th scope="col">Tracked value</th>
-                <th scope="col">Tracked for</th>
+                <th scope="col">Vault history</th>
                 <th scope="col">30-day swing</th>
                 <th scope="col">24h APY</th>
               </tr>
@@ -778,10 +831,13 @@ export async function EthHubBody() {
           </p>
         ) : null}
         <dl className="eh-defs">
-          <dt>Tracked for</dt>
+          <dt>Vault history</dt>
           <dd>
-            Counts the days of readings held for the strategy. The protocol underneath is usually
-            older.
+            {`Counts the time since the vault contract’s first reading. Harvest vaults are ` +
+              `upgradeable, so an older vault can run a newer strategy`}
+            {hasOriginalVault
+              ? ": ETH KPK Yield V2 is Harvest’s original ETH vault from October 2020, which now lends through KPK’s Morpho vault."
+              : "."}
           </dd>
           <dt>30-day swing</dt>
           <dd>
@@ -790,8 +846,13 @@ export async function EthHubBody() {
           </dd>
           <dt>Type</dt>
           <dd>
-            Shows how many contracts sit between the ETH and the borrower. A plain money market
-            has the fewest, and the{" "}
+            {`Shows how many contracts sit between the ETH and the borrower. A plain money ` +
+              `market has the fewest` +
+              (mmFunded === 0
+                ? `, though every money market in this index held under the liquidity floor, ` +
+                  `so the fewest layers here also come with the least size`
+                : "") +
+              `, and the `}
             <Link href="/risk-framework">risk framework page</Link> covers every exposure.
           </dd>
         </dl>
@@ -810,7 +871,69 @@ export async function EthHubBody() {
         }
       >
         <UsdcCalculator products={calcProducts} asOf={c.asOf} asset="ETH" defaultAmount={1} />
+        <table className="eh-earn">
+          <caption>
+            A year of earnings, in ETH, before any rate change
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col">Amount</th>
+              <th scope="col">{`At ${apy(c.best.apy24h)} (${bare(c.best)})`}</th>
+              <th scope="col">{`At the ${apy(c.medianApy)} median`}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {[1, 10, 32].map((n) => (
+              <tr key={n}>
+                <th scope="row">{`${n} ETH`}</th>
+                <td>{`${((n * c.best!.apy24h) / 100).toFixed(4)} ETH`}</td>
+                <td>{`${((n * c.medianApy) / 100).toFixed(4)} ETH`}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
         <Ask items={asks("calc")} />
+      </Block>
+
+      <Block
+        id="how-to-start"
+        eyebrow="Getting started"
+        title="How to start earning yield on ETH"
+        asOf={c.asOf}
+        asOfIso={c.asOfIso}
+        lead={
+          `Starting takes a handful of transactions, and on Base, where ${base?.count ?? 0} of ` +
+          `the ${c.count} ETH strategies run, each one costs a few cents.`
+        }
+      >
+        <ol className="eh-steps">
+          <li>
+            <strong>Choosing a network comes first.</strong> Base holds most of the funded ETH
+            strategies; Ethereum mainnet costs more per transaction.
+          </li>
+          <li>
+            <strong>Wrapping ETH into WETH takes one transaction</strong>, and it unwraps back to
+            ETH at any time.
+          </li>
+          <li>
+            <strong>Picking a strategy sets the rate and the risk.</strong> The safety table above
+            shows each funded strategy&rsquo;s size, history and 30-day swing.
+          </li>
+          <li>
+            <strong>Entering the position is one transaction in the Harvest app</strong>, which
+            issues vault shares that grow as the strategy compounds.
+          </li>
+          <li>
+            <strong>Withdrawing is open at any time</strong> the market underneath has unborrowed
+            ETH to pay out, with no lockup or exit queue.
+          </li>
+        </ol>
+        <p>
+          <strong>What it costs.</strong> The rates on this page are after the vault&rsquo;s
+          performance fee, so the APY shown is what the position earns. Gas is paid on each
+          transaction, and the looping strategy charges an entry cost the app shows before a
+          position opens.
+        </p>
       </Block>
 
       <Block
@@ -882,13 +1005,13 @@ export async function EthHubBody() {
         asOf={c.asOf}
         asOfIso={c.asOfIso}
         lead={
-          `Among the venues in this ETH index, ${listOf(
+          `Among the vaults in this ETH index, grouped by the protocol they lend into, ${listOf(
             c.byVenue
               .slice(0, 3)
               .map(
                 (v) =>
-                  `${v.venue} paid a median of ${apy(v.medianApy)} across ${v.count} ` +
-                  `${plural(v.count, "strategy", "strategies")}`,
+                  `the ${v.venue} ${plural(v.count, "vault", "vaults")} paid a median of ` +
+                  `${apy(v.medianApy)} across ${v.count}`,
               ),
           )}.`
         }
@@ -897,9 +1020,9 @@ export async function EthHubBody() {
           {c.byVenue.map((v) => (
             <li key={v.venue}>
               {v.count === 1
-                ? `${v.venue} ETH paid ${apy(v.medianApy)} on ${listOf(v.chains)} and held ${tvl(v.tvl)}.`
-                : `${v.venue} ETH paid a median of ${apy(v.medianApy)} across ${v.count} ` +
-                  `strategies on ${listOf(v.chains)}, holding ${tvl(v.tvl)}` +
+                ? `The ${v.venue} ETH vault paid ${apy(v.medianApy)} on ${listOf(v.chains)} and held ${tvl(v.tvl)}.`
+                : `The ${v.count} ${v.venue} ETH vaults paid a median of ${apy(v.medianApy)} on ` +
+                  `${listOf(v.chains)}, holding ${tvl(v.tvl)}` +
                   (v.minApy.toFixed(2) === v.maxApy.toFixed(2)
                     ? "."
                     : `, within ${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}.`)}
@@ -1019,7 +1142,13 @@ export async function EthHubBody() {
           `The network and protocol filters narrow rows already on the page.`
         }
       >
-        <HubTable vaults={c.all} sparklines={sparklines} scopeLabel="ETH strategies" />
+        <HubTable
+          vaults={c.all}
+          sparklines={sparklines}
+          scopeLabel="ETH strategies"
+          metrics
+          venueLabel="Protocol"
+        />
       </Block>
 
       <Block

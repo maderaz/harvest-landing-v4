@@ -98,6 +98,9 @@ export function EthLoopFigure() {
       ref={ref}
       className={`eh-fig${done ? " is-done" : ""}${reduced ? " is-static" : ""}`}
       aria-labelledby="loop-fig-title"
+      // The animated labels are frames of a drawing, not claims; keep them out
+      // of search snippets. The <desc> carries the one-sentence summary.
+      data-nosnippet=""
     >
       <div className="eh-fig-head">
         <h3 id="loop-fig-title">How a leveraged loop multiplies the spread</h3>
