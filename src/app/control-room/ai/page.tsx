@@ -9,6 +9,7 @@ export default function AiSummaryPage() {
   return (
     <FunnelSummary
       group="AI"
+      botExport
       copy={{
         title: "AI Summary",
         description:
