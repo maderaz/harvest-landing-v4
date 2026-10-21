@@ -59,10 +59,26 @@ function parseAmount(raw: string): number | null {
 export function UsdcCalculator({
   products,
   asOf,
+  asset = "USDC",
+  defaultAmount = 10_000,
 }: {
   products: CalcProduct[];
   asOf: string;
+  /**
+   * The unit the amount is entered and the results are shown in. USDC results
+   * read as dollars; any other asset (ETH on /eth) is shown in its own unit,
+   * because a year of yield on ETH is earned in ETH and converting it to
+   * dollars would fold a price forecast into a rate calculation.
+   */
+  asset?: string;
+  defaultAmount?: number;
 }) {
+  const inDollars = asset === "USDC";
+  const fmt = (n: number) =>
+    inDollars
+      ? `$${money2(n)}`
+      : `${n.toLocaleString("en-US", { maximumFractionDigits: 4 })} ${asset}`;
+  const defaultLabel = defaultAmount.toLocaleString("en-US");
   const [raw, setRaw] = useState("");
   const [slug, setSlug] = useState(products[0]?.slug ?? "");
   const [shown, setShown] = useState<{ amount: number; product: CalcProduct } | null>(null);
@@ -91,8 +107,8 @@ export function UsdcCalculator({
     // Never gated on a parsed amount. The button is always live, so pressing
     // it with an empty field has to do something other than nothing: it falls
     // back to 10,000, which is also the figure the FAQ answers against.
-    const a = amount ?? 10_000;
-    if (!raw.trim()) setRaw("10,000");
+    const a = amount ?? defaultAmount;
+    if (!raw.trim()) setRaw(defaultLabel);
     if (product) setShown({ amount: a, product });
   }
 
@@ -107,7 +123,7 @@ export function UsdcCalculator({
           </p>
 
           <label className="uh-calc-label" htmlFor="uh-amount">
-            Amount in USDC
+            Amount in {asset}
           </label>
           <div className="uh-calc-field">
             <input
@@ -116,7 +132,7 @@ export function UsdcCalculator({
               type="text"
               inputMode="decimal"
               autoComplete="off"
-              placeholder="10,000"
+              placeholder={defaultLabel}
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
               onKeyDown={(e) => {
@@ -124,8 +140,8 @@ export function UsdcCalculator({
               }}
             />
             <span className="uh-calc-unit" aria-hidden="true">
-              <AssetIcon asset="USDC" size={16} decorative />
-              USDC
+              <AssetIcon asset={asset} size={16} decorative />
+              {asset}
             </span>
           </div>
 
@@ -179,33 +195,34 @@ export function UsdcCalculator({
               <>
                 <p className="uh-calc-headline">
                   Projected balance in a year:{" "}
-                  <strong>${money2(result.balance)}</strong>
+                  <strong>{fmt(result.balance)}</strong>
                 </p>
                 <p className="uh-calc-detail">
-                  {money(shown.amount)} USDC in {shown.product.name} at{" "}
+                  {inDollars ? money(shown.amount) : shown.amount.toLocaleString("en-US")}{" "}
+                  {asset} in {shown.product.name} at{" "}
                   {shown.product.apy.toFixed(2)}% APY, the rate recorded as of {asOf}.
                 </p>
                 <ul className="uh-calc-facts">
                   <li>
                     Left to compound, the position earns{" "}
-                    <strong>${money2(result.compounded)}</strong> over a year. The
+                    <strong>{fmt(result.compounded)}</strong> over a year. The
                     quoted APY already assumes the strategy harvests and reinvests
                     on its own schedule.
                   </li>
                   <li>
                     Taken out as it accrues, it earns{" "}
-                    <strong>${money2(result.simple)}</strong> over the same year,
+                    <strong>{fmt(result.simple)}</strong> over the same year,
                     which is the {result.nominal.toFixed(2)}% nominal rate
                     underneath that APY.
                   </li>
                   <li>
                     Compounding is worth{" "}
-                    <strong>${money2(result.compounded - result.simple)}</strong> of
+                    <strong>{fmt(result.compounded - result.simple)}</strong> of
                     the difference on this amount.
                   </li>
                   <li>
                     Averaged across twelve months that is about{" "}
-                    <strong>${money2(result.monthly)}</strong> a month, before any
+                    <strong>{fmt(result.monthly)}</strong> a month, before any
                     rate change.
                   </li>
                 </ul>

@@ -1,0 +1,255 @@
+/* Additions specific to /eth. The page reuses the /usdc long-form shell
+   (.uh-page: hero, summary, Block rhythm, FAQ, calculator) and adds the pieces
+   its queries need: a jump list of answers under the hero, per-network cards,
+   strategy-type cards and the safety evidence table. Everything is scoped
+   under .eh-page so none of it reaches /usdc. */
+
+/* === Jump list ======================================================
+   The questions the page answers, as pills. A reader arriving from an AI
+   answer usually has exactly one of them in mind. */
+.uni-hub-test.eh-page .eh-jumps {
+  list-style: none;
+  margin: 22px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.uni-hub-test.eh-page .eh-jumps a {
+  display: inline-block;
+  padding: 7px 14px;
+  border: 1px solid var(--uni-line);
+  border-radius: var(--uni-radius-pill, 999px);
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--uni-ink);
+  text-decoration: none;
+  background: var(--uni-card, transparent);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.uni-hub-test.eh-page .eh-jumps a:hover {
+  border-color: var(--uni-gold, #ffb936);
+  background: var(--uni-gold-soft, rgba(255, 185, 54, 0.12));
+}
+
+/* === Network cards ================================================== */
+.uni-hub-test.eh-page .eh-nets {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 14px;
+  margin: 8px 0 22px;
+}
+.uni-hub-test.eh-page .eh-net {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px 16px;
+  border: 1px solid var(--uni-line);
+  border-radius: var(--uni-radius-sm, 14px);
+  background: var(--uni-card, transparent);
+  min-width: 0;
+}
+.uni-hub-test.eh-page .eh-net-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.uni-hub-test.eh-page .eh-net-head h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: 650;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page .eh-net-tag {
+  margin-left: auto;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+  white-space: nowrap;
+}
+.uni-hub-test.eh-page .uh-block .eh-net-meta,
+.uni-hub-test.eh-page .uh-block .eh-net-empty {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page .uh-block .eh-net-empty {
+  color: var(--uni-ink-2);
+}
+.uni-hub-test.eh-page .eh-picks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+  counter-reset: pick;
+}
+.uni-hub-test.eh-page .eh-picks li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  column-gap: 12px;
+  row-gap: 2px;
+  padding-top: 10px;
+  border-top: 1px solid var(--uni-line);
+}
+.uni-hub-test.eh-page .eh-picks li:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+.uni-hub-test.eh-page .eh-pick-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--uni-ink);
+  text-decoration: none;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.uni-hub-test.eh-page .eh-pick-name:hover {
+  text-decoration: underline;
+}
+.uni-hub-test.eh-page .eh-pick-apy {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--uni-ink);
+  text-align: right;
+}
+.uni-hub-test.eh-page .eh-pick-sub {
+  grid-column: 1 / -1;
+  font-size: 13px;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page .eh-net-more {
+  margin-top: auto;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--uni-ink);
+  text-decoration: none;
+}
+.uni-hub-test.eh-page .eh-net-more:hover {
+  text-decoration: underline;
+}
+
+/* === Strategy-type cards ============================================ */
+.uni-hub-test.eh-page .eh-types {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 8px 0 22px;
+}
+.uni-hub-test.eh-page .eh-type {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+  border: 1px solid var(--uni-line);
+  border-radius: var(--uni-radius-sm, 14px);
+  background: var(--uni-card, transparent);
+  min-width: 0;
+}
+.uni-hub-test.eh-page .eh-type h3 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 17px;
+  line-height: 23px;
+  font-weight: 650;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page .uh-block .eh-type-blurb,
+.uni-hub-test.eh-page .uh-block .eh-type-best {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+}
+.uni-hub-test.eh-page .uh-block .eh-type-best {
+  margin-top: auto;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page .eh-type-best a {
+  color: var(--uni-ink);
+  font-weight: 600;
+}
+.uni-hub-test.eh-page .eh-type-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 10px 0;
+  border-top: 1px solid var(--uni-line);
+  border-bottom: 1px solid var(--uni-line);
+}
+.uni-hub-test.eh-page .eh-type-stats dt {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page .eh-type-stats dd {
+  margin: 2px 0 0;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--uni-ink);
+}
+
+/* === Safety evidence table ==========================================
+   Scrolls sideways inside its own box on a phone rather than pushing the
+   page wider than the viewport. */
+.uni-hub-test.eh-page .eh-evidence-wrap {
+  margin: 8px 0 22px;
+  overflow-x: auto;
+  border: 1px solid var(--uni-line);
+  border-radius: var(--uni-radius-sm, 14px);
+  -webkit-overflow-scrolling: touch;
+}
+.uni-hub-test.eh-page .eh-evidence {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 14.5px;
+}
+.uni-hub-test.eh-page .eh-evidence th,
+.uni-hub-test.eh-page .eh-evidence td {
+  padding: 12px 14px;
+  text-align: left;
+  border-bottom: 1px solid var(--uni-line);
+  white-space: nowrap;
+}
+.uni-hub-test.eh-page .eh-evidence tbody tr:last-child th,
+.uni-hub-test.eh-page .eh-evidence tbody tr:last-child td {
+  border-bottom: 0;
+}
+.uni-hub-test.eh-page .eh-evidence thead th {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+  color: var(--uni-ink-3);
+  background: var(--uni-tint, transparent);
+}
+.uni-hub-test.eh-page .eh-evidence tbody th a {
+  color: var(--uni-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+.uni-hub-test.eh-page .eh-evidence tbody th a:hover {
+  text-decoration: underline;
+}
+.uni-hub-test.eh-page .eh-evidence td {
+  font-family: var(--mono, ui-monospace, monospace);
+  color: var(--uni-ink-2);
+}
+.uni-hub-test.eh-page .eh-evidence td:nth-child(2) {
+  font-family: var(--sans, inherit);
+}
+
+@media (max-width: 800px) {
+  .uni-hub-test.eh-page .eh-jumps a { font-size: 13.5px; padding: 6px 12px; }
+  .uni-hub-test.eh-page .eh-net,
+  .uni-hub-test.eh-page .eh-type { padding: 16px; }
+}
