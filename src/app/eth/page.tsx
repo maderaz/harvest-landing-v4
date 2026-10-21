@@ -29,8 +29,8 @@ export async function generateMetadata(): Promise<Metadata> {
     ? `Best ETH yield: ${formatAPY(c.best.apy24h)} APY paid in ETH${
         base ? ` on ${base.chain}` : ""
       }. Compare ${c.count} ETH and WETH strategies on ${c.chainCount} networks by 24-hour ` +
-      `APY, TVL and 30-day steadiness, updated hourly.`
-    : `Compare ETH and WETH yield strategies by 24-hour APY, TVL and 30-day steadiness, updated hourly.`;
+      `APY, TVL and 30-day steadiness, updated several times a day.`
+    : `Compare ETH and WETH yield strategies by 24-hour APY, TVL and 30-day steadiness, updated several times a day.`;
 
   return {
     title,

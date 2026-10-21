@@ -23,7 +23,7 @@ import Link from "next/link";
 import { getAllSparklines } from "@/lib/data";
 import { AssetIcon, ChainIcon } from "@/components/token-icons";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
-import { assetHubH1, assetHubCrumbs } from "@/lib/seo";
+import { assetHubCrumbs } from "@/lib/seo";
 import {
   breadcrumbSchema,
   itemListSchema,
@@ -36,11 +36,12 @@ import { RankingDataNote } from "@/components/ranking-data-note";
 import { UsdcCalculator, type CalcProduct } from "@/components/usdc-calculator";
 import { EthLoopFigure } from "@/components/eth-loop-figure";
 import { harvestAppUrl } from "@/lib/harvest-app";
-import { proseName, listOf, plural, apy, apyFloorLabel, tvl } from "@/lib/usdc-hub";
-import { trackedLabel, strategyTypeOf, isL2 } from "@/lib/eth-hub";
+import { proseName, listOf, plural, apy, tvl } from "@/lib/usdc-hub";
+import { strategyTypeOf, isL2 } from "@/lib/eth-hub";
 import {
   ethPageModel,
   networkSentence,
+  seasonedSentence,
   stakingReferenceText,
   stakingSourceUrl,
   bare,
@@ -48,6 +49,7 @@ import {
   PLURAL,
   TYPE_BLURB,
   HARVEST_FEE_TEXT,
+  ETH_HUB_H1,
   ETH_RISKS,
   ETH_RISKS_LEAD,
   STAKING_LEAD,
@@ -181,7 +183,7 @@ export async function EthHubBody() {
   if (!m) {
     return (
       <div className="uni-hub-test">
-        <h1 className="uni-hub-h1">{assetHubH1("ETH")}</h1>
+        <h1 className="uni-hub-h1">{ETH_HUB_H1}</h1>
         <p className="uni-hub-sub">ETH yield strategies are populating, check back shortly.</p>
       </div>
     );
@@ -231,7 +233,7 @@ export async function EthHubBody() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
-            ...itemListSchema(c.all, HUB_URL),
+            ...itemListSchema(c.all, HUB_URL, "24h"),
             name: "ETH yield strategies ranked by 24-hour APY",
             numberOfItems: c.count,
             dateModified: c.asOfIso,
@@ -268,7 +270,7 @@ export async function EthHubBody() {
               description:
                 `Live 24-hour APY, 30-day mean APY and tracked value for the ${c.count} ETH and ` +
                 `WETH yield strategies Harvest indexes across ${c.chainCount} networks, measured ` +
-                `from first-party vault contract readings and refreshed hourly.`,
+                `from first-party vault contract readings and refreshed several times a day.`,
               url: HUB_URL,
               dateModified: c.asOfIso,
               temporalCoverage: c.asOfIso,
@@ -291,13 +293,13 @@ export async function EthHubBody() {
           <span className="uni-hub-hero-icon" aria-hidden="true">
             <AssetIcon asset="ETH" size={44} priority />
           </span>
-          <h1 className="uni-hub-h1">{assetHubH1("ETH")}</h1>
+          <h1 className="uni-hub-h1">{ETH_HUB_H1}</h1>
         </div>
         <p className="uh-answer">
           <Em text={m.answer} />
         </p>
         <p className="uh-updated" data-dateline="">
-          Rates last recorded {c.asOf} at {asOfTime} UTC, and refreshed hourly.
+          Rates last recorded {c.asOf} at {asOfTime} UTC, and refreshed several times a day.
         </p>
         <p className="eh-whose">
           {`Every rate here is the APY of a Harvest vault built on the named protocol, after ` +
@@ -501,10 +503,8 @@ export async function EthHubBody() {
         asOf={c.asOf}
         asOfIso={c.asOfIso}
         lead={
-          `Four measurements help judge the risk of an ETH strategy: how much it holds, how long ` +
-          `it has been tracked, how steady its rate has been and what kind of strategy it is, and ` +
-          `the table lists all four for the ${c.fundedCount} ETH strategies holding at least ` +
-          `${tvl(c.fundedFloor)}.`
+          `${seasonedSentence(c, evidence)} The table lists those readings and the strategy ` +
+          `type for all ${c.fundedCount} ETH strategies holding at least ${tvl(c.fundedFloor)}.`
         }
       >
         <div className="eh-evidence-wrap" data-nosnippet="">
@@ -527,7 +527,7 @@ export async function EthHubBody() {
                   </th>
                   <td>{cap(SINGULAR[r.type])}</td>
                   <td>{tvl(r.vault.tvl)}</td>
-                  <td>{r.trackedDays ? trackedLabel(r.trackedDays) : "–"}</td>
+                  <td>{r.trackedDays ? r.ageLabel : "–"}</td>
                   <td>{r.stdev == null ? "–" : `±${r.stdev.toFixed(2)} pts`}</td>
                   <td>{apy(r.vault.apy24h)}</td>
                 </tr>
@@ -539,7 +539,7 @@ export async function EthHubBody() {
           <p>
             {`The largest funded ETH strategy was ${proseName(evidence[0].vault)}, holding ` +
               `${tvl(evidence[0].vault.tvl)} and tracked for ` +
-              `${trackedLabel(evidence[0].trackedDays)}. A strategy that size has had its rate ` +
+              `${evidence[0].ageLabel}. A strategy that size has had its rate ` +
               `tested by real withdrawals, and it is also a larger target for attackers.`}
           </p>
         ) : null}
@@ -705,8 +705,8 @@ export async function EthHubBody() {
         lead={
           c.stability.measuredCount
             ? `Across the ${c.stability.measuredCount} ETH strategies with a month of readings ` +
-              `behind them, ${c.stability.steadyCount} moved by less than a percentage point over ` +
-              `the 30 days to ${c.asOf}.`
+              `behind them, ${c.stability.steadyCount} had a 30-day swing (the standard deviation ` +
+              `of the daily rate) under one point in the 30 days to ${c.asOf}.`
             : undefined
         }
       >
@@ -715,9 +715,10 @@ export async function EthHubBody() {
             {`Among strategies holding at least ${tvl(c.fundedFloor)}, the steadiest over the ` +
               `trailing 30 days was ${c.stability.steadiest.name}, with a standard deviation of ` +
               `${c.stability.steadiest.stdev.toFixed(2)} points around a mean of ` +
-              `${apy(c.stability.steadiest.mean)}. The widest was ${c.stability.mostVolatile.name}, ` +
-              `which ranged from ${apyFloorLabel(c.stability.mostVolatile.min)} to ` +
-              `${apy(c.stability.mostVolatile.max)} over the same window.`}
+              `${apy(c.stability.steadiest.mean)}. The least steady was ` +
+              `${c.stability.mostVolatile.name}, with a standard deviation of ` +
+              `${c.stability.mostVolatile.stdev.toFixed(2)} points around a mean of ` +
+              `${apy(c.stability.mostVolatile.mean)}.`}
           </p>
         ) : null}
         <p>

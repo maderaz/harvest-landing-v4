@@ -19,6 +19,7 @@ import {
   byStrategyType,
   networkPicks,
   evidenceRows,
+  seasonedRows,
   strategyTypeOf,
   tokenOf,
   isL2,
@@ -40,11 +41,48 @@ import {
 // Ethereum. Every rate on the page is already net of it.
 export const HARVEST_FEE_TEXT = "10% on Base and Arbitrum and 15% on Ethereum mainnet";
 
+// The shared asset-hub H1 reads "Best Ethereum Yield", which on this site is
+// also the name of the /ethereum network page. The hub ranks the asset, so it
+// says ETH, as its title, schema and Markdown twin do.
+export const ETH_HUB_H1 = "Best ETH Yield";
+
 /** Rows holding less than this are called dust where the median is qualified. */
 export const DUST_TVL = 1_000;
 
 /** Daily-compounded equivalent of an APR, both in percent. */
 export const aprToApy = (apr: number) => ((1 + apr / 100 / 365) ** 365 - 1) * 100;
+
+/**
+ * The measured answer to "which is safest": the funded strategies that clear
+ * size, track record and steadiness together. Shared by the safety section
+ * and the Base safety FAQ so the two never name different vaults.
+ */
+export function seasonedSentence(
+  c: EthCohort,
+  evidence: EthEvidenceRow[],
+  chain?: string,
+): string {
+  const rows = seasonedRows(chain ? evidence.filter((r) => r.vault.chain === chain) : evidence);
+  const scope = chain ? ` on ${chain}` : "";
+  const bars =
+    `at least ${tvl(c.fundedFloor)}, a year or more of vault history and a 30-day swing ` +
+    `under one point`;
+  if (!rows.length) {
+    return `No ETH strategy${scope} cleared all three measured bars as of ${c.asOf}: ${bars}.`;
+  }
+  return (
+    `Measured on size, track record and rate steadiness, the ETH ` +
+    `${rows.length === 1 ? "strategy" : "strategies"}${scope} clearing all three bars as of ` +
+    `${c.asOf} (${bars}) ${rows.length === 1 ? "was" : "were"} ` +
+    `${listOf(
+      rows.map(
+        (r) =>
+          `${chain ? bare(r.vault) : proseName(r.vault)} (${tvl(r.vault.tvl)}, ` +
+          `${r.ageLabel}, ±${r.stdev!.toFixed(2)} pts)`,
+      ),
+    )}.`
+  );
+}
 
 export type FaqSpot = "top" | "network" | "types" | "safety" | "calc" | "staking" | "risk";
 export interface Faq {
@@ -173,9 +211,6 @@ export function buildFaqs(
   const allocator = types.find((t) => t.type === "allocator");
   const wethRows = c.all.filter((v) => tokenOf(v) === "WETH");
   const smallCount = c.count - c.fundedCount;
-  const baseSafest = evidence
-    .filter((r) => r.vault.chain === "Base")
-    .slice(0, 2);
 
   const list: Faq[] = [
     {
@@ -227,18 +262,7 @@ export function buildFaqs(
       q: "Which ETH yield options on Base are the safest to use?",
       at: "safety",
       a:
-        (baseSafest.length
-          ? `By size, track record and rate steadiness, the strongest ETH options on Base as of ` +
-            `${c.asOf} were ` +
-            `${listOf(
-              baseSafest.map(
-                (r) =>
-                  `${bare(r.vault)} (${tvl(r.vault.tvl)}` +
-                  (r.stdev != null ? `, ±${r.stdev.toFixed(2)} pts over 30 days` : "") +
-                  `)`,
-              ),
-            )}. `
-          : "") +
+        `${seasonedSentence(c, evidence, "Base")} ` +
         `No ETH yield is free of risk, so these are measurements rather than a safety score, ` +
         `and the safety section lists every ` +
         `funded strategy with all four readings.`,

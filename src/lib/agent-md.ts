@@ -33,6 +33,7 @@ import {
   SINGULAR,
   TYPE_BLURB,
   HARVEST_FEE_TEXT,
+  ETH_HUB_H1,
   ETH_RISKS,
   ETH_RISKS_LEAD,
   STAKING_LEAD,
@@ -213,12 +214,12 @@ function agentNotes(path: string, asOf: string, fees = "see the Harvest app."): 
 async function rankingTable(rows: YieldVault[]): Promise<string> {
   const products = new Set((await productScope()).map((v) => v.slug));
   const out = [
-    "| # | Strategy | Protocol | Network | APY 24h | APY 30d | TVL | Risk | Markdown | Page |",
-    "|---|---|---|---|---|---|---|---|---|---|",
+    "| # | Strategy | Protocol | Network | APY 24h | APY 30d | TVL | Markdown | Page |",
+    "|---|---|---|---|---|---|---|---|---|",
   ];
   rows.forEach((v, i) => {
     out.push(
-      `| ${i + 1} | ${cell(getCanonicalDisplayName(v))} | ${cell(stripChainSuffix(v.category, v.chain))} | ${cell(v.chain)} | ${formatAPY(v.apy24h)} | ${formatAPY(v.apy30d)} | ${formatTVL(v.tvl)} | ${cell(v.riskLevel)} | ${
+      `| ${i + 1} | ${cell(getCanonicalDisplayName(v))} | ${cell(stripChainSuffix(v.category, v.chain))} | ${cell(v.chain)} | ${formatAPY(v.apy24h)} | ${formatAPY(v.apy30d)} | ${formatTVL(v.tvl)} | ${
         products.has(v.slug) ? `[${v.slug}.md](${SITE_URL}/${v.slug}.md)` : "-"
       } | ${SITE_URL}/${v.slug} |`,
     );
@@ -227,7 +228,7 @@ async function rankingTable(rows: YieldVault[]): Promise<string> {
 }
 
 function methodologyNote(): string {
-  return `Ranked by 24-hour APY, highest first. APY 30d is the trailing 30-day average; for a strategy tracked under 30 days it is the average of the days tracked. APY and TVL come from Harvest's indexer, refreshed hourly. Methodology: ${METHODOLOGY_URL}\n`;
+  return `Ranked by 24-hour APY, highest first. APY 30d is the trailing 30-day average; for a strategy tracked under 30 days it is the average of the days tracked. APY and TVL come from Harvest's indexer, refreshed several times a day. Methodology: ${METHODOLOGY_URL}\n`;
 }
 
 async function hubMd(page: AgentPage, title: string, rows: YieldVault[], empty: string, path: string): Promise<string> {
@@ -273,7 +274,7 @@ async function ethMd(page: AgentPage): Promise<string | null> {
   const m = await ethPageModel();
   if (!m) return null;
   const { c } = m;
-  const title = assetHubH1("ETH");
+  const title = ETH_HUB_H1;
   const asOf = c.asOfIso;
   const link = (part: string | { text: string; href: string }) =>
     typeof part === "string" ? part : `[${part.text}](${part.href})`;
@@ -403,7 +404,6 @@ async function productMd(page: AgentPage): Promise<string> {
     ["TVL", formatTVL(v.tvl)],
     ["Holders", holders !== null ? holders.toLocaleString("en-US") : "-"],
     ["Tracked for", days > 0 ? `${days} days` : "-"],
-    ["Risk level", v.riskLevel],
     ...(rewardSymbols ? [["Reward tokens", rewardSymbols] as [string, string]] : []),
   ];
 
@@ -458,7 +458,6 @@ async function productMd(page: AgentPage): Promise<string> {
     ...depositSections(v, d, app, lp ? `${v.asset}/${lp.counterpart}` : null, lp?.platform ?? null),
     "## Risks",
     "",
-    `- Harvest risk level: ${v.riskLevel}.`,
     "- Smart-contract, strategy and underlying-protocol risk apply to every strategy.",
     ...(lp ? ["- This vault holds a liquidity-pool position in two tokens, so its value moves with both."] : []),
     `- Risk framework: ${RISK_URL}`,

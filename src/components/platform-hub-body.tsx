@@ -180,7 +180,7 @@ export async function PlatformHubBody({ platformSlug, livePlatformSlugs }: Props
                     .map((a) => a.asset)
                     .join(", ")} across ${chainStats
                     .map((c) => c.chain)
-                    .join(", ")}. Updated hourly.`
+                    .join(", ")}. Updated several times a day.`
                 : `${platform.display} strategies are populating, check back shortly.`}
             </p>
           </div>

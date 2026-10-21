@@ -167,8 +167,10 @@ export function networkPicks(c: EthCohort, chain: string, limit = 3): EthNetwork
 export interface EthEvidenceRow {
   vault: YieldVault;
   type: EthStrategyType;
-  /** Days between the first and latest reading Harvest holds. */
+  /** Days from the vault's first reading to the page's as-of date. */
   trackedDays: number;
+  /** The same span in calendar years and months, for display. */
+  ageLabel: string;
   /** 30-day standard deviation of the daily APY, in points, when measured. */
   stdev: number | null;
 }
@@ -178,21 +180,42 @@ export function evidenceRows(
   history: Record<string, FullVaultHistory> | null,
 ): EthEvidenceRow[] {
   const stdevBySlug = new Map(c.stability.rows.map((r) => [r.slug, r.stdev]));
+  const asOfTs = Date.parse(c.asOfIso) / 1000;
   return c.funded
     .map((v) => {
       const h = history?.[v.contractAddress] ?? history?.[v.contractAddress.toLowerCase()];
       const ts = [...(h?.apyHistory ?? []), ...(h?.tvlHistory ?? [])].map((p) => p.timestamp);
-      const trackedDays = ts.length
-        ? Math.floor((Math.max(...ts) - Math.min(...ts)) / 86400)
-        : 0;
+      const firstTs = ts.length ? Math.min(...ts) : asOfTs;
+      const trackedDays = Math.floor((asOfTs - firstTs) / 86400);
       return {
         vault: v,
         type: strategyTypeOf(v),
         trackedDays,
+        ageLabel: calendarAgeLabel(firstTs, asOfTs),
         stdev: stdevBySlug.get(v.slug) ?? null,
       };
     })
     .sort((a, b) => b.vault.tvl - a.vault.tvl);
+}
+
+/**
+ * trackedLabel on calendar dates. Dividing whole days by an average month
+ * reads a vault opened six years and a day ago as "5 years and 11 months".
+ */
+export function calendarAgeLabel(fromTs: number, toTs: number): string {
+  const a = new Date(fromTs * 1000);
+  const b = new Date(toTs * 1000);
+  let months =
+    (b.getUTCFullYear() - a.getUTCFullYear()) * 12 + (b.getUTCMonth() - a.getUTCMonth());
+  if (b.getUTCDate() < a.getUTCDate()) months -= 1;
+  const days = Math.floor((toTs - fromTs) / 86400);
+  if (days < 60 || months < 1) return `${days} days`;
+  if (months < 12) return `${months} months`;
+  const years = Math.floor(months / 12);
+  const rest = months % 12;
+  return rest
+    ? `${years} ${years === 1 ? "year" : "years"} and ${rest} ${rest === 1 ? "month" : "months"}`
+    : `${years} ${years === 1 ? "year" : "years"}`;
 }
 
 /** "3 years and 2 months", "11 months", "26 days". */
@@ -205,6 +228,19 @@ export function trackedLabel(days: number): string {
   return rest
     ? `${years} ${years === 1 ? "year" : "years"} and ${rest} ${rest === 1 ? "month" : "months"}`
     : `${years} ${years === 1 ? "year" : "years"}`;
+}
+
+// "Safest" is answered with the funded strategies that clear every measured
+// bar at once, not with the largest: size alone is what the floor already
+// checks, and a five-month-old vault with a wide swing is not a safe answer.
+export const SEASONED_DAYS = 365;
+export const STEADY_STDEV = 1;
+
+/** Funded rows with a year of history and a 30-day swing under one point. */
+export function seasonedRows(rows: EthEvidenceRow[]): EthEvidenceRow[] {
+  return rows.filter(
+    (r) => r.trackedDays >= SEASONED_DAYS && r.stdev != null && r.stdev < STEADY_STDEV,
+  );
 }
 
 /** Median 24h APY across strategies clearing the liquidity floor. */
