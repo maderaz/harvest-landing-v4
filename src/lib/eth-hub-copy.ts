@@ -504,6 +504,15 @@ export async function ethPageModel() {
     `least ${tvl(c.fundedFloor)}, and ${apy(c.medianApy)} across all ${c.count}, ` +
     `${dustCount} of which held under ${tvl(DUST_TVL)}.`;
 
+  // The sentence under the H1 on the HTML page: figure, product, floor, date,
+  // nothing else, so a visitor arriving from an AI answer reads one line and
+  // then the table. The longer answer and the findings stay in /eth.md, and
+  // every figure they carry is restated in the section it belongs to.
+  const heroAnswer =
+    `The best ETH yield in Harvest's index is ${apy(best.apy24h)} APY, paid in ETH by ` +
+    `${proseName(best)}, among strategies holding at least ${tvl(c.fundedFloor)}, as of ` +
+    `${c.asOf}.`;
+
   const findings = [
     `The ${c.count} ETH strategies tracked here held ${tvl(c.totalTvl)} between them across ` +
       `${c.chainCount} ${plural(c.chainCount, "network", "networks")}, and ${c.fundedCount} ` +
@@ -546,6 +555,7 @@ export async function ethPageModel() {
     l2Count,
     fundedL2,
     answer,
+    heroAnswer,
     findings,
   };
 }

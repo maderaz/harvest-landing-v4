@@ -210,18 +210,16 @@ export async function EthHubBody() {
     appUrl: harvestAppUrl(v.chain, v.contractAddress),
   }));
 
-  // The questions the page answers, as a jump list under the hero. A reader
-  // arriving from an AI answer usually came with one of these in mind.
+  // The questions the page answers, as a short jump list under the top 10.
+  // Kept to four so the top of the page is the answer and the table; the
+  // full index of questions sits at the foot of the page.
   const jumps: { href: string; label: string }[] = [
     { href: "#by-network", label: "ETH yield on Base" },
-    { href: "#by-network", label: "Base vs Arbitrum vs mainnet" },
-    { href: "#strategy-types", label: "What to do with WETH" },
     { href: "#safest", label: "Risk and safety" },
     { href: "#vs-staking", label: "Yield vs staking" },
     { href: "#calculator", label: "Earnings calculator" },
-    { href: "#how-to-start", label: "How to start" },
-    { href: "#faq", label: "All questions" },
   ];
+  const topRaw = c.bestRaw && c.bestRaw.slug !== best.slug ? c.bestRaw : null;
 
   return (
     <div className="uni-hub-test uh-page eh-page">
@@ -296,47 +294,40 @@ export async function EthHubBody() {
           <h1 className="uni-hub-h1">{ETH_HUB_H1}</h1>
         </div>
         <p className="uh-answer">
-          <Em text={m.answer} />
+          <Em text={m.heroAnswer} />
         </p>
-        <p className="uh-updated" data-dateline="">
-          Rates last recorded {c.asOf} at {asOfTime} UTC, and refreshed several times a day.
+        {/* Three figures as text, not a chart: each tile is a label and a
+            value an extractor can read, dated by the line under them. */}
+        <dl className="eh-tiles" data-asof={c.asOfIso}>
+          <div className="eh-tile">
+            <dt>Best above {tvl(c.fundedFloor)}</dt>
+            <dd className="eh-tile-v">{apy(best.apy24h)}</dd>
+            <dd className="eh-tile-s">
+              {bare(best)} · {best.chain}
+            </dd>
+          </div>
+          {topRaw ? (
+            <div className="eh-tile">
+              <dt>Top rate overall</dt>
+              <dd className="eh-tile-v">{apy(topRaw.apy24h)}</dd>
+              <dd className="eh-tile-s">
+                {bare(topRaw)} · {SINGULAR[strategyTypeOf(topRaw)]}, {tvl(topRaw.tvl)}
+              </dd>
+            </div>
+          ) : null}
+          <div className="eh-tile">
+            <dt>Tracked</dt>
+            <dd className="eh-tile-v">{tvl(c.totalTvl)}</dd>
+            <dd className="eh-tile-s">
+              {c.count} strategies on {c.chainCount} networks
+            </dd>
+          </div>
+        </dl>
+        <p className="uh-updated eh-meta" data-dateline="">
+          Updated {c.asOf}, {asOfTime} UTC · Rates after Harvest&rsquo;s fee ·{" "}
+          <Link href="/methodology">Methodology</Link>
         </p>
-        <p className="eh-whose">
-          {`Every rate here is the APY of a Harvest vault built on the named protocol, after ` +
-            `Harvest's fee on harvested yield (${HARVEST_FEE_TEXT}), so it can differ from the rate ` +
-            `in that protocol's own app. `}
-          <strong>Autopilot is Harvest&rsquo;s own allocator</strong>, which moves ETH between
-          lending venues as their rates change. Liquid staking tokens such as stETH and rETH are
-          not ranked here.
-        </p>
-        {/* A <nav>, since it is navigation: the labels are link text, not
-            claims, and the atomicity gate strips <nav> like any other chrome. */}
-        <nav aria-label="Jump to an answer">
-          <ul className="eh-jumps">
-            {jumps.map((j) => (
-              <li key={j.label}>
-                <a href={j.href}>{j.label}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
       </div>
-
-      <section className="uh-summary" aria-labelledby="summary" data-asof={c.asOfIso}>
-        <h2 className="uh-summary-h" id="summary">
-          Summary
-        </h2>
-        <p className="uh-summary-date" data-dateline="">
-          Every figure below was recorded {c.asOf}.
-        </p>
-        <ul className="uh-findings">
-          {m.findings.map((f) => (
-            <li key={f}>
-              <Em text={f} />
-            </li>
-          ))}
-        </ul>
-      </section>
 
       <Block
         id="top-ten"
@@ -363,6 +354,17 @@ export async function EthHubBody() {
             `few hundred dollars of ETH. The headline figure uses a ${tvl(c.fundedFloor)} floor ` +
             `for that reason, and ${c.fundedCount} of the ${c.count} strategies cleared it.`}
         </p>
+        {/* A <nav>, since it is navigation: the labels are link text, not
+            claims, and the atomicity gate strips <nav> like any other chrome. */}
+        <nav aria-label="Jump to an answer">
+          <ul className="eh-jumps">
+            {jumps.map((j) => (
+              <li key={j.label}>
+                <a href={j.href}>{j.label}</a>
+              </li>
+            ))}
+          </ul>
+        </nav>
         <Ask items={asks("top")} />
       </Block>
 
@@ -842,6 +844,15 @@ export async function EthHubBody() {
           behind them retires or fails the risk framework. Solo staking, liquid staking tokens
           held on their own and centralised exchange products are outside it. The inclusion rules
           are on the <Link href="/methodology">methodology page</Link>.
+        </p>
+        <p className="eh-whose">
+          {`Every rate here is the APY of a Harvest vault built on the named protocol, after ` +
+            `Harvest's fee on harvested yield, which as of ${c.asOf} was ${HARVEST_FEE_TEXT}, so ` +
+            `it can differ from the rate ` +
+            `in that protocol's own app. `}
+          <strong>Autopilot is Harvest&rsquo;s own allocator</strong>, which moves ETH between
+          lending venues as their rates change. Liquid staking tokens such as stETH and rETH are
+          not ranked here.
         </p>
       </Block>
 

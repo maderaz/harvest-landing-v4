@@ -32,6 +32,56 @@
   background: var(--uni-gold-soft, rgba(255, 185, 54, 0.12));
 }
 
+/* === Hero tiles =====================================================
+   The answer sentence, then three figures, then one meta line. Everything
+   else that used to sit above the table lives further down the page. */
+.uni-hub-test.eh-page .eh-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+  margin: 24px 0 0;
+}
+.uni-hub-test.eh-page .eh-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--uni-line);
+  border-radius: var(--uni-radius-sm, 14px);
+  background: var(--uni-card, transparent);
+  min-width: 0;
+}
+.uni-hub-test.eh-page .eh-tile dt {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page .eh-tile dd {
+  margin: 0;
+}
+.uni-hub-test.eh-page .eh-tile-v {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 650;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page .eh-tile-s {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--uni-ink-2, var(--uni-ink-3));
+}
+.uni-hub-test.eh-page .eh-meta {
+  margin-top: 14px;
+}
+.uni-hub-test.eh-page .eh-meta a {
+  color: inherit;
+}
+.uni-hub-test.eh-page .uh-block .eh-jumps {
+  margin-top: 18px;
+}
+
 /* === Network cards ================================================== */
 .uni-hub-test.eh-page .eh-nets {
   display: grid;
