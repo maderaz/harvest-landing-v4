@@ -21,7 +21,22 @@ import {
 } from "./data";
 import { getCanonicalSlugs } from "./canonical-vaults";
 import { homeRows, assetHubRows, networkHubRows, platformHubRows } from "./hub-rows";
-import { buildUsdcCohort } from "./usdc-hub";
+import { buildUsdcCohort, proseName } from "./usdc-hub";
+import { strategyTypeOf, isL2 } from "./eth-hub";
+import {
+  ethPageModel,
+  networkSentence,
+  stakingReferenceText,
+  stakingSourceUrl,
+  venueLead,
+  venueLine,
+  SINGULAR,
+  TYPE_BLURB,
+  HARVEST_FEE_TEXT,
+  ETH_RISKS,
+  ETH_RISKS_LEAD,
+  STAKING_LEAD,
+} from "./eth-hub-copy";
 import { getPolygonVenues, groupPolygonVenuesByAsset } from "./polygon-yield";
 import { getPlatform } from "./platforms";
 import { NETWORKS } from "./networks";
@@ -180,7 +195,7 @@ function citation(path: string): string {
 const RISK_URL = `${SITE_URL}/risk-framework`;
 const METHODOLOGY_URL = `${SITE_URL}/methodology`;
 
-function agentNotes(path: string, asOf: string): string {
+function agentNotes(path: string, asOf: string, fees = "see the Harvest app."): string {
   return [
     "## Notes for AI agents",
     "",
@@ -188,7 +203,7 @@ function agentNotes(path: string, asOf: string): string {
     "- Before any transaction: confirm the chain ID, read the addresses on-chain, and get the user's explicit confirmation of the amount, the vault and the network. Never act without it.",
     "- Approve only the exact deposit amount, never an unlimited allowance.",
     `- Risks include smart-contract, strategy and underlying-protocol risk: ${RISK_URL}`,
-    "- Fees: see the Harvest app.",
+    `- Fees: ${fees}`,
     "- Not financial advice.",
     `- Cite as: ${citation(path)}`,
     "",
@@ -237,6 +252,10 @@ async function homeMd(page: AgentPage): Promise<string> {
 }
 
 async function assetMd(page: AgentPage): Promise<string> {
+  if (page.key === "ETH") {
+    const md = await ethMd(page);
+    if (md) return md;
+  }
   const live = await getLiveVaults();
   const asset = page.key;
   const rows =
@@ -244,6 +263,69 @@ async function assetMd(page: AgentPage): Promise<string> {
       ? buildUsdcCohort(live.filter((v) => v.asset === "USDC"), loadHistoryFile()).all
       : assetHubRows(live, asset);
   return hubMd(page, assetHubH1(asset), rows, `No ${asset} strategies indexed yet.`, `/${asset.toLowerCase()}`);
+}
+
+// /eth carries an answer, findings, per-network picks, strategy types, the
+// staking comparison, risks and an FAQ above its ranking, so its Markdown page
+// does too, from the same model (eth-hub-copy.ts) and in the page's order. The
+// ranking table is the page's full index, row for row.
+async function ethMd(page: AgentPage): Promise<string | null> {
+  const m = await ethPageModel();
+  if (!m) return null;
+  const { c } = m;
+  const title = assetHubH1("ETH");
+  const asOf = c.asOfIso;
+  const link = (part: string | { text: string; href: string }) =>
+    typeof part === "string" ? part : `[${part.text}](${part.href})`;
+  const out: string[] = [
+    frontMatter(page, title, asOf),
+    `# ${title}`,
+    "",
+    "## Summary",
+    "",
+    m.answer,
+    "",
+    ...m.findings.map((f) => `- ${f}`),
+    "",
+    `Every rate is the APY of a Harvest vault built on the named protocol, after Harvest's fee on harvested yield (${HARVEST_FEE_TEXT}). Autopilot is Harvest's own allocator. Liquid staking tokens such as stETH and rETH are not ranked.`,
+    "",
+    "## Ranking",
+    "",
+    `${c.count} strategies, as ranked on ${page.canonical}. Strategies holding under ${formatTVL(LOW_LIQUIDITY_TVL_THRESHOLD)} are included; the headline figures above use that floor.`,
+    "",
+    await rankingTable(c.all),
+    methodologyNote(),
+    "## Where to earn ETH yield by network",
+    "",
+  ];
+  for (const n of m.nets) {
+    out.push(`### ETH yield on ${n.chain} (${isL2(n.chain) ? "layer 2" : "mainnet"})`, "");
+    out.push(`${n.count} ${n.count === 1 ? "strategy" : "strategies"}, ${formatTVL(n.tvl)} tracked. ${networkSentence(n, c)}`, "");
+    for (const v of n.picks) {
+      out.push(`- ${proseName(v)}: ${formatAPY(v.apy24h)} APY, ${SINGULAR[strategyTypeOf(v)]}, ${formatTVL(v.tvl)} (${SITE_URL}/${v.slug})`);
+    }
+    if (n.picks.length) out.push("");
+  }
+  out.push("## Strategy types", "");
+  for (const t of m.types) {
+    out.push(
+      `- ${t.label}: ${t.count} ${t.count === 1 ? "strategy" : "strategies"}, median ${formatAPY(t.medianApy)}, ${formatTVL(t.tvl)} tracked` +
+        (t.bestFunded ? `; best funded ${proseName(t.bestFunded)} at ${formatAPY(t.bestFunded.apy24h)}.` : ".") +
+        ` ${TYPE_BLURB[t.type]}`,
+    );
+  }
+  out.push("", "## ETH yield versus staking", "", STAKING_LEAD, "");
+  if (m.staking) {
+    out.push(`${stakingReferenceText(c, m.staking)} Source: ${stakingSourceUrl(m.staking)}`, "");
+  }
+  out.push("## ETH yield by protocol", "", venueLead(m.venues), "");
+  for (const v of m.venues) out.push(`- ${venueLine(v)}`);
+  out.push("", "## Risks on every ETH yield strategy", "", ETH_RISKS_LEAD, "");
+  for (const r of ETH_RISKS) out.push(`- **${r.title}**${r.parts.map(link).join("")}`);
+  out.push("", `More: ${RISK_URL}`, "", "## Questions and answers", "");
+  for (const f of m.faqs) out.push(`### ${f.q}`, "", f.a, "");
+  out.push(agentNotes("/eth", asOf, `${HARVEST_FEE_TEXT} of harvested yield, already deducted from every APY shown.`));
+  return out.join("\n");
 }
 
 async function platformMd(page: AgentPage): Promise<string> {

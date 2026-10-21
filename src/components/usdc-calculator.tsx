@@ -157,7 +157,7 @@ export function UsdcCalculator({
             >
               {products.map((p) => (
                 <option key={p.slug} value={p.slug}>
-                  {p.name} · {p.apy.toFixed(2)}% APY
+                  {`${p.name} · ${p.apy.toFixed(2)}% APY`}
                 </option>
               ))}
             </select>
@@ -200,7 +200,7 @@ export function UsdcCalculator({
                 <p className="uh-calc-detail">
                   {inDollars ? money(shown.amount) : shown.amount.toLocaleString("en-US")}{" "}
                   {asset} in {shown.product.name} at{" "}
-                  {shown.product.apy.toFixed(2)}% APY, the rate recorded as of {asOf}.
+                  {`${shown.product.apy.toFixed(2)}% APY, the rate recorded as of ${asOf}.`}
                 </p>
                 <ul className="uh-calc-facts">
                   <li>
@@ -212,7 +212,7 @@ export function UsdcCalculator({
                   <li>
                     Taken out as it accrues, it earns{" "}
                     <strong>{fmt(result.simple)}</strong> over the same year,
-                    which is the {result.nominal.toFixed(2)}% nominal rate
+                    which is the {`${result.nominal.toFixed(2)}%`} nominal rate
                     underneath that APY.
                   </li>
                   <li>

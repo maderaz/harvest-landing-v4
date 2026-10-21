@@ -71,7 +71,12 @@ for (const f of mdFiles) {
 
 // -------------------------------------------------------------- rankings
 
-const pageRows = (page) => [...page.matchAll(/class="hub-row" href="\/([a-z0-9-]+)"/g)].map((m) => m[1]);
+// A page that renders a short table above its full index (/eth's top 10)
+// repeats its first row where the full index starts; compare that index.
+const pageRows = (page) => {
+  const rows = [...page.matchAll(/class="hub-row" href="\/([a-z0-9-]+)"/g)].map((m) => m[1]);
+  return rows.slice(Math.max(0, rows.lastIndexOf(rows[0])));
+};
 const mdRows = (md) =>
   [...md.matchAll(/^\| \d+ \|.*\| https:\/\/harvest\.finance\/([a-z0-9-]+) \|$/gm)].map((m) => m[1]);
 

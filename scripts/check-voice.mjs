@@ -162,7 +162,17 @@ for (const slug of PAGES) {
 // from the HTML page (a product's description line and Overview, the Polygon
 // operator note) is left to the gates that govern that page, as it is on the
 // page itself.
-const QUOTED_SECTIONS = ["## Overview"];
+// eth.md reuses the /eth page's sentences section by section (eth-hub-copy.ts).
+const QUOTED_SECTIONS = [
+  "## Overview",
+  "## Summary",
+  "## Where to earn ETH yield by network",
+  "## Strategy types",
+  "## ETH yield versus staking",
+  "## ETH yield by protocol",
+  "## Risks on every ETH yield strategy",
+  "## Questions and answers",
+];
 let mdScanned = 0;
 for (const name of (await fs.readdir(PUBLIC_DIR)).filter((f) => f.endsWith(".md"))) {
   const raw = await fs.readFile(path.join(PUBLIC_DIR, name), "utf8");

@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import type { YieldVault } from "./types";
 import type { FullVaultHistory } from "./data";
 import {
@@ -203,6 +205,107 @@ export function trackedLabel(days: number): string {
   return rest
     ? `${years} ${years === 1 ? "year" : "years"} and ${rest} ${rest === 1 ? "month" : "months"}`
     : `${years} ${years === 1 ? "year" : "years"}`;
+}
+
+/** Median 24h APY across strategies clearing the liquidity floor. */
+export function fundedMedian(c: EthCohort): number {
+  return median(c.funded.map((v) => v.apy24h).sort((a, b) => a - b));
+}
+
+// ---- by protocol ------------------------------------------------------------
+//
+// c.byVenue groups on the protocol name alone, so the leveraged WETH loop on
+// Aave lands in the Aave group and stretches its range to the loop's rate,
+// which is a claim about Aave lending that Aave lending never paid. The loop
+// gets its own group here, as it does in the strategy-type breakdown.
+
+export interface EthVenue {
+  venue: string;
+  loop: boolean;
+  rows: YieldVault[];
+  count: number;
+  minApy: number;
+  maxApy: number;
+  medianApy: number;
+  tvl: number;
+  chains: string[];
+}
+
+export function ethVenues(c: EthCohort): EthVenue[] {
+  const groups = new Map<string, YieldVault[]>();
+  for (const v of c.all) {
+    const k = `${venueOf(v)}|${strategyTypeOf(v) === "looping" ? "loop" : ""}`;
+    groups.set(k, [...(groups.get(k) ?? []), v]);
+  }
+  return [...groups.entries()]
+    .map(([k, rows]) => {
+      const asc = rows.map((r) => r.apy24h).sort((a, b) => a - b);
+      return {
+        venue: k.split("|")[0],
+        loop: k.endsWith("|loop"),
+        rows,
+        count: rows.length,
+        minApy: asc[0],
+        maxApy: asc[asc.length - 1],
+        medianApy: median(asc),
+        tvl: rows.reduce((s, r) => s + r.tvl, 0),
+        chains: [...new Set(rows.map((r) => r.chain))],
+      };
+    })
+    .sort((a, b) => Number(a.loop) - Number(b.loop) || b.count - a.count || b.medianApy - a.medianApy);
+}
+
+// ---- staking reference ------------------------------------------------------
+//
+// Lido's stETH APR, read from its TokenRebased events by
+// scripts/fetch-eth-staking-reference.mjs and committed daily. It is a
+// reference beside the ranking, never a row in it: stETH is a liquid staking
+// token and the page excludes those. Null when the file is absent or older
+// than a week, and the page then says the index does not measure staking
+// rather than quoting a stale or invented figure.
+
+export interface StakingReference {
+  name: string;
+  aprAverage: number;
+  aprLatest: number;
+  reportCount: number;
+  fromIso: string;
+  asOfIso: string;
+  contract: string;
+  /** "October 21, 2026", UTC. */
+  asOf: string;
+  latestTx: string;
+}
+
+const STAKING_MAX_AGE_DAYS = 7;
+
+export function loadStakingReference(): StakingReference | null {
+  const file = path.join(process.cwd(), "data", "eth-staking-reference.json");
+  if (!fs.existsSync(file)) return null;
+  try {
+    const raw = JSON.parse(fs.readFileSync(file, "utf-8"));
+    const asOfMs = Date.parse(raw.asOfIso);
+    if (!Number.isFinite(asOfMs) || typeof raw.aprAverage !== "number") return null;
+    if (Date.now() - asOfMs > STAKING_MAX_AGE_DAYS * 86400_000) return null;
+    return {
+      name: raw.name,
+      aprAverage: raw.aprAverage,
+      aprLatest: raw.aprLatest,
+      reportCount: raw.reportCount,
+      fromIso: raw.fromIso,
+      asOfIso: raw.asOfIso,
+      contract: raw.contract,
+      asOf: new Date(asOfMs).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+        timeZone: "UTC",
+      }),
+      latestTx: raw.reports?.at(-1)?.tx ?? "",
+    };
+  } catch {
+    return null;
+  }
 }
 
 /** WETH, ETH or stETH: the token a row is denominated in, from its name. */

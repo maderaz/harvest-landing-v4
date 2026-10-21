@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { YieldVault } from "@/lib/types";
 import { formatAPY, formatTVL, stripChainSuffix } from "@/lib/format";
-import { isLowLiquidityTvl } from "@/lib/admin-rules";
+import { isLowLiquidityTvl, LOW_LIQUIDITY_TVL_THRESHOLD } from "@/lib/admin-rules";
 import { isLpPairVault, getCanonicalDisplayName } from "@/lib/lp-pair";
 import { AssetIcon, ChainIcon } from "./token-icons";
 import { LpBadge } from "./lp-badge";
@@ -439,11 +439,10 @@ function Row({
       {metrics && (
         <span className="hub-cell hub-num hub-tvl">
           {formatTVL(vault.tvl)}
-          {isLowLiquidityTvl(vault.tvl) && (
-            <span className="hub-lowliq" title="Holds under the $50K liquidity floor">
-              low
-            </span>
-          )}
+          {/* Same text node run as the figure, so a parser reading the cell
+              gets "$28K (below $50K)" and not a second, empty-looking cell. */}
+          {isLowLiquidityTvl(vault.tvl) &&
+            ` (below ${formatTVL(LOW_LIQUIDITY_TVL_THRESHOLD)})`}
         </span>
       )}
       {metrics && <span className="hub-cell hub-num hub-apy30">{formatAPY(vault.apy30d)}</span>}
