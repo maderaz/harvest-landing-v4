@@ -372,12 +372,13 @@ export async function EthHubBody() {
           <Em text={m.heroAnswer} />
         </p>
         <div className="eh-ctas">
-          <a className="eh-btn eh-btn-primary" href="https://app.harvest.finance" target="_blank" rel="noopener noreferrer">
+          <a className="eh-btn eh-btn-primary" href="https://app.harvest.finance/?search=eth&asset=singlestakes" target="_blank" rel="noopener noreferrer">
             Open the Harvest app
           </a>
-          <Link className="eh-btn" href="/methodology">
-            How rates are measured
-          </Link>
+          <a className="eh-btn" href="#top-ten">
+            See the top 10 ranking
+            <span aria-hidden="true">&nbsp;↓</span>
+          </a>
         </div>
       </div>
 
