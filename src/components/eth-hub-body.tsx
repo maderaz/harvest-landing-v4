@@ -205,6 +205,15 @@ function Block({
   );
 }
 
+/** A link to a primary source off the site, opened in a new tab. */
+function Ext({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <a href={href} target="_blank" rel="noopener noreferrer">
+      {children}
+    </a>
+  );
+}
+
 function Chevron() {
   return (
     <svg
@@ -270,15 +279,6 @@ export async function EthHubBody() {
     appUrl: harvestAppUrl(v.chain, v.contractAddress),
   }));
 
-  // The questions the page answers, as a short jump list under the top 10.
-  // Kept to four so the top of the page is the answer and the table; the
-  // full index of questions sits at the foot of the page.
-  const jumps: { href: string; label: string }[] = [
-    { href: "#by-network", label: "ETH yield on Base" },
-    { href: "#safest", label: "Risk and safety" },
-    { href: "#vs-staking", label: "Yield vs staking" },
-    { href: "#calculator", label: "Earnings calculator" },
-  ];
   const topRaw = c.bestRaw && c.bestRaw.slug !== best.slug ? c.bestRaw : null;
 
   return (
@@ -384,13 +384,6 @@ export async function EthHubBody() {
       {/* Four figures as text in a ruled grid: a label over a value, dated by
           the meta line above. */}
       <dl className="eh-statgrid" data-asof={c.asOfIso}>
-        <div>
-          <dt>Best above {tvl(c.fundedFloor)}</dt>
-          <dd className="eh-sg-v">{apy(best.apy24h)}</dd>
-          <dd className="eh-sg-s">
-            {bare(best)} · {best.chain}
-          </dd>
-        </div>
         {topRaw ? (
           <div>
             <dt>Top rate overall</dt>
@@ -400,6 +393,13 @@ export async function EthHubBody() {
             </dd>
           </div>
         ) : null}
+        <div>
+          <dt>Best above {tvl(c.fundedFloor)}</dt>
+          <dd className="eh-sg-v">{apy(best.apy24h)}</dd>
+          <dd className="eh-sg-s">
+            {bare(best)} · {best.chain}
+          </dd>
+        </div>
         <div>
           <dt>Tracked in ETH strategies</dt>
           <dd className="eh-sg-v">{tvl(c.totalTvl)}</dd>
@@ -438,22 +438,20 @@ export async function EthHubBody() {
         />
         <p className="uh-note">
           {`Rates are read from the vault contracts on ${listOf(visibleChains)}, net of fees, and ` +
-            `refreshed several times a day. ` +
+            `refreshed several times a day, as the `}
+          <Link href="/methodology">methodology</Link>
+          {` sets out. ` +
             `Sorted on the 24-hour rate with no floor applied, so a row near the top can sit on a ` +
             `few hundred dollars of ETH. The headline figure uses a ${tvl(c.fundedFloor)} floor ` +
             `for that reason, and ${c.fundedCount} of the ${c.count} strategies cleared it.`}
         </p>
-        {/* A <nav>, since it is navigation: the labels are link text, not
-            claims, and the atomicity gate strips <nav> like any other chrome. */}
-        <nav aria-label="Jump to an answer">
-          <ul className="eh-jumps">
-            {jumps.map((j) => (
-              <li key={j.label}>
-                <a href={j.href}>{j.label}</a>
-              </li>
-            ))}
-          </ul>
-        </nav>
+        <p>
+          The rest of the page breaks the ranking down: <a href="#by-network">ETH yield by network</a>
+          , <a href="#safest">what can be measured about safety</a>,{" "}
+          <a href="#vs-staking">how lending compares with staking</a> and{" "}
+          <a href="#calculator">what 1 ETH earns in a year</a>. The same rates for stablecoins are on
+          the <Link href="/usdc">USDC yield ranking</Link>.
+        </p>
         <Ask items={asks("top")} />
       </Block>
 
@@ -477,6 +475,14 @@ export async function EthHubBody() {
               `transaction there costs cents.`,
           ]}
         />
+        <p>
+          <strong>Gas decides more than the rate on a small position.</strong>{" "}
+          <Link href="/base">Base</Link> and <Link href="/arbitrum">Arbitrum</Link> are{" "}
+          <Ext href="https://ethereum.org/en/layer-2/">layer 2 networks</Ext> that settle a
+          transaction for cents, while <Link href="/ethereum">Ethereum mainnet</Link> can cost several
+          dollars when it is busy. On a position of a few ETH, that difference decides whether
+          entering and leaving is worth it at all.
+        </p>
         <div className="eh-nets">
           {nets.map((n) => (
             <article className="eh-net" key={n.chain} aria-labelledby={`net-${n.chain}`}>
@@ -516,12 +522,6 @@ export async function EthHubBody() {
           ))}
         </div>
         <p>
-          <strong>Gas decides more than the rate on a small position.</strong>{" "}
-          {`Base and Arbitrum settle a transaction for cents, while Ethereum mainnet can cost ` +
-            `several dollars when it is busy. On a position of a few ETH, that difference decides ` +
-            `whether entering and leaving is worth it at all.`}
-        </p>
-        <p>
           <Em
             text={
               `Of the ${c.count} ETH strategies tracked, ${l2Count} run on a layer 2. Each card ` +
@@ -552,6 +552,13 @@ export async function EthHubBody() {
             "Every step from a money market to a loop adds a layer of contracts, and only leveraged looping can be liquidated.",
           ]}
         />
+        <p>
+          <strong>WETH and ETH are the same asset in every row.</strong>{" "}
+          <Ext href="https://ethereum.org/en/wrapped-eth/">Wrapped ETH</Ext> is ETH locked one-to-one
+          in a contract that issues an{" "}
+          <Ext href="https://eips.ethereum.org/EIPS/eip-20">ERC-20 token</Ext>, because lending
+          contracts can hold ERC-20 tokens and cannot hold native ETH.
+        </p>
         <div className="eh-types">
           {types.map((t) => (
             <article className="eh-type" key={t.type} aria-labelledby={`type-${t.type}`}>
@@ -586,25 +593,21 @@ export async function EthHubBody() {
           ))}
         </div>
         <p>
-          <strong>WETH and ETH are the same asset in every row.</strong>{" "}
-          {`Wrapped ETH is ETH locked one-to-one in a contract that issues an ERC-20 token, ` +
-            `because lending contracts can hold ERC-20 tokens and cannot hold native ETH.`}
-        </p>
-        <p>
           {`WETH unwraps back to ETH at any time, and on Base every strategy takes it, so ` +
             `wrapping is the first step and a single transaction.`}
         </p>
         <p>
           <strong>A money market has the fewest layers, and every step up adds one.</strong>{" "}
-          A          money market is one protocol and one rate curve. A curated vault adds the curator&rsquo;s choice of markets. An allocator
-          adds a contract that moves the position between venues.
+          A money market such as <Link href="/aave">Aave</Link> is one protocol and one rate curve.
+          A curated vault on <Link href="/morpho">Morpho</Link>{" "}adds the curator&rsquo;s choice of
+          markets. An allocator adds a contract that moves the position between venues.
         </p>
+        <EthLoopFigure />
         <p>
           <strong>Looping adds leverage</strong>, the only one of the four with a liquidation
           path. Building the loop costs fees, so it charges an entry cost the app shows before a
           position opens.
         </p>
-        <EthLoopFigure />
         <Ask items={asks("types")} />
       </Block>
 
@@ -637,11 +640,13 @@ export async function EthHubBody() {
                     <Link href={`/${r.vault.slug}`}>{bare(r.vault)}</Link>
                     <span className="eh-netname">{r.vault.chain}</span>
                   </th>
-                  <td>{cap(SINGULAR[r.type])}</td>
-                  <td>{tvl(r.vault.tvl)}</td>
-                  <td>{r.trackedDays ? r.ageLabel : "–"}</td>
-                  <td>{r.stdev == null ? "–" : `±${r.stdev.toFixed(2)} pts`}</td>
-                  <td>{apy(r.vault.apy24h)}</td>
+                  <td data-label="Type">{cap(SINGULAR[r.type])}</td>
+                  <td data-label="Tracked value">{tvl(r.vault.tvl)}</td>
+                  <td data-label="Vault history">{r.trackedDays ? r.ageLabel : "–"}</td>
+                  <td data-label="30-day swing">
+                    {r.stdev == null ? "–" : `±${r.stdev.toFixed(2)} pts`}
+                  </td>
+                  <td data-label="24h APY">{apy(r.vault.apy24h)}</td>
                 </tr>
               ))}
             </tbody>
@@ -649,7 +654,9 @@ export async function EthHubBody() {
         </div>
         {evidence[0] ? (
           <p>
-            {`The largest funded ETH strategy was ${proseName(evidence[0].vault)}, holding ` +
+            {`The largest funded ETH strategy was `}
+            <Link href={`/${evidence[0].vault.slug}`}>{proseName(evidence[0].vault)}</Link>
+            {`, holding ` +
               `${tvl(evidence[0].vault.tvl)} and tracked for ` +
               `${evidence[0].ageLabel}. A strategy that size has had its rate ` +
               `tested by real withdrawals, and it is also a larger target for attackers.`}
@@ -681,6 +688,11 @@ export async function EthHubBody() {
             <Link href="/risk-framework">risk framework page</Link> covers every exposure.
           </dd>
         </dl>
+        <p>
+          None of these columns is a safety score. They are the parts of risk that can be counted,
+          and the contracts behind every vault are listed with their audits on the{" "}
+          <Link href="/security">security and audits page</Link>.
+        </p>
         <Ask items={asks("safety")} />
       </Block>
 
@@ -696,6 +708,15 @@ export async function EthHubBody() {
         }
       >
         <UsdcCalculator products={calcProducts} asOf={c.asOf} asset="ETH" defaultAmount={1} />
+        <p>
+          <Em
+            text={
+              `At the top funded rate of ${apy(best.apy24h)} as of ${c.asOf}, 1 ETH would earn about ` +
+              `${(best.apy24h / 100).toFixed(4)} ETH over a year. The table runs the same sum for ` +
+              `10 and 32 ETH, beside the median rate.`
+            }
+          />
+        </p>
         <table className="eh-earn">
           <caption>
             A year of earnings, in ETH, before any rate change
@@ -717,6 +738,10 @@ export async function EthHubBody() {
             ))}
           </tbody>
         </table>
+        <p>
+          Both columns assume the rate holds for a full year, which no onchain rate does, and the
+          yield is paid in ETH, so its dollar value moves with the ETH price.
+        </p>
         <Ask items={asks("calc")} />
       </Block>
 
@@ -733,8 +758,8 @@ export async function EthHubBody() {
       >
         <ol className="eh-steps">
           <li>
-            <strong>Choosing a network comes first.</strong> Base holds most of the funded ETH
-            strategies; Ethereum mainnet costs more per transaction.
+            <strong>Choosing a network comes first.</strong> <Link href="/base">Base</Link> holds
+            most of the funded ETH strategies; Ethereum mainnet costs more per transaction.
           </li>
           <li>
             <strong>Wrapping ETH into WETH takes one transaction</strong>, and it unwraps back to
@@ -742,8 +767,8 @@ export async function EthHubBody() {
           </li>
           <li>
             <strong>Picking a strategy sets the rate and the risk.</strong>{" "}
-            The safety table above
-            shows each funded strategy&rsquo;s size, history and 30-day swing.
+            The <a href="#safest">safety table</a>{" "}shows each funded strategy&rsquo;s size, history
+            and 30-day swing.
           </li>
           <li>
             <strong>Entering the position is one transaction in the Harvest app</strong>, which
@@ -765,7 +790,9 @@ export async function EthHubBody() {
         </p>
         <p>
           {`Gas is paid on each transaction, and the looping strategy charges an entry cost ` +
-            `the app shows before a position opens.`}
+            `the app shows before a position opens. How `}
+          <Ext href="https://ethereum.org/en/developers/docs/gas/">gas</Ext>
+          {` is priced is set out by the Ethereum Foundation.`}
         </p>
       </Block>
 
@@ -789,6 +816,11 @@ export async function EthHubBody() {
             ]}
           />
         ) : null}
+        <p>
+          A staked position earns from the protocol itself: new ETH issued to{" "}
+          <Ext href="https://ethereum.org/en/staking/">validators</Ext> plus the fees and tips they
+          collect.
+        </p>
         {staking ? (
           <StatPair
             title="Staking against lending"
@@ -804,11 +836,9 @@ export async function EthHubBody() {
           />
         ) : null}
         <p>
-          A staked position earns from the protocol itself: new ETH issued to validators plus the
-          fees and tips they collect.
-        </p>
-        <p>
-          Getting out goes through Ethereum&rsquo;s validator exit queue, which can take days when
+          Getting out goes through Ethereum&rsquo;s{" "}
+          <Ext href="https://ethereum.org/en/staking/withdrawals/">validator exit queue</Ext>, which
+          can take days when
           many validators leave at once. Liquid staking tokens such as stETH skip the wait by
           letting the position trade, at whatever price the market offers that day.
         </p>
@@ -890,7 +920,8 @@ export async function EthHubBody() {
           </p>
         ) : null}
         <p>
-          ETH lending rates swing harder than stablecoin rates because ETH borrowing demand is
+          ETH lending rates swing harder than <Link href="/usdc">stablecoin rates</Link> because ETH
+          borrowing demand is
           tied to market direction. When traders want to short ETH or lever up staked ETH, they
           borrow at once, and the rate jumps.
         </p>

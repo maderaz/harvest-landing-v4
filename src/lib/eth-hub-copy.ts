@@ -572,10 +572,19 @@ export async function ethPageModel() {
   // nothing else, so a visitor arriving from an AI answer reads one line and
   // then the table. The longer answer and the findings stay in /eth.md, and
   // every figure they carry is restated in the section it belongs to.
+  // Leads with the top rate in the table, whatever its size, so the intro,
+  // row 1 and the first answer agree; the best rate above the liquidity
+  // floor follows in the same sentence pair.
+  const top = c.all[0];
   const heroAnswer =
-    `The best ETH yield in Harvest's index is ${apy(best.apy24h)} APY, paid in ETH by ` +
-    `${proseName(best)}, among strategies holding at least ${tvl(c.fundedFloor)}, as of ` +
-    `${c.asOf}.`;
+    `The best ETH yield is ${apy(top.apy24h)} APY, paid in ETH by ` +
+    `${proseName(top)}, the highest 24-hour rate among the ${c.count} ETH strategies tracked ` +
+    `here as of ${c.asOf}` +
+    (top.slug === best.slug
+      ? `, holding ${tvl(top.tvl)}.`
+      : `. It is ${article(SINGULAR[strategyTypeOf(top)])} ${SINGULAR[strategyTypeOf(top)]} ` +
+        `holding ${tvl(top.tvl)}; among strategies holding at least ${tvl(c.fundedFloor)}, the ` +
+        `best was ${apy(best.apy24h)} on ${proseName(best)}.`);
 
   const findings = [
     `The ${c.count} ETH strategies tracked here held ${tvl(c.totalTvl)} between them across ` +

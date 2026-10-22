@@ -707,8 +707,7 @@
   .uni-hub-test.eh-page .eh-fig-head { flex-direction: column; align-items: flex-start; gap: 12px; }
   .uni-hub-test.eh-page .eh-fig .eh-fig-meta { align-items: flex-start; flex-direction: row; gap: 12px; }
   .uni-hub-test.eh-page .eh-fig-head h3 { font-size: 28px; }
-  .uni-hub-test.eh-page .eh-fig-panel { padding: 20px 0 16px 18px; overflow-x: auto; }
-  .uni-hub-test.eh-page .eh-fig-svg { width: 760px; max-width: none; }
+  .uni-hub-test.eh-page .eh-fig-panel { padding: 20px 16px 16px; }
   .uni-hub-test.eh-page .eh-fig-foot { flex-direction: column; align-items: flex-start; gap: 14px; }
 }
 
@@ -1728,4 +1727,117 @@
   .uni-hub-test.eh-page.eh-read .eh-stat-row { grid-template-columns: 1fr; }
   .uni-hub-test.eh-page.eh-read .eh-rows-num { width: 92px; }
   .uni-hub-test.eh-page.eh-read .eh-rows-num strong { font-size: 19px; }
+}
+
+/* === Quieter pass ======================================================
+   One rule between sections, never two; questions as plain rows with no
+   card or fill; smaller type in the network cards; and the top three rows
+   of each ranking on a gentle green. */
+.uni-hub-test.eh-page.eh-read .eh-statgrid { border-bottom: 0; }
+
+.uni-hub-test.eh-page.eh-read .eh-ask {
+  margin-top: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+}
+.uni-hub-test.eh-page.eh-read .uh-block .eh-ask-h { margin: 0 0 6px; }
+.uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-item {
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--eh-line);
+  border-radius: 0;
+  background: none;
+}
+.uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-item[open] { background: none; }
+.uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-q { font-size: 15px; padding: 14px 0; }
+.uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-a { padding: 0 0 16px; }
+
+.uni-hub-test.eh-page.eh-read .eh-net { padding: 18px 18px 16px; }
+.uni-hub-test.eh-page.eh-read .eh-net-head { gap: 8px; }
+.uni-hub-test.eh-page.eh-read .eh-net-head h3 { font-size: 15.5px; line-height: 1.3; }
+.uni-hub-test.eh-page.eh-read .eh-net-tag { font-size: 10px; }
+.uni-hub-test.eh-page.eh-read .uh-block .eh-net-meta { font-size: 13px; margin: 6px 0 10px; }
+.uni-hub-test.eh-page.eh-read .uh-block .eh-net-empty { font-size: 13.5px; line-height: 1.55; }
+.uni-hub-test.eh-page.eh-read .eh-pick-name { font-size: 13.5px; }
+.uni-hub-test.eh-page.eh-read .eh-pick-apy { font-size: 13px; }
+.uni-hub-test.eh-page.eh-read .eh-pick-sub { font-size: 12px; }
+.uni-hub-test.eh-page.eh-read .eh-net-more { font-size: 13px; }
+
+.uni-hub-test.eh-page.eh-read .hub-tbody > .hub-row:nth-child(-n + 3) {
+  background: #effaf3;
+}
+.uni-hub-test.eh-page.eh-read .hub-tbody > .hub-row:nth-child(-n + 3):hover {
+  background: #e4f6ea;
+}
+.uni-hub-test.eh-page.eh-read .hub-tbody > .hub-row:nth-child(-n + 3) .hub-rank {
+  color: #1f8a4c;
+  font-weight: 600;
+}
+:root[data-theme="dark"] .uni-hub-test.eh-page.eh-read .hub-tbody > .hub-row:nth-child(-n + 3) {
+  background: rgba(52, 199, 89, 0.08);
+}
+:root[data-theme="dark"] .uni-hub-test.eh-page.eh-read .hub-tbody > .hub-row:nth-child(-n + 3) .hub-rank {
+  color: #5fd38a;
+}
+
+/* Phones: the whole row already links to the vault page, so the Open
+   button goes and the name takes its room; names wrap at spaces only. */
+.uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-vault-title { overflow-wrap: normal; }
+@media (max-width: 540px) {
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-row .hub-cell.hub-linkcell,
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-thead .hub-th:nth-child(8) { display: none; }
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics.hub-table--links .hub-thead,
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics.hub-table--links .hub-row,
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-thead,
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-row {
+    grid-template-columns: 18px minmax(0, 1fr) 56px 58px;
+    gap: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  .uni-hub-test.eh-page.eh-read .hub-vault { gap: 8px; }
+  .uni-hub-test.eh-page.eh-read .hub-vault-name { font-size: 13px; }
+  .uni-hub-test.eh-page.eh-read .hub-vault-net { font-size: 11px; }
+  .uni-hub-test.eh-page.eh-read .eh-ctas .eh-btn { flex: 1 1 auto; justify-content: center; }
+}
+.uni-hub-test.eh-page.eh-read .eh-earn tbody th { white-space: nowrap; }
+
+/* Phones: the safety table becomes one card per strategy, each figure on
+   its own labelled line, so nothing scrolls sideways. */
+@media (max-width: 600px) {
+  .uni-hub-test.eh-page.eh-read .eh-evidence-wrap { overflow: visible; border: 0; background: none; }
+  .uni-hub-test.eh-page.eh-read .eh-evidence { min-width: 0; }
+  .uni-hub-test.eh-page.eh-read .eh-evidence thead { display: none; }
+  .uni-hub-test.eh-page.eh-read .eh-evidence,
+  .uni-hub-test.eh-page.eh-read .eh-evidence tbody,
+  .uni-hub-test.eh-page.eh-read .eh-evidence tr,
+  .uni-hub-test.eh-page.eh-read .eh-evidence th,
+  .uni-hub-test.eh-page.eh-read .eh-evidence td { display: block; }
+  .uni-hub-test.eh-page.eh-read .eh-evidence tr {
+    margin: 0 0 10px;
+    padding: 14px 16px;
+    border: 1px solid var(--eh-line);
+    border-radius: 12px;
+  }
+  .uni-hub-test.eh-page.eh-read .eh-evidence th,
+  .uni-hub-test.eh-page.eh-read .eh-evidence td {
+    padding: 0;
+    border: 0;
+    white-space: normal;
+  }
+  .uni-hub-test.eh-page.eh-read .eh-evidence th[scope="row"] { margin-bottom: 8px; }
+  .uni-hub-test.eh-page.eh-read .eh-evidence td {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 4px 0;
+    font-size: 13.5px;
+  }
+  .uni-hub-test.eh-page.eh-read .eh-evidence td::before {
+    content: attr(data-label);
+    color: var(--eh-ink-3);
+    font-family: var(--sans);
+  }
 }

@@ -55,6 +55,16 @@ export function EthLoopFigure() {
   const [step, setStep] = useState(-1);
   const [run, setRun] = useState(0);
   const [reduced, setReduced] = useState(false);
+  // On a phone the three parts stack: the loop on top, then the position and
+  // the net rate side by side under it, so the drawing fits without scrolling.
+  const [narrow, setNarrow] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 700px)");
+    const on = () => setNarrow(mq.matches);
+    on();
+    mq.addEventListener("change", on);
+    return () => mq.removeEventListener("change", on);
+  }, []);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -125,7 +135,9 @@ export function EthLoopFigure() {
 
       <div className="eh-fig-panel">
         <p className="eh-fig-label">Position and net rate · 3 loops</p>
-      <svg viewBox="0 0 960 520" className="eh-fig-svg" role="img" aria-labelledby="loop-fig-desc">
+      <svg
+        viewBox={narrow ? "0 0 480 920" : "0 0 960 520"}
+        className="eh-fig-svg" role="img" aria-labelledby="loop-fig-desc">
         <desc id="loop-fig-desc">
           ETH is supplied, borrowed against at 75% and supplied again, three times. The position
           grows from 1 ETH to about 2.73 ETH, and the net rate on the starting ETH rises from 2.50%
@@ -145,7 +157,10 @@ export function EthLoopFigure() {
         <g transform="translate(0 100)">
 
         {/* ---- the loop: circle r=125 centred at (200, 215) ---- */}
-        <g className={`lf-cycle${step >= 0 ? " is-on" : ""}`}>
+        <g
+          className={`lf-cycle${step >= 0 ? " is-on" : ""}`}
+          transform={narrow ? "translate(40 0)" : undefined}
+        >
           <circle cx="200" cy="215" r="100" fill="url(#lf-glow)" className="lf-glow" />
           {[
             // arcs run -78°..18°, 42°..138°, 162°..258°, leaving gaps at the nodes
@@ -174,7 +189,7 @@ export function EthLoopFigure() {
         </g>
 
         {/* ---- the position ---- */}
-        <g className="lf-stack">
+        <g className="lf-stack" transform={narrow ? "translate(-470 430)" : undefined}>
           <text x="510" y="96" className="lf-col-h">Position</text>
           <line x1="500" x2="640" y1={BASE_Y + 0.5} y2={BASE_Y + 0.5} className="lf-axis" />
           {LEVERAGE.map((_, i) => {
@@ -192,7 +207,7 @@ export function EthLoopFigure() {
         </g>
 
         {/* ---- the result ---- */}
-        <g className="lf-math">
+        <g className="lf-math" transform={narrow ? "translate(-505 430)" : undefined}>
           <text x="700" y="96" className="lf-col-h">Net rate on 1 ETH</text>
           <text x="700" y="160" className="lf-net">{`${net(lev).toFixed(2)}%`}</text>
           <g className={`lf-compare${done ? " is-in" : ""}`}>
