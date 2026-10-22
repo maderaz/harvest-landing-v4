@@ -525,7 +525,7 @@ export async function EthHubBody() {
                 <tr key={r.vault.slug}>
                   <th scope="row">
                     <Link href={`/${r.vault.slug}`}>{bare(r.vault)}</Link>
-                    <span className="eh-net">{r.vault.chain}</span>
+                    <span className="eh-netname">{r.vault.chain}</span>
                   </th>
                   <td>{cap(SINGULAR[r.type])}</td>
                   <td>{tvl(r.vault.tvl)}</td>
