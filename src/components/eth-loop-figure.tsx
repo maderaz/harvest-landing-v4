@@ -20,8 +20,15 @@
 // SVG and CSS rather than video: sharp at any width, a few KB, and it starts
 // only when scrolled into view. With reduced motion it renders the finished
 // state and does not move.
+//
+// Drawn in the social-card style: an orange dotted canvas holding a header,
+// one dark brown panel and a footer note. Inside the panel the chart is one
+// series in brand orange, the part that has not grown (the starting ETH, the
+// plain supply rate) at reduced strength, and a faint "Harvest" watermark sits
+// top-left over empty space, clear of every mark.
 
 import { useEffect, useRef, useState } from "react";
+import { AssetIcon } from "@/components/token-icons";
 
 const LTV = 0.75;
 const SUPPLY = 2.5;
@@ -102,44 +109,49 @@ export function EthLoopFigure() {
       // of search snippets. The <desc> carries the one-sentence summary.
       data-nosnippet=""
     >
-      <div className="eh-fig-head">
-        <h3 id="loop-fig-title">How a leveraged loop multiplies the spread</h3>
-        <figcaption>Illustrative: 75% loan-to-value, 2.5% supply rate, 2.0% borrow rate.</figcaption>
-      </div>
+      <header className="eh-fig-head">
+        <div className="eh-fig-title">
+          <p className="eh-fig-eyebrow">Leveraged looping</p>
+          <div className="eh-fig-titlerow">
+            <AssetIcon asset="ETH" size={44} />
+            <h3 id="loop-fig-title">How a loop multiplies the spread</h3>
+          </div>
+        </div>
+        <p className="eh-fig-meta">
+          <span>Supply 2.5% · Borrow 2.0%</span>
+          <strong>75% LTV</strong>
+        </p>
+      </header>
 
-      <svg viewBox="0 0 960 420" className="eh-fig-svg" role="img" aria-labelledby="loop-fig-desc">
+      <div className="eh-fig-panel">
+        <p className="eh-fig-label">Position and net rate · 3 loops</p>
+      <svg viewBox="0 0 960 520" className="eh-fig-svg" role="img" aria-labelledby="loop-fig-desc">
         <desc id="loop-fig-desc">
           ETH is supplied, borrowed against at 75% and supplied again, three times. The position
           grows from 1 ETH to about 2.73 ETH, and the net rate on the starting ETH rises from 2.50%
           to about 3.37%, against 2.50% for supplying without the loop.
         </desc>
         <defs>
-          <linearGradient id="lf-supply" x1="0" x2="1">
-            <stop offset="0" stopColor="#3b6cff" />
-            <stop offset="1" stopColor="#7d8bff" />
-          </linearGradient>
-          <linearGradient id="lf-borrow" x1="0" x2="1">
-            <stop offset="0" stopColor="#8a6cff" />
-            <stop offset="1" stopColor="#c86bd8" />
-          </linearGradient>
-          <linearGradient id="lf-again" x1="0" x2="1">
-            <stop offset="0" stopColor="#c86bd8" />
-            <stop offset="1" stopColor="#3b6cff" />
-          </linearGradient>
           <radialGradient id="lf-glow">
-            <stop offset="0" stopColor="#ffb936" stopOpacity="0.26" />
-            <stop offset="1" stopColor="#ffb936" stopOpacity="0" />
+            <stop offset="0" stopColor="#ffb234" stopOpacity="0.18" />
+            <stop offset="1" stopColor="#ffb234" stopOpacity="0" />
           </radialGradient>
         </defs>
+
+        {/* Watermark: top-left, over the empty band above the drawing. */}
+        <text x="0" y="96" className="lf-mark" aria-hidden="true">
+          Harvest
+        </text>
+        <g transform="translate(0 100)">
 
         {/* ---- the loop: circle r=125 centred at (200, 215) ---- */}
         <g className={`lf-cycle${step >= 0 ? " is-on" : ""}`}>
           <circle cx="200" cy="215" r="100" fill="url(#lf-glow)" className="lf-glow" />
           {[
             // arcs run -78°..18°, 42°..138°, 162°..258°, leaving gaps at the nodes
-            { d: "M 226.0 92.7 A 125 125 0 0 1 318.9 253.6", g: "url(#lf-supply)" },
-            { d: "M 292.9 298.6 A 125 125 0 0 1 107.1 298.6", g: "url(#lf-borrow)" },
-            { d: "M 81.1 253.6 A 125 125 0 0 1 174.0 92.7", g: "url(#lf-again)" },
+            { d: "M 226.0 92.7 A 125 125 0 0 1 318.9 253.6", g: "#ffb234" },
+            { d: "M 292.9 298.6 A 125 125 0 0 1 107.1 298.6", g: "#ffb234" },
+            { d: "M 81.1 253.6 A 125 125 0 0 1 174.0 92.7", g: "#ffb234" },
           ].map((a, i) => (
             <g key={i}>
               <path
@@ -194,13 +206,22 @@ export function EthLoopFigure() {
             </text>
           </g>
         </g>
+        </g>
       </svg>
+      </div>
 
-      {!reduced ? (
-        <button type="button" className="eh-fig-replay" onClick={() => setRun((r) => r + 1)}>
-          Replay
-        </button>
-      ) : null}
+      <footer className="eh-fig-foot">
+        <p className="eh-fig-note">
+          Illustrative figures: 75% loan-to-value, a 2.5% supply rate and a 2.0% borrow rate.
+          Real rates move, and a borrow rate above the supply rate turns the loop against the
+          position.
+        </p>
+        {!reduced ? (
+          <button type="button" className="eh-fig-replay" onClick={() => setRun((r) => r + 1)}>
+            Replay
+          </button>
+        ) : null}
+      </footer>
     </figure>
   );
 }

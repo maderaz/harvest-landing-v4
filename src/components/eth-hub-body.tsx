@@ -21,7 +21,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { getAllSparklines } from "@/lib/data";
-import { ChainIcon } from "@/components/token-icons";
+import { AssetIcon, ChainIcon } from "@/components/token-icons";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { assetHubCrumbs } from "@/lib/seo";
 import {
@@ -335,48 +335,75 @@ export async function EthHubBody() {
         <span className="uni-hub-crumbs-current">ETH Ranking</span>
       </nav>
 
+      <p className="eh-topmeta" data-dateline="">
+        <span>
+          Updated <strong>{c.asOf}</strong>, {asOfTime} UTC
+        </span>
+        <span>
+          Strategies <strong>{c.count}</strong>
+        </span>
+        <span>
+          Networks <strong>{c.chainCount}</strong>
+        </span>
+        <span>Rates after fees</span>
+      </p>
+
       <div className="uni-hub-hero uh-hero eh-hero">
-        <h1 className="uni-hub-h1">{ETH_HUB_H1}</h1>
+        <div className="eh-hero-title">
+          <AssetIcon asset="ETH" size={52} priority />
+          <h1 className="uni-hub-h1">{ETH_HUB_H1}</h1>
+        </div>
         <p className="eh-dek">
-          A live ranking of ETH and WETH lending and vault rates, read from the vault contracts.
+          Live ETH and WETH lending rates{" "}
+          <span className="eh-dek-accent">· read from the vault contracts</span>
         </p>
-        <p className="uh-updated eh-meta" data-dateline="">
-          Updated {c.asOf}, {asOfTime} UTC · Rates after Harvest&rsquo;s fee ·{" "}
-          <Link href="/methodology">Methodology</Link>
-        </p>
-      </div>
-      <div className="eh-intro">
         <p className="uh-answer">
           <Em text={m.heroAnswer} />
         </p>
-        {/* Three figures as text, not a chart: each tile is a label and a
-            value an extractor can read, dated by the line under them. */}
-        <dl className="eh-tiles" data-asof={c.asOfIso}>
-          <div className="eh-tile">
-            <dt>Best above {tvl(c.fundedFloor)}</dt>
-            <dd className="eh-tile-v">{apy(best.apy24h)}</dd>
-            <dd className="eh-tile-s">
-              {bare(best)} · {best.chain}
-            </dd>
-          </div>
-          {topRaw ? (
-            <div className="eh-tile">
-              <dt>Top rate overall</dt>
-              <dd className="eh-tile-v">{apy(topRaw.apy24h)}</dd>
-              <dd className="eh-tile-s">
-                {bare(topRaw)} · {SINGULAR[strategyTypeOf(topRaw)]}, {tvl(topRaw.tvl)}
-              </dd>
-            </div>
-          ) : null}
-          <div className="eh-tile">
-            <dt>Tracked</dt>
-            <dd className="eh-tile-v">{tvl(c.totalTvl)}</dd>
-            <dd className="eh-tile-s">
-              {c.count} strategies on {c.chainCount} networks
-            </dd>
-          </div>
-        </dl>
+        <div className="eh-ctas">
+          <a className="eh-btn eh-btn-primary" href="https://app.harvest.finance" target="_blank" rel="noopener noreferrer">
+            Open the Harvest app
+          </a>
+          <Link className="eh-btn" href="/methodology">
+            How rates are measured
+          </Link>
+        </div>
       </div>
+
+      {/* Four figures as text in a ruled grid: a label over a value, dated by
+          the meta line above. */}
+      <dl className="eh-statgrid" data-asof={c.asOfIso}>
+        <div>
+          <dt>Best above {tvl(c.fundedFloor)}</dt>
+          <dd className="eh-sg-v">{apy(best.apy24h)}</dd>
+          <dd className="eh-sg-s">
+            {bare(best)} · {best.chain}
+          </dd>
+        </div>
+        {topRaw ? (
+          <div>
+            <dt>Top rate overall</dt>
+            <dd className="eh-sg-v">{apy(topRaw.apy24h)}</dd>
+            <dd className="eh-sg-s">
+              {bare(topRaw)} · {SINGULAR[strategyTypeOf(topRaw)]}
+            </dd>
+          </div>
+        ) : null}
+        <div>
+          <dt>Tracked in ETH strategies</dt>
+          <dd className="eh-sg-v">{tvl(c.totalTvl)}</dd>
+          <dd className="eh-sg-s">
+            {c.count} strategies on {c.chainCount} networks
+          </dd>
+        </div>
+        {staking ? (
+          <div>
+            <dt>Staking reference</dt>
+            <dd className="eh-sg-v">{`${aprToApy(staking.aprAverage).toFixed(2)}%`}</dd>
+            <dd className="eh-sg-s">Lido stETH, after its fee</dd>
+          </div>
+        ) : null}
+      </dl>
 
       <Block
         id="top-ten"
@@ -868,40 +895,40 @@ export async function EthHubBody() {
         asOfIso={c.asOfIso}
         lead={venueLead(venues)}
       >
-        <div className="eh-ntable-wrap">
-          <table className="eh-ntable">
-            <thead>
-              <tr>
-                <th scope="col">Protocol</th>
-                <th scope="col" className="num">Vaults</th>
-                <th scope="col" className="num">Tracked</th>
-                <th scope="col" className="num">Median APY</th>
-                <th scope="col" className="num">Range</th>
-                <th scope="col">Networks</th>
-              </tr>
-            </thead>
-            <tbody>
-              {venues
-                .filter((v) => !v.loop)
-                .map((v) => (
-                  <tr key={v.venue}>
-                    <th scope="row">{v.venue}</th>
-                    <td className="num">{v.count}</td>
-                    <td className="num">{tvl(v.tvl)}</td>
-                    <td className="num">
-                      <strong>{apy(v.medianApy)}</strong>
-                    </td>
-                    <td className="num eh-dim">
-                      {v.count > 1 && v.minApy.toFixed(2) !== v.maxApy.toFixed(2)
-                        ? `${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}`
-                        : "–"}
-                    </td>
-                    <td className="eh-dim">{v.chains.join(", ")}</td>
-                  </tr>
-                ))}
-            </tbody>
-          </table>
-        </div>
+        <table className="eh-rows">
+          <thead>
+            <tr>
+              <th scope="col">Median APY</th>
+              <th scope="col">Protocol</th>
+              <th scope="col" className="num">24h range</th>
+            </tr>
+          </thead>
+          <tbody>
+            {venues
+              .filter((v) => !v.loop)
+              .map((v) => (
+                <tr key={v.venue}>
+                  <td className="eh-rows-num">
+                    <strong>{apy(v.medianApy)}</strong>
+                    <span>{v.count > 1 ? "median" : "24h APY"}</span>
+                  </td>
+                  <th scope="row">
+                    <span className="eh-rows-t">{v.venue}</span>
+                    <span className="eh-rows-s">
+                      {`${v.count} ${plural(v.count, "vault", "vaults")} · ${tvl(v.tvl)} tracked · ${v.chains.join(", ")}`}
+                    </span>
+                  </th>
+                  <td className="num">
+                    {v.count > 1 && v.minApy.toFixed(2) !== v.maxApy.toFixed(2) ? (
+                      <span className="eh-chip">{`${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}`}</span>
+                    ) : (
+                      <span className="eh-chip eh-chip-dim">single vault</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
         {venues
           .filter((v) => v.loop)
           .map((v) => (

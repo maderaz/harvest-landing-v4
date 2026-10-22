@@ -424,58 +424,163 @@
   .uni-hub-test.eh-page .eh-qlist { columns: 1; }
 }
 
-/* === Animated figure ================================================
-   A dark card with a light display title and an "Illustrative" caption,
-   holding an SVG that builds itself when scrolled into view. Dark in both
-   themes on purpose: the figure is an object on the page, like a chart
-   card, not part of the prose surface. */
+/* === Animated figure: social-card style ==============================
+   Same system as the vault social cards: a warm orange canvas with a dotted
+   halftone, a header row (mono eyebrow, token icon inline with a bold title,
+   meta on the right), one very dark brown panel, and a footer note. Inside
+   the panel: cream headline numbers, one series in brand orange, the part
+   that has not grown at about 35%, mono tan labels, no gridlines or legends,
+   and a faint "Harvest" watermark top-left over empty space. Orange in both
+   themes on purpose: the figure is an object on the page, like a card. */
+.eh-fig {
+  --lf-orange: #ffb234;
+  --lf-brown: #2a1a05;
+  --lf-panel: #1e1304;
+  --lf-tan: #bfa27a;
+  --lf-cream: #fff3de;
+  --lf-sans: var(--font-space-grotesk), var(--sans, system-ui), sans-serif;
+  --lf-mono: var(--font-jetbrains-mono), var(--mono, ui-monospace), monospace;
+}
 .uni-hub-test.eh-page .eh-fig {
   position: relative;
   margin: 36px 0 8px;
-  padding: 28px 32px 22px;
-  border-radius: 22px;
+  padding: 40px 44px 34px;
+  border-radius: 24px;
   background:
-    radial-gradient(120% 90% at 85% 0%, rgba(59, 108, 255, 0.16), transparent 60%),
-    #0b1020;
-  color: #e9ecf5;
+    radial-gradient(circle, rgba(42, 26, 5, 0.09) 1.3px, transparent 1.7px) 0 0 / 16px 16px,
+    linear-gradient(135deg, #ffb83f 0%, #ffb234 55%, #ffa827 100%);
+  color: var(--lf-brown);
+  font-family: var(--lf-sans);
   overflow: hidden;
+}
+
+/* Header row */
+.uni-hub-test.eh-page .eh-fig-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.uni-hub-test.eh-page .uh-block .eh-fig .eh-fig-eyebrow {
+  margin: 0 0 12px;
+  font-family: var(--lf-mono);
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lf-brown);
+  max-width: none;
+}
+.uni-hub-test.eh-page .eh-fig-titlerow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.uni-hub-test.eh-page .eh-fig-titlerow img,
+.uni-hub-test.eh-page .eh-fig-titlerow svg {
+  flex-shrink: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 3px #fff;
 }
 .uni-hub-test.eh-page .eh-fig-head h3 {
   margin: 0;
-  font-family: var(--display);
-  font-size: 30px;
-  line-height: 1.15;
-  font-weight: 450;
-  letter-spacing: -0.015em;
-  color: #f4f6fb;
+  font-family: var(--lf-sans);
+  font-size: 40px;
+  line-height: 1.05;
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  color: var(--lf-brown);
 }
-.uni-hub-test.eh-page .eh-fig-head figcaption {
-  margin-top: 8px;
-  font-size: 14.5px;
-  color: rgba(233, 236, 245, 0.62);
+.uni-hub-test.eh-page .uh-block .eh-fig .eh-fig-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0 0 4px;
+  font-family: var(--lf-mono);
+  font-size: 13px;
+  line-height: 1.3;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lf-brown);
+  white-space: nowrap;
+  max-width: none;
+}
+.uni-hub-test.eh-page .eh-fig-meta strong {
+  font-weight: 700;
+  color: var(--lf-brown);
+}
+
+/* The dark panel */
+.uni-hub-test.eh-page .eh-fig-panel {
+  margin-top: 28px;
+  padding: 30px 36px 26px;
+  border-radius: 22px;
+  background: var(--lf-panel);
+  color: var(--lf-cream);
+}
+.uni-hub-test.eh-page .uh-block .eh-fig .eh-fig-label {
+  margin: 0;
+  font-family: var(--lf-mono);
+  font-size: 13px;
+  line-height: 1.3;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lf-tan);
+  max-width: none;
 }
 .uni-hub-test.eh-page .eh-fig-svg {
   display: block;
   width: 100%;
   height: auto;
-  margin-top: 8px;
-  font-family: var(--sans, inherit);
+  margin-top: 6px;
+  font-family: var(--lf-sans);
+}
+
+/* Footer: the note on the orange, Replay on the right. */
+.uni-hub-test.eh-page .eh-fig-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-top: 24px;
+}
+.uni-hub-test.eh-page .uh-block .eh-fig .eh-fig-note {
+  margin: 0;
+  max-width: 640px;
+  font-family: var(--lf-sans);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: var(--lf-brown);
 }
 .uni-hub-test.eh-page .eh-fig-replay {
-  position: absolute;
-  top: 26px;
-  right: 28px;
-  padding: 6px 12px;
+  flex-shrink: 0;
+  padding: 9px 18px;
+  border: 0;
   border-radius: 999px;
-  border: 1px solid rgba(233, 236, 245, 0.22);
-  background: transparent;
-  color: rgba(233, 236, 245, 0.8);
-  font-size: 13px;
+  background: var(--lf-panel);
+  color: var(--lf-cream);
+  font-family: var(--lf-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   cursor: pointer;
+  transition: background 0.15s ease;
 }
 .uni-hub-test.eh-page .eh-fig-replay:hover {
-  border-color: rgba(233, 236, 245, 0.5);
-  color: #fff;
+  background: #3a2609;
+}
+
+/* Watermark */
+.eh-fig .lf-mark {
+  fill: var(--lf-cream);
+  fill-opacity: 0.08;
+  font-family: var(--lf-sans);
+  font-size: 88px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
 }
 
 /* the loop */
@@ -490,14 +595,14 @@
 .eh-fig .lf-arc.is-drawn { stroke-dashoffset: 0; }
 .eh-fig .lf-flow {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.75);
-  stroke-width: 2;
+  stroke: var(--lf-panel);
+  stroke-width: 2.5;
   stroke-dasharray: 0.012 0.02;
   opacity: 0;
   transition: opacity 0.6s ease;
 }
 .eh-fig .lf-flow.is-drawn {
-  opacity: 1;
+  opacity: 0.7;
   transition-delay: 0.9s;
   animation: lf-flow 2.4s linear infinite;
 }
@@ -505,91 +610,106 @@
 .eh-fig .lf-glow { opacity: 0; transition: opacity 0.8s ease; }
 .eh-fig .lf-cycle.is-on .lf-glow { opacity: 1; }
 .eh-fig .lf-node {
-  fill: #f4f6fb;
+  fill: var(--lf-cream);
+  font-family: var(--lf-sans);
   font-size: 21px;
   font-weight: 500;
   text-anchor: middle;
 }
-.eh-fig .lf-node-sub {
-  fill: rgba(233, 236, 245, 0.6);
-  font-size: 15px;
-  text-anchor: middle;
-}
 .eh-fig .lf-lev {
-  fill: #ffb936;
-  font-size: 46px;
-  font-weight: 600;
+  fill: var(--lf-orange);
+  font-family: var(--lf-sans);
+  font-size: 50px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
   text-anchor: middle;
-  font-family: var(--mono, ui-monospace, monospace);
 }
 .eh-fig .lf-lev-sub {
-  fill: rgba(233, 236, 245, 0.6);
-  font-size: 15px;
+  fill: var(--lf-tan);
+  font-family: var(--lf-mono);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
   text-anchor: middle;
 }
 
-/* the position */
+/* the position: the starting ETH has not grown, so it sits at reduced
+   strength; each borrowed layer is the growth, at full orange. */
 .eh-fig .lf-col-h {
-  fill: rgba(233, 236, 245, 0.62);
-  font-size: 15px;
-  letter-spacing: 0.06em;
+  fill: var(--lf-tan);
+  font-family: var(--lf-mono);
+  font-size: 13px;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
-.eh-fig .lf-axis { stroke: rgba(233, 236, 245, 0.25); stroke-width: 1; }
-.eh-fig .lf-legend { fill: rgba(233, 236, 245, 0.5); font-size: 14px; }
+.eh-fig .lf-axis { stroke: var(--lf-tan); stroke-opacity: 0.35; stroke-width: 1; }
 .eh-fig .lf-layer {
   opacity: 0;
   transform: translateY(-26px);
   transition: opacity 0.55s ease, transform 0.75s cubic-bezier(0.2, 0.9, 0.3, 1.2);
 }
 .eh-fig .lf-layer.is-in { opacity: 1; transform: none; }
-.eh-fig .lf-layer rect { fill: #ffb936; transition: fill 0.6s ease; }
-.eh-fig .lf-layer.is-borrowed rect { fill: #4b6bff; }
-.eh-fig.is-spiked .lf-layer.is-borrowed rect { fill: #e5484d; }
+.eh-fig .lf-layer rect { fill: var(--lf-orange); fill-opacity: 0.35; }
+.eh-fig .lf-layer.is-borrowed rect { fill-opacity: 1; }
 .eh-fig .lf-layer-t {
-  fill: #0b1020;
-  font-size: 16px;
-  font-weight: 650;
-  font-family: var(--mono, ui-monospace, monospace);
+  fill: var(--lf-cream);
+  font-family: var(--lf-mono);
+  font-size: 15px;
+  font-weight: 500;
 }
-.eh-fig .lf-layer.is-borrowed .lf-layer-t { fill: #fff; }
+.eh-fig .lf-layer.is-borrowed .lf-layer-t { fill: var(--lf-panel); }
 
-/* the arithmetic */
+/* the result */
 .eh-fig .lf-net {
-  fill: #ffb936;
-  font-size: 58px;
-  font-weight: 600;
-  font-family: var(--mono, ui-monospace, monospace);
-  transition: fill 0.5s ease;
+  fill: var(--lf-cream);
+  font-family: var(--lf-sans);
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -0.035em;
 }
-.eh-fig .lf-net.is-neg { fill: #ff6369; }
-.eh-fig .lf-math-row {
-  fill: rgba(233, 236, 245, 0.78);
-  font-size: 17px;
-  font-family: var(--mono, ui-monospace, monospace);
-  transition: fill 0.5s ease;
-}
-.eh-fig .lf-borrow-row.is-hot { fill: #ff8a8f; }
-.eh-fig .lf-spike,
-.eh-fig .lf-verdict {
+.eh-fig .lf-compare {
   opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
+  transform: translateY(10px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
 }
-.eh-fig .lf-spike.is-in,
-.eh-fig .lf-verdict.is-in { opacity: 1; transform: none; }
-.eh-fig .lf-spike-t { fill: #ff8a8f; font-size: 18px; font-weight: 600; }
-.eh-fig .lf-verdict-t { fill: #f4f6fb; font-size: 19px; font-weight: 500; }
+.eh-fig .lf-compare.is-in { opacity: 1; transform: none; }
+.eh-fig .lf-compare-h {
+  fill: var(--lf-tan);
+  font-family: var(--lf-mono);
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.eh-fig .lf-bar-plain { fill: var(--lf-orange); fill-opacity: 0.35; }
+.eh-fig .lf-bar-loop { fill: var(--lf-orange); }
+.eh-fig .lf-compare .lf-bar-plain,
+.eh-fig .lf-compare .lf-bar-loop {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s;
+}
+.eh-fig .lf-compare.is-in .lf-bar-plain,
+.eh-fig .lf-compare.is-in .lf-bar-loop { transform: none; }
+.eh-fig .lf-compare.is-in .lf-bar-loop { transition-delay: 0.45s; }
+.eh-fig .lf-bar-t {
+  fill: var(--lf-tan);
+  font-family: var(--lf-mono);
+  font-size: 15px;
+  font-weight: 500;
+}
+.eh-fig .lf-bar-t-hi { fill: var(--lf-orange); }
 
 .eh-fig.is-static * { transition: none !important; animation: none !important; }
 
-@media (max-width: 700px) {
-  .uni-hub-test.eh-page .eh-fig { padding: 22px 0 18px 18px; }
-  .uni-hub-test.eh-page .eh-fig-head { padding-right: 18px; }
-  .uni-hub-test.eh-page .eh-fig-head h3 { font-size: 23px; padding-right: 64px; }
+@media (max-width: 800px) {
+  .uni-hub-test.eh-page .eh-fig { padding: 26px 20px 22px; border-radius: 20px; }
+  .uni-hub-test.eh-page .eh-fig-head { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .uni-hub-test.eh-page .eh-fig .eh-fig-meta { align-items: flex-start; flex-direction: row; gap: 12px; }
+  .uni-hub-test.eh-page .eh-fig-head h3 { font-size: 28px; }
+  .uni-hub-test.eh-page .eh-fig-panel { padding: 20px 0 16px 18px; overflow-x: auto; }
   .uni-hub-test.eh-page .eh-fig-svg { width: 760px; max-width: none; }
-  .uni-hub-test.eh-page .eh-fig { overflow-x: auto; }
-  .uni-hub-test.eh-page .eh-fig-replay { top: 20px; right: 16px; }
+  .uni-hub-test.eh-page .eh-fig-foot { flex-direction: column; align-items: flex-start; gap: 14px; }
 }
 
 /* === Less grey ========================================================
@@ -649,37 +769,6 @@
   background: var(--uni-card-2, #fff);
   border-color: var(--uni-line-2, #ebebe7);
 }
-
-/* === Figure: comparison ============================================= */
-.eh-fig .lf-compare {
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-.eh-fig .lf-compare.is-in { opacity: 1; transform: none; }
-.eh-fig .lf-compare-h {
-  fill: rgba(233, 236, 245, 0.66);
-  font-size: 15px;
-}
-.eh-fig .lf-bar-plain { fill: rgba(233, 236, 245, 0.28); }
-.eh-fig .lf-bar-loop { fill: #ffb936; }
-.eh-fig .lf-compare .lf-bar-plain,
-.eh-fig .lf-compare .lf-bar-loop {
-  transform-box: fill-box;
-  transform-origin: left center;
-  transform: scaleX(0);
-  transition: transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1) 0.15s;
-}
-.eh-fig .lf-compare.is-in .lf-bar-plain,
-.eh-fig .lf-compare.is-in .lf-bar-loop { transform: none; }
-.eh-fig .lf-compare.is-in .lf-bar-loop { transition-delay: 0.45s; }
-.eh-fig .lf-bar-t {
-  fill: rgba(233, 236, 245, 0.85);
-  font-size: 16px;
-  font-weight: 600;
-  font-family: var(--mono, ui-monospace, monospace);
-}
-.eh-fig .lf-bar-t-hi { fill: #ffb936; }
 
 /* === Ranking table with TVL and 30-day mean ===========================
    DOM order: # | Vault | 24h APY | Protocol | trend | TVL | 30d avg [| Link].
@@ -1014,414 +1103,629 @@
 }
 
 /* === Reading layout ====================================================
-   Modelled on long-form data reports: a centred title, prose held to a
-   reading measure of about 72 characters, and figures, tables and cards that
-   break out wider than the text. Sections are separated by air rather than
-   rules, headings are large and light, and each section can open with a
-   short "Key points" list of whole sentences for skimmers and answer engines.
-   Scoped to .eh-read so the other hubs keep their layout. */
+   One column for everything: prose, tables, cards and figures share an
+   800px measure, so nothing breaks out past the text. The hierarchy is a
+   profile page's: a meta row, a left-aligned title with a dek and two
+   buttons, a ruled stat grid, then sections divided by hairlines, each with
+   a mono label, a compact heading and short paragraphs. Cards are quiet:
+   hairline borders, soft fills, generous padding, check-circle lists and
+   accordion rows that tint when open. Scoped to .eh-read. */
 .uni-hub-test.eh-page.eh-read {
-  --eh-prose: 720px;
-  --eh-wide: 1080px;
-  --eh-line: var(--uni-line-2, #ebebe7);
-  --eh-soft: #fafaf8;
+  --eh-col: 800px;
+  --eh-line: #ecebe7;
+  --eh-soft: #f7f6f3;
+  --eh-tint: #fff4dc;
+  --eh-accent: #9a5b00;
+  --eh-ink: #171512;
+  --eh-ink-2: #45423c;
+  --eh-ink-3: #77736b;
+  --eh-mono: var(--font-jetbrains-mono), var(--mono, ui-monospace), monospace;
 }
 :root[data-theme="dark"] .uni-hub-test.eh-page.eh-read {
-  --eh-soft: var(--uni-card, #2a2825);
+  --eh-line: #33312c;
+  --eh-soft: #2a2825;
+  --eh-tint: rgba(255, 185, 54, 0.09);
+  --eh-accent: #ffb936;
+  --eh-ink: #f4f3ef;
+  --eh-ink-2: #d2cfc8;
+  --eh-ink-3: #a19d95;
 }
 
-/* Title block: centred, light, with a one-line dek and the dateline. */
-.uni-hub-test.eh-page.eh-read .eh-hero {
-  max-width: 860px;
-  margin: 28px auto 0;
-  padding: 0;
-  border-bottom: 0;
-  text-align: center;
-}
-.uni-hub-test.eh-page.eh-read .eh-hero .eh-meta {
-  border-bottom: 0;
-  padding-bottom: 0;
-}
-/* Type cards two across, so each card's three figures have room. */
-.uni-hub-test.eh-page.eh-read .eh-types {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-@media (max-width: 700px) {
-  .uni-hub-test.eh-page.eh-read .eh-types,
-  .uni-hub-test.eh-page.eh-read .eh-nets {
-    grid-template-columns: 1fr;
-  }
-}
-.uni-hub-test.eh-page.eh-read .eh-hero .uni-hub-h1 {
-  font-size: clamp(34px, 5vw, 54px);
-  font-weight: 500;
-  letter-spacing: -0.025em;
-  line-height: 1.1;
-  margin: 0;
-}
-.uni-hub-test.eh-page.eh-read .eh-dek {
-  margin: 18px auto 0;
-  max-width: 620px;
-  font-size: 18px;
-  line-height: 1.55;
-  color: var(--uni-ink-3);
-}
-.uni-hub-test.eh-page.eh-read .eh-hero .eh-meta {
-  margin: 14px 0 0;
-  font-size: 12.5px;
-  color: var(--uni-ink-3);
-}
-
-/* The answer and the three figures under the title. */
-.uni-hub-test.eh-page.eh-read .eh-intro {
-  max-width: var(--eh-wide);
-  margin: 48px auto 0;
-}
-.uni-hub-test.eh-page.eh-read .eh-intro .uh-answer {
-  max-width: var(--eh-prose);
-  margin: 0 auto;
-  font-size: 18.5px;
-  line-height: 1.75;
-  color: var(--uni-ink-2);
-}
-.uni-hub-test.eh-page.eh-read .eh-tiles {
-  max-width: var(--eh-wide);
-  margin: 36px auto 0;
-  gap: 16px;
-}
-.uni-hub-test.eh-page.eh-read .eh-tile {
-  padding: 20px 22px 18px;
-  border: 1px solid var(--eh-line);
-  border-radius: 10px;
-  background: var(--uni-card-2, #fff);
-  box-shadow: 0 1px 2px rgba(25, 23, 23, 0.04);
-}
-.uni-hub-test.eh-page.eh-read .eh-tile dt {
-  font-size: 14px;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--uni-ink);
-}
-.uni-hub-test.eh-page.eh-read .eh-tile-v {
-  margin-top: 6px;
-  font-family: var(--sans);
-  font-size: 30px;
-  line-height: 36px;
-  font-weight: 650;
-  font-variant-numeric: tabular-nums;
-}
-.uni-hub-test.eh-page.eh-read .eh-tile-s {
-  margin-top: 8px;
-  padding-top: 10px;
-  border-top: 1px solid var(--eh-line);
-  font-size: 12.5px;
-  color: var(--uni-ink-3);
-}
-
-/* Sections: air between them, prose at the reading measure. */
-.uni-hub-test.eh-page.eh-read .uh-block,
-.uni-hub-test.eh-page.eh-read .eh-qindex {
-  max-width: var(--eh-wide);
-  margin: 96px auto 0;
-  padding-top: 0;
-  border-top: 0;
+/* Every top-level piece sits in the same column. */
+.uni-hub-test.eh-page.eh-read > * {
+  max-width: var(--eh-col);
+  margin-left: auto;
+  margin-right: auto;
 }
 .uni-hub-test.eh-page.eh-read .uh-block > *,
 .uni-hub-test.eh-page.eh-read .eh-qindex > * {
-  max-width: var(--eh-prose);
-  margin-left: auto;
-  margin-right: auto;
-}
-.uni-hub-test.eh-page.eh-read .uh-block > .hub-table-wrap,
-.uni-hub-test.eh-page.eh-read .uh-block > .eh-nets,
-.uni-hub-test.eh-page.eh-read .uh-block > .eh-types,
-.uni-hub-test.eh-page.eh-read .uh-block > .eh-evidence-wrap,
-.uni-hub-test.eh-page.eh-read .uh-block > .uh-calc,
-.uni-hub-test.eh-page.eh-read .uh-block > .eh-fig {
-  max-width: var(--eh-wide);
-  margin-top: 40px;
-  margin-bottom: 40px;
-}
-.uni-hub-test.eh-page.eh-read .uni-hub-cta-row,
-.uni-hub-test.eh-page.eh-read .uni-data-note {
-  max-width: var(--eh-prose);
-  margin-left: auto;
-  margin-right: auto;
+  max-width: none;
 }
 
-/* Eyebrow as a quiet label above the heading. */
+/* Meta row */
+.uni-hub-test.eh-page.eh-read .eh-topmeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin-top: 26px;
+  margin-bottom: 0;
+  font-size: 13.5px;
+  color: var(--eh-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-topmeta strong {
+  font-weight: 600;
+  color: var(--eh-ink);
+}
+
+/* Title block */
+.uni-hub-test.eh-page.eh-read .eh-hero {
+  margin-top: 22px;
+  padding: 0;
+  border: 0;
+  text-align: left;
+}
+.uni-hub-test.eh-page.eh-read .eh-hero-title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.uni-hub-test.eh-page.eh-read .eh-hero-title img { border-radius: 50%; flex-shrink: 0; }
+.uni-hub-test.eh-page.eh-read .eh-hero .uni-hub-h1 {
+  margin: 0;
+  font-size: clamp(34px, 4.6vw, 50px);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  color: var(--eh-ink);
+}
+.uni-hub-test.eh-page.eh-read .eh-dek {
+  margin: 18px 0 0;
+  font-size: 17.5px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: var(--eh-ink);
+}
+.uni-hub-test.eh-page.eh-read .eh-dek-accent { color: var(--eh-accent); }
+.uni-hub-test.eh-page.eh-read .eh-hero .uh-answer {
+  margin: 14px 0 0;
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--eh-ink-2);
+}
+.uni-hub-test.eh-page.eh-read .eh-hero .uh-answer strong { color: var(--eh-ink); }
+.uni-hub-test.eh-page.eh-read .eh-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+.uni-hub-test.eh-page.eh-read .eh-btn {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--eh-line);
+  border-radius: 10px;
+  background: var(--uni-card-2, #fff);
+  color: var(--eh-ink);
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.uni-hub-test.eh-page.eh-read .eh-btn:hover { border-color: var(--eh-ink-3); }
+.uni-hub-test.eh-page.eh-read .eh-btn-primary {
+  border-color: #191717;
+  background: #191717;
+  color: #fff;
+}
+.uni-hub-test.eh-page.eh-read .eh-btn-primary:hover { background: #33302b; border-color: #33302b; }
+:root[data-theme="dark"] .uni-hub-test.eh-page.eh-read .eh-btn-primary {
+  border-color: #ffb936;
+  background: #ffb936;
+  color: #191717;
+}
+
+/* Ruled stat grid */
+.uni-hub-test.eh-page.eh-read .eh-statgrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  margin-top: 40px;
+  margin-bottom: 0;
+  border-top: 1px solid var(--eh-line);
+  border-bottom: 1px solid var(--eh-line);
+}
+.uni-hub-test.eh-page.eh-read .eh-statgrid > div {
+  padding: 16px 18px 18px;
+  border-left: 1px solid var(--eh-line);
+}
+.uni-hub-test.eh-page.eh-read .eh-statgrid > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+.uni-hub-test.eh-page.eh-read .eh-statgrid dt {
+  font-size: 12.5px;
+  color: var(--eh-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-statgrid dd { margin: 0; }
+.uni-hub-test.eh-page.eh-read .eh-sg-v {
+  margin-top: 6px !important;
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--eh-ink);
+  font-variant-numeric: tabular-nums;
+}
+.uni-hub-test.eh-page.eh-read .eh-sg-s {
+  margin-top: 6px !important;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--eh-ink-3);
+}
+
+/* Sections: hairline above, air around. */
+.uni-hub-test.eh-page.eh-read .uh-block,
+.uni-hub-test.eh-page.eh-read .eh-qindex {
+  margin-top: 64px;
+  margin-bottom: 0;
+  padding-top: 56px;
+  border-top: 1px solid var(--eh-line);
+}
 .uni-hub-test.eh-page.eh-read .uh-block .rp-eyebrow,
 .uni-hub-test.eh-page.eh-read .eh-qindex .rp-eyebrow {
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  margin: 0 0 12px;
+  font-family: var(--eh-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--uni-ink-3);
-  margin-bottom: 14px;
+  color: var(--eh-ink-3);
 }
 .uni-hub-test.eh-page.eh-read .uh-eyebrow-date {
-  font-size: 12px;
-  text-transform: none;
-  letter-spacing: 0;
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-
-/* Large, light headings. */
 .uni-hub-test.eh-page.eh-read .uh-block h2,
 .uni-hub-test.eh-page.eh-read .eh-qindex h2 {
-  font-size: clamp(28px, 3.2vw, 38px);
-  font-weight: 500;
-  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  font-size: 27px;
+  font-weight: 650;
+  letter-spacing: -0.022em;
   line-height: 1.22;
-  margin-bottom: 26px;
+  color: var(--eh-ink);
 }
-
-/* Body copy at a comfortable size, line height and gap. */
 .uni-hub-test.eh-page.eh-read .uh-block p {
-  font-size: 16.5px;
-  line-height: 1.8;
-  margin-bottom: 22px;
+  font-size: 15.5px;
+  line-height: 1.72;
+  color: var(--eh-ink-2);
+  margin-bottom: 16px;
 }
 .uni-hub-test.eh-page.eh-read .uh-block > .uh-lead {
   padding-left: 0;
   border-left: 0;
-  font-size: 18px !important;
-  line-height: 1.75 !important;
-  margin-bottom: 26px !important;
-}
-.uni-hub-test.eh-page.eh-read strong {
-  font-weight: 600;
-}
-.uni-hub-test.eh-page.eh-read .uh-note {
-  font-size: 14px !important;
+  font-size: 17px !important;
   line-height: 1.65 !important;
-  color: var(--uni-ink-3) !important;
+  color: var(--eh-ink) !important;
+  margin-bottom: 24px !important;
+}
+.uni-hub-test.eh-page.eh-read strong { font-weight: 600; color: var(--eh-ink); }
+.uni-hub-test.eh-page.eh-read .uh-note {
+  font-size: 13.5px !important;
+  line-height: 1.6 !important;
+  color: var(--eh-ink-3) !important;
+  margin-top: 14px;
 }
 
-/* Key points: a light box of whole-sentence bullets. */
+/* Key points: a soft card of check-circle lines. */
 .uni-hub-test.eh-page.eh-read .eh-keys {
-  margin-top: 4px;
-  margin-bottom: 30px;
-  padding: 18px 24px 8px;
+  margin: 4px 0 28px;
+  padding: 20px 24px 10px;
   border: 1px solid var(--eh-line);
-  border-radius: 10px;
+  border-radius: 14px;
   background: var(--eh-soft);
 }
 .uni-hub-test.eh-page.eh-read .uh-block .eh-keys-h {
-  margin: 0 0 10px;
-  font-size: 12px;
-  line-height: 1.4;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  margin: 0 0 14px;
+  font-family: var(--eh-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--uni-ink-3);
+  color: var(--eh-ink-3);
 }
 .uni-hub-test.eh-page.eh-read .eh-keys ul {
   margin: 0;
-  padding: 0 0 0 18px;
-  list-style: disc;
+  padding: 0;
+  list-style: none;
 }
 .uni-hub-test.eh-page.eh-read .eh-keys li {
-  display: list-item;
-  margin: 0 0 10px;
-  padding-left: 4px;
-  font-size: 15.5px;
-  line-height: 1.6;
-  color: var(--uni-ink);
+  position: relative;
+  margin: 0 0 14px;
+  padding-left: 34px;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--eh-ink);
 }
-.uni-hub-test.eh-page.eh-read .eh-keys li::marker {
-  color: var(--uni-gold, #ffb936);
+.uni-hub-test.eh-page.eh-read .eh-keys li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 12.5l4 4 8-9'/%3E%3C/svg%3E")
+      center / 13px 13px no-repeat,
+    #191717;
+}
+:root[data-theme="dark"] .uni-hub-test.eh-page.eh-read .eh-keys li::before {
+  background-color: #ffb936;
 }
 
-/* Stat card: two figures under one label, a rule, then a dated note. */
+/* Stat pair: two tinted blocks under a mono label. */
 .uni-hub-test.eh-page.eh-read .eh-stat {
-  margin-top: 30px;
-  margin-bottom: 34px;
-  padding: 22px 26px 18px;
-  border: 1px solid var(--eh-line);
-  border-radius: 10px;
-  background: var(--uni-card-2, #fff);
-  box-shadow: 0 1px 2px rgba(25, 23, 23, 0.04);
+  margin: 24px 0 28px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
 }
 .uni-hub-test.eh-page.eh-read .eh-stat-h {
-  margin: 0 0 16px;
-  font-size: 16px;
+  margin: 0 0 12px;
+  font-family: var(--eh-mono);
+  font-size: 11.5px;
   font-weight: 500;
-  color: var(--uni-ink);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--eh-ink-3);
 }
 .uni-hub-test.eh-page.eh-read .eh-stat-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 12px;
   margin: 0;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--eh-line);
+  padding: 0;
+  border: 0;
+}
+.uni-hub-test.eh-page.eh-read .eh-stat-row > div {
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: var(--eh-tint);
 }
 .uni-hub-test.eh-page.eh-read .eh-stat-row dt {
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--uni-ink-3);
+  font-size: 12.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--eh-ink-2);
 }
-.uni-hub-test.eh-page.eh-read .eh-stat-row dd {
-  margin: 0;
-}
+.uni-hub-test.eh-page.eh-read .eh-stat-row dd { margin: 0; }
 .uni-hub-test.eh-page.eh-read .eh-stat-v {
   margin-top: 6px !important;
-  font-size: 30px;
-  line-height: 36px;
-  font-weight: 650;
-  color: var(--uni-ink);
+  font-size: 28px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--eh-accent);
   font-variant-numeric: tabular-nums;
 }
 .uni-hub-test.eh-page.eh-read .eh-stat-s {
-  margin-top: 4px !important;
+  margin-top: 6px !important;
   font-size: 13px;
   line-height: 1.45;
-  color: var(--uni-ink-3);
+  color: var(--eh-ink-2);
 }
 .uni-hub-test.eh-page.eh-read .uh-block .eh-stat-note {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   font-size: 13px;
   line-height: 1.5;
-  color: var(--uni-ink-3);
+  color: var(--eh-ink-3);
 }
 
-/* Narrow tables inside the reading column: no card, a small grey header,
-   hairline rows, figures right-aligned. */
-.uni-hub-test.eh-page.eh-read .eh-ntable-wrap {
-  margin-top: 8px;
-  margin-bottom: 30px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+/* Protocol rows: a big median on the left, name and detail, a range chip. */
+.uni-hub-test.eh-page.eh-read .eh-rows {
+  width: 100%;
+  margin: 8px 0 24px;
+  border-collapse: collapse;
 }
-.uni-hub-test.eh-page.eh-read .eh-ntable,
+.uni-hub-test.eh-page.eh-read .eh-rows thead th {
+  padding: 0 12px 10px 0;
+  font-family: var(--eh-mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--eh-ink-3);
+  border-bottom: 1px solid var(--eh-line);
+}
+.uni-hub-test.eh-page.eh-read .eh-rows tbody td,
+.uni-hub-test.eh-page.eh-read .eh-rows tbody th {
+  padding: 16px 12px 16px 0;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid var(--eh-line);
+  font-weight: 400;
+}
+.uni-hub-test.eh-page.eh-read .eh-rows .num { text-align: right; padding-right: 0; }
+.uni-hub-test.eh-page.eh-read .eh-rows-num { width: 128px; }
+.uni-hub-test.eh-page.eh-read .eh-rows-num strong {
+  display: block;
+  font-size: 22px;
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--eh-accent);
+  font-variant-numeric: tabular-nums;
+}
+.uni-hub-test.eh-page.eh-read .eh-rows-num span {
+  display: block;
+  margin-top: 3px;
+  font-size: 12px;
+  color: var(--eh-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-rows-t {
+  display: block;
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--eh-ink);
+}
+.uni-hub-test.eh-page.eh-read .eh-rows-s {
+  display: block;
+  margin-top: 3px;
+  font-size: 13.5px;
+  color: var(--eh-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-chip {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: var(--eh-soft);
+  border: 1px solid var(--eh-line);
+  font-size: 12.5px;
+  color: var(--eh-ink-2);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.uni-hub-test.eh-page.eh-read .eh-chip-dim { color: var(--eh-ink-3); }
+
+/* Ranking tables in the column: protocol moves under the name, so the
+   visible columns are # | Vault | 24h | trend | TVL | 30d [| Link]. */
+.uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-row .hub-cell.hub-strategy,
+.uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-thead .hub-th:nth-child(4) {
+  display: none;
+}
+@media (min-width: 801px) {
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-thead,
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics .hub-row {
+    grid-template-columns: 30px minmax(0, 1fr) 76px 92px 70px 64px;
+    gap: 14px;
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics.hub-table--links .hub-thead,
+  .uni-hub-test.eh-page.eh-read .hub-table--metrics.hub-table--links .hub-row {
+    grid-template-columns: 30px minmax(0, 1fr) 76px 92px 70px 64px 60px;
+  }
+}
+.uni-hub-test.eh-page.eh-read .hub-spark svg { width: 88px; height: auto; }
+.uni-hub-test.eh-page.eh-read .hub-table {
+  border-color: var(--eh-line);
+  border-radius: 14px;
+  box-shadow: none;
+}
+.uni-hub-test.eh-page.eh-read .hub-thead { background: var(--eh-soft); }
+.uni-hub-test.eh-page.eh-read .hub-th,
+.uni-hub-test.eh-page.eh-read .hub-th-sort {
+  font-family: var(--eh-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.uni-hub-test.eh-page.eh-read .hub-row {
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.uni-hub-test.eh-page.eh-read .hub-vault-name { font-size: 14.5px; }
+
+/* Safety table: same card, mono header. */
+.uni-hub-test.eh-page.eh-read .eh-evidence-wrap {
+  border-color: var(--eh-line);
+  border-radius: 14px;
+  box-shadow: none;
+}
+.uni-hub-test.eh-page.eh-read .eh-evidence thead th {
+  font-family: var(--eh-mono);
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: var(--eh-soft);
+  border-bottom: 1px solid var(--eh-line);
+}
+.uni-hub-test.eh-page.eh-read .eh-evidence th,
+.uni-hub-test.eh-page.eh-read .eh-evidence td {
+  padding: 13px 14px;
+  font-size: 14px;
+  border-color: var(--eh-line);
+}
+
+/* Earnings table: light rows. */
 .uni-hub-test.eh-page.eh-read .eh-earn {
   width: 100%;
+  margin-top: 28px;
   border: 0;
   border-radius: 0;
   border-collapse: collapse;
   background: transparent;
   box-shadow: none;
-  font-size: 14.5px;
-  font-variant-numeric: tabular-nums;
-}
-.uni-hub-test.eh-page.eh-read .eh-ntable { min-width: 560px; }
-.uni-hub-test.eh-page.eh-read .eh-ntable thead th,
-.uni-hub-test.eh-page.eh-read .eh-earn thead th {
-  padding: 8px 10px;
-  font-size: 12.5px;
-  font-weight: 500;
-  text-align: left;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--uni-ink-3);
-  background: transparent;
-  border-bottom: 1px solid var(--uni-line);
-}
-.uni-hub-test.eh-page.eh-read .eh-ntable tbody th,
-.uni-hub-test.eh-page.eh-read .eh-ntable td,
-.uni-hub-test.eh-page.eh-read .eh-earn tbody th,
-.uni-hub-test.eh-page.eh-read .eh-earn td {
-  padding: 11px 10px;
-  text-align: left;
-  font-family: var(--sans);
-  font-size: 14.5px;
-  font-weight: 400;
-  color: var(--uni-ink);
-  border-bottom: 1px solid var(--eh-line);
-  white-space: nowrap;
-}
-.uni-hub-test.eh-page.eh-read .eh-ntable tbody th,
-.uni-hub-test.eh-page.eh-read .eh-earn tbody th {
-  font-weight: 500;
-}
-.uni-hub-test.eh-page.eh-read .eh-ntable .num {
-  text-align: right;
-}
-.uni-hub-test.eh-page.eh-read .eh-ntable .eh-dim {
-  color: var(--uni-ink-3);
-}
-.uni-hub-test.eh-page.eh-read .eh-ntable tbody tr:hover,
-.uni-hub-test.eh-page.eh-read .eh-earn tbody tr:hover {
-  background: var(--eh-soft);
 }
 .uni-hub-test.eh-page.eh-read .eh-earn caption {
   padding: 0 0 10px;
-  font-size: 15px;
-}
-
-/* Wide card tables: small uppercase header on a tinted band. */
-.uni-hub-test.eh-page.eh-read .hub-th,
-.uni-hub-test.eh-page.eh-read .hub-th-sort,
-.uni-hub-test.eh-page.eh-read .eh-evidence thead th {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
+  font-family: var(--eh-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
+  color: var(--eh-ink-3);
 }
-.uni-hub-test.eh-page.eh-read .hub-table,
-.uni-hub-test.eh-page.eh-read .eh-evidence-wrap {
-  border-color: var(--eh-line);
-  border-radius: 10px;
+.uni-hub-test.eh-page.eh-read .eh-earn thead th {
+  padding: 8px 10px 8px 0;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--eh-ink-3);
+  background: transparent;
+  border-bottom: 1px solid var(--eh-line);
 }
-.uni-hub-test.eh-page.eh-read .hub-thead,
-.uni-hub-test.eh-page.eh-read .eh-evidence thead th {
-  background: var(--eh-soft);
+.uni-hub-test.eh-page.eh-read .eh-earn tbody th,
+.uni-hub-test.eh-page.eh-read .eh-earn td {
+  padding: 12px 10px 12px 0;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--eh-ink);
+  border-bottom: 1px solid var(--eh-line);
 }
 
-/* Cards in the network and type grids share the card language. */
+/* Cards in the network and type grids. */
+.uni-hub-test.eh-page.eh-read .eh-nets {
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  margin: 8px 0 28px;
+}
+.uni-hub-test.eh-page.eh-read .eh-types {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 8px 0 28px;
+}
 .uni-hub-test.eh-page.eh-read .eh-net,
 .uni-hub-test.eh-page.eh-read .eh-type {
-  border-radius: 10px;
-  border-color: var(--eh-line);
-  box-shadow: 0 1px 2px rgba(25, 23, 23, 0.04);
+  border: 1px solid var(--eh-line);
+  border-radius: 14px;
+  background: var(--uni-card-2, #fff);
+  box-shadow: none;
 }
 
-/* Lists in prose: plain bullets with a bold lead-in, not ruled rows. */
+/* Risks: rows with a bold title line. */
 .uni-hub-test.eh-page.eh-read .uh-risks {
-  padding-left: 20px;
-  list-style: disc;
-  gap: 4px;
-  margin-bottom: 24px;
+  margin: 8px 0 20px;
+  padding: 0;
+  list-style: none;
+  gap: 0;
 }
 .uni-hub-test.eh-page.eh-read .uh-risks > li {
-  padding: 0 0 12px 2px;
-  border-top: 0;
-  font-size: 16.5px;
-  line-height: 1.8;
+  padding: 16px 0;
+  border-top: 1px solid var(--eh-line);
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--eh-ink-2);
 }
-.uni-hub-test.eh-page.eh-read .uh-risks > li::marker {
-  color: var(--uni-ink-3);
+.uni-hub-test.eh-page.eh-read .uh-risks > li:last-child { border-bottom: 1px solid var(--eh-line); }
+.uni-hub-test.eh-page.eh-read .uh-risks > li > strong { color: var(--eh-ink); }
+
+/* Steps: a progress timeline, numbered circles joined by a line. */
+.uni-hub-test.eh-page.eh-read .eh-steps {
+  margin: 8px 0 24px;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+.uni-hub-test.eh-page.eh-read .eh-steps > li {
+  position: relative;
+  margin: 0;
+  padding: 0 0 22px 46px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--eh-ink-2);
+  counter-increment: step;
+}
+.uni-hub-test.eh-page.eh-read .eh-steps > li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: -1px;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #191717;
+  color: #fff;
+  font-family: var(--eh-mono);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.uni-hub-test.eh-page.eh-read .eh-steps > li::after {
+  content: "";
+  position: absolute;
+  left: 13.5px;
+  top: 30px;
+  bottom: 2px;
+  width: 1px;
+  background: var(--eh-line);
+}
+.uni-hub-test.eh-page.eh-read .eh-steps > li:last-child::after { display: none; }
+:root[data-theme="dark"] .uni-hub-test.eh-page.eh-read .eh-steps > li::before {
+  background: #ffb936;
+  color: #191717;
 }
 
-/* Questions in place: a light card, no gold rule. */
+/* Questions in place: accordion rows that tint when open. */
 .uni-hub-test.eh-page.eh-read .eh-ask {
-  margin-top: 36px;
-  padding: 6px 22px 6px;
+  margin-top: 32px;
+  padding: 18px 10px 10px;
   border: 1px solid var(--eh-line);
-  border-radius: 10px;
+  border-left: 1px solid var(--eh-line);
+  border-radius: 14px;
   background: var(--uni-card-2, #fff);
 }
 .uni-hub-test.eh-page.eh-read .uh-block .eh-ask-h {
-  margin: 14px 0 4px;
-  font-family: var(--sans);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  margin: 0 14px 8px;
+  font-family: var(--eh-mono);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--uni-ink-3);
+  color: var(--eh-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-item {
+  border: 0;
+  border-radius: 10px;
+  padding: 0 14px;
+}
+.uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-item[open] { background: var(--eh-soft); }
+.uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-q {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--eh-ink);
+}
+.uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-a {
+  font-size: 15px;
+  line-height: 1.68;
+}
+
+/* Jump links as quiet chips. */
+.uni-hub-test.eh-page.eh-read .eh-jumps a {
+  border-radius: 8px;
+  font-size: 13.5px;
 }
 
 @media (max-width: 800px) {
   .uni-hub-test.eh-page.eh-read .uh-block,
-  .uni-hub-test.eh-page.eh-read .eh-qindex { margin-top: 64px; }
-  .uni-hub-test.eh-page.eh-read .eh-intro { margin-top: 32px; }
-  .uni-hub-test.eh-page.eh-read .uh-block p { font-size: 16px; line-height: 1.75; }
-  .uni-hub-test.eh-page.eh-read .uh-block > .uh-lead { font-size: 17px !important; }
-  .uni-hub-test.eh-page.eh-read .eh-intro .uh-answer { font-size: 17px; }
-  .uni-hub-test.eh-page.eh-read .eh-stat { padding: 18px 18px 14px; }
-  .uni-hub-test.eh-page.eh-read .eh-stat-v,
-  .uni-hub-test.eh-page.eh-read .eh-tile-v { font-size: 24px; line-height: 30px; }
-  .uni-hub-test.eh-page.eh-read .eh-keys { padding: 16px 18px 6px; }
+  .uni-hub-test.eh-page.eh-read .eh-qindex { margin-top: 44px; padding-top: 40px; }
+  .uni-hub-test.eh-page.eh-read .uh-block h2,
+  .uni-hub-test.eh-page.eh-read .eh-qindex h2 { font-size: 23px; }
+  .uni-hub-test.eh-page.eh-read .eh-statgrid { grid-template-columns: 1fr 1fr; }
+  .uni-hub-test.eh-page.eh-read .eh-statgrid > div:nth-child(odd) { padding-left: 0; border-left: 0; }
+  .uni-hub-test.eh-page.eh-read .eh-statgrid > div:nth-child(n + 3) { border-top: 1px solid var(--eh-line); }
+  .uni-hub-test.eh-page.eh-read .eh-types,
+  .uni-hub-test.eh-page.eh-read .eh-nets { grid-template-columns: 1fr; }
+  .uni-hub-test.eh-page.eh-read .eh-stat-row { grid-template-columns: 1fr; }
+  .uni-hub-test.eh-page.eh-read .eh-rows-num { width: 92px; }
+  .uni-hub-test.eh-page.eh-read .eh-rows-num strong { font-size: 19px; }
 }

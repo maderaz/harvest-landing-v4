@@ -407,7 +407,7 @@ function Row({
               <span className="hub-vault-title">
                 {getCanonicalDisplayName(vault).replace(/\s*\([^)]*\)$/, "")}
               </span>
-              <span className="hub-vault-net">{vault.chain}</span>
+              <span className="hub-vault-net">{`${vault.chain} · ${protocolName}`}</span>
             </>
           ) : (
             getCanonicalDisplayName(vault)
