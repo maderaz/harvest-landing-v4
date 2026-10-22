@@ -175,16 +175,14 @@ export function stakingAnswer(c: EthCohort, s: StakingReference | null): string 
       loopNote
     );
   }
+  // One example, not a list: the best funded rate against the staking rate,
+  // then how many funded strategies cleared it.
+  const lead = above[0];
   return (
-    `Yes, on ${countOf(above.length, c.fundedCount)} ETH strategies holding at least ` +
-    `${tvl(c.fundedFloor)}, on their 24-hour rates as of ${c.asOf}, led by ${listOf(
-      above.slice(0, 3).map((v) => `${proseName(v)} at ${apy(v.apy24h)}`),
-    )}.` +
-    (c.fundedCount > above.length
-      ? ` The other ${c.fundedCount - above.length} paid less than staking.`
-      : "") +
-    ` ${ref}` +
-    loopNote
+    `Yes. As of ${c.asOf}, ${proseName(lead)} paid ${apy(lead.apy24h)}, against about ` +
+    `${aprToApy(s.aprAverage).toFixed(2)}% APY for Lido's stETH, and ` +
+    `${countOf(above.length, c.fundedCount)} ETH strategies holding at least ` +
+    `${tvl(c.fundedFloor)} paid more than staking.`
   );
 }
 

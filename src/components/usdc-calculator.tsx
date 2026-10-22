@@ -167,20 +167,6 @@ export function UsdcCalculator({
             Calculate earnings
           </button>
 
-          <p className="uh-calc-note">
-            Educational only. The figures extrapolate one day&rsquo;s rate across a
-            full year and assume it holds, which no onchain rate does. Rates move
-            with borrower demand, with reward programs that start and stop, and
-            with how much liquidity sits in a strategy at the time. A large
-            enough amount can move the rate it earns. Nothing here is advice, an
-            offer, or a forecast.
-          </p>
-          {/* A fee disclaimer used to sit here saying these figures were gross
-              of fees and a realised amount would be lower. That was wrong: the
-              published APY is already net of the performance fee, so the
-              paragraph was warning about a deduction that has already been
-              taken. Removed rather than reworded, because nothing needs
-              disclosing when the figure shown is the figure earned. */}
         </div>
 
         <div className="uh-calc-res">
@@ -240,6 +226,21 @@ export function UsdcCalculator({
           </div>
         </div>
       </div>
+      {/* Full width under both panes, so the inputs pane stays short. */}
+      <p className="uh-calc-note">
+        Educational only. The figures extrapolate one day&rsquo;s rate across a
+        full year and assume it holds, which no onchain rate does. Rates move
+        with borrower demand, with reward programs that start and stop, and
+        with how much liquidity sits in a strategy at the time. A large
+        enough amount can move the rate it earns. Nothing here is advice, an
+        offer, or a forecast.
+      </p>
+      {/* A fee disclaimer used to sit here saying these figures were gross
+          of fees and a realised amount would be lower. That was wrong: the
+          published APY is already net of the performance fee, so the
+          paragraph was warning about a deduction that has already been
+          taken. Removed rather than reworded, because nothing needs
+          disclosing when the figure shown is the figure earned. */}
     </div>
   );
 }

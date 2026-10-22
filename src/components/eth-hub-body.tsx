@@ -602,7 +602,12 @@ export async function EthHubBody() {
           A curated vault on <Link href="/morpho">Morpho</Link>{" "}adds the curator&rsquo;s choice of
           markets. An allocator adds a contract that moves the position between venues.
         </p>
-        <EthLoopFigure />
+        <EthLoopFigure
+          vaultHref={(() => {
+            const loop = c.all.find((v) => strategyTypeOf(v) === "looping");
+            return loop ? `/${loop.slug}` : undefined;
+          })()}
+        />
         <p>
           <strong>Looping adds leverage</strong>, the only one of the four with a liquidation
           path. Building the loop costs fees, so it charges an entry cost the app shows before a

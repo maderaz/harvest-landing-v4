@@ -3,60 +3,74 @@
 // Animated figure for the leveraged-looping paragraph on /eth.
 //
 // A loop is the one ETH strategy whose mechanism does not survive being
-// written down: "supply, borrow against it, supply again" reads as a sentence
-// and lands as nothing. Drawn, it is obvious. The figure builds the loop one
-// round at a time, stacks the position as it grows and counts the net rate up,
-// then sets the result beside the rate of supplying without the loop.
+// written down, so the figure draws a real one: WETH Looping on Base, which
+// routes WETH into cbETH, supplies it on Aave V3 in E-mode, borrows WETH
+// against it and folds the loop to a 92% target LTV. The frames follow the
+// vault's own page: the route, the leverage climbing fold by fold, the
+// position (collateral, debt, equity), the LTV against its liquidation line,
+// and the carry that is left once the borrow cost is paid.
 //
-// One idea per frame and few words on screen: three short node labels, one
-// leverage figure, one position bar, one net rate. Labels sit clear of the
-// arcs, never on them.
+// The figures are a dated snapshot of the vault's details page, labelled as
+// such, not a live feed: they explain the mechanism and are not quoted
+// anywhere else on the page.
 //
-// Every number is illustrative and labelled so: 75% loan-to-value, a 2.5%
-// supply rate and a 2.0% borrow rate. Net rate on the starting ETH is
-//
-//   net = supply * L - borrow * (L - 1)      L = total supplied / starting ETH
+// Drawn in the social-card style: an orange dotted canvas holding a header,
+// one dark brown panel and a footer note. Inside the panel the chart is one
+// series in brand orange, what has not grown at reduced strength, and a faint
+// "Harvest" watermark sits top-left over empty space, clear of every mark.
 //
 // SVG and CSS rather than video: sharp at any width, a few KB, and it starts
 // only when scrolled into view. With reduced motion it renders the finished
 // state and does not move.
-//
-// Drawn in the social-card style: an orange dotted canvas holding a header,
-// one dark brown panel and a footer note. Inside the panel the chart is one
-// series in brand orange, the part that has not grown (the starting ETH, the
-// plain supply rate) at reduced strength, and a faint "Harvest" watermark sits
-// top-left over empty space, clear of every mark.
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { AssetIcon } from "@/components/token-icons";
 
-const LTV = 0.75;
-const SUPPLY = 2.5;
-const BORROW = 2.0;
-const ROUNDS = 4; // starting ETH plus three loops
+// Snapshot of the vault's details page.
+const SNAPSHOT = "Oct 22, 2026";
+const LEVERAGE = 12.6;
+const TARGET_LTV = 92;
+const LIQ_LTV = 95;
+const STAKE = 2.28; // cbETH staking yield, %
+const BORROW = 2.02; // WETH borrow APR, %
+const LIVE_APY = 5.43;
+const COLL = 344_077; // $ of cbETH collateral
+const DEBT = 316_700; // $ of WETH debt
+const EQUITY = 27_378;
+const COLL_CBETH = 125.55;
+const DEBT_WETH = 131.99;
 
-/** Cumulative leverage after each round: 1, 1.75, 2.3125, 2.734375 */
-const LEVERAGE = Array.from({ length: ROUNDS }, (_, i) =>
-  Array.from({ length: i + 1 }, (_, k) => LTV ** k).reduce((a, b) => a + b, 0),
-);
-const net = (lev: number) => SUPPLY * lev - BORROW * (lev - 1);
-const FINAL = net(LEVERAGE[ROUNDS - 1]);
+// Leverage after each fold at 92% LTV: 1, 1.92, 3.53, 6.69, 9.02, 11.6, then
+// the target the vault rebalances to.
+const FOLDS = [1, 1.92, 3.53, 6.69, 9.02, 11.6, LEVERAGE];
 
-// Beats, in ms from the start: rounds 1-4, then the comparison.
-const BEATS = [300, 1500, 2700, 3900, 5200];
-const HOLD = 5500;
+const k = (usd: number) => `$${(usd / 1000).toFixed(1)}K`;
+const EARNED = (COLL * STAKE) / 100;
+const PAID = (DEBT * BORROW) / 100;
+const KEPT = EARNED - PAID;
+
+// Beats, in ms from the start: the route, six folds, the position, the LTV,
+// then the carry.
+const BEATS = [300, 1000, 1450, 1900, 2350, 2800, 3250, 3700, 4500, 5300, 6100];
+const HOLD = 6000;
 const LAST = BEATS.length - 1;
+const POS = 7;
+const GAUGE = 8;
+const CARRY = 9;
 
-// Comparison bars: px per percentage point.
-const PX = 58;
+// Left column bars: px per dollar of collateral.
+const W = 430;
+const px = (usd: number) => (usd / COLL) * W;
+// LTV track: 80% to 96% across the right column.
+const tx = (ltv: number) => 520 + ((ltv - 80) / 16) * 440;
 
-export function EthLoopFigure() {
+export function EthLoopFigure({ vaultHref }: { vaultHref?: string }) {
   const ref = useRef<HTMLElement>(null);
   const [step, setStep] = useState(-1);
   const [run, setRun] = useState(0);
   const [reduced, setReduced] = useState(false);
-  // On a phone the three parts stack: the loop on top, then the position and
-  // the net rate side by side under it, so the drawing fits without scrolling.
+  // On a phone the two columns stack, so the drawing fits without scrolling.
   const [narrow, setNarrow] = useState(false);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 700px)");
@@ -100,20 +114,21 @@ export function EthLoopFigure() {
     };
   }, [run]);
 
-  const round = Math.min(step, ROUNDS - 1); // -1..3
-  const lev = round >= 0 ? LEVERAGE[round] : 1;
-  const done = step >= LAST;
-
-  // Stacked position bar, layer heights proportional to ETH in each round.
-  const BASE_Y = 380;
-  const BAR_H = 250;
-  const unit = BAR_H / LEVERAGE[ROUNDS - 1];
-  let y = BASE_Y;
+  const fold = Math.max(0, Math.min(step, FOLDS.length - 1));
+  const lev = step >= 1 ? FOLDS[fold] : 1;
+  const on = (beat: number) => (step >= beat ? " is-in" : "");
+  const chips = [
+    { t: "WETH", w: 74 },
+    { t: "cbETH", w: 84 },
+    { t: "Supply", w: 86 },
+    { t: "Borrow ↻", w: 104 },
+  ];
+  let cx = 0;
 
   return (
     <figure
       ref={ref}
-      className={`eh-fig${done ? " is-done" : ""}${reduced ? " is-static" : ""}`}
+      className={`eh-fig${step >= LAST ? " is-done" : ""}${reduced ? " is-static" : ""}`}
       aria-labelledby="loop-fig-title"
       // The animated labels are frames of a drawing, not claims; keep them out
       // of search snippets. The <desc> carries the one-sentence summary.
@@ -121,115 +136,142 @@ export function EthLoopFigure() {
     >
       <header className="eh-fig-head">
         <div className="eh-fig-title">
-          <p className="eh-fig-eyebrow">Leveraged looping</p>
+          <p className="eh-fig-eyebrow">Leveraged looping · Aave V3 E-mode</p>
           <div className="eh-fig-titlerow">
             <AssetIcon asset="ETH" size={44} />
-            <h3 id="loop-fig-title">How a loop multiplies the spread</h3>
+            <h3 id="loop-fig-title">{`How a ${LEVERAGE}× loop earns ${LIVE_APY}%`}</h3>
           </div>
         </div>
         <p className="eh-fig-meta">
-          <span>Supply 2.5% · Borrow 2.0%</span>
-          <strong>75% LTV</strong>
+          <span>WETH Looping · Base</span>
+          <strong>{SNAPSHOT}</strong>
         </p>
       </header>
 
       <div className="eh-fig-panel">
-        <p className="eh-fig-label">Position and net rate · 3 loops</p>
-      <svg
-        viewBox={narrow ? "0 0 480 920" : "0 0 960 520"}
-        className="eh-fig-svg" role="img" aria-labelledby="loop-fig-desc">
-        <desc id="loop-fig-desc">
-          ETH is supplied, borrowed against at 75% and supplied again, three times. The position
-          grows from 1 ETH to about 2.73 ETH, and the net rate on the starting ETH rises from 2.50%
-          to about 3.37%, against 2.50% for supplying without the loop.
-        </desc>
-        <defs>
-          <radialGradient id="lf-glow">
-            <stop offset="0" stopColor="#ffb234" stopOpacity="0.18" />
-            <stop offset="1" stopColor="#ffb234" stopOpacity="0" />
-          </radialGradient>
-        </defs>
-
-        {/* Watermark: top-left, over the empty band above the drawing. */}
-        <text x="0" y="96" className="lf-mark" aria-hidden="true">
-          Harvest
-        </text>
-        <g transform="translate(0 100)">
-
-        {/* ---- the loop: circle r=125 centred at (200, 215) ---- */}
-        <g
-          className={`lf-cycle${step >= 0 ? " is-on" : ""}`}
-          transform={narrow ? "translate(40 0)" : undefined}
+        <p className="eh-fig-label">cbETH / ETH loop · vault snapshot</p>
+        <svg
+          viewBox={narrow ? "0 0 480 1010" : "0 0 960 540"}
+          className="eh-fig-svg"
+          role="img"
+          aria-labelledby="loop-fig-desc"
         >
-          <circle cx="200" cy="215" r="100" fill="url(#lf-glow)" className="lf-glow" />
-          {[
-            // arcs run -78°..18°, 42°..138°, 162°..258°, leaving gaps at the nodes
-            { d: "M 226.0 92.7 A 125 125 0 0 1 318.9 253.6", g: "#ffb234" },
-            { d: "M 292.9 298.6 A 125 125 0 0 1 107.1 298.6", g: "#ffb234" },
-            { d: "M 81.1 253.6 A 125 125 0 0 1 174.0 92.7", g: "#ffb234" },
-          ].map((a, i) => (
-            <g key={i}>
-              <path
-                pathLength={1}
-                d={a.d}
-                stroke={a.g}
-                className={`lf-arc${round >= i ? " is-drawn" : ""}`}
-              />
-              <path pathLength={1} d={a.d} className={`lf-flow${round >= i ? " is-drawn" : ""}`} />
+          <desc id="loop-fig-desc">
+            {`WETH Looping on Base routes WETH into cbETH, supplies it on Aave V3 in E-mode, ` +
+              `borrows WETH against it and folds to ${LEVERAGE}x leverage at a ${TARGET_LTV}% ` +
+              `target LTV, below a ${LIQ_LTV}% liquidation LTV. With a ${STAKE}% cbETH staking ` +
+              `yield and a ${BORROW}% WETH borrow rate, about ${k(COLL)} of collateral against ` +
+              `${k(DEBT)} of debt leaves ${k(EQUITY)} of equity earning a live ${LIVE_APY}% APY, ` +
+              `as of ${SNAPSHOT}.`}
+          </desc>
+
+          {/* Watermark: top-left, over the empty band above the drawing. */}
+          <text x="0" y="92" className="lf-mark" aria-hidden="true">
+            Harvest
+          </text>
+
+          {/* ---- left: route, leverage, position ---- */}
+          <g transform={narrow ? "translate(25 0)" : undefined}>
+            <g className={`lf-route${on(0)}`}>
+              {chips.map((c, i) => {
+                const x = cx;
+                cx += c.w + 22;
+                return (
+                  <g key={c.t} style={{ transitionDelay: `${i * 0.12}s` }} className="lf-chip">
+                    <rect x={x} y="128" width={c.w} height="36" rx="18" />
+                    <text x={x + c.w / 2} y="151" textAnchor="middle" className="lf-chip-t">
+                      {c.t}
+                    </text>
+                    {i < chips.length - 1 ? (
+                      <text x={x + c.w + 11} y="151" textAnchor="middle" className="lf-arrow">
+                        →
+                      </text>
+                    ) : null}
+                  </g>
+                );
+              })}
             </g>
-          ))}
 
-          {/* Node labels sit outside the circle, clear of every arc end. */}
-          <text x="200" y="56" className="lf-node">Supply ETH</text>
-          <text x="318" y="396" className="lf-node">Borrow 75%</text>
-          <text x="82" y="396" className="lf-node">Supply again</text>
-
-          <text x="200" y="226" className="lf-lev">{`${lev.toFixed(2)}×`}</text>
-          <text x="200" y="256" className="lf-lev-sub">leverage</text>
-        </g>
-
-        {/* ---- the position ---- */}
-        <g className="lf-stack" transform={narrow ? "translate(-470 430)" : undefined}>
-          <text x="510" y="96" className="lf-col-h">Position</text>
-          <line x1="500" x2="640" y1={BASE_Y + 0.5} y2={BASE_Y + 0.5} className="lf-axis" />
-          {LEVERAGE.map((_, i) => {
-            const h = LTV ** i * unit;
-            y -= h;
-            return (
-              <g key={i} className={`lf-layer${round >= i ? " is-in" : ""}${i > 0 ? " is-borrowed" : ""}`}>
-                <rect x="510" y={y + 3} width="120" height={h - 6} rx="9" />
-                <text x="570" y={y + h / 2 + 6} textAnchor="middle" className="lf-layer-t">
-                  {i === 0 ? "1 ETH" : `+${(LTV ** i).toFixed(2)}`}
-                </text>
-              </g>
-            );
-          })}
-        </g>
-
-        {/* ---- the result ---- */}
-        <g className="lf-math" transform={narrow ? "translate(-505 430)" : undefined}>
-          <text x="700" y="96" className="lf-col-h">Net rate on 1 ETH</text>
-          <text x="700" y="160" className="lf-net">{`${net(lev).toFixed(2)}%`}</text>
-          <g className={`lf-compare${done ? " is-in" : ""}`}>
-            <text x="700" y="250" className="lf-compare-h">Supplying alone</text>
-            <rect x="700" y="264" width={SUPPLY * PX} height="12" rx="6" className="lf-bar-plain" />
-            <text x={700 + SUPPLY * PX + 10} y="275" className="lf-bar-t">{`${SUPPLY.toFixed(2)}%`}</text>
-            <text x="700" y="318" className="lf-compare-h">With the loop</text>
-            <rect x="700" y="332" width={FINAL * PX} height="12" rx="6" className="lf-bar-loop" />
-            <text x={700 + FINAL * PX + 10} y="343" className="lf-bar-t lf-bar-t-hi">
-              {`${FINAL.toFixed(2)}%`}
+            <text x="0" y="222" className="lf-lab">
+              Live leverage
             </text>
+            <text x="0" y="296" className="lf-lev-big">{`${lev.toFixed(lev < 10 ? 2 : 1)}×`}</text>
+            <text x={W} y="296" textAnchor="end" className="lf-lab">
+              {step >= FOLDS.length - 1 ? `Target LTV ${TARGET_LTV}%` : "Folding"}
+            </text>
+
+            <text x="0" y="350" className="lf-lab">
+              Position on Aave V3
+            </text>
+            {[
+              { y: 376, t: `Collateral · ${COLL_CBETH} cbETH`, v: COLL, c: "lf-bar-coll" },
+              { y: 424, t: `Debt · ${DEBT_WETH} WETH`, v: DEBT, c: "lf-bar-debt" },
+              { y: 472, t: "Net equity", v: EQUITY, c: "lf-bar-eq" },
+            ].map((r, i) => (
+              <g key={r.t} className={`lf-pos${on(POS)}`} style={{ transitionDelay: `${i * 0.15}s` }}>
+                <text x="0" y={r.y} className="lf-row-t">
+                  {r.t}
+                </text>
+                <text x={W} y={r.y} textAnchor="end" className="lf-row-v">
+                  {k(r.v)}
+                </text>
+                <rect x="0" y={r.y + 10} width={Math.max(px(r.v), 6)} height="14" rx="7" className={r.c} />
+              </g>
+            ))}
           </g>
-        </g>
-        </g>
-      </svg>
+
+          {/* ---- right: live APY, LTV, carry ---- */}
+          <g transform={narrow ? "translate(-495 470)" : undefined}>
+            <text x="520" y="150" className="lf-lab">
+              Live APY
+            </text>
+            <text x="520" y="226" className={`lf-apy${on(CARRY)}`}>{`${LIVE_APY}%`}</text>
+
+            <g className={`lf-gauge${on(GAUGE)}`}>
+              <text x="520" y="282" className="lf-lab">
+                LTV
+              </text>
+              <rect x="520" y="300" width="440" height="10" rx="5" className="lf-track" />
+              <rect x="520" y="300" width={tx(TARGET_LTV) - 520} height="10" rx="5" className="lf-fill" />
+              <line x1={tx(LIQ_LTV)} x2={tx(LIQ_LTV)} y1="292" y2="318" className="lf-liq" />
+              <text x="520" y="340" className="lf-tick-t">
+                80%
+              </text>
+              <text x={tx(TARGET_LTV)} y="340" textAnchor="end" className="lf-tick-t lf-tick-hi">
+                {`Target ${TARGET_LTV}%`}
+              </text>
+              <text x="960" y="340" textAnchor="end" className="lf-tick-t">
+                {`Liq. ${LIQ_LTV}%`}
+              </text>
+            </g>
+
+            <g className={`lf-carry${on(CARRY)}`}>
+              <text x="520" y="392" className="lf-lab">
+                Carry at these rates, a year
+              </text>
+              <text x="520" y="426" className="lf-row-t">{`cbETH staking ${STAKE}% on ${k(COLL)}`}</text>
+              <text x="960" y="426" textAnchor="end" className="lf-row-v">{`+${k(EARNED)}`}</text>
+              <text x="520" y="462" className="lf-row-t">{`WETH borrow ${BORROW}% on ${k(DEBT)}`}</text>
+              <text x="960" y="462" textAnchor="end" className="lf-row-v lf-dim">{`−${k(PAID)}`}</text>
+              <line x1="520" x2="960" y1="480" y2="480" className="lf-rule" />
+              <text x="520" y="512" className="lf-row-t lf-strong">{`Kept on ${k(EQUITY)} of equity`}</text>
+              <text x="960" y="512" textAnchor="end" className="lf-row-v lf-hi">{`+${k(KEPT)}`}</text>
+            </g>
+          </g>
+        </svg>
       </div>
 
       <footer className="eh-fig-foot">
         <p className="eh-fig-note">
-          Illustrative figures: 75% loan-to-value, a 2.5% supply rate and a 2.0% borrow rate.
-          Real rates move, and a borrow rate above the supply rate turns the loop against the
-          position.
+          {`Snapshot of the vault page on ${SNAPSHOT}. The fold multiplies the spread between ` +
+            `staking yield and borrow cost, and the liquidation risk by the same leverage; the vault ` +
+            `deleverages when its health factor nears 1.001.`}
+          {vaultHref ? (
+            <>
+              {" "}
+              <Link href={vaultHref}>See the vault</Link>.
+            </>
+          ) : null}
         </p>
         {!reduced ? (
           <button type="button" className="eh-fig-replay" onClick={() => setRun((r) => r + 1)}>

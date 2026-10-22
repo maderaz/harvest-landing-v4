@@ -1804,9 +1804,24 @@
 }
 .uni-hub-test.eh-page.eh-read .eh-earn tbody th { white-space: nowrap; }
 
+/* No sideways scrolling: the safety table fits the column and wraps. */
+.uni-hub-test.eh-page.eh-read .eh-evidence-wrap { overflow: visible; }
+.uni-hub-test.eh-page.eh-read .eh-evidence { min-width: 0; table-layout: auto; }
+.uni-hub-test.eh-page.eh-read .eh-evidence th,
+.uni-hub-test.eh-page.eh-read .eh-evidence td {
+  padding: 13px 12px;
+  white-space: normal;
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+.uni-hub-test.eh-page.eh-read .eh-evidence td:nth-child(3),
+.uni-hub-test.eh-page.eh-read .eh-evidence td:nth-child(5),
+.uni-hub-test.eh-page.eh-read .eh-evidence td:nth-child(6) { white-space: nowrap; }
+.uni-hub-test.eh-page.eh-read .eh-evidence thead th { line-height: 1.3; }
+
 /* Phones: the safety table becomes one card per strategy, each figure on
    its own labelled line, so nothing scrolls sideways. */
-@media (max-width: 600px) {
+@media (max-width: 760px) {
   .uni-hub-test.eh-page.eh-read .eh-evidence-wrap { overflow: visible; border: 0; background: none; }
   .uni-hub-test.eh-page.eh-read .eh-evidence { min-width: 0; }
   .uni-hub-test.eh-page.eh-read .eh-evidence thead { display: none; }
@@ -1839,5 +1854,190 @@
     content: attr(data-label);
     color: var(--eh-ink-3);
     font-family: var(--sans);
+  }
+}
+
+/* Questions in place: a soft rounded area again, rows inside it plain. */
+.uni-hub-test.eh-page.eh-read .eh-ask {
+  padding: 16px 20px 4px;
+  border: 1px solid var(--eh-line);
+  border-radius: 14px;
+  background: var(--eh-soft);
+}
+.uni-hub-test.eh-page.eh-read .uh-calc-note { margin-top: 18px !important; }
+
+/* === Loop figure: the vault snapshot ==================================
+   Route chips, the leverage counter, collateral / debt / equity bars, the
+   LTV track against its liquidation line, and the carry rows. One series
+   in orange; what has not grown sits at reduced strength. */
+.eh-fig .lf-lab {
+  fill: var(--lf-tan);
+  font-family: var(--lf-mono);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.eh-fig .lf-chip {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.eh-fig .lf-route.is-in .lf-chip { opacity: 1; transform: none; }
+.eh-fig .lf-chip rect { fill: var(--lf-orange); fill-opacity: 0.14; stroke: var(--lf-orange); stroke-opacity: 0.55; }
+.eh-fig .lf-chip-t { fill: var(--lf-cream); font-family: var(--lf-mono); font-size: 14px; }
+.eh-fig .lf-arrow { fill: var(--lf-tan); font-family: var(--lf-mono); font-size: 15px; }
+.eh-fig .lf-lev-big {
+  fill: var(--lf-orange);
+  font-family: var(--lf-sans);
+  font-size: 76px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+}
+.eh-fig .lf-row-t { fill: var(--lf-cream); font-family: var(--lf-sans); font-size: 16px; font-weight: 500; }
+.eh-fig .lf-row-v { fill: var(--lf-cream); font-family: var(--lf-mono); font-size: 15px; }
+.eh-fig .lf-dim { fill: var(--lf-tan); }
+.eh-fig .lf-hi { fill: var(--lf-orange); font-weight: 600; }
+.eh-fig .lf-strong { font-weight: 700; }
+.eh-fig .lf-pos {
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+.eh-fig .lf-pos rect {
+  transform-box: fill-box;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 0.9s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transition-delay: inherit;
+}
+.eh-fig .lf-pos.is-in { opacity: 1; }
+.eh-fig .lf-pos.is-in rect { transform: none; }
+.eh-fig .lf-bar-coll { fill: var(--lf-orange); fill-opacity: 0.35; }
+.eh-fig .lf-bar-debt { fill: var(--lf-cream); fill-opacity: 0.16; }
+.eh-fig .lf-bar-eq { fill: var(--lf-orange); }
+.eh-fig .lf-gauge,
+.eh-fig .lf-carry {
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.eh-fig .lf-gauge.is-in,
+.eh-fig .lf-carry.is-in { opacity: 1; transform: none; }
+.eh-fig .lf-track { fill: var(--lf-tan); fill-opacity: 0.22; }
+.eh-fig .lf-fill {
+  fill: var(--lf-orange);
+  transform-box: fill-box;
+  transform-origin: left center;
+  transform: scaleX(0);
+  transition: transform 1s cubic-bezier(0.2, 0.9, 0.3, 1) 0.2s;
+}
+.eh-fig .lf-gauge.is-in .lf-fill { transform: none; }
+.eh-fig .lf-liq { stroke: #ff7a5c; stroke-width: 2.5; stroke-linecap: round; }
+.eh-fig .lf-tick-t { fill: var(--lf-tan); font-family: var(--lf-mono); font-size: 12.5px; }
+.eh-fig .lf-tick-hi { fill: var(--lf-orange); }
+.eh-fig .lf-rule { stroke: var(--lf-tan); stroke-opacity: 0.3; }
+.eh-fig .lf-apy {
+  fill: var(--lf-cream);
+  font-family: var(--lf-sans);
+  font-size: 76px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  opacity: 0.25;
+  transition: opacity 0.6s ease;
+}
+.eh-fig .lf-apy.is-in { opacity: 1; }
+.uni-hub-test.eh-page .eh-fig .eh-fig-note a { color: var(--lf-brown); text-decoration: underline; text-underline-offset: 2px; background: none; }
+
+.uni-hub-test.eh-page.eh-read .eh-fig { margin-bottom: 28px; }
+
+/* === Phone type scale ==================================================
+   One sans family and a short scale on phones: body 14px, headings 19px,
+   labels 12px, figures 20px. The monospace labels, display numerals and
+   mixed sizes of the desktop layout collapse into it. The loop card keeps
+   its own social-card type. */
+@media (max-width: 700px) {
+  .uni-hub-test.eh-page.eh-read {
+    --eh-mono: var(--sans);
+  }
+  .uni-hub-test.eh-page.eh-read .rp-eyebrow,
+  .uni-hub-test.eh-page.eh-read .uh-block .rp-eyebrow,
+  .uni-hub-test.eh-page.eh-read .uh-eyebrow-date,
+  .uni-hub-test.eh-page.eh-read .uh-block .eh-keys-h,
+  .uni-hub-test.eh-page.eh-read .eh-stat-h,
+  .uni-hub-test.eh-page.eh-read .uh-block .eh-ask-h,
+  .uni-hub-test.eh-page.eh-read .eh-earn caption,
+  .uni-hub-test.eh-page.eh-read .eh-rows thead th,
+  .uni-hub-test.eh-page.eh-read .hub-th,
+  .uni-hub-test.eh-page.eh-read .hub-th-sort,
+  .uni-hub-test.eh-page.eh-read .eh-net-tag,
+  .uni-hub-test.eh-page.eh-read .hub-filter-meta,
+  .uni-hub-test.eh-page.eh-read .eh-type-stats dt {
+    font-family: var(--sans) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    color: var(--eh-ink-3) !important;
+  }
+  .uni-hub-test.eh-page.eh-read .hub-num,
+  .uni-hub-test.eh-page.eh-read .hub-rank,
+  .uni-hub-test.eh-page.eh-read .eh-pick-apy,
+  .uni-hub-test.eh-page.eh-read .eh-type-stats dd,
+  .uni-hub-test.eh-page.eh-read .eh-steps > li::before,
+  .uni-hub-test.eh-page.eh-read .eh-chip {
+    font-family: var(--sans) !important;
+    letter-spacing: 0 !important;
+  }
+
+  .uni-hub-test.eh-page.eh-read .eh-topmeta { font-size: 12.5px; }
+  .uni-hub-test.eh-page.eh-read .eh-hero .uni-hub-h1 { font-size: 30px; }
+  .uni-hub-test.eh-page.eh-read .eh-hero-title img { width: 38px; height: 38px; }
+  .uni-hub-test.eh-page.eh-read .eh-dek { font-size: 15px; }
+  .uni-hub-test.eh-page.eh-read .eh-hero .uh-answer { font-size: 14px; line-height: 1.6; }
+  .uni-hub-test.eh-page.eh-read .eh-btn { height: 42px; font-size: 14px; }
+  .uni-hub-test.eh-page.eh-read .eh-sg-v { font-size: 20px; }
+  .uni-hub-test.eh-page.eh-read .eh-sg-s { font-size: 12px; }
+
+  .uni-hub-test.eh-page.eh-read .uh-block h2,
+  .uni-hub-test.eh-page.eh-read .eh-qindex h2 { font-size: 19px; line-height: 1.3; margin-bottom: 10px; }
+  .uni-hub-test.eh-page.eh-read .uh-block p,
+  .uni-hub-test.eh-page.eh-read .uh-block li,
+  .uni-hub-test.eh-page.eh-read .uh-block dd { font-size: 14px !important; line-height: 1.6 !important; }
+  .uni-hub-test.eh-page.eh-read .uh-block > .uh-lead { font-size: 15px !important; line-height: 1.6 !important; margin-bottom: 18px !important; }
+  .uni-hub-test.eh-page.eh-read .uh-note { font-size: 12.5px !important; }
+  .uni-hub-test.eh-page.eh-read .uh-block dt { font-size: 14px; }
+
+  .uni-hub-test.eh-page.eh-read .eh-keys { padding: 16px 16px 6px; }
+  .uni-hub-test.eh-page.eh-read .eh-keys li { padding-left: 30px; }
+  .uni-hub-test.eh-page.eh-read .eh-keys li::before { width: 20px; height: 20px; background-size: 12px 12px, auto; }
+
+  .uni-hub-test.eh-page.eh-read .eh-ask { padding: 14px 16px 2px; }
+  .uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-q { font-size: 14px !important; line-height: 1.4; padding: 12px 0; }
+  .uni-hub-test.eh-page.eh-read .eh-ask .uh-faq-a { font-size: 13.5px !important; }
+
+  .uni-hub-test.eh-page.eh-read .eh-stat-v { font-size: 20px; }
+  .uni-hub-test.eh-page.eh-read .eh-stat-row > div { padding: 14px 16px; }
+  .uni-hub-test.eh-page.eh-read .eh-rows-num strong { font-size: 17px; }
+  .uni-hub-test.eh-page.eh-read .eh-rows-t { font-size: 14px; }
+  .uni-hub-test.eh-page.eh-read .eh-rows-s { font-size: 12.5px; }
+
+  .uni-hub-test.eh-page.eh-read .hub-num { font-size: 13px; }
+  .uni-hub-test.eh-page.eh-read .hub-rank { font-size: 12px; }
+  .uni-hub-test.eh-page.eh-read .eh-type h3 { font-size: 15px; }
+  .uni-hub-test.eh-page.eh-read .eh-type-blurb,
+  .uni-hub-test.eh-page.eh-read .eh-type-best { font-size: 13.5px !important; }
+  .uni-hub-test.eh-page.eh-read .eh-type-stats dd { font-size: 14px; }
+  .uni-hub-test.eh-page.eh-read .eh-earn tbody th,
+  .uni-hub-test.eh-page.eh-read .eh-earn td,
+  .uni-hub-test.eh-page.eh-read .eh-earn thead th { font-size: 13px; }
+  .uni-hub-test.eh-page.eh-read .eh-qlist a { font-size: 14px; }
+  .uni-hub-test.eh-page.eh-read .uni-data-note,
+  .uni-hub-test.eh-page.eh-read .uni-hub-cta-meta { font-size: 12.5px; }
+}
+@media (max-width: 800px) {
+  .uni-hub-test.eh-page .uh-block .eh-fig .eh-fig-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    white-space: normal;
   }
 }
