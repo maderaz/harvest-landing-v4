@@ -133,7 +133,7 @@ export function stakingClause(s: StakingReference): string {
 }
 
 /** "all 5" or "3 of the 5": how many of a set, without "5 of the 5". */
-const countOf = (n: number, total: number) => (n === total ? `all ${total}` : `${n} of the ${total}`);
+export const countOf = (n: number, total: number) => (n === total ? `all ${total}` : `${n} of the ${total}`);
 
 /** Funded strategies paying more than the staking reference, highest first. */
 export const aboveStaking = (c: EthCohort, s: StakingReference) =>

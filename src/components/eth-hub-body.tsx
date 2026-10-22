@@ -21,7 +21,7 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import { getAllSparklines } from "@/lib/data";
-import { AssetIcon, ChainIcon } from "@/components/token-icons";
+import { ChainIcon } from "@/components/token-icons";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { assetHubCrumbs } from "@/lib/seo";
 import {
@@ -36,7 +36,7 @@ import { RankingDataNote } from "@/components/ranking-data-note";
 import { UsdcCalculator, type CalcProduct } from "@/components/usdc-calculator";
 import { EthLoopFigure } from "@/components/eth-loop-figure";
 import { harvestAppUrl } from "@/lib/harvest-app";
-import { proseName, listOf, plural, apy, tvl } from "@/lib/usdc-hub";
+import { proseName, listOf, plural, apy, apyFloorLabel, tvl } from "@/lib/usdc-hub";
 import { strategyTypeOf, isL2 } from "@/lib/eth-hub";
 import {
   ethPageModel,
@@ -55,6 +55,9 @@ import {
   STAKING_LEAD,
   venueLead,
   venueLine,
+  aboveStaking,
+  aprToApy,
+  countOf,
   type Faq,
   type FaqSpot,
 } from "@/lib/eth-hub-copy";
@@ -116,6 +119,52 @@ function Ask({ items }: { items: Faq[] }) {
 }
 
 
+/**
+ * A short list of the section's facts, each a whole sentence that survives
+ * being lifted on its own. Readers skim it; answer engines quote it.
+ */
+function KeyPoints({ items }: { items: string[] }) {
+  if (!items.length) return null;
+  return (
+    <aside className="eh-keys" aria-label="Key points">
+      <p className="eh-keys-h">Key points</p>
+      <ul>
+        {items.map((t) => (
+          <li key={t}>
+            <Em text={t} />
+          </li>
+        ))}
+      </ul>
+    </aside>
+  );
+}
+
+/** Two figures side by side under one label, with a dated note below. */
+function StatPair({
+  title,
+  items,
+  note,
+}: {
+  title: string;
+  items: { label: string; value: string; sub?: string }[];
+  note: string;
+}) {
+  return (
+    <figure className="eh-stat" data-nosnippet="">
+      <figcaption className="eh-stat-h">{title}</figcaption>
+      <dl className="eh-stat-row">
+        {items.map((it) => (
+          <div key={it.label}>
+            <dt>{it.label}</dt>
+            <dd className="eh-stat-v">{it.value}</dd>
+            {it.sub ? <dd className="eh-stat-s">{it.sub}</dd> : null}
+          </div>
+        ))}
+      </dl>
+      <p className="eh-stat-note">{note}</p>
+    </figure>
+  );
+}
 
 function Block({
   id,
@@ -222,7 +271,7 @@ export async function EthHubBody() {
   const topRaw = c.bestRaw && c.bestRaw.slug !== best.slug ? c.bestRaw : null;
 
   return (
-    <div className="uni-hub-test uh-page eh-page">
+    <div className="uni-hub-test uh-page eh-page eh-read">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema(crumbs)) }}
@@ -286,13 +335,17 @@ export async function EthHubBody() {
         <span className="uni-hub-crumbs-current">ETH Ranking</span>
       </nav>
 
-      <div className="uni-hub-hero uh-hero">
-        <div className="uh-titlerow">
-          <span className="uni-hub-hero-icon" aria-hidden="true">
-            <AssetIcon asset="ETH" size={44} priority />
-          </span>
-          <h1 className="uni-hub-h1">{ETH_HUB_H1}</h1>
-        </div>
+      <div className="uni-hub-hero uh-hero eh-hero">
+        <h1 className="uni-hub-h1">{ETH_HUB_H1}</h1>
+        <p className="eh-dek">
+          A live ranking of ETH and WETH lending and vault rates, read from the vault contracts.
+        </p>
+        <p className="uh-updated eh-meta" data-dateline="">
+          Updated {c.asOf}, {asOfTime} UTC · Rates after Harvest&rsquo;s fee ·{" "}
+          <Link href="/methodology">Methodology</Link>
+        </p>
+      </div>
+      <div className="eh-intro">
         <p className="uh-answer">
           <Em text={m.heroAnswer} />
         </p>
@@ -323,10 +376,6 @@ export async function EthHubBody() {
             </dd>
           </div>
         </dl>
-        <p className="uh-updated eh-meta" data-dateline="">
-          Updated {c.asOf}, {asOfTime} UTC · Rates after Harvest&rsquo;s fee ·{" "}
-          <Link href="/methodology">Methodology</Link>
-        </p>
       </div>
 
       <Block
@@ -376,6 +425,18 @@ export async function EthHubBody() {
         asOfIso={c.asOfIso}
         lead={base ? networkSentence(base, c) : undefined}
       >
+        <KeyPoints
+          items={[
+            ...nets.map((n) =>
+              n.picks[0]
+                ? `The best funded ETH rate on ${n.chain} was ${apy(n.picks[0].apy24h)}, ` +
+                  `paid by ${bare(n.picks[0])}.`
+                : `No ETH strategy on ${n.chain} held ${tvl(c.fundedFloor)} or more.`,
+            ),
+            `Layer 2 networks carry ${l2Count} of the ${c.count} ETH strategies, and a ` +
+              `transaction there costs cents.`,
+          ]}
+        />
         <div className="eh-nets">
           {nets.map((n) => (
             <article className="eh-net" key={n.chain} aria-labelledby={`net-${n.chain}`}>
@@ -444,6 +505,13 @@ export async function EthHubBody() {
           `${listOf(types.map((t) => `${t.count} ${t.count === 1 ? SINGULAR[t.type] : PLURAL[t.type]}`))}.`
         }
       >
+        <KeyPoints
+          items={[
+            "ETH earns yield here in four ways: money markets, curated vaults, allocators and leveraged loops.",
+            "WETH is ETH wrapped one-to-one, and it unwraps back to ETH at any time.",
+            "Every step from a money market to a loop adds a layer of contracts, and only leveraged looping can be liquidated.",
+          ]}
+        />
         <div className="eh-types">
           {types.map((t) => (
             <article className="eh-type" key={t.type} aria-labelledby={`type-${t.type}`}>
@@ -480,13 +548,15 @@ export async function EthHubBody() {
         <p>
           <strong>WETH and ETH are the same asset in every row.</strong>{" "}
           {`Wrapped ETH is ETH locked one-to-one in a contract that issues an ERC-20 token, ` +
-            `because lending contracts can hold ERC-20 tokens and cannot hold native ETH. It ` +
-            `unwraps back to ETH at any time, and on Base every strategy takes it, so wrapping is ` +
-            `the first step and a single transaction.`}
+            `because lending contracts can hold ERC-20 tokens and cannot hold native ETH.`}
         </p>
         <p>
-          <strong>A money market has the fewest layers, and every step up adds one.</strong> A
-          money market is one protocol and one rate curve. A curated vault adds the curator&rsquo;s choice of markets. An allocator
+          {`WETH unwraps back to ETH at any time, and on Base every strategy takes it, so ` +
+            `wrapping is the first step and a single transaction.`}
+        </p>
+        <p>
+          <strong>A money market has the fewest layers, and every step up adds one.</strong>{" "}
+          A          money market is one protocol and one rate curve. A curated vault adds the curator&rsquo;s choice of markets. An allocator
           adds a contract that moves the position between venues.
         </p>
         <p>
@@ -631,7 +701,8 @@ export async function EthHubBody() {
             ETH at any time.
           </li>
           <li>
-            <strong>Picking a strategy sets the rate and the risk.</strong> The safety table above
+            <strong>Picking a strategy sets the rate and the risk.</strong>{" "}
+            The safety table above
             shows each funded strategy&rsquo;s size, history and 30-day swing.
           </li>
           <li>
@@ -646,11 +717,15 @@ export async function EthHubBody() {
         <p>
           <strong>What it costs.</strong>{" "}
           {`Harvest keeps a share of the yield each strategy harvests, ${HARVEST_FEE_TEXT}, ` +
-            `split between a profit share and a platform fee set in each strategy contract. ` +
-            `Every rate on this page is after it, so the APY ` +
-            `shown is what the position earns. There is no fee to enter or leave a vault. Gas is ` +
-            `paid on each transaction, and the looping strategy charges an entry cost the app ` +
-            `shows before a position opens.`}
+            `split between a profit share and a platform fee set in each strategy contract.`}
+        </p>
+        <p>
+          {`Every rate on this page is after that fee, so the APY shown is what the position ` +
+            `earns. There is no fee to enter or leave a vault.`}
+        </p>
+        <p>
+          {`Gas is paid on each transaction, and the looping strategy charges an entry cost ` +
+            `the app shows before a position opens.`}
         </p>
       </Block>
 
@@ -662,19 +737,52 @@ export async function EthHubBody() {
         title="ETH yield versus ETH staking"
         lead={STAKING_LEAD}
       >
+        {staking ? (
+          <KeyPoints
+            items={[
+              `Lido's stETH paid about ${aprToApy(staking.aprAverage).toFixed(2)}% APY, the ` +
+                `staking rate this page compares against.`,
+              `${cap(countOf(aboveStaking(c, staking).length, c.fundedCount))} ETH strategies ` +
+                `holding at least ${tvl(c.fundedFloor)} paid more than staking.`,
+              `None of the ${c.count} ETH strategies here is staked, so no withdrawal waits in ` +
+                `the validator exit queue.`,
+            ]}
+          />
+        ) : null}
+        {staking ? (
+          <StatPair
+            title="Staking against lending"
+            items={[
+              {
+                label: "Lido stETH",
+                value: `${aprToApy(staking.aprAverage).toFixed(2)}%`,
+                sub: "Staking, after Lido's fee",
+              },
+              { label: `Best above ${tvl(c.fundedFloor)}`, value: apy(best.apy24h), sub: bare(best) },
+            ]}
+            note={`APY as of ${c.asOf}. Staking is an average of daily reports, lending a 24-hour rate.`}
+          />
+        ) : null}
         <p>
           A staked position earns from the protocol itself: new ETH issued to validators plus the
-          fees and tips they collect. Getting out goes through Ethereum&rsquo;s validator exit
-          queue, which can take days when many validators leave at once. Liquid staking tokens
-          such as stETH skip the wait by letting the position trade, at whatever price the market
-          offers that day.
+          fees and tips they collect.
+        </p>
+        <p>
+          Getting out goes through Ethereum&rsquo;s validator exit queue, which can take days when
+          many validators leave at once. Liquid staking tokens such as stETH skip the wait by
+          letting the position trade, at whatever price the market offers that day.
         </p>
         <p>
           A lending position earns from borrowers. People borrow ETH to sell it short, to pay for
-          a leveraged staking position, or to fund a trade, and the rate they pay rises when ETH
-          is in demand and falls when it is not.{" "}
-          <strong>Nothing here is staked, so nothing waits in the exit queue.</strong> A withdrawal waits only if the market underneath has lent out all of its ETH,
-          which happens rarely and briefly, and the rate climbs until supply returns.
+          a leveraged staking position, or to fund a trade.
+        </p>
+        <p>
+          Borrowers pay more when ETH is in demand and less when it is not.{" "}
+          <strong>Nothing here is staked, so nothing waits in the exit queue.</strong>
+        </p>
+        <p>
+          A withdrawal waits only if the market underneath has lent out all of its ETH, which
+          happens rarely and briefly, and the rate climbs until supply returns.
         </p>
         {staking ? (
           <p>
@@ -713,6 +821,24 @@ export async function EthHubBody() {
         }
       >
         {c.stability.steadiest && c.stability.mostVolatile ? (
+          <StatPair
+            title={`30-day swing, strategies holding at least ${tvl(c.fundedFloor)}`}
+            items={[
+              {
+                label: "Steadiest",
+                value: `±${c.stability.steadiest.stdev.toFixed(2)} pts`,
+                sub: `${c.stability.steadiest.name}, mean ${apy(c.stability.steadiest.mean)}`,
+              },
+              {
+                label: "Least steady",
+                value: `±${c.stability.mostVolatile.stdev.toFixed(2)} pts`,
+                sub: `${c.stability.mostVolatile.name}, mean ${apy(c.stability.mostVolatile.mean)}`,
+              },
+            ]}
+            note={`Standard deviation of the daily rate over the 30 days to ${c.asOf}.`}
+          />
+        ) : null}
+        {c.stability.steadiest && c.stability.mostVolatile ? (
           <p>
             {`Among strategies holding at least ${tvl(c.fundedFloor)}, the steadiest over the ` +
               `trailing 30 days was ${c.stability.steadiest.name}, with a standard deviation of ` +
@@ -725,9 +851,12 @@ export async function EthHubBody() {
         ) : null}
         <p>
           ETH lending rates swing harder than stablecoin rates because ETH borrowing demand is
-          tied to market direction: when traders want to short ETH or lever up staked ETH, they
-          borrow at once, and the rate jumps. A steady rate is the more useful property for a
-          position meant to sit, and the 30-day column in the table shows it at a glance.
+          tied to market direction. When traders want to short ETH or lever up staked ETH, they
+          borrow at once, and the rate jumps.
+        </p>
+        <p>
+          A steady rate is the more useful property for a position meant to sit, and the 30-day
+          column in the table shows it at a glance.
         </p>
       </Block>
 
@@ -739,13 +868,45 @@ export async function EthHubBody() {
         asOfIso={c.asOfIso}
         lead={venueLead(venues)}
       >
-        <ul className="uh-venues">
-          {venues.map((v) => (
-            <li key={`${v.venue}${v.loop ? "-loop" : ""}`}>
-              {venueLine(v)}
-            </li>
+        <div className="eh-ntable-wrap">
+          <table className="eh-ntable">
+            <thead>
+              <tr>
+                <th scope="col">Protocol</th>
+                <th scope="col" className="num">Vaults</th>
+                <th scope="col" className="num">Tracked</th>
+                <th scope="col" className="num">Median APY</th>
+                <th scope="col" className="num">Range</th>
+                <th scope="col">Networks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {venues
+                .filter((v) => !v.loop)
+                .map((v) => (
+                  <tr key={v.venue}>
+                    <th scope="row">{v.venue}</th>
+                    <td className="num">{v.count}</td>
+                    <td className="num">{tvl(v.tvl)}</td>
+                    <td className="num">
+                      <strong>{apy(v.medianApy)}</strong>
+                    </td>
+                    <td className="num eh-dim">
+                      {v.count > 1 && v.minApy.toFixed(2) !== v.maxApy.toFixed(2)
+                        ? `${apyFloorLabel(v.minApy)} to ${apy(v.maxApy)}`
+                        : "–"}
+                    </td>
+                    <td className="eh-dim">{v.chains.join(", ")}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        </div>
+        {venues
+          .filter((v) => v.loop)
+          .map((v) => (
+            <p key={`${v.venue}-loop`}>{venueLine(v)}</p>
           ))}
-        </ul>
         <p>
           Pooled markets such as <Link href="/aave">Aave</Link> and Compound set one rate for
           every lender from one utilisation curve, so their ETH rates sit close together and move
@@ -848,8 +1009,9 @@ export async function EthHubBody() {
         <p className="eh-whose">
           {`Every rate here is the APY of a Harvest vault built on the named protocol, after ` +
             `Harvest's fee on harvested yield, which as of ${c.asOf} was ${HARVEST_FEE_TEXT}, so ` +
-            `it can differ from the rate ` +
-            `in that protocol's own app. `}
+            `it can differ from the rate in that protocol's own app.`}
+        </p>
+        <p className="eh-whose">
           <strong>Autopilot is Harvest&rsquo;s own allocator</strong>, which moves ETH between
           lending venues as their rates change. Liquid staking tokens such as stETH and rETH are
           not ranked here.

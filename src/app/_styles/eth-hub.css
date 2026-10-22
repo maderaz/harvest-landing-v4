@@ -1012,3 +1012,416 @@
   .uni-hub-test.eh-page .eh-earn th,
   .uni-hub-test.eh-page .eh-earn td { padding: 10px 12px; }
 }
+
+/* === Reading layout ====================================================
+   Modelled on long-form data reports: a centred title, prose held to a
+   reading measure of about 72 characters, and figures, tables and cards that
+   break out wider than the text. Sections are separated by air rather than
+   rules, headings are large and light, and each section can open with a
+   short "Key points" list of whole sentences for skimmers and answer engines.
+   Scoped to .eh-read so the other hubs keep their layout. */
+.uni-hub-test.eh-page.eh-read {
+  --eh-prose: 720px;
+  --eh-wide: 1080px;
+  --eh-line: var(--uni-line-2, #ebebe7);
+  --eh-soft: #fafaf8;
+}
+:root[data-theme="dark"] .uni-hub-test.eh-page.eh-read {
+  --eh-soft: var(--uni-card, #2a2825);
+}
+
+/* Title block: centred, light, with a one-line dek and the dateline. */
+.uni-hub-test.eh-page.eh-read .eh-hero {
+  max-width: 860px;
+  margin: 28px auto 0;
+  padding: 0;
+  border-bottom: 0;
+  text-align: center;
+}
+.uni-hub-test.eh-page.eh-read .eh-hero .eh-meta {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+/* Type cards two across, so each card's three figures have room. */
+.uni-hub-test.eh-page.eh-read .eh-types {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (max-width: 700px) {
+  .uni-hub-test.eh-page.eh-read .eh-types,
+  .uni-hub-test.eh-page.eh-read .eh-nets {
+    grid-template-columns: 1fr;
+  }
+}
+.uni-hub-test.eh-page.eh-read .eh-hero .uni-hub-h1 {
+  font-size: clamp(34px, 5vw, 54px);
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  margin: 0;
+}
+.uni-hub-test.eh-page.eh-read .eh-dek {
+  margin: 18px auto 0;
+  max-width: 620px;
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-hero .eh-meta {
+  margin: 14px 0 0;
+  font-size: 12.5px;
+  color: var(--uni-ink-3);
+}
+
+/* The answer and the three figures under the title. */
+.uni-hub-test.eh-page.eh-read .eh-intro {
+  max-width: var(--eh-wide);
+  margin: 48px auto 0;
+}
+.uni-hub-test.eh-page.eh-read .eh-intro .uh-answer {
+  max-width: var(--eh-prose);
+  margin: 0 auto;
+  font-size: 18.5px;
+  line-height: 1.75;
+  color: var(--uni-ink-2);
+}
+.uni-hub-test.eh-page.eh-read .eh-tiles {
+  max-width: var(--eh-wide);
+  margin: 36px auto 0;
+  gap: 16px;
+}
+.uni-hub-test.eh-page.eh-read .eh-tile {
+  padding: 20px 22px 18px;
+  border: 1px solid var(--eh-line);
+  border-radius: 10px;
+  background: var(--uni-card-2, #fff);
+  box-shadow: 0 1px 2px rgba(25, 23, 23, 0.04);
+}
+.uni-hub-test.eh-page.eh-read .eh-tile dt {
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page.eh-read .eh-tile-v {
+  margin-top: 6px;
+  font-family: var(--sans);
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+}
+.uni-hub-test.eh-page.eh-read .eh-tile-s {
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--eh-line);
+  font-size: 12.5px;
+  color: var(--uni-ink-3);
+}
+
+/* Sections: air between them, prose at the reading measure. */
+.uni-hub-test.eh-page.eh-read .uh-block,
+.uni-hub-test.eh-page.eh-read .eh-qindex {
+  max-width: var(--eh-wide);
+  margin: 96px auto 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.uni-hub-test.eh-page.eh-read .uh-block > *,
+.uni-hub-test.eh-page.eh-read .eh-qindex > * {
+  max-width: var(--eh-prose);
+  margin-left: auto;
+  margin-right: auto;
+}
+.uni-hub-test.eh-page.eh-read .uh-block > .hub-table-wrap,
+.uni-hub-test.eh-page.eh-read .uh-block > .eh-nets,
+.uni-hub-test.eh-page.eh-read .uh-block > .eh-types,
+.uni-hub-test.eh-page.eh-read .uh-block > .eh-evidence-wrap,
+.uni-hub-test.eh-page.eh-read .uh-block > .uh-calc,
+.uni-hub-test.eh-page.eh-read .uh-block > .eh-fig {
+  max-width: var(--eh-wide);
+  margin-top: 40px;
+  margin-bottom: 40px;
+}
+.uni-hub-test.eh-page.eh-read .uni-hub-cta-row,
+.uni-hub-test.eh-page.eh-read .uni-data-note {
+  max-width: var(--eh-prose);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Eyebrow as a quiet label above the heading. */
+.uni-hub-test.eh-page.eh-read .uh-block .rp-eyebrow,
+.uni-hub-test.eh-page.eh-read .eh-qindex .rp-eyebrow {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+  margin-bottom: 14px;
+}
+.uni-hub-test.eh-page.eh-read .uh-eyebrow-date {
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+/* Large, light headings. */
+.uni-hub-test.eh-page.eh-read .uh-block h2,
+.uni-hub-test.eh-page.eh-read .eh-qindex h2 {
+  font-size: clamp(28px, 3.2vw, 38px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.22;
+  margin-bottom: 26px;
+}
+
+/* Body copy at a comfortable size, line height and gap. */
+.uni-hub-test.eh-page.eh-read .uh-block p {
+  font-size: 16.5px;
+  line-height: 1.8;
+  margin-bottom: 22px;
+}
+.uni-hub-test.eh-page.eh-read .uh-block > .uh-lead {
+  padding-left: 0;
+  border-left: 0;
+  font-size: 18px !important;
+  line-height: 1.75 !important;
+  margin-bottom: 26px !important;
+}
+.uni-hub-test.eh-page.eh-read strong {
+  font-weight: 600;
+}
+.uni-hub-test.eh-page.eh-read .uh-note {
+  font-size: 14px !important;
+  line-height: 1.65 !important;
+  color: var(--uni-ink-3) !important;
+}
+
+/* Key points: a light box of whole-sentence bullets. */
+.uni-hub-test.eh-page.eh-read .eh-keys {
+  margin-top: 4px;
+  margin-bottom: 30px;
+  padding: 18px 24px 8px;
+  border: 1px solid var(--eh-line);
+  border-radius: 10px;
+  background: var(--eh-soft);
+}
+.uni-hub-test.eh-page.eh-read .uh-block .eh-keys-h {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-keys ul {
+  margin: 0;
+  padding: 0 0 0 18px;
+  list-style: disc;
+}
+.uni-hub-test.eh-page.eh-read .eh-keys li {
+  display: list-item;
+  margin: 0 0 10px;
+  padding-left: 4px;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page.eh-read .eh-keys li::marker {
+  color: var(--uni-gold, #ffb936);
+}
+
+/* Stat card: two figures under one label, a rule, then a dated note. */
+.uni-hub-test.eh-page.eh-read .eh-stat {
+  margin-top: 30px;
+  margin-bottom: 34px;
+  padding: 22px 26px 18px;
+  border: 1px solid var(--eh-line);
+  border-radius: 10px;
+  background: var(--uni-card-2, #fff);
+  box-shadow: 0 1px 2px rgba(25, 23, 23, 0.04);
+}
+.uni-hub-test.eh-page.eh-read .eh-stat-h {
+  margin: 0 0 16px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--uni-ink);
+}
+.uni-hub-test.eh-page.eh-read .eh-stat-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin: 0;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--eh-line);
+}
+.uni-hub-test.eh-page.eh-read .eh-stat-row dt {
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-stat-row dd {
+  margin: 0;
+}
+.uni-hub-test.eh-page.eh-read .eh-stat-v {
+  margin-top: 6px !important;
+  font-size: 30px;
+  line-height: 36px;
+  font-weight: 650;
+  color: var(--uni-ink);
+  font-variant-numeric: tabular-nums;
+}
+.uni-hub-test.eh-page.eh-read .eh-stat-s {
+  margin-top: 4px !important;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .uh-block .eh-stat-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--uni-ink-3);
+}
+
+/* Narrow tables inside the reading column: no card, a small grey header,
+   hairline rows, figures right-aligned. */
+.uni-hub-test.eh-page.eh-read .eh-ntable-wrap {
+  margin-top: 8px;
+  margin-bottom: 30px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.uni-hub-test.eh-page.eh-read .eh-ntable,
+.uni-hub-test.eh-page.eh-read .eh-earn {
+  width: 100%;
+  border: 0;
+  border-radius: 0;
+  border-collapse: collapse;
+  background: transparent;
+  box-shadow: none;
+  font-size: 14.5px;
+  font-variant-numeric: tabular-nums;
+}
+.uni-hub-test.eh-page.eh-read .eh-ntable { min-width: 560px; }
+.uni-hub-test.eh-page.eh-read .eh-ntable thead th,
+.uni-hub-test.eh-page.eh-read .eh-earn thead th {
+  padding: 8px 10px;
+  font-size: 12.5px;
+  font-weight: 500;
+  text-align: left;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--uni-ink-3);
+  background: transparent;
+  border-bottom: 1px solid var(--uni-line);
+}
+.uni-hub-test.eh-page.eh-read .eh-ntable tbody th,
+.uni-hub-test.eh-page.eh-read .eh-ntable td,
+.uni-hub-test.eh-page.eh-read .eh-earn tbody th,
+.uni-hub-test.eh-page.eh-read .eh-earn td {
+  padding: 11px 10px;
+  text-align: left;
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 400;
+  color: var(--uni-ink);
+  border-bottom: 1px solid var(--eh-line);
+  white-space: nowrap;
+}
+.uni-hub-test.eh-page.eh-read .eh-ntable tbody th,
+.uni-hub-test.eh-page.eh-read .eh-earn tbody th {
+  font-weight: 500;
+}
+.uni-hub-test.eh-page.eh-read .eh-ntable .num {
+  text-align: right;
+}
+.uni-hub-test.eh-page.eh-read .eh-ntable .eh-dim {
+  color: var(--uni-ink-3);
+}
+.uni-hub-test.eh-page.eh-read .eh-ntable tbody tr:hover,
+.uni-hub-test.eh-page.eh-read .eh-earn tbody tr:hover {
+  background: var(--eh-soft);
+}
+.uni-hub-test.eh-page.eh-read .eh-earn caption {
+  padding: 0 0 10px;
+  font-size: 15px;
+}
+
+/* Wide card tables: small uppercase header on a tinted band. */
+.uni-hub-test.eh-page.eh-read .hub-th,
+.uni-hub-test.eh-page.eh-read .hub-th-sort,
+.uni-hub-test.eh-page.eh-read .eh-evidence thead th {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.uni-hub-test.eh-page.eh-read .hub-table,
+.uni-hub-test.eh-page.eh-read .eh-evidence-wrap {
+  border-color: var(--eh-line);
+  border-radius: 10px;
+}
+.uni-hub-test.eh-page.eh-read .hub-thead,
+.uni-hub-test.eh-page.eh-read .eh-evidence thead th {
+  background: var(--eh-soft);
+}
+
+/* Cards in the network and type grids share the card language. */
+.uni-hub-test.eh-page.eh-read .eh-net,
+.uni-hub-test.eh-page.eh-read .eh-type {
+  border-radius: 10px;
+  border-color: var(--eh-line);
+  box-shadow: 0 1px 2px rgba(25, 23, 23, 0.04);
+}
+
+/* Lists in prose: plain bullets with a bold lead-in, not ruled rows. */
+.uni-hub-test.eh-page.eh-read .uh-risks {
+  padding-left: 20px;
+  list-style: disc;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+.uni-hub-test.eh-page.eh-read .uh-risks > li {
+  padding: 0 0 12px 2px;
+  border-top: 0;
+  font-size: 16.5px;
+  line-height: 1.8;
+}
+.uni-hub-test.eh-page.eh-read .uh-risks > li::marker {
+  color: var(--uni-ink-3);
+}
+
+/* Questions in place: a light card, no gold rule. */
+.uni-hub-test.eh-page.eh-read .eh-ask {
+  margin-top: 36px;
+  padding: 6px 22px 6px;
+  border: 1px solid var(--eh-line);
+  border-radius: 10px;
+  background: var(--uni-card-2, #fff);
+}
+.uni-hub-test.eh-page.eh-read .uh-block .eh-ask-h {
+  margin: 14px 0 4px;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--uni-ink-3);
+}
+
+@media (max-width: 800px) {
+  .uni-hub-test.eh-page.eh-read .uh-block,
+  .uni-hub-test.eh-page.eh-read .eh-qindex { margin-top: 64px; }
+  .uni-hub-test.eh-page.eh-read .eh-intro { margin-top: 32px; }
+  .uni-hub-test.eh-page.eh-read .uh-block p { font-size: 16px; line-height: 1.75; }
+  .uni-hub-test.eh-page.eh-read .uh-block > .uh-lead { font-size: 17px !important; }
+  .uni-hub-test.eh-page.eh-read .eh-intro .uh-answer { font-size: 17px; }
+  .uni-hub-test.eh-page.eh-read .eh-stat { padding: 18px 18px 14px; }
+  .uni-hub-test.eh-page.eh-read .eh-stat-v,
+  .uni-hub-test.eh-page.eh-read .eh-tile-v { font-size: 24px; line-height: 30px; }
+  .uni-hub-test.eh-page.eh-read .eh-keys { padding: 16px 18px 6px; }
+}
