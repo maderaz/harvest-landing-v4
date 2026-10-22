@@ -284,7 +284,9 @@ async function ethMd(page: AgentPage): Promise<string | null> {
     "",
     "## Summary",
     "",
-    m.answer,
+    // Same opening as the HTML page: the top rate first, then the best above
+    // the floor.
+    m.heroAnswer,
     "",
     ...m.findings.map((f) => `- ${f}`),
     "",
