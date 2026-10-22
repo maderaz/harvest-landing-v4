@@ -241,6 +241,17 @@ export async function EthHubBody() {
   const { c, best, nets, types, evidence, staking, faqs, venues, l2Count } = m;
   const crumbs = assetHubCrumbs("ETH");
   const asOfTime = new Date(c.asOfIso).toISOString().slice(11, 16);
+  const monthYear = new Date(c.asOfIso).toLocaleString("en-US", {
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+  // Comparison wording for the protocol heading, from the largest venues.
+  const venueVs = venues
+    .filter((v) => !v.loop)
+    .slice(0, 4)
+    .map((v) => v.venue)
+    .join(" vs ");
   // 0xFE09…573e is the fWETH vault Harvest launched on Ethereum in October 2020;
   // its history is real and long, and the strategy behind it is newer.
   const hasOriginalVault = evidence.some(
@@ -354,7 +365,7 @@ export async function EthHubBody() {
           <h1 className="uni-hub-h1">{ETH_HUB_H1}</h1>
         </div>
         <p className="eh-dek">
-          Live ETH and WETH lending rates{" "}
+          Live ETH and WETH lending rates for {monthYear}{" "}
           <span className="eh-dek-accent">· read from the vault contracts</span>
         </p>
         <p className="uh-answer">
@@ -426,7 +437,9 @@ export async function EthHubBody() {
           venueLabel="Protocol"
         />
         <p className="uh-note">
-          {`Sorted on the 24-hour rate with no floor applied, so a row near the top can sit on a ` +
+          {`Rates are read from the vault contracts on ${listOf(visibleChains)}, net of fees, and ` +
+            `refreshed several times a day. ` +
+            `Sorted on the 24-hour rate with no floor applied, so a row near the top can sit on a ` +
             `few hundred dollars of ETH. The headline figure uses a ${tvl(c.fundedFloor)} floor ` +
             `for that reason, and ${c.fundedCount} of the ${c.count} strategies cleared it.`}
         </p>
@@ -447,7 +460,7 @@ export async function EthHubBody() {
       <Block
         id="by-network"
         eyebrow="By network"
-        title="Where to earn ETH yield on Base, Arbitrum and Ethereum"
+        title="ETH yield on Base vs Arbitrum vs Ethereum"
         asOf={c.asOf}
         asOfIso={c.asOfIso}
         lead={base ? networkSentence(base, c) : undefined}
@@ -674,7 +687,7 @@ export async function EthHubBody() {
       <Block
         id="calculator"
         eyebrow="Calculator"
-        title="ETH yield calculator"
+        title="How much can 1 ETH earn in a year?"
         asOf={c.asOf}
         asOfIso={c.asOfIso}
         lead={
@@ -761,7 +774,7 @@ export async function EthHubBody() {
         eyebrow="Mechanism"
         asOf={c.asOf}
         asOfIso={c.asOfIso}
-        title="ETH yield versus ETH staking"
+        title="ETH yield vs staking (Lido stETH)"
         lead={STAKING_LEAD}
       >
         {staking ? (
@@ -885,12 +898,13 @@ export async function EthHubBody() {
           A steady rate is the more useful property for a position meant to sit, and the 30-day
           column in the table shows it at a glance.
         </p>
+        <Ask items={asks("stability")} />
       </Block>
 
       <Block
         id="by-venue"
         eyebrow="By venue"
-        title="ETH yield by protocol"
+        title={venueVs ? `ETH yield by protocol: ${venueVs}` : "ETH yield by protocol"}
         asOf={c.asOf}
         asOfIso={c.asOfIso}
         lead={venueLead(venues)}

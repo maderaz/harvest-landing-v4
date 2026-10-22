@@ -69,7 +69,15 @@ export function safetyFraming(c: EthCohort, chain?: string): string {
   );
 }
 
-export type FaqSpot = "top" | "network" | "types" | "safety" | "calc" | "staking" | "risk";
+export type FaqSpot =
+  | "top"
+  | "network"
+  | "types"
+  | "safety"
+  | "calc"
+  | "staking"
+  | "stability"
+  | "risk";
 export interface Faq {
   q: string;
   at: FaqSpot;
@@ -197,6 +205,8 @@ export function buildFaqs(
   const wethRows = c.all.filter((v) => tokenOf(v) === "WETH");
   const top = c.all[0];
   const smallCount = c.count - c.fundedCount;
+  const loop = c.all.find((v) => strategyTypeOf(v) === "looping") ?? null;
+  const st = c.stability;
 
   const list: Faq[] = [
     {
@@ -339,11 +349,65 @@ export function buildFaqs(
         `vaults route the same interest through a strategy, and some rates add a reward token ` +
         `that the strategy harvests and sells back into ETH.`,
     },
+    // Questions in the shapes that trigger AI Overviews most often in Ahrefs'
+    // study of 146M results: "why" (59.8%) and yes/no (57.4%) questions. The
+    // yes/no answers open with the answer itself.
+    {
+      q: "Why does leveraged ETH looping pay more?",
+      at: "types",
+      a: loop
+        ? `Looping earns the supply rate on more ETH than the position started with. It ` +
+          `supplies ETH, borrows ETH against it and supplies that again, so it earns the gap ` +
+          `between the supply and borrow rates several times over. As of ${c.asOf}, ` +
+          `${proseName(loop)} paid ${apy(loop.apy24h)} and held ${tvl(loop.tvl)}. The same ` +
+          `multiplier works against the position when the borrow rate rises above the supply rate.`
+        : "",
+    },
+    {
+      q: "Why is ETH lending yield lower than stablecoin yield?",
+      at: "staking",
+      a:
+        `Fewer borrowers need ETH than need dollars. Most borrowing on lending markets is ` +
+        `for stablecoins, while ETH is mostly posted as collateral, so ETH markets run at lower ` +
+        `utilisation and pay their suppliers less. ETH rates rise when traders borrow ETH to ` +
+        `short it or to lever up staked ETH.`,
+    },
+    {
+      q: "Why do ETH yields change every day?",
+      at: "stability",
+      a:
+        `A lending rate is set by how much of a market's ETH is borrowed, and borrowing ` +
+        `demand for ETH moves with the market. When traders short ETH or lever up staked ETH, ` +
+        `they borrow at once and the rate jumps; when they repay, it falls.` +
+        (st.measuredCount
+          ? ` As of ${c.asOf}, ${st.steadyCount} of the ${st.measuredCount} ETH strategies with a ` +
+            `month of readings had a 30-day swing under one point.`
+          : ""),
+    },
+    {
+      q: "What fees do ETH yield vaults charge?",
+      at: "calc",
+      a:
+        `A share of the yield, not of the deposit. The vaults on this page keep ` +
+        `${HARVEST_FEE_TEXT} of the yield each strategy harvests, and every APY shown is ` +
+        `already after that fee. There is no fee to enter or leave a vault; gas is paid on each ` +
+        `transaction, and the looping strategy charges an entry cost the app shows before a ` +
+        `position opens.`,
+    },
+    {
+      q: "Have the ETH vault contracts been audited?",
+      at: "risk",
+      a:
+        `Yes. The vault contracts have been audited by Haechi Audit, PeckShield, CertiK, ` +
+        `Least Authority and Halborn, with the reports published in full on GitHub, and the ` +
+        `first ETH vault has run onchain since October 2020. An audit lowers contract risk ` +
+        `without removing it, and each lending protocol underneath carries its own audits.`,
+    },
     {
       q: "Is ETH yield safe?",
       at: "risk",
       a:
-        `Every strategy here carries smart-contract risk on the vault ` +
+        `No ETH yield is free of risk. Every strategy here carries smart-contract risk on the vault ` +
         `and on the protocol under it, oracle risk on the price feeds those contracts trust, and ` +
         `liquidity risk when a market runs fully borrowed. Strategies that accept staked or ` +
         `restaked ETH as collateral add the risk that those tokens trade below ETH, which ` +

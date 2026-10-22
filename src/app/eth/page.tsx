@@ -20,13 +20,21 @@ export async function generateMetadata(): Promise<Metadata> {
 
   // The queries reaching this page name a network ("on Base", "on an L2"), so
   // the title carries the networks and keeps the "best ETH yield" head term.
-  const title = "Best ETH Yield on Base, Arbitrum & Ethereum: Live APY";
+  // It also carries the month and year of the data: in Ahrefs' study of
+  // ChatGPT's query fan-out, the year was the modifier added most often to
+  // the searches it runs (22.9% of them), and a dated title matches those.
+  const monthYear = c.asOfIso
+    ? new Date(c.asOfIso).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })
+    : "";
+  const title = monthYear
+    ? `Best ETH Yield (${monthYear}): Live APY on Base, Arbitrum & Ethereum`
+    : "Best ETH Yield on Base, Arbitrum & Ethereum: Live APY";
 
   // The description leads with the answer, the way the page does, so the
   // snippet a reader sees is already the figure they searched for.
   const base = networkPicks(c, "Base").picks[0];
   const description = c.best
-    ? `Best ETH yield: ${formatAPY(c.best.apy24h)} APY paid in ETH${
+    ? `Best ETH yield${monthYear ? `, ${monthYear}` : ""}: ${formatAPY(c.best.apy24h)} APY paid in ETH${
         base ? ` on ${base.chain}` : ""
       }. Compare ${c.count} ETH and WETH strategies on ${c.chainCount} networks by 24-hour ` +
       `APY, TVL and 30-day steadiness, updated several times a day.`
@@ -36,7 +44,8 @@ export async function generateMetadata(): Promise<Metadata> {
     title,
     description,
     openGraph: { title, description, url: URL, siteName: SITE_NAME, type: "website" },
-    alternates: { canonical: URL },
+    // The markdown twin, linked so agents that follow links can find it.
+    alternates: { canonical: URL, types: { "text/markdown": `${URL}.md` } },
   };
 }
 
