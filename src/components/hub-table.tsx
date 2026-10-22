@@ -249,7 +249,9 @@ export function HubTable({
             onClick={() => clickSort("apy24h")}
           />
           <span className="hub-th hub-th-right">{venueLabel}</span>
-          {!networkFirst && (
+          {/* The metrics variant names the network under the vault name,
+              so it carries no separate Network column. */}
+          {!networkFirst && !metrics && (
             <span className="hub-th hub-th-center">Network</span>
           )}
           <span className="hub-th hub-th-num">30d APY trend</span>
@@ -415,7 +417,7 @@ function Row({
       </span>
       <span className="hub-cell hub-num hub-apy">{formatAPY(vault.apy24h)}</span>
       <span className="hub-cell hub-strategy">{protocolName}</span>
-      {!networkFirst && networkCell}
+      {!networkFirst && !metrics && networkCell}
       <span
         className={`hub-cell hub-spark${trendUp ? " hub-spark-up" : " hub-spark-flat"}`}
         aria-hidden="true"

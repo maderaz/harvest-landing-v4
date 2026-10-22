@@ -682,18 +682,19 @@
 .eh-fig .lf-bar-t-hi { fill: #ffb936; }
 
 /* === Ranking table with TVL and 30-day mean ===========================
-   DOM order: # | Vault | 24h APY | Protocol | Network | trend | TVL | 30d avg
-   [| Link]. The base responsive rules still drop Protocol, then Network,
-   then the trend; the 30-day mean goes with Network, and TVL stays to the
-   narrowest width because it is what qualifies the rate beside it. */
+   DOM order: # | Vault | 24h APY | Protocol | trend | TVL | 30d avg [| Link].
+   The network is named under the vault name, so there is no Network
+   column. Protocol goes first, then the 30-day mean, then the trend; TVL
+   stays to the narrowest width because it is what qualifies the rate
+   beside it. */
 .hub-table--metrics .hub-thead,
 .hub-table--metrics .hub-row {
-  grid-template-columns: 46px minmax(190px, 2fr) 0.8fr 0.9fr 0.4fr 110px 0.8fr 0.7fr;
+  grid-template-columns: 46px minmax(190px, 2fr) 0.8fr 0.9fr 110px 0.8fr 0.7fr;
   gap: 20px;
 }
 .hub-table--metrics.hub-table--links .hub-thead,
 .hub-table--metrics.hub-table--links .hub-row {
-  grid-template-columns: 46px minmax(190px, 2fr) 0.8fr 0.9fr 0.4fr 110px 0.8fr 0.7fr 74px;
+  grid-template-columns: 46px minmax(190px, 2fr) 0.8fr 0.9fr 110px 0.8fr 0.7fr 74px;
 }
 .hub-table--metrics .hub-vault-name {
   display: flex;
@@ -717,17 +718,21 @@
 @media (max-width: 1100px) {
   .hub-table--metrics .hub-thead,
   .hub-table--metrics .hub-row {
-    grid-template-columns: 40px minmax(140px, 1.6fr) 80px 44px 96px 84px 70px;
+    grid-template-columns: 40px minmax(140px, 1.6fr) 80px 96px 84px 70px;
     gap: 16px;
   }
   .hub-table--metrics.hub-table--links .hub-thead,
   .hub-table--metrics.hub-table--links .hub-row {
-    grid-template-columns: 40px minmax(140px, 1.6fr) 80px 44px 96px 84px 70px 70px;
+    grid-template-columns: 40px minmax(140px, 1.6fr) 80px 96px 84px 70px 70px;
   }
 }
 @media (max-width: 800px) {
-  .hub-table--metrics .hub-thead .hub-th:nth-child(8),
-  .hub-table--metrics .hub-row .hub-cell:nth-child(8) { display: none; }
+  /* Header cells are hidden by position. Without a Network column the
+     shared rules would drop the trend and TVL headers instead of the
+     30-day mean, so the metrics header resets them here. */
+  .hub-table.hub-table--metrics:not(.hub-table--net-first) .hub-thead .hub-th:nth-child(5),
+  .hub-table.hub-table--metrics:not(.hub-table--net-first) .hub-thead .hub-th:nth-child(6) { display: block; }
+  .hub-table.hub-table--metrics:not(.hub-table--net-first) .hub-thead .hub-th:nth-child(7) { display: none; }
   .hub-table--metrics .hub-thead,
   .hub-table--metrics .hub-row {
     grid-template-columns: 32px minmax(110px, 1.6fr) 72px 90px 84px;
@@ -831,16 +836,15 @@
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-apy,
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-apy30 { display: block; }
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-vault,
-  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-network,
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-spark,
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-tvl,
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-linkcell { display: flex; }
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-strategy { display: none; }
 }
 @media (max-width: 800px) {
-  .hub-table.hub-table--metrics .hub-row .hub-cell.hub-network,
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-apy30 { display: none; }
 }
 @media (max-width: 540px) {
   .hub-table.hub-table--metrics .hub-row .hub-cell.hub-spark { display: none; }
+  .hub-table.hub-table--metrics:not(.hub-table--net-first) .hub-thead .hub-th:nth-child(5) { display: none; }
 }
