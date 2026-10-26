@@ -652,7 +652,7 @@ interface ExcludedDepositor {
   reason: string;
 }
 
-type NewDepMetric = "wallets" | "usd" | "tvl";
+type NewDepMetric = "wallets" | "usd" | "cumulative" | "tvl";
 
 // Sortable table columns. Tx is a link, so it does not sort.
 type NewDepSortKey =
@@ -741,17 +741,21 @@ function NewDepositorsSection({
       bin.total++;
       bin.byType[r.group] = (bin.byType[r.group] || 0) + 1;
     }
-  } else if (metric === "tvl") {
-    // Running net (deposits minus withdrawals, USD at transaction time) per
-    // source. Flows before the window seed the first bar, so the line starts
-    // from where the total actually stood, not from zero.
+  } else if (metric === "tvl" || metric === "cumulative") {
+    // Running total per source, USD at transaction time: every deposit for
+    // Cumulative deposits, which only ever rises; deposits minus withdrawals
+    // for Net TVL, which falls when these wallets withdraw. Flows before the
+    // window seed the first bar, so it starts from where the total actually
+    // stood, not from zero.
     const net: Record<string, number> = {};
     const perDay = bins.map(() => ({}) as Record<string, number>);
     for (const r of rows) {
       if (hidden.has(r.group)) continue;
       const flows = [
         ...r.deposits.map((d) => ({ time: d.time, v: d.usd })),
-        ...r.withdrawals.map((d) => ({ time: d.time, v: d.usd == null ? null : -d.usd })),
+        ...(metric === "tvl"
+          ? r.withdrawals.map((d) => ({ time: d.time, v: d.usd == null ? null : -d.usd }))
+          : []),
       ];
       for (const f of flows) {
         const v = f.v != null ? Number(f.v) : 0;
@@ -790,18 +794,19 @@ function NewDepositorsSection({
     return d >= 0 && d < days;
   });
   const windowUnpriced = unpriced(depositsInWindow);
+  const running = metric === "tvl" || metric === "cumulative";
   const todayTvl = bins[bins.length - 1]?.total ?? 0;
   const bignum = hoveredBin
     ? hoveredBin.total
     : metric === "usd"
       ? windowUsd
-      : metric === "tvl"
+      : running
         ? todayTvl
         : shown.length;
   const byGroup = (g: string) =>
     metric === "usd"
       ? formatTVL(sumUsd(depositsInWindow.filter((d) => d.group === g)))
-      : metric === "tvl"
+      : running
         ? formatTVL(bins[bins.length - 1]?.byType[g] ?? 0)
         : shown.filter((r) => r.group === g).length.toLocaleString("en-US");
 
@@ -877,9 +882,11 @@ function NewDepositorsSection({
               first brought the wallet. Dollar values are
               priced at transaction time by the subgraph indexer, which runs
               hourly, so the newest deposits can show as unpriced for a while.
-              Cumulative TVL is the running total of these wallets&rsquo; deposits
-              minus their withdrawals at those transaction-time prices, so it
-              tracks net money in, not the current value of the positions.
+              Cumulative deposits is the running total of everything these
+              wallets have deposited, so it only rises. Net TVL subtracts their
+              withdrawals, so it falls when they take money out. Both use
+              transaction-time prices: they track money in, not the current
+              value of the positions.
             </InfoTip>
           </h2>
           <span className="uni-hub-section-meta">
@@ -906,7 +913,7 @@ function NewDepositorsSection({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="aq-timeframe" role="tablist" aria-label="Chart metric">
-            {(["wallets", "usd", "tvl"] as const).map((m) => (
+            {(["wallets", "usd", "cumulative", "tvl"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -915,7 +922,14 @@ function NewDepositorsSection({
                 className={`aq-timeframe-tab${metric === m ? " active" : ""}`}
                 onClick={() => setMetric(m)}
               >
-                {m === "wallets" ? "New depositors" : m === "usd" ? "Deposits ($)" : "Cumulative TVL"}
+                {
+                  {
+                    wallets: "New depositors",
+                    usd: "Deposits ($)",
+                    cumulative: "Cumulative deposits",
+                    tvl: "Net TVL",
+                  }[m]
+                }
               </button>
             ))}
           </div>
@@ -926,7 +940,11 @@ function NewDepositorsSection({
       <div className="aq-chart-card">
         <div className="aq-chart-bignum">{fmt(bignum)}</div>
         <div className="aq-chart-bignum-label">
-          {metric === "tvl"
+          {metric === "cumulative"
+            ? hoveredBin
+              ? `deposited in total by search and AI depositors as of ${heartbeatDaysAgo(hoveredBin.daysAgo)}, at transaction-time prices`
+              : `deposited in total by search and AI depositors to date, at transaction-time prices; withdrawals are not subtracted`
+            : metric === "tvl"
             ? hoveredBin
               ? `net deposited by search and AI depositors as of ${heartbeatDaysAgo(hoveredBin.daysAgo)}, deposits minus withdrawals at transaction-time prices`
               : `net deposited by search and AI depositors to date, deposits minus withdrawals at transaction-time prices`
@@ -984,7 +1002,15 @@ function NewDepositorsSection({
                 types={visible}
                 idx={hoverIdx as number}
                 days={days}
-                unit={metric === "wallets" ? "new depositors" : metric === "usd" ? "deposited" : "net TVL"}
+                unit={
+                  metric === "wallets"
+                    ? "new depositors"
+                    : metric === "usd"
+                      ? "deposited"
+                      : metric === "cumulative"
+                        ? "deposited to date"
+                        : "net TVL"
+                }
                 format={metric === "wallets" ? undefined : formatTVL}
               />
             )}
