@@ -428,11 +428,15 @@ export function FunnelSummary({
   group,
   copy,
   botExport = false,
+  pinLandings = NO_PINS,
 }: {
   group: FunnelGroup;
   copy: FunnelCopy;
   // Offer a "CSV with bots" export while "Show bots" is ticked.
   botExport?: boolean;
+  // Landings this page always draws on their own in the landing breakdown,
+  // on top of the site-wide PINNED_LANDINGS.
+  pinLandings?: readonly string[];
 }) {
   const [visits, setVisits] = useState<VisitRow[] | null>(null);
   const [clicks, setClicks] = useState<ClickRow[] | null>(null);
@@ -457,6 +461,7 @@ export function FunnelSummary({
   // item (e.g. /usdc) also filters the Acquired sessions table below the chart.
   const [chartMode, setChartMode] = useState<ChartMode>("all");
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
+  const pins = useMemo(() => [...PINNED_LANDINGS, ...pinLandings], [pinLandings]);
 
   // Clear legend isolation when the breakdown dimension flips (engine <->
   // landing), and auto-engage Breakdown when Isolate direct turns on, so the
@@ -922,7 +927,7 @@ export function FunnelSummary({
   const dimension: ChartDimension = deepLandingOnly ? "landing" : "engine";
   // Same bucketing the chart legend uses, so the table can filter to exactly
   // the categories the legend leaves visible (tail folded into "Other").
-  const categories = buildCategories(points, dimension);
+  const categories = buildCategories(points, dimension, pins);
 
   // Table follows legend isolation: while categories are hidden in breakdown
   // mode, drop sessions whose category is hidden so the table matches the chart.
@@ -1092,6 +1097,7 @@ export function FunnelSummary({
             // SEO sessions, so the natural breakdown is by the landing sub-page
             // (which pages pull SEO traffic), not by engine.
             dimension={dimension}
+            pins={pins}
             mode={chartMode}
             setMode={setChartMode}
             hidden={hidden}
@@ -1216,14 +1222,16 @@ const LANDING_LABELS: Record<string, string> = {
   "/report/xrp-yield-ranking": "XRP Yield Report",
   "/report/aerodrome": "Aerodrome LP Report",
   "/best-crypto-casino-bonus": "Crypto Casino Bonus",
+  "/ko/xrp-rich-list": "XRP Rich List (KO)",
 };
 // Editorial landings that are never folded into "Other" and are listed in the
 // legend even with no sessions in the window, so their traffic stays one click
 // from isolation regardless of how they rank against the product pages that
 // day. Reports match by prefix; anything else is named here.
 const PINNED_LANDINGS: readonly string[] = ["/best-crypto-casino-bonus"];
-const isPinnedLanding = (k: string) =>
-  k.startsWith("/report/") || PINNED_LANDINGS.includes(k);
+const NO_PINS: readonly string[] = [];
+const isPinnedLanding = (k: string, pins: readonly string[]) =>
+  k.startsWith("/report/") || pins.includes(k);
 
 // Legend/tooltip label: friendly name for report landings, otherwise strip the
 // leading slash off landing paths so they read compactly; engines and "Other"
@@ -1250,6 +1258,7 @@ function catRawOf(
 function buildCategories(
   points: { engine: string; landing: string }[],
   dimension: ChartDimension,
+  pins: readonly string[] = PINNED_LANDINGS,
 ): { ordered: string[]; color: Record<string, string>; top: Set<string> } {
   const counts = new Map<string, number>();
   for (const p of points) {
@@ -1270,8 +1279,8 @@ function buildCategories(
     // Always draw pinned landings individually (never fold into "Other"), so
     // they stay isolatable even at low volume; fill the rest of the top slots by
     // volume, then sort the drawn set by volume for a clean legend.
-    const pinned = present.filter(isPinnedLanding);
-    const rest = present.filter((k) => !isPinnedLanding(k));
+    const pinned = present.filter((k) => isPinnedLanding(k, pins));
+    const rest = present.filter((k) => !isPinnedLanding(k, pins));
     const room = Math.max(0, TOP_LANDINGS - pinned.length);
     const drawn = new Set([...pinned, ...rest.slice(0, room)]);
     const shown = [...drawn].sort(
@@ -1279,7 +1288,7 @@ function buildCategories(
     );
     // A pinned landing with nothing in the window still gets a legend entry,
     // so "no traffic" is distinguishable from "folded into Other".
-    const quiet = PINNED_LANDINGS.filter((k) => !drawn.has(k));
+    const quiet = pins.filter((k) => !drawn.has(k));
     const folded = present.some((k) => !drawn.has(k));
     ordered = [...shown, ...quiet, ...(folded ? [OTHER] : [])];
   }
@@ -1307,6 +1316,7 @@ function ChartSection({
   timeframe,
   onTimeframeChange,
   dimension = "engine",
+  pins,
   mode,
   setMode,
   hidden,
@@ -1318,6 +1328,7 @@ function ChartSection({
   timeframe: Timeframe;
   onTimeframeChange: (tf: Timeframe) => void;
   dimension?: ChartDimension;
+  pins: readonly string[];
   // Breakdown mode + legend isolation are lifted to the parent so the Acquired
   // sessions table can filter to the same visible categories.
   mode: ChartMode;
@@ -1330,8 +1341,8 @@ function ChartSection({
   // Categories present, ordered, colored. Same helper the table uses so the
   // legend and the filtered table always agree on the drawn set + "Other" fold.
   const engines = useMemo(
-    () => buildCategories(points, dimension),
-    [points, dimension],
+    () => buildCategories(points, dimension, pins),
+    [points, dimension, pins],
   );
 
   // Map a point to the category actually drawn (tail -> "Other").

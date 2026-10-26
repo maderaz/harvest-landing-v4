@@ -5,11 +5,16 @@ import { RecurringFromDeepLanding } from "@/components/admin/recurring-from-deep
 // FunnelSummary scoped to the "SEO" source group; the AI Summary page
 // (/control-room/ai) renders the same component scoped to "AI".
 
+// The Korean rich list gets its own legend entry here, so its search traffic
+// can be isolated even on days it would rank below the top landings.
+const SEO_PINNED_LANDINGS = ["/ko/xrp-rich-list"];
+
 export default function SeoSummaryPage() {
   return (
     <>
     <FunnelSummary
       group="SEO"
+      pinLandings={SEO_PINNED_LANDINGS}
       copy={{
         title: "SEO Summary",
         description:
