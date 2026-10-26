@@ -63,6 +63,9 @@ interface VaultEventRow {
   event_type: "deposit" | "withdraw" | "transfer";
   wallet_address: string;
   amount_shares: string | null;
+  // USD at transaction time, written by the subgraph indexer; null on rows
+  // only the RPC indexer has seen yet.
+  amount_usd: number | null;
 }
 interface VisitRow {
   created_at: string;
@@ -149,6 +152,7 @@ type FeedItem =
       chain: string;
       tx: string;
       netWorth: number | null;
+      amountUsd: number | null;
     };
 
 type VisitItem = Extract<FeedItem, { kind: "visit" }>;
@@ -532,12 +536,14 @@ function HeartbeatTooltip({
   types,
   idx,
   days,
+  unit = "actions",
 }: {
   bin: { daysAgo: number; byType: Record<string, number> };
   count: number;
   types: { key: string; label: string; color: string }[];
   idx: number;
   days: number;
+  unit?: string;
 }) {
   const rows = types
     .filter((t) => bin.byType[t.key])
@@ -603,10 +609,358 @@ function HeartbeatTooltip({
       >
         <span>Total</span>
         <span style={{ fontFamily: "var(--mono)" }}>
-          {count.toLocaleString("en-US")} actions
+          {count.toLocaleString("en-US")} {unit}
         </span>
       </div>
     </div>
+  );
+}
+
+// "New depositors from search and AI": one entry per wallet, on the day of its
+// first-ever deposit, kept only when that deposit is attributed to an SEO or AI
+// session and the wallet was not already a depositor before we acquired it.
+// A wallet that deposits again, into another vault, on another chain or in
+// several logs of one transaction is still one depositor, counted once and
+// under one source. Its later deposits (any source) add to its cumulative
+// total instead of adding rows.
+interface NewDepositor {
+  wallet: string;
+  time: string;
+  group: "SEO" | "AI";
+  channel: string;
+  vaultSlug: string | null;
+  vaultAddress: string;
+  chain: string;
+  tx: string;
+  /** Every deposit the wallet has made, first one included. */
+  deposits: { time: string; usd: number | null }[];
+}
+
+const NEW_DEP_GROUPS: { key: "SEO" | "AI"; label: string; color: string }[] = [
+  { key: "SEO", label: "Search (SEO)", color: "#4E79A7" },
+  { key: "AI", label: "AI assistants", color: "#B07AA1" },
+];
+
+type NewDepMetric = "wallets" | "usd";
+
+const sumUsd = (ds: { usd: number | null }[]) =>
+  ds.reduce((s, d) => s + (d.usd != null && Number.isFinite(Number(d.usd)) ? Number(d.usd) : 0), 0);
+const unpriced = (ds: { usd: number | null }[]) => ds.filter((d) => d.usd == null).length;
+
+function NewDepositorsSection({
+  rows,
+  productLabel,
+}: {
+  rows: NewDepositor[];
+  productLabel: (slug: string | null, address?: string) => string;
+}) {
+  const [timeframe, setTimeframe] = useState<Timeframe>("all");
+  const [metric, setMetric] = useState<NewDepMetric>("wallets");
+  const [hidden, setHidden] = useState<Set<string>>(() => new Set());
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  const [now] = useState(() => Date.now());
+  const DAY = 86_400_000;
+  // Clamped at 0 so a deposit loaded by Refresh after mount lands in today.
+  const daysAgoOf = (iso: string) =>
+    Math.max(0, Math.floor((now - new Date(iso).getTime()) / DAY));
+
+  const oldestMs = useMemo(() => {
+    let o = Infinity;
+    for (const r of rows) {
+      const t = new Date(r.time).getTime();
+      if (Number.isFinite(t) && t < o) o = t;
+    }
+    return Number.isFinite(o) ? o : null;
+  }, [rows]);
+  const days = resolveDays(timeframe, oldestMs);
+
+  // Wallets acquired in the window (by first deposit), source toggles applied.
+  const shown = rows.filter((r) => {
+    const d = daysAgoOf(r.time);
+    return d >= 0 && d < days && !hidden.has(r.group);
+  });
+  // Deposits made in the window by any acquired wallet (first and repeat),
+  // for the dollar view.
+  const depositsInWindow = rows
+    .filter((r) => !hidden.has(r.group))
+    .flatMap((r) => r.deposits.map((d) => ({ ...d, group: r.group })))
+    .filter((d) => {
+      const a = daysAgoOf(d.time);
+      return a >= 0 && a < days;
+    });
+
+  const bins = Array.from({ length: days }, (_, i) => ({
+    daysAgo: days - 1 - i,
+    byType: {} as Record<string, number>,
+    total: 0,
+  }));
+  if (metric === "wallets") {
+    for (const r of shown) {
+      const bin = bins[days - 1 - daysAgoOf(r.time)];
+      bin.total++;
+      bin.byType[r.group] = (bin.byType[r.group] || 0) + 1;
+    }
+  } else {
+    for (const d of depositsInWindow) {
+      const usd = d.usd != null ? Number(d.usd) : 0;
+      if (!Number.isFinite(usd) || usd <= 0) continue;
+      const bin = bins[days - 1 - daysAgoOf(d.time)];
+      bin.total += usd;
+      bin.byType[d.group] = (bin.byType[d.group] || 0) + usd;
+    }
+  }
+
+  const max = Math.max(1, ...bins.map((b) => b.total));
+  const visible = NEW_DEP_GROUPS.filter((g) => !hidden.has(g.key));
+  const hoveredBin = hoverIdx != null ? bins[hoverIdx] : null;
+  const fmt = (v: number) =>
+    metric === "usd" ? formatTVL(v) : Math.round(v).toLocaleString("en-US");
+  const windowUsd = sumUsd(depositsInWindow);
+  const windowUnpriced = unpriced(depositsInWindow);
+  const bignum = hoveredBin ? hoveredBin.total : metric === "usd" ? windowUsd : shown.length;
+  const byGroup = (g: string) =>
+    metric === "usd"
+      ? formatTVL(sumUsd(depositsInWindow.filter((d) => d.group === g)))
+      : shown.filter((r) => r.group === g).length.toLocaleString("en-US");
+
+  const toggle = (k: string) =>
+    setHidden((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      // Never hide both: clicking the last visible one shows everything.
+      return next.size === NEW_DEP_GROUPS.length ? new Set() : next;
+    });
+
+  return (
+    <section className="uni-hub-section" style={{ marginTop: 28 }}>
+      <header className="uni-hub-section-head">
+        <div className="aq-section-head-left">
+          <h2 className="uni-hub-section-title">
+            New depositors from search and AI
+            <InfoTip label="About new depositors">
+              Each wallet is counted once, on the day of its first-ever deposit,
+              and only when that deposit is attributed to a search or AI session.
+              Wallets that were already depositors before their first tracked
+              visit are left out. Repeat deposits, deposits into other vaults or
+              chains, and extra logs of one transaction never add a wallet; they
+              add to its cumulative deposits. A wallet sits under exactly one
+              source, the one that drove its first deposit. Dollar values are
+              priced at transaction time by the subgraph indexer, which runs
+              hourly, so the newest deposits can show as unpriced for a while.
+            </InfoTip>
+          </h2>
+          <span className="uni-hub-section-meta">
+            {shown.length.toLocaleString("en-US")} new wallets ·{" "}
+            {formatTVL(windowUsd)} deposited by them in the last {days}d
+            {windowUnpriced ? ` · ${windowUnpriced} deposit${windowUnpriced === 1 ? "" : "s"} not priced yet` : ""}
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <div className="aq-timeframe" role="tablist" aria-label="Chart metric">
+            {(["wallets", "usd"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="tab"
+                aria-selected={metric === m}
+                className={`aq-timeframe-tab${metric === m ? " active" : ""}`}
+                onClick={() => setMetric(m)}
+              >
+                {m === "wallets" ? "New depositors" : "Deposits ($)"}
+              </button>
+            ))}
+          </div>
+          <TimeframeSelector value={timeframe} onChange={setTimeframe} />
+        </div>
+      </header>
+
+      <div className="aq-chart-card">
+        <div className="aq-chart-bignum">{fmt(bignum)}</div>
+        <div className="aq-chart-bignum-label">
+          {metric === "wallets"
+            ? hoveredBin
+              ? `new depositors ${heartbeatDaysAgo(hoveredBin.daysAgo)}`
+              : `new depositors across the trailing ${days} days`
+            : hoveredBin
+              ? `deposited ${heartbeatDaysAgo(hoveredBin.daysAgo)} by search and AI depositors`
+              : `deposited by search and AI depositors across the trailing ${days} days, first and repeat deposits`}
+        </div>
+        <div className="aq-chart">
+          <div className="aq-chart-bars" style={{ position: "relative" }}>
+            {bins.map((b, i) => {
+              const heightPct = Math.max((b.total / max) * 100, b.total > 0 ? 4 : 0);
+              return (
+                <div
+                  key={i}
+                  className="aq-bar-col"
+                  onMouseEnter={() => setHoverIdx(i)}
+                  onMouseLeave={() => setHoverIdx(null)}
+                >
+                  {b.total > 0 && (
+                    <div
+                      style={{
+                        width: "100%",
+                        height: `${heightPct}%`,
+                        minHeight: 4,
+                        display: "flex",
+                        flexDirection: "column",
+                        borderRadius: "5px 5px 0 0",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {visible
+                        .filter((g) => b.byType[g.key])
+                        .map((g) => (
+                          <div
+                            key={g.key}
+                            style={{
+                              height: `${(b.byType[g.key] / b.total) * 100}%`,
+                              background: g.color,
+                            }}
+                          />
+                        ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+            {hoveredBin && hoveredBin.total > 0 && metric === "wallets" && (
+              <HeartbeatTooltip
+                bin={hoveredBin}
+                count={hoveredBin.total}
+                types={visible}
+                idx={hoverIdx as number}
+                days={days}
+                unit="new depositors"
+              />
+            )}
+          </div>
+          <div className="aq-chart-axis">
+            <span>{days}d ago</span>
+            <span>{Math.floor(days / 2)}d ago</span>
+            <span>today</span>
+          </div>
+        </div>
+
+        <div
+          className="uni-hub-section-meta"
+          style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: "6px 14px" }}
+        >
+          {NEW_DEP_GROUPS.map((g) => {
+            const off = hidden.has(g.key);
+            return (
+              <button
+                key={g.key}
+                type="button"
+                onClick={() => toggle(g.key)}
+                aria-pressed={!off}
+                title={off ? `Show ${g.label}` : `Only ${g.label}`}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  fontSize: 12,
+                  padding: 0,
+                  border: "none",
+                  background: "none",
+                  cursor: "pointer",
+                  color: "inherit",
+                  opacity: off ? 0.4 : 1,
+                  textDecoration: off ? "line-through" : "none",
+                }}
+              >
+                <span
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 2,
+                    background: off ? "transparent" : g.color,
+                    boxShadow: off ? `inset 0 0 0 1.5px ${g.color}` : "none",
+                    flexShrink: 0,
+                  }}
+                />
+                {g.label} ({off ? "0" : byGroup(g.key)})
+              </button>
+            );
+          })}
+        </div>
+
+        {shown.length > 0 && (
+          <div style={{ overflowX: "auto", marginTop: 14 }}>
+            <table className="w-full text-sm" style={{ borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "var(--uni-ink-2, inherit)" }}>
+                  {[
+                    "First deposit",
+                    "Wallet",
+                    "Source",
+                    "First product",
+                    "Deposits",
+                    "Cumulative",
+                    "Last deposit",
+                    "First tx",
+                  ].map((h) => (
+                    <th key={h} style={{ padding: "6px 8px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((r) => {
+                  const last = r.deposits.reduce(
+                    (a, d) => (new Date(d.time).getTime() > new Date(a).getTime() ? d.time : a),
+                    r.time,
+                  );
+                  const missing = unpriced(r.deposits);
+                  return (
+                    <tr key={r.wallet} style={{ borderTop: "1px solid var(--uni-line-2)" }}>
+                      <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
+                        <TimeLabel iso={r.time} />
+                      </td>
+                      <td style={{ padding: "6px 8px" }}>
+                        <WalletLabel address={r.wallet} title={r.wallet} />
+                      </td>
+                      <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
+                        <span
+                          style={{
+                            display: "inline-block",
+                            width: 8,
+                            height: 8,
+                            borderRadius: 2,
+                            marginRight: 6,
+                            background: NEW_DEP_GROUPS.find((g) => g.key === r.group)!.color,
+                          }}
+                        />
+                        {r.channel}
+                      </td>
+                      <td style={{ padding: "6px 8px" }}>{productLabel(r.vaultSlug, r.vaultAddress)}</td>
+                      <td style={{ padding: "6px 8px", fontFamily: "var(--mono)" }}>{r.deposits.length}</td>
+                      <td
+                        style={{ padding: "6px 8px", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}
+                        title={missing ? `${missing} deposit${missing === 1 ? "" : "s"} not priced yet` : undefined}
+                      >
+                        {formatTVL(sumUsd(r.deposits))}
+                        {missing ? " +" : ""}
+                      </td>
+                      <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
+                        <TimeLabel iso={last} />
+                      </td>
+                      <td style={{ padding: "6px 8px" }}>
+                        <a href={txLink(r.chain, r.tx)} target="_blank" rel="noopener noreferrer">
+                          {shortenAddress(r.tx)}
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </section>
   );
 }
 
@@ -640,7 +994,7 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
       ),
       supabaseSelectAll<VaultEventRow>(
         "vault_events_prod",
-        "select=tx_hash,log_index,block_timestamp,chain,vault_address,vault_slug,event_type,wallet_address,amount_shares&event_type=in.(deposit,withdraw)&order=block_timestamp.desc",
+        "select=tx_hash,log_index,block_timestamp,chain,vault_address,vault_slug,event_type,wallet_address,amount_shares,amount_usd&event_type=in.(deposit,withdraw)&order=block_timestamp.desc",
       ),
       supabaseSelectAll<ConnectionRow>(
         "wallet_connections_prod",
@@ -721,7 +1075,15 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         continue;
       const key = `${(e.tx_hash || "").toLowerCase()}|${(e.vault_address || "").toLowerCase()}|${e.event_type}`;
       const prev = byKey.get(key);
-      if (!prev || sharesBig(e) > sharesBig(prev)) byKey.set(key, e);
+      // The RPC and subgraph indexers both write the same deposit and only the
+      // subgraph row carries USD, so the kept row takes the largest USD seen
+      // under its key (the real leg; dust mints are worth less).
+      const usd = Math.max(
+        e.amount_usd ?? -Infinity,
+        prev?.amount_usd ?? -Infinity,
+      );
+      const keep = !prev || sharesBig(e) > sharesBig(prev) ? e : prev;
+      byKey.set(key, { ...keep, amount_usd: Number.isFinite(usd) ? usd : null });
     }
     return [...byKey.values()];
   }, [events]);
@@ -895,8 +1257,14 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         hsid: link?.session ?? null,
       };
     }
+    // The session's referrer-aware first-touch channel when it names one
+    // (Google, ChatGPT, ...), so an event reads the same source as the visits
+    // of the session that drove it; otherwise the app view of the raw source
+    // (owned traffic reads Homepage).
+    const ftGroup = channelGroup(ft.channel);
     return {
-      channel: appChannel(ft.source),
+      channel:
+        ftGroup !== "Direct" && ftGroup !== "Referral" ? ft.channel : appChannel(ft.source),
       country: ft.country,
       device: ft.device,
       srcDomain: ft.domain,
@@ -922,6 +1290,8 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
   const [engagement, setEngagement] = useState<Engagement>("all");
   // Activity heartbeat chart: hidden by default, toggled from the header.
   const [showHeartbeat, setShowHeartbeat] = useState(false);
+  // New depositors from search and AI: shown by default, toggled from the header.
+  const [showNewDeps, setShowNewDeps] = useState(true);
 
   const items = useMemo<FeedItem[]>(() => {
     if (!loaded) return [];
@@ -1037,6 +1407,7 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
           chain: evChains[i % evChains.length],
           tx: SAMPLE_TX[i % SAMPLE_TX.length],
           netWorth: worths[i % worths.length],
+          amountUsd: [1200, 25000, 480, 9800, null][i % 5],
         });
       }
       return out.sort(
@@ -1142,6 +1513,7 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
           chain: e.chain,
           tx: e.tx_hash,
           netWorth: r.netWorth,
+          amountUsd: e.amount_usd,
         };
       }),
     ];
@@ -1383,6 +1755,49 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     [firstDepTs, firstVisitByWallet],
   );
 
+  // One row per wallet: its earliest deposit (ties broken by row id, so a
+  // multi-vault transaction picks the same row every time), kept when that
+  // deposit came from a search or AI session and the wallet was new to us.
+  const newDepositors = useMemo<NewDepositor[]>(() => {
+    const first = new Map<string, Extract<FeedItem, { kind: "event" }>>();
+    for (const it of items) {
+      if (it.kind !== "event" || it.eventType !== "deposit" || !it.wallet) continue;
+      const w = it.wallet.toLowerCase();
+      const prev = first.get(w);
+      const t = new Date(it.time).getTime();
+      const pt = prev ? new Date(prev.time).getTime() : Infinity;
+      if (!prev || t < pt || (t === pt && it.id < prev.id)) first.set(w, it);
+    }
+    // Every deposit per wallet, for the cumulative view. Rows are already one
+    // per transaction leg (dedupedEvents), so nothing is counted twice.
+    const deposits = new Map<string, { time: string; usd: number | null }[]>();
+    for (const it of items) {
+      if (it.kind !== "event" || it.eventType !== "deposit" || !it.wallet) continue;
+      const w = it.wallet.toLowerCase();
+      const arr = deposits.get(w) ?? [];
+      arr.push({ time: it.time, usd: it.amountUsd });
+      deposits.set(w, arr);
+    }
+    const out: NewDepositor[] = [];
+    for (const [w, it] of first) {
+      const group = channelGroup(it.channel);
+      if (group !== "SEO" && group !== "AI") continue;
+      if (statusFor(w, new Date(it.time).getTime()) !== "new") continue;
+      out.push({
+        wallet: w,
+        time: it.time,
+        group,
+        channel: it.channel,
+        vaultSlug: it.vaultSlug,
+        vaultAddress: it.vaultAddress,
+        chain: it.chain,
+        tx: it.tx,
+        deposits: deposits.get(w) ?? [],
+      });
+    }
+    return out.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  }, [items, statusFor]);
+
   const loading = !loaded && !err;
 
   const totalPages = Math.max(1, Math.ceil(streamRows.length / ROWS_PER_PAGE));
@@ -1438,8 +1853,21 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
             </svg>
             {showHeartbeat ? "Hide heartbeat" : "Show heartbeat"}
           </button>
+          <button
+            type="button"
+            className={`lf-refresh${showNewDeps ? " active" : ""}`}
+            onClick={() => setShowNewDeps((v) => !v)}
+            aria-pressed={showNewDeps}
+            style={{ flexShrink: 0 }}
+          >
+            {showNewDeps ? "Hide new depositors" : "Show new depositors"}
+          </button>
         </div>
       </header>
+
+      {showNewDeps && (
+        <NewDepositorsSection rows={newDepositors} productLabel={productLabel} />
+      )}
 
       {showHeartbeat && <HeartbeatSection items={items} showBots={showBots} />}
 
