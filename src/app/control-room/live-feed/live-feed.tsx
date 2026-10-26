@@ -652,6 +652,10 @@ interface ExcludedDepositor {
   reason: string;
 }
 
+// Cumulative deposits draws in greens, the deposit colour of the heartbeat,
+// darker for search and lighter for AI so the split still reads.
+const NEW_DEP_GREENS: Record<"SEO" | "AI", string> = { SEO: "#59A14F", AI: "#8CD17D" };
+
 type NewDepMetric = "wallets" | "usd" | "cumulative" | "tvl";
 
 // Sortable table columns. Tx is a link, so it does not sort.
@@ -784,7 +788,11 @@ function NewDepositorsSection({
   }
 
   const max = Math.max(1, ...bins.map((b) => b.total));
-  const visible = NEW_DEP_GROUPS.filter((g) => !hidden.has(g.key));
+  const palette =
+    metric === "cumulative"
+      ? NEW_DEP_GROUPS.map((g) => ({ ...g, color: NEW_DEP_GREENS[g.key] }))
+      : NEW_DEP_GROUPS;
+  const visible = palette.filter((g) => !hidden.has(g.key));
   const hoveredBin = hoverIdx != null ? bins[hoverIdx] : null;
   const fmt = (v: number) =>
     metric === "wallets" ? Math.round(v).toLocaleString("en-US") : formatTVL(v);
@@ -1026,7 +1034,7 @@ function NewDepositorsSection({
           className="uni-hub-section-meta"
           style={{ marginTop: 8, display: "flex", flexWrap: "wrap", gap: "6px 14px" }}
         >
-          {NEW_DEP_GROUPS.map((g) => {
+          {palette.map((g) => {
             const off = hidden.has(g.key);
             return (
               <button
