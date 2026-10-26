@@ -644,6 +644,14 @@ const NEW_DEP_GROUPS: { key: "SEO" | "AI"; label: string; color: string }[] = [
   { key: "AI", label: "AI assistants", color: "#B07AA1" },
 ];
 
+/** A search or AI first deposit that failed the wallet-level checks. */
+interface ExcludedDepositor {
+  wallet: string;
+  time: string;
+  channel: string;
+  reason: string;
+}
+
 type NewDepMetric = "wallets" | "usd" | "tvl";
 
 // Sortable table columns. Tx is a link, so it does not sort.
@@ -677,11 +685,14 @@ const unpriced = (ds: { usd: number | null }[]) => ds.filter((d) => d.usd == nul
 
 function NewDepositorsSection({
   rows,
+  excluded,
   productLabel,
 }: {
   rows: NewDepositor[];
+  excluded: ExcludedDepositor[];
   productLabel: (slug: string | null, address?: string) => string;
 }) {
+  const [showExcluded, setShowExcluded] = useState(false);
   const [timeframe, setTimeframe] = useState<Timeframe>("all");
   const [metric, setMetric] = useState<NewDepMetric>("wallets");
   const [sortKey, setSortKey] = useState<NewDepSortKey>("first");
@@ -774,6 +785,10 @@ function NewDepositorsSection({
   const fmt = (v: number) =>
     metric === "wallets" ? Math.round(v).toLocaleString("en-US") : formatTVL(v);
   const windowUsd = sumUsd(depositsInWindow);
+  const excludedShown = excluded.filter((e) => {
+    const d = daysAgoOf(e.time);
+    return d >= 0 && d < days;
+  });
   const windowUnpriced = unpriced(depositsInWindow);
   const todayTvl = bins[bins.length - 1]?.total ?? 0;
   const bignum = hoveredBin
@@ -846,13 +861,20 @@ function NewDepositorsSection({
           <h2 className="uni-hub-section-title">
             New depositors from search and AI
             <InfoTip label="About new depositors">
-              Each wallet is counted once, on the day of its first-ever deposit,
-              and only when that deposit is attributed to a search or AI session.
-              Wallets that were already depositors before their first tracked
-              visit are left out. Repeat deposits, deposits into other vaults or
-              chains, and extra logs of one transaction never add a wallet; they
-              add to its cumulative deposits. A wallet sits under exactly one
-              source, the one that drove its first deposit. Dollar values are
+              Wallets that search or AI brought to Harvest first, counted once on
+              the day of their first-ever deposit. That deposit has to come from a
+              search or AI session, and the wallet&rsquo;s earliest known touch
+              before it has to be search or AI too. Every session the wallet
+              connected in counts as a touch, as do desktop sessions from the same
+              browser (user agent, screen, window, country and timezone). A wallet
+              that first came Direct, from social or a referral, that connected to
+              the app before its first search or AI visit, or that deposited or
+              withdrew before it, is excluded: it knew Harvest already. Visits
+              that never connected a wallet on a phone cannot be tied to it, so
+              those stay invisible. Repeat deposits, other vaults or chains, and
+              extra logs of one transaction add to the wallet&rsquo;s cumulative
+              deposits, never a new row. The source shown is the channel that
+              first brought the wallet. Dollar values are
               priced at transaction time by the subgraph indexer, which runs
               hourly, so the newest deposits can show as unpriced for a while.
               Cumulative TVL is the running total of these wallets&rsquo; deposits
@@ -862,7 +884,23 @@ function NewDepositorsSection({
           </h2>
           <span className="uni-hub-section-meta">
             {shown.length.toLocaleString("en-US")} new wallets ·{" "}
-            {formatTVL(windowUsd)} deposited by them in the last {days}d
+            {formatTVL(windowUsd)} deposited by them in the last {days}d ·{" "}
+            <button
+              type="button"
+              onClick={() => setShowExcluded((v) => !v)}
+              aria-expanded={showExcluded}
+              style={{
+                padding: 0,
+                border: "none",
+                background: "none",
+                font: "inherit",
+                color: "inherit",
+                textDecoration: "underline",
+                cursor: "pointer",
+              }}
+            >
+              {excludedShown.length} excluded as already aware
+            </button>
             {windowUnpriced ? ` · ${windowUnpriced} deposit${windowUnpriced === 1 ? "" : "s"} not priced yet` : ""}
           </span>
         </div>
@@ -1000,6 +1038,39 @@ function NewDepositorsSection({
             );
           })}
         </div>
+
+        {showExcluded && excludedShown.length > 0 && (
+          <div style={{ overflowX: "auto", marginTop: 14 }}>
+            <table className="w-full text-sm" style={{ borderCollapse: "collapse" }}>
+              <caption style={{ textAlign: "left", padding: "0 8px 6px", fontWeight: 600 }}>
+                Search or AI first deposits left out, and why
+              </caption>
+              <thead>
+                <tr style={{ textAlign: "left", color: "var(--uni-ink-2, inherit)" }}>
+                  {["First deposit", "Wallet", "Deposit session", "Why it is excluded"].map((h) => (
+                    <th key={h} style={{ padding: "6px 8px", fontWeight: 600, whiteSpace: "nowrap" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {excludedShown.map((e) => (
+                  <tr key={e.wallet} style={{ borderTop: "1px solid var(--uni-line-2)" }}>
+                    <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
+                      <TimeLabel iso={e.time} />
+                    </td>
+                    <td style={{ padding: "6px 8px" }}>
+                      <WalletLabel address={e.wallet} title={e.wallet} />
+                    </td>
+                    <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>{e.channel}</td>
+                    <td style={{ padding: "6px 8px" }}>{e.reason}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
 
         {shown.length > 0 && (
           <div style={{ overflowX: "auto", marginTop: 14 }}>
@@ -1896,16 +1967,45 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     [firstDepTs, firstVisitByWallet],
   );
 
-  // One row per wallet: its earliest deposit (ties broken by row id, so a
-  // multi-vault transaction picks the same row every time), kept when that
-  // deposit came from a search or AI session and the wallet was new to us.
-  const newDepositors = useMemo<NewDepositor[]>(() => {
+  // Desktop sessions that look like the same browser: same user agent, screen
+  // and window size, country and timezone. Used only to find a wallet's
+  // earlier visits that never connected a wallet. Phones and tablets are left
+  // out, since one model's fingerprint is shared by many people.
+  const { sessionLinkKey, linkKeySessions } = useMemo(() => {
+    const sessionLinkKey = new Map<string, string>();
+    const linkKeySessions = new Map<string, Set<string>>();
+    for (const v of visits ?? []) {
+      if (!v.session_id || !v.user_agent || !v.screen_width || !v.viewport_width) continue;
+      const dev = (v.device_type || "").toLowerCase();
+      if (dev === "mobile" || dev === "tablet") continue;
+      const key = `${fingerprintKey(v)}||${v.country ?? ""}||${v.timezone ?? ""}`;
+      sessionLinkKey.set(v.session_id, key);
+      const set = linkKeySessions.get(key) ?? new Set<string>();
+      set.add(v.session_id);
+      linkKeySessions.set(key, set);
+    }
+    return { sessionLinkKey, linkKeySessions };
+  }, [visits]);
+
+  // One row per wallet that search or AI brought to us first. Candidates are
+  // wallets whose earliest deposit (ties broken by row id, so a multi-vault
+  // transaction picks the same row every time) came from a search or AI
+  // session. A candidate then has to pass the wallet-level checks: its
+  // earliest known touch before that deposit, across every session it
+  // connected in plus desktop sessions from the same browser, must itself be
+  // search or AI; it must not have connected to the app before that touch;
+  // and it must have no deposit or withdrawal before it. Anything else means
+  // the wallet knew Harvest already and search was only the way back in.
+  const { newDepositors, excludedDepositors } = useMemo(() => {
     const first = new Map<string, Extract<FeedItem, { kind: "event" }>>();
+    const firstEventMs = new Map<string, number>();
     for (const it of items) {
-      if (it.kind !== "event" || it.eventType !== "deposit" || !it.wallet) continue;
+      if (it.kind !== "event" || !it.wallet) continue;
       const w = it.wallet.toLowerCase();
-      const prev = first.get(w);
       const t = new Date(it.time).getTime();
+      firstEventMs.set(w, Math.min(firstEventMs.get(w) ?? Infinity, t));
+      if (it.eventType !== "deposit") continue;
+      const prev = first.get(w);
       const pt = prev ? new Date(prev.time).getTime() : Infinity;
       if (!prev || t < pt || (t === pt && it.id < prev.id)) first.set(w, it);
     }
@@ -1922,16 +2022,60 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
       arr.push({ time: it.time, usd: it.amountUsd });
       m.set(w, arr);
     }
+    const day = (ms: number) => formatDateOnly(new Date(ms).toISOString());
     const out: NewDepositor[] = [];
+    const excluded: ExcludedDepositor[] = [];
     for (const [w, it] of first) {
-      const group = channelGroup(it.channel);
-      if (group !== "SEO" && group !== "AI") continue;
-      if (statusFor(w, new Date(it.time).getTime()) !== "new") continue;
+      const depGroup = channelGroup(it.channel);
+      if (depGroup !== "SEO" && depGroup !== "AI") continue;
+      const depMs = new Date(it.time).getTime();
+      const exclude = (reason: string) =>
+        excluded.push({ wallet: w, time: it.time, channel: it.channel, reason });
+
+      // Every session tied to the wallet: those it connected in, then desktop
+      // sessions from the same browser.
+      const conns = walletConnections.get(w) ?? [];
+      const linked = new Set<string>();
+      for (const c of conns) if (c.session) linked.add(c.session);
+      for (const sid of [...linked]) {
+        const k = sessionLinkKey.get(sid);
+        for (const other of k ? linkKeySessions.get(k) ?? [] : []) linked.add(other);
+      }
+      const touches = [...linked]
+        .map((sid) => sessionFirstTouch.get(sid))
+        .filter((t): t is NonNullable<typeof t> => !!t && t.t <= depMs + CONNECT_SKEW_MS)
+        .sort((a, b) => a.t - b.t);
+      const origin = touches[0];
+      if (!origin) {
+        exclude("no tracked visit before the first deposit");
+        continue;
+      }
+      const originGroup = channelGroup(origin.channel);
+      if (originGroup !== "SEO" && originGroup !== "AI") {
+        exclude(`first came via ${origin.channel} on ${day(origin.t)}`);
+        continue;
+      }
+      const firstConn = conns[0]?.t ?? Infinity;
+      if (firstConn < origin.t - CONNECT_SKEW_MS) {
+        exclude(`connected to the app on ${day(firstConn)}, before its first ${origin.channel} visit`);
+        continue;
+      }
+      const firstEvent = firstEventMs.get(w) ?? Infinity;
+      if (firstEvent < origin.t - CONNECT_SKEW_MS) {
+        exclude(`on-chain activity on ${day(firstEvent)}, before its first ${origin.channel} visit`);
+        continue;
+      }
+      if (statusFor(w, depMs) !== "new") {
+        exclude("already a depositor before its first tracked visit");
+        continue;
+      }
       out.push({
         wallet: w,
         time: it.time,
-        group,
-        channel: it.channel,
+        group: originGroup,
+        // The channel that first brought the wallet, which can differ from the
+        // one on the deposit session (Google first, ChatGPT on the way back).
+        channel: origin.channel,
         vaultSlug: it.vaultSlug,
         vaultAddress: it.vaultAddress,
         chain: it.chain,
@@ -1940,8 +2084,10 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         withdrawals: withdrawals.get(w) ?? [],
       });
     }
-    return out.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-  }, [items, statusFor]);
+    const byTimeDesc = (a: { time: string }, b: { time: string }) =>
+      new Date(b.time).getTime() - new Date(a.time).getTime();
+    return { newDepositors: out.sort(byTimeDesc), excludedDepositors: excluded.sort(byTimeDesc) };
+  }, [items, statusFor, walletConnections, sessionFirstTouch, sessionLinkKey, linkKeySessions]);
 
   const loading = !loaded && !err;
 
@@ -2011,7 +2157,11 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
       </header>
 
       {showNewDeps && (
-        <NewDepositorsSection rows={newDepositors} productLabel={productLabel} />
+        <NewDepositorsSection
+          rows={newDepositors}
+          excluded={excludedDepositors}
+          productLabel={productLabel}
+        />
       )}
 
       {showHeartbeat && <HeartbeatSection items={items} showBots={showBots} />}
