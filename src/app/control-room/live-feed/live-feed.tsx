@@ -537,6 +537,7 @@ function HeartbeatTooltip({
   idx,
   days,
   unit = "actions",
+  format = (n: number) => n.toLocaleString("en-US"),
 }: {
   bin: { daysAgo: number; byType: Record<string, number> };
   count: number;
@@ -544,6 +545,7 @@ function HeartbeatTooltip({
   idx: number;
   days: number;
   unit?: string;
+  format?: (n: number) => string;
 }) {
   const rows = types
     .filter((t) => bin.byType[t.key])
@@ -592,7 +594,7 @@ function HeartbeatTooltip({
           />
           <span style={{ flex: 1 }}>{r.label}</span>
           <span style={{ fontFamily: "var(--mono)", whiteSpace: "nowrap" }}>
-            {r.n.toLocaleString("en-US")} ({Math.round((r.n / count) * 100)}%)
+            {format(r.n)} ({Math.round((r.n / count) * 100)}%)
           </span>
         </div>
       ))}
@@ -609,7 +611,7 @@ function HeartbeatTooltip({
       >
         <span>Total</span>
         <span style={{ fontFamily: "var(--mono)" }}>
-          {count.toLocaleString("en-US")} {unit}
+          {format(count)} {unit}
         </span>
       </div>
     </div>
@@ -634,6 +636,7 @@ interface NewDepositor {
   tx: string;
   /** Every deposit the wallet has made, first one included. */
   deposits: { time: string; usd: number | null }[];
+  withdrawals: { time: string; usd: number | null }[];
 }
 
 const NEW_DEP_GROUPS: { key: "SEO" | "AI"; label: string; color: string }[] = [
@@ -641,7 +644,32 @@ const NEW_DEP_GROUPS: { key: "SEO" | "AI"; label: string; color: string }[] = [
   { key: "AI", label: "AI assistants", color: "#B07AA1" },
 ];
 
-type NewDepMetric = "wallets" | "usd";
+type NewDepMetric = "wallets" | "usd" | "tvl";
+
+// Sortable table columns. Tx is a link, so it does not sort.
+type NewDepSortKey =
+  | "first"
+  | "wallet"
+  | "source"
+  | "product"
+  | "deposits"
+  | "cumulative"
+  | "net"
+  | "last";
+const NEW_DEP_COLUMNS: { key: NewDepSortKey | null; label: string; numeric?: boolean }[] = [
+  { key: "first", label: "First deposit" },
+  { key: "wallet", label: "Wallet" },
+  { key: "source", label: "Source" },
+  { key: "product", label: "First product" },
+  { key: "deposits", label: "Deposits", numeric: true },
+  { key: "cumulative", label: "Cumulative", numeric: true },
+  { key: "net", label: "Net (TVL)", numeric: true },
+  { key: "last", label: "Last deposit" },
+  { key: null, label: "First tx" },
+];
+
+const lastDepositMs = (r: NewDepositor) =>
+  Math.max(...r.deposits.map((d) => new Date(d.time).getTime()), new Date(r.time).getTime());
 
 const sumUsd = (ds: { usd: number | null }[]) =>
   ds.reduce((s, d) => s + (d.usd != null && Number.isFinite(Number(d.usd)) ? Number(d.usd) : 0), 0);
@@ -656,6 +684,8 @@ function NewDepositorsSection({
 }) {
   const [timeframe, setTimeframe] = useState<Timeframe>("all");
   const [metric, setMetric] = useState<NewDepMetric>("wallets");
+  const [sortKey, setSortKey] = useState<NewDepSortKey>("first");
+  const [sortDesc, setSortDesc] = useState(true);
   const [hidden, setHidden] = useState<Set<string>>(() => new Set());
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const [now] = useState(() => Date.now());
@@ -700,6 +730,34 @@ function NewDepositorsSection({
       bin.total++;
       bin.byType[r.group] = (bin.byType[r.group] || 0) + 1;
     }
+  } else if (metric === "tvl") {
+    // Running net (deposits minus withdrawals, USD at transaction time) per
+    // source. Flows before the window seed the first bar, so the line starts
+    // from where the total actually stood, not from zero.
+    const net: Record<string, number> = {};
+    const perDay = bins.map(() => ({}) as Record<string, number>);
+    for (const r of rows) {
+      if (hidden.has(r.group)) continue;
+      const flows = [
+        ...r.deposits.map((d) => ({ time: d.time, v: d.usd })),
+        ...r.withdrawals.map((d) => ({ time: d.time, v: d.usd == null ? null : -d.usd })),
+      ];
+      for (const f of flows) {
+        const v = f.v != null ? Number(f.v) : 0;
+        if (!Number.isFinite(v) || v === 0) continue;
+        const a = daysAgoOf(f.time);
+        if (a >= days) net[r.group] = (net[r.group] || 0) + v;
+        else perDay[days - 1 - a][r.group] = (perDay[days - 1 - a][r.group] || 0) + v;
+      }
+    }
+    bins.forEach((bin, i) => {
+      for (const g of NEW_DEP_GROUPS) {
+        net[g.key] = (net[g.key] || 0) + (perDay[i][g.key] || 0);
+        const v = Math.max(0, net[g.key]);
+        if (v > 0) bin.byType[g.key] = v;
+        bin.total += v;
+      }
+    });
   } else {
     for (const d of depositsInWindow) {
       const usd = d.usd != null ? Number(d.usd) : 0;
@@ -714,14 +772,63 @@ function NewDepositorsSection({
   const visible = NEW_DEP_GROUPS.filter((g) => !hidden.has(g.key));
   const hoveredBin = hoverIdx != null ? bins[hoverIdx] : null;
   const fmt = (v: number) =>
-    metric === "usd" ? formatTVL(v) : Math.round(v).toLocaleString("en-US");
+    metric === "wallets" ? Math.round(v).toLocaleString("en-US") : formatTVL(v);
   const windowUsd = sumUsd(depositsInWindow);
   const windowUnpriced = unpriced(depositsInWindow);
-  const bignum = hoveredBin ? hoveredBin.total : metric === "usd" ? windowUsd : shown.length;
+  const todayTvl = bins[bins.length - 1]?.total ?? 0;
+  const bignum = hoveredBin
+    ? hoveredBin.total
+    : metric === "usd"
+      ? windowUsd
+      : metric === "tvl"
+        ? todayTvl
+        : shown.length;
   const byGroup = (g: string) =>
     metric === "usd"
       ? formatTVL(sumUsd(depositsInWindow.filter((d) => d.group === g)))
-      : shown.filter((r) => r.group === g).length.toLocaleString("en-US");
+      : metric === "tvl"
+        ? formatTVL(bins[bins.length - 1]?.byType[g] ?? 0)
+        : shown.filter((r) => r.group === g).length.toLocaleString("en-US");
+
+  const netOf = (r: NewDepositor) => sumUsd(r.deposits) - sumUsd(r.withdrawals);
+  const sortValue = (r: NewDepositor): number | string => {
+    switch (sortKey) {
+      case "first":
+        return new Date(r.time).getTime();
+      case "wallet":
+        return r.wallet;
+      case "source":
+        return r.channel.toLowerCase();
+      case "product":
+        return productLabel(r.vaultSlug, r.vaultAddress).toLowerCase();
+      case "deposits":
+        return r.deposits.length;
+      case "cumulative":
+        return sumUsd(r.deposits);
+      case "net":
+        return netOf(r);
+      case "last":
+        return lastDepositMs(r);
+    }
+  };
+  const sorted = [...shown].sort((a, b) => {
+    const va = sortValue(a);
+    const vb = sortValue(b);
+    const c =
+      typeof va === "number" && typeof vb === "number"
+        ? va - vb
+        : String(va).localeCompare(String(vb));
+    // Ties fall back to newest first deposit, so the order is stable.
+    return (sortDesc ? -c : c) || new Date(b.time).getTime() - new Date(a.time).getTime();
+  });
+  const sortBy = (k: NewDepSortKey) => {
+    if (k === sortKey) setSortDesc((d) => !d);
+    else {
+      setSortKey(k);
+      // Numbers and dates open biggest / newest first; text opens A to Z.
+      setSortDesc(!["wallet", "source", "product"].includes(k));
+    }
+  };
 
   const toggle = (k: string) =>
     setHidden((prev) => {
@@ -748,6 +855,9 @@ function NewDepositorsSection({
               source, the one that drove its first deposit. Dollar values are
               priced at transaction time by the subgraph indexer, which runs
               hourly, so the newest deposits can show as unpriced for a while.
+              Cumulative TVL is the running total of these wallets&rsquo; deposits
+              minus their withdrawals at those transaction-time prices, so it
+              tracks net money in, not the current value of the positions.
             </InfoTip>
           </h2>
           <span className="uni-hub-section-meta">
@@ -758,7 +868,7 @@ function NewDepositorsSection({
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <div className="aq-timeframe" role="tablist" aria-label="Chart metric">
-            {(["wallets", "usd"] as const).map((m) => (
+            {(["wallets", "usd", "tvl"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -767,7 +877,7 @@ function NewDepositorsSection({
                 className={`aq-timeframe-tab${metric === m ? " active" : ""}`}
                 onClick={() => setMetric(m)}
               >
-                {m === "wallets" ? "New depositors" : "Deposits ($)"}
+                {m === "wallets" ? "New depositors" : m === "usd" ? "Deposits ($)" : "Cumulative TVL"}
               </button>
             ))}
           </div>
@@ -778,7 +888,11 @@ function NewDepositorsSection({
       <div className="aq-chart-card">
         <div className="aq-chart-bignum">{fmt(bignum)}</div>
         <div className="aq-chart-bignum-label">
-          {metric === "wallets"
+          {metric === "tvl"
+            ? hoveredBin
+              ? `net deposited by search and AI depositors as of ${heartbeatDaysAgo(hoveredBin.daysAgo)}, deposits minus withdrawals at transaction-time prices`
+              : `net deposited by search and AI depositors to date, deposits minus withdrawals at transaction-time prices`
+            : metric === "wallets"
             ? hoveredBin
               ? `new depositors ${heartbeatDaysAgo(hoveredBin.daysAgo)}`
               : `new depositors across the trailing ${days} days`
@@ -825,14 +939,15 @@ function NewDepositorsSection({
                 </div>
               );
             })}
-            {hoveredBin && hoveredBin.total > 0 && metric === "wallets" && (
+            {hoveredBin && hoveredBin.total > 0 && (
               <HeartbeatTooltip
                 bin={hoveredBin}
                 count={hoveredBin.total}
                 types={visible}
                 idx={hoverIdx as number}
                 days={days}
-                unit="new depositors"
+                unit={metric === "wallets" ? "new depositors" : metric === "usd" ? "deposited" : "net TVL"}
+                format={metric === "wallets" ? undefined : formatTVL}
               />
             )}
           </div>
@@ -891,29 +1006,45 @@ function NewDepositorsSection({
             <table className="w-full text-sm" style={{ borderCollapse: "collapse" }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "var(--uni-ink-2, inherit)" }}>
-                  {[
-                    "First deposit",
-                    "Wallet",
-                    "Source",
-                    "First product",
-                    "Deposits",
-                    "Cumulative",
-                    "Last deposit",
-                    "First tx",
-                  ].map((h) => (
-                    <th key={h} style={{ padding: "6px 8px", fontWeight: 600, whiteSpace: "nowrap" }}>
-                      {h}
-                    </th>
-                  ))}
+                  {NEW_DEP_COLUMNS.map((col) => {
+                    const active = col.key === sortKey;
+                    return (
+                      <th
+                        key={col.label}
+                        aria-sort={active ? (sortDesc ? "descending" : "ascending") : undefined}
+                        style={{ padding: "6px 8px", fontWeight: 600, whiteSpace: "nowrap" }}
+                      >
+                        {col.key ? (
+                          <button
+                            type="button"
+                            onClick={() => sortBy(col.key!)}
+                            style={{
+                              padding: 0,
+                              border: "none",
+                              background: "none",
+                              font: "inherit",
+                              color: active ? "var(--uni-ink, inherit)" : "inherit",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {col.label}
+                            <span aria-hidden="true" style={{ opacity: active ? 1 : 0.3 }}>
+                              {active ? (sortDesc ? " ▼" : " ▲") : " ↕"}
+                            </span>
+                          </button>
+                        ) : (
+                          col.label
+                        )}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
-                {shown.map((r) => {
-                  const last = r.deposits.reduce(
-                    (a, d) => (new Date(d.time).getTime() > new Date(a).getTime() ? d.time : a),
-                    r.time,
-                  );
+                {sorted.map((r) => {
+                  const last = new Date(lastDepositMs(r)).toISOString();
                   const missing = unpriced(r.deposits);
+                  const missingAll = missing + unpriced(r.withdrawals);
                   return (
                     <tr key={r.wallet} style={{ borderTop: "1px solid var(--uni-line-2)" }}>
                       <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
@@ -943,6 +1074,16 @@ function NewDepositorsSection({
                       >
                         {formatTVL(sumUsd(r.deposits))}
                         {missing ? " +" : ""}
+                      </td>
+                      <td
+                        style={{ padding: "6px 8px", fontFamily: "var(--mono)", whiteSpace: "nowrap" }}
+                        title={
+                          `${r.withdrawals.length} withdrawal${r.withdrawals.length === 1 ? "" : "s"}` +
+                          (missingAll ? `, ${missingAll} event${missingAll === 1 ? "" : "s"} not priced yet` : "")
+                        }
+                      >
+                        {netOf(r) < 0 ? `-${formatTVL(-netOf(r))}` : formatTVL(netOf(r))}
+                        {missingAll ? " ±" : ""}
                       </td>
                       <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
                         <TimeLabel iso={last} />
@@ -1770,13 +1911,16 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     }
     // Every deposit per wallet, for the cumulative view. Rows are already one
     // per transaction leg (dedupedEvents), so nothing is counted twice.
+    // Withdrawals ride along so the TVL view can net them out.
     const deposits = new Map<string, { time: string; usd: number | null }[]>();
+    const withdrawals = new Map<string, { time: string; usd: number | null }[]>();
     for (const it of items) {
-      if (it.kind !== "event" || it.eventType !== "deposit" || !it.wallet) continue;
+      if (it.kind !== "event" || !it.wallet) continue;
       const w = it.wallet.toLowerCase();
-      const arr = deposits.get(w) ?? [];
+      const m = it.eventType === "deposit" ? deposits : withdrawals;
+      const arr = m.get(w) ?? [];
       arr.push({ time: it.time, usd: it.amountUsd });
-      deposits.set(w, arr);
+      m.set(w, arr);
     }
     const out: NewDepositor[] = [];
     for (const [w, it] of first) {
@@ -1793,6 +1937,7 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
         chain: it.chain,
         tx: it.tx,
         deposits: deposits.get(w) ?? [],
+        withdrawals: withdrawals.get(w) ?? [],
       });
     }
     return out.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
