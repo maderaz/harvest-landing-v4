@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookieSettingsLink } from "@/components/cookie-settings-link";
 import { getLiveVaults } from "@/lib/data";
 import { NETWORKS } from "@/lib/networks";
 import { formatTVL } from "@/lib/format";
@@ -274,6 +275,7 @@ export async function Footer() {
                 </a>
               ),
             )}
+            <CookieSettingsLink />
           </div>
         </div>
 
