@@ -151,7 +151,6 @@ const ORGANIZATION_JSONLD = {
     "https://harvestfinance.medium.com/",
     "https://discord.gg/xHXe3tYjPY",
     "https://github.com/harvestfi",
-    "https://docs.harvest.finance/",
     "https://defillama.com/protocol/harvest-finance",
     "https://www.coingecko.com/en/coins/harvest-finance",
   ],

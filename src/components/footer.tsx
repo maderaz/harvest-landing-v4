@@ -27,6 +27,8 @@ const ASSET_HREF: Record<string, string> = {
 const RESOURCES = [
   { label: "Methodology", href: "/methodology" },
   { label: "Risk Framework", href: "/risk-framework" },
+  { label: "Docs", href: "/docs" },
+  { label: "Supported Protocols", href: "/docs/general-info/supported-protocols" },
 ];
 
 // Research reports: standalone, data-backed pages. Kept separate from
@@ -43,10 +45,10 @@ const REPORTS = [
 // Legitimacy-signal pages.
 const COMPANY = [
   { label: "About", href: "/about" },
-  { label: "Disclosures", href: "/disclosures" },
+  { label: "Risk Disclosures", href: "/docs/legal/risk-disclosures" },
   { label: "Security & Audits", href: "/security" },
-  { label: "Terms", href: "/terms" },
-  { label: "Privacy", href: "/privacy" },
+  { label: "Terms", href: "/docs/legal/terms-and-conditions" },
+  { label: "Privacy", href: "/docs/legal/privacy-policy" },
   { label: "Contact", href: "/contact" },
 ];
 

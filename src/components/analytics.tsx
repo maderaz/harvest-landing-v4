@@ -149,7 +149,7 @@ function CookieBanner({
         </span>
         <span className="cookie-banner-text-detail">
           {" "}You can accept or reject analytics cookies.{" "}
-          <a href="/privacy" className="cookie-banner-link">Privacy policy</a>
+          <a href="/docs/legal/privacy-policy" className="cookie-banner-link">Privacy policy</a>
         </span>
       </p>
       <div className="cookie-banner-actions">
