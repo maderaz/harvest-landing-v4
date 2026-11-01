@@ -3,112 +3,39 @@
   "trailingSlash": false,
   "ignoreCommand": "[ \"$VERCEL_GIT_COMMIT_REF\" = \"main\" ] || [ \"$VERCEL_GIT_COMMIT_REF\" = \"docs-prod\" ] || [ \"$VERCEL_GIT_COMMIT_REF\" = \"site-updates-prod\" ] && exit 1 || exit 0",
   "redirects": [
-    {
-      "source": "/faq",
-      "destination": "/methodology",
-      "permanent": true
-    },
-    {
-      "source": "/work",
-      "destination": "/about",
-      "permanent": true
-    },
-    {
-      "source": "/earn",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/breadtothepeople",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/amplifarm",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/pool/farm-wbtc",
-      "destination": "/btc",
-      "permanent": true
-    },
-    {
-      "source": "/pool/farm-dai",
-      "destination": "/usdc",
-      "permanent": true
-    },
-    {
-      "source": "/pool/profit-sharing-farm",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/pool/:path*",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/terms",
-      "destination": "/docs/legal/terms-and-conditions",
-      "permanent": true
-    },
-    {
-      "source": "/privacy",
-      "destination": "/docs/legal/privacy-policy",
-      "permanent": true
-    },
-    {
-      "source": "/disclosures",
-      "destination": "/docs/legal/risk-disclosures",
-      "permanent": true
-    }
+    { "source": "/terms", "destination": "/docs/legal/terms-and-conditions", "permanent": true },
+    { "source": "/privacy", "destination": "/docs/legal/privacy-policy", "permanent": true },
+    { "source": "/disclosures", "destination": "/docs/legal/risk-disclosures", "permanent": true },
+    { "source": "/faq", "destination": "/methodology", "permanent": true },
+    { "source": "/work", "destination": "/about", "permanent": true },
+    { "source": "/earn", "destination": "/", "permanent": true },
+    { "source": "/breadtothepeople", "destination": "/", "permanent": true },
+    { "source": "/amplifarm", "destination": "/", "permanent": true },
+    { "source": "/pool/farm-wbtc", "destination": "/btc", "permanent": true },
+    { "source": "/pool/farm-dai", "destination": "/usdc", "permanent": true },
+    { "source": "/pool/profit-sharing-farm", "destination": "/", "permanent": true },
+    { "source": "/pool/:path*", "destination": "/", "permanent": true }
   ],
   "headers": [
     {
       "source": "/(.*)opengraph-image",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "image/png"
-        }
-      ]
+      "headers": [{ "key": "Content-Type", "value": "image/png" }]
     },
     {
       "source": "/(.*)twitter-image",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "image/png"
-        }
-      ]
+      "headers": [{ "key": "Content-Type", "value": "image/png" }]
     },
     {
       "source": "/(.*)\\.md",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/markdown; charset=utf-8"
-        }
-      ]
+      "headers": [{ "key": "Content-Type", "value": "text/markdown; charset=utf-8" }]
     },
     {
       "source": "/:path((?!index$|agents$)[a-z0-9-]+)\\.md",
-      "headers": [
-        {
-          "key": "Link",
-          "value": "<https://harvest.finance/:path>; rel=\"canonical\""
-        }
-      ]
+      "headers": [{ "key": "Link", "value": "<https://harvest.finance/:path>; rel=\"canonical\"" }]
     },
     {
       "source": "/index.md",
-      "headers": [
-        {
-          "key": "Link",
-          "value": "<https://harvest.finance/>; rel=\"canonical\""
-        }
-      ]
+      "headers": [{ "key": "Link", "value": "<https://harvest.finance/>; rel=\"canonical\"" }]
     }
   ]
 }
