@@ -161,6 +161,8 @@ const SOURCE_MAP: Record<string, string> = {
   "claude.ai": "Claude",
   "anthropic.com": "Claude",
   "gemini.google.com": "Gemini",
+  "grok.com": "Grok",
+  "x.ai": "Grok",
   "copilot.microsoft.com": "Copilot",
   "twitter.com": "Twitter/X",
   "x.com": "Twitter/X",

@@ -62,6 +62,8 @@ const APP_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ["perplexity", "Perplexity"],
   ["anthropic", "Claude"],
   ["bard", "Gemini"],
+  // Grok's own app (ai.x.grok), before the X/Twitter package below.
+  ["grok", "Grok"],
   // Social / messaging.
   ["twitter", "X / Twitter"],
   ["atebits", "X / Twitter"],
@@ -160,6 +162,10 @@ export function classifyChannel(raw: string | null): string {
   if (s.includes("claude") || s.includes("anthropic")) return "Claude";
   if (s.includes("gemini")) return "Gemini";
   if (s.includes("minara")) return "Minara";
+  // Before X/Twitter: a grok.com or x.com/i/grok referrer is the assistant,
+  // not a post. Grok answers opened inside the X app arrive via t.co and
+  // cannot be told apart from post clicks, so they stay X / Twitter.
+  if (s.includes("grok")) return "Grok";
 
   // Social / messaging.
   if (s.includes("t.co") || s.includes("twitter") || s.includes("x.com")) return "X / Twitter";
@@ -235,7 +241,7 @@ const SEARCH_CHANNELS = new Set([
   "Google", "Bing", "DuckDuckGo", "Yandex", "Baidu", "Brave",
   "Ecosia", "Startpage", "Qwant", "Naver", "Seznam", "Kagi", "Mojeek", "Ask",
 ]);
-const AI_CHANNELS = new Set(["ChatGPT", "Perplexity", "Claude", "Gemini", "Minara"]);
+const AI_CHANNELS = new Set(["ChatGPT", "Perplexity", "Claude", "Gemini", "Grok", "Minara"]);
 const SOCIAL_CHANNELS = new Set([
   "X / Twitter", "Reddit", "Discord", "Telegram", "GitHub", "Medium",
   "Instagram", "Facebook", "LinkedIn", "TikTok", "WhatsApp", "Signal", "Farcaster",

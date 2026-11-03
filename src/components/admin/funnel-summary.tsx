@@ -1203,7 +1203,7 @@ const ENGINE_PALETTE = [
 const ENGINE_ORDER = [
   "Google", "Bing", "DuckDuckGo", "Brave", "Yandex", "Baidu",
   "Ecosia", "Startpage", "Qwant", "Naver", "Seznam", "Kagi", "Mojeek", "Ask",
-  "ChatGPT", "Perplexity", "Claude", "Gemini", "Minara",
+  "ChatGPT", "Perplexity", "Claude", "Gemini", "Grok", "Minara",
 ];
 
 type ChartMode = "all" | "breakdown";
