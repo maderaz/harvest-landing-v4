@@ -52,11 +52,12 @@ import { SeoExport } from "./seo-export";
 import { FilterHint } from "@/components/admin/filter-hint";
 import "@/app/_styles/asset-hub.css";
 
-// Coarse source group this funnel is scoped to (search engines vs AI answer
-// engines). Everything else - chart, funnel stats, session table, filters -
-// is identical between the two, so the SEO Summary and AI Summary pages both
-// render this one component with a different group + display copy.
-export type FunnelGroup = "SEO" | "AI";
+// Coarse source group this funnel is scoped to (search engines, AI answer
+// engines, social networks). Everything else - chart, funnel stats, session
+// table, filters - is identical between them, so the SEO, AI and Social
+// Summary pages all render this one component with a different group +
+// display copy.
+export type FunnelGroup = "SEO" | "AI" | "Social";
 
 export interface FunnelCopy {
   title: string;
@@ -987,8 +988,8 @@ export function FunnelSummary({
               value={acquired}
               sub={
                 timeframe === "all"
-                  ? "SEO sessions, all time"
-                  : `SEO sessions, last ${days}d`
+                  ? `${group} sessions, all time`
+                  : `${group} sessions, last ${days}d`
               }
             />
             <FunnelStat
@@ -1204,6 +1205,8 @@ const ENGINE_ORDER = [
   "Google", "Bing", "DuckDuckGo", "Brave", "Yandex", "Baidu",
   "Ecosia", "Startpage", "Qwant", "Naver", "Seznam", "Kagi", "Mojeek", "Ask",
   "ChatGPT", "Perplexity", "Claude", "Gemini", "Grok", "Minara",
+  "X / Twitter", "Reddit", "Telegram", "Discord", "Facebook", "Instagram",
+  "LinkedIn", "TikTok", "YouTube", "WhatsApp", "Signal", "Farcaster", "GitHub", "Medium",
 ];
 
 type ChartMode = "all" | "breakdown";
