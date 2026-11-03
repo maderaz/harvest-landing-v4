@@ -124,10 +124,11 @@ export async function supabaseSelectAll<T>(
   };
 
   if (!order) {
-    for (let from = 0; from < hardLimit; from += chunk) {
-      const batch = await page(params, `${from}-${from + chunk - 1}`);
+    // Advance by what came back, not by chunk, in case the server caps lower.
+    while (all.length < hardLimit) {
+      const batch = await page(params, `${all.length}-${all.length + chunk - 1}`);
+      if (batch.length === 0) return all;
       all.push(...batch);
-      if (batch.length < chunk) return all;
     }
     console.warn(`supabaseSelectAll(${table}): stopped at the ${hardLimit}-row limit`);
     return all;
@@ -135,38 +136,64 @@ export async function supabaseSelectAll<T>(
 
   const [, col, dir] = order;
   const op = dir === "desc" ? "lte" : "gte";
+  const valueOf = (r: T) => (r as Record<string, unknown>)[col];
   let cursor: unknown = undefined;
-  // Rows already taken that sit exactly on the cursor value. The next page
-  // repeats the cursor (lte/gte) so rows sharing a timestamp across the page
-  // boundary are not lost, and skips this many of them.
-  let atCursor = 0;
+  // Rows already taken that sit exactly on the cursor value, by content. The
+  // next page repeats the cursor (lte/gte) so rows sharing a timestamp across
+  // the page boundary are not lost, and drops the ones already taken. Matched
+  // by content, not position, because Postgres returns tied rows in no fixed
+  // order. The page size never goes above chunk: PostgREST caps every reply
+  // at its max-rows (1000 on Supabase), so a short page is not proof of the
+  // end; only an empty one is.
+  let seenAtCursor = new Map<string, number>();
+  let tieOffset = 0;
   while (all.length < hardLimit) {
     const filter =
       cursor === undefined ? "" : `&${col}=${op}.${encodeURIComponent(String(cursor))}`;
-    const batch = await page(`${params}${filter}&limit=${chunk + atCursor}`);
-    const fresh = batch.slice(atCursor);
+    const skip = tieOffset ? `&offset=${tieOffset}` : "";
+    const batch = await page(`${params}${filter}&limit=${chunk}${skip}`);
+    if (batch.length === 0) return all;
+    const pending = new Map(seenAtCursor);
+    const fresh: T[] = [];
+    for (const r of batch) {
+      if (!tieOffset && cursor !== undefined && valueOf(r) === cursor) {
+        const key = JSON.stringify(r);
+        const n = pending.get(key) ?? 0;
+        if (n > 0) {
+          pending.set(key, n - 1);
+          continue;
+        }
+      }
+      fresh.push(r);
+    }
+    if (fresh.length === 0) {
+      // A whole page of rows already taken: one value has more ties than a
+      // page holds. Step past them by offset until the value changes.
+      tieOffset = [...seenAtCursor.values()].reduce((a, b) => a + b, 0);
+      continue;
+    }
     all.push(...fresh);
-    if (batch.length < chunk + atCursor || fresh.length === 0) return all;
-    const last = (fresh[fresh.length - 1] as Record<string, unknown>)[col];
+    const last = valueOf(fresh[fresh.length - 1]);
     if (last === null || last === undefined) {
       // Cannot key past a null; finish the rest by offset.
-      for (let from = all.length; from < hardLimit; from += chunk) {
-        const rest = await page(params, `${from}-${from + chunk - 1}`);
+      while (all.length < hardLimit) {
+        const rest = await page(params, `${all.length}-${all.length + chunk - 1}`);
+        if (rest.length === 0) return all;
         all.push(...rest);
-        if (rest.length < chunk) return all;
       }
       break;
     }
-    if (last === cursor) {
-      atCursor += fresh.length;
-    } else {
+    if (last !== cursor) {
       cursor = last;
-      atCursor = 0;
-      for (let k = fresh.length - 1; k >= 0; k--) {
-        if ((fresh[k] as Record<string, unknown>)[col] === last) atCursor++;
-        else break;
-      }
+      seenAtCursor = new Map();
+      tieOffset = 0;
     }
+    for (const r of fresh) {
+      if (valueOf(r) !== cursor) continue;
+      const key = JSON.stringify(r);
+      seenAtCursor.set(key, (seenAtCursor.get(key) ?? 0) + 1);
+    }
+    if (tieOffset) tieOffset += fresh.length;
   }
   console.warn(`supabaseSelectAll(${table}): stopped at the ${hardLimit}-row limit`);
   return all;
