@@ -1340,6 +1340,8 @@ function ChartSection({
   setHidden: Dispatch<SetStateAction<Set<string>>>;
 }) {
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  // Daily bars, or the running total of the stage up to each day.
+  const [cumulative, setCumulative] = useState(false);
 
   // Categories present, ordered, colored. Same helper the table uses so the
   // legend and the filtered table always agree on the drawn set + "Other" fold.
@@ -1354,7 +1356,7 @@ function ChartSection({
 
   // Per-day counts, keeping the full per-engine split so visibility toggles
   // and the tooltip can recompute without a re-bin.
-  const bins = useMemo(() => {
+  const { daily, bins } = useMemo(() => {
     const now = Date.now();
     const dayMs = 86_400_000;
     const out: {
@@ -1364,6 +1366,9 @@ function ChartSection({
     }[] = [];
     for (let i = 0; i < days; i++)
       out.push({ vAll: 0, daysAgo: days - 1 - i, byEngine: {} });
+    // Sessions from before the window, kept for the cumulative view so its
+    // first bar starts at the all-time total, not at zero.
+    const before = { vAll: 0, byEngine: {} as Record<string, number> };
     for (const p of points) {
       const daysAgo = Math.floor((now - p.ts) / dayMs);
       if (daysAgo >= 0 && daysAgo < days) {
@@ -1371,11 +1376,22 @@ function ChartSection({
         bin.vAll++;
         const cat = catOf(p);
         bin.byEngine[cat] = (bin.byEngine[cat] || 0) + 1;
+      } else if (daysAgo >= days) {
+        before.vAll++;
+        const cat = catOf(p);
+        before.byEngine[cat] = (before.byEngine[cat] || 0) + 1;
       }
     }
-    return out;
+    if (!cumulative) return { daily: out, bins: out };
+    const run = { vAll: before.vAll, byEngine: { ...before.byEngine } };
+    const running = out.map((b) => {
+      run.vAll += b.vAll;
+      for (const [k, v] of Object.entries(b.byEngine)) run.byEngine[k] = (run.byEngine[k] || 0) + v;
+      return { vAll: run.vAll, daysAgo: b.daysAgo, byEngine: { ...run.byEngine } };
+    });
+    return { daily: out, bins: running };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [points, days, engines]);
+  }, [points, days, engines, cumulative]);
 
   // Engines actually drawn: all of them in "All" mode, only the un-hidden ones
   // in "Breakdown". The visible count per day drives bar height, totals and the
@@ -1407,10 +1423,17 @@ function ChartSection({
   const noun = metricLabel.toLowerCase();
   const hoveredBin = hoverIdx != null ? bins[hoverIdx] : null;
   const hoveredCount = hoveredBin ? countOf(hoveredBin) : 0;
-  const displayValue = hoveredBin ? hoveredCount : total;
-  const displayLabel = hoveredBin
-    ? `${noun} ${labelForDaysAgo(hoveredBin.daysAgo)}`
-    : `${noun} across the trailing ${days} days`;
+  // Cumulative bars are running totals, so the headline is the last one (the
+  // total to date); the window's own growth comes from the daily counts.
+  const grewBy = daily.reduce((sum, b) => sum + countOf(b), 0);
+  const displayValue = hoveredBin ? hoveredCount : cumulative ? latest : total;
+  const displayLabel = cumulative
+    ? hoveredBin
+      ? `${noun} in total by ${labelForDaysAgo(hoveredBin.daysAgo)}`
+      : `${noun} in total to date`
+    : hoveredBin
+      ? `${noun} ${labelForDaysAgo(hoveredBin.daysAgo)}`
+      : `${noun} across the trailing ${days} days`;
 
   const toggleEngine = (e: string) =>
     setHidden((prev) => {
@@ -1436,8 +1459,17 @@ function ChartSection({
             {metricLabel}, last {days} days
           </h2>
           <span className="uni-hub-section-meta">
-            today {latest.toLocaleString("en-US")} · peak{" "}
-            {peak.toLocaleString("en-US")}/day
+            {cumulative ? (
+              <>
+                {latest.toLocaleString("en-US")} in total · +{grewBy.toLocaleString("en-US")} in
+                the last {days} days
+              </>
+            ) : (
+              <>
+                today {latest.toLocaleString("en-US")} · peak{" "}
+                {peak.toLocaleString("en-US")}/day
+              </>
+            )}
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -1456,6 +1488,20 @@ function ChartSection({
                 onClick={() => setMode(m)}
               >
                 {m === "all" ? "All" : "Breakdown"}
+              </button>
+            ))}
+          </div>
+          <div className="aq-timeframe" role="tablist" aria-label="Daily or cumulative">
+            {([false, true] as const).map((c) => (
+              <button
+                key={String(c)}
+                type="button"
+                role="tab"
+                aria-selected={cumulative === c}
+                className={`aq-timeframe-tab${cumulative === c ? " active" : ""}`}
+                onClick={() => setCumulative(c)}
+              >
+                {c ? "Cumulative" : "Daily"}
               </button>
             ))}
           </div>
