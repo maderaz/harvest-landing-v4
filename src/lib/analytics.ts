@@ -286,38 +286,96 @@ export interface Geo {
   city?: string;
 }
 
+// Visitor country (and region/city where the provider gives them), looked up
+// in the browser because the site is a static export with no server to read
+// an edge geo header from.
+//
+// ipapi.co alone used to do this. Its free tier refuses requests once a
+// network hits its limit, and the old code only fell back when the request
+// threw, so a 429 or an {"error": true} body left country blank, and that
+// blank was cached for the rest of the session: every page of the visit
+// went in without a country. Now several keyless, CORS-open providers are
+// asked at once, the first answer with a valid two-letter code wins, and an
+// empty result is never cached, so the next page view tries again.
+const GEO_TIMEOUT_MS = 3000;
+const isCountry = (c: unknown): c is string => typeof c === "string" && /^[A-Z]{2}$/.test(c);
+
+async function geoFrom(url: string, read: (body: string) => Geo): Promise<Geo> {
+  // AbortController + setTimeout, not AbortSignal.timeout, which Safari
+  // only has from 16.
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), GEO_TIMEOUT_MS);
+  let body: string;
+  try {
+    const r = await fetch(url, { mode: "cors", signal: ctl.signal });
+    if (!r.ok) throw new Error(`${url} ${r.status}`);
+    body = await r.text();
+  } finally {
+    clearTimeout(timer);
+  }
+  const g = read(body);
+  if (!isCountry(g.country)) throw new Error(`${url} gave no country`);
+  return g;
+}
+
+const GEO_PROVIDERS: Array<() => Promise<Geo>> = [
+  () =>
+    geoFrom("https://ipapi.co/json/", (b) => {
+      const j = JSON.parse(b) as Record<string, unknown>;
+      return {
+        country: (j.country_code as string) || undefined,
+        region: (j.region as string) || undefined,
+        city: (j.city as string) || undefined,
+      };
+    }),
+  () =>
+    geoFrom("https://get.geojs.io/v1/ip/geo.json", (b) => {
+      const j = JSON.parse(b) as Record<string, unknown>;
+      return {
+        country: (j.country_code as string) || undefined,
+        region: (j.region as string) || undefined,
+        city: (j.city as string) || undefined,
+      };
+    }),
+  () =>
+    geoFrom("https://api.country.is/", (b) => ({
+      country: ((JSON.parse(b) as Record<string, unknown>).country as string) || undefined,
+    })),
+  () =>
+    geoFrom("https://www.cloudflare.com/cdn-cgi/trace", (b) => ({
+      country: b.match(/loc=([A-Z]{2})/)?.[1],
+    })),
+];
+
+/** The first promise to resolve; rejects only when all of them reject. */
+function firstSuccess<T>(ps: Promise<T>[]): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let failed = 0;
+    for (const p of ps) {
+      p.then(resolve, () => {
+        if (++failed === ps.length) reject(new Error("all providers failed"));
+      });
+    }
+  });
+}
+
 export async function fetchGeo(): Promise<Geo> {
   try {
     const cached = sessionStorage.getItem(GEO_CACHE_KEY);
-    if (cached) return JSON.parse(cached) as Geo;
+    if (cached) {
+      const g = JSON.parse(cached) as Geo;
+      // A cached result without a country is a past failure: look again.
+      if (isCountry(g.country)) return g;
+    }
   } catch {
     // ignore - we'll fall through to the network call.
   }
   let out: Geo = {};
   try {
-    const r = await fetch("https://ipapi.co/json/", { mode: "cors" });
-    if (r.ok) {
-      const j = (await r.json()) as Record<string, unknown>;
-      out = {
-        country: (j.country_code as string) || undefined,
-        region: (j.region as string) || undefined,
-        city: (j.city as string) || undefined,
-      };
-    }
+    out = await firstSuccess(GEO_PROVIDERS.map((p) => p()));
   } catch {
-    // ipapi failed - try Cloudflare trace for country-only fallback.
-    try {
-      const r = await fetch("https://www.cloudflare.com/cdn-cgi/trace", {
-        mode: "cors",
-      });
-      if (r.ok) {
-        const text = await r.text();
-        const loc = text.match(/loc=(\S+)/)?.[1];
-        if (loc) out = { country: loc };
-      }
-    } catch {
-      // give up - return {} below.
-    }
+    // Every provider failed or timed out: record the visit without a country.
+    return {};
   }
   try {
     sessionStorage.setItem(GEO_CACHE_KEY, JSON.stringify(out));
