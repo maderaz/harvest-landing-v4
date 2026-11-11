@@ -635,8 +635,8 @@ interface NewDepositor {
   chain: string;
   tx: string;
   /** Every deposit the wallet has made, first one included. */
-  deposits: { time: string; usd: number | null }[];
-  withdrawals: { time: string; usd: number | null }[];
+  deposits: { time: string; usd: number | null; tx: string; chain: string }[];
+  withdrawals: { time: string; usd: number | null; tx: string; chain: string }[];
 }
 
 const NEW_DEP_GROUPS: { key: "SEO" | "AI"; label: string; color: string }[] = [
@@ -682,6 +682,13 @@ const NEW_DEP_COLUMNS: { key: NewDepSortKey | null; label: string; numeric?: boo
 
 const lastDepositMs = (r: NewDepositor) =>
   Math.max(...r.deposits.map((d) => new Date(d.time).getTime()), new Date(r.time).getTime());
+
+/** The wallet's most recent deposit, for the Last deposit link. */
+const lastDepositOf = (r: NewDepositor) =>
+  r.deposits.reduce<NewDepositor["deposits"][number] | null>(
+    (a, d) => (!a || new Date(d.time).getTime() > new Date(a.time).getTime() ? d : a),
+    null,
+  );
 
 const sumUsd = (ds: { usd: number | null }[]) =>
   ds.reduce((s, d) => s + (d.usd != null && Number.isFinite(Number(d.usd)) ? Number(d.usd) : 0), 0);
@@ -1147,7 +1154,8 @@ function NewDepositorsSection({
               </thead>
               <tbody>
                 {sorted.map((r) => {
-                  const last = new Date(lastDepositMs(r)).toISOString();
+                  const lastDep = lastDepositOf(r);
+                  const last = lastDep?.time ?? r.time;
                   const missing = unpriced(r.deposits);
                   const missingAll = missing + unpriced(r.withdrawals);
                   return (
@@ -1191,7 +1199,18 @@ function NewDepositorsSection({
                         {missingAll ? " ±" : ""}
                       </td>
                       <td style={{ padding: "6px 8px", whiteSpace: "nowrap" }}>
-                        <TimeLabel iso={last} />
+                        {lastDep ? (
+                          <a
+                            href={txLink(lastDep.chain, lastDep.tx)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title={`Open this deposit on the ${lastDep.chain} explorer`}
+                          >
+                            <TimeLabel iso={last} />
+                          </a>
+                        ) : (
+                          <TimeLabel iso={last} />
+                        )}
                       </td>
                       <td style={{ padding: "6px 8px" }}>
                         <a href={txLink(r.chain, r.tx)} target="_blank" rel="noopener noreferrer">
@@ -2046,14 +2065,15 @@ export function LiveFeed({ productNames }: { productNames: Record<string, string
     // Every deposit per wallet, for the cumulative view. Rows are already one
     // per transaction leg (dedupedEvents), so nothing is counted twice.
     // Withdrawals ride along so the TVL view can net them out.
-    const deposits = new Map<string, { time: string; usd: number | null }[]>();
-    const withdrawals = new Map<string, { time: string; usd: number | null }[]>();
+    type Flow = { time: string; usd: number | null; tx: string; chain: string };
+    const deposits = new Map<string, Flow[]>();
+    const withdrawals = new Map<string, Flow[]>();
     for (const it of items) {
       if (it.kind !== "event" || !it.wallet) continue;
       const w = it.wallet.toLowerCase();
       const m = it.eventType === "deposit" ? deposits : withdrawals;
       const arr = m.get(w) ?? [];
-      arr.push({ time: it.time, usd: it.amountUsd });
+      arr.push({ time: it.time, usd: it.amountUsd, tx: it.tx, chain: it.chain });
       m.set(w, arr);
     }
     const day = (ms: number) => formatDateOnly(new Date(ms).toISOString());
