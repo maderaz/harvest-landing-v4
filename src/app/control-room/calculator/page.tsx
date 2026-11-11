@@ -97,19 +97,10 @@ const ERA_ROWS: {
 // appear.
 type ToolKey = "rich-list" | "staking-report" | "staking-richlist";
 
-// ONE PATH PER TAB. The staking calculator is the same component in two
-// places, and for a while this table treated it as one tool by giving the
-// staking tab both source_pages. That is the wrong unit. The two placements
-// are read by different audiences arriving for different reasons: one is the
-// tool the yield report is built around, the other is a second answer offered
-// to someone who came to rank a balance. Summed, a strong surface hides a weak
-// one and neither can be judged, which is exactly the decision these numbers
-// exist to inform. Splitting them costs nothing, because every row already
-// carries the source_page that tells them apart.
-//
-// `kind` picks which funnel the tiles describe; `switched` marks the one
-// surface that sits behind a switch and therefore has a stage before its
-// first calculation.
+// ONE PATH PER TAB. The staking calculator renders in two places, read by
+// different audiences; summed, a strong surface hides a weak one. `kind`
+// picks which funnel the tiles describe, `switched` marks the surface that
+// sits behind a switch and so has a stage before its first calculation.
 const TOOLS: {
   key: ToolKey;
   label: string;
@@ -163,19 +154,9 @@ export default function CalculatorAnalyticsPage() {
   const [timeframe, setTimeframe] = useState<Timeframe>("30d");
   const [countries, setCountries] = useState<string[]>([]);
 
-  // Scoped in the QUERY and paged, rather than one blind "newest 5000".
-  //
-  // The old read asked for the newest 5,000 rows across both calculators and
-  // all time, then filtered by source_page in the browser. Once the table
-  // passed 5,000 rows that cap started landing inside the window an operator
-  // was looking at: everything older than the cap existed in Supabase and
-  // simply never reached the page, so a chart set to 30 days showed four and
-  // the honest conclusion from the outside was "we are not saving these".
-  //
-  // Two changes. source_page moves into the query, so one tool's volume can
-  // no longer push the other tool's history off the end. And the fetch pages
-  // through in chunks instead of stopping at a limit, so the only ceiling is
-  // the explicit one below, which the page says out loud when it is reached.
+  // Scoped in the query and paged. Filtering client-side after a blind
+  // "newest 5000" meant one tool's volume pushed the other's history off the
+  // end, and a 30-day chart showed four.
   const tap = TOOLS.find((t) => t.key === tool)!;
   const tapPath = tap.path;
   useEffect(() => {
@@ -250,14 +231,8 @@ export default function CalculatorAnalyticsPage() {
     ).length;
     const toRanking = ctas.filter((r) => r.cta === "top-accounts").length;
 
-    // The switch in front of the embedded calculator.
-    //
-    // Counted in sessions rather than in events, and that is the whole point.
-    // A visitor toggling back and forth is one person considering one thing,
-    // and a per-event rate would score their indecision as demand. So: how
-    // many distinct sessions flipped to the staking calculator, and how many
-    // of those went on to be shown a number. Anything else divides two
-    // quantities that are not about the same people.
+    // Sessions, not events: a visitor toggling back and forth is one person
+    // considering one thing, and a per-event rate scores that as demand.
     const flipSessions = new Set(
       filtered
         .filter((r) => r.event === "switch" && r.tier === "to-staking")
@@ -397,12 +372,8 @@ export default function CalculatorAnalyticsPage() {
         </div>
       </header>
 
-      {/* .lf-filterbar, the house control row (flex, wrapping, 10px gap), and
-          not the aq-filterbar this page used to name: that class has no rule
-          anywhere in the stylesheets, so the row was four inline-level
-          controls laid out by default flow with no gap and no wrap behaviour,
-          and the coverage line below it had to be dragged up by a negative
-          margin to sit anywhere near the bar. Both halves of that go. */}
+      {/* .lf-filterbar, the house control row. The aq-filterbar this used to
+          name has no rule anywhere, so the row had no gap and no wrapping. */}
       <div className="lf-filterbar" style={{ marginBottom: 14 }}>
         <div className="aq-timeframe" role="tablist" aria-label="Calculator">
           {TOOLS.map((t) => (
@@ -459,9 +430,8 @@ export default function CalculatorAnalyticsPage() {
       >
         {tap.switched ? (
           <>
-            {/* The embedded tool's own funnel, which starts one stage earlier
-                than either of the others: nobody sees this calculator without
-                first flipping the switch. */}
+            {/* Starts one stage earlier: nobody sees this calculator without
+                flipping the switch. */}
             <Stat label="Sessions that flipped to it" value={stats?.flips} />
             <Stat label="Calculations" value={stats?.results} />
             <Stat
@@ -529,9 +499,7 @@ export default function CalculatorAnalyticsPage() {
           style={{ gridTemplateColumns: "repeat(3, minmax(0, 1fr))", marginBottom: 32 }}
         >
           <Stat label="Unique sessions" value={stats?.sessions} />
-          {/* Not a failure. Someone who looks at the rates and goes back to
-              the rank has used both tools, which is the case for having both
-              on one page; it is only worth watching against the tile to its
+          {/* Not a failure on its own; read it against the tile to its
               left. */}
           <Stat label="Flipped back to the rank" value={stats?.flipsBack} />
           <Stat
@@ -660,12 +628,9 @@ export default function CalculatorAnalyticsPage() {
           </p>
         ) : (
           <div className="hub-table-wrap aq-recent-wrap">
-            {/* .aq-recent-table carries min-width: 1180px, a floor sized for
-                the nine-column clicks table. This one has six columns needing
-                about 780px, so the floor was pushing Device out of the card
-                and putting a horizontal scrollbar under a table that fits.
-                Its own floor instead, which still scrolls on a narrow
-                screen and stops inventing width on a wide one. */}
+            {/* .aq-recent-table's 1180px floor is sized for the nine-column
+                clicks table and was pushing Device out of this six-column
+                one. Its own floor instead. */}
             <div className="hub-table aq-recent-table" style={{ minWidth: 820 }}>
               <div className="hub-thead" style={{ gridTemplateColumns: EVENT_COLS }}>
                 <span className="hub-th">When</span>
@@ -687,14 +652,9 @@ export default function CalculatorAnalyticsPage() {
                   <span className="hub-cell">{r.event ?? "—"}</span>
                   <span className="hub-cell">{r.tier ?? r.cta ?? "—"}</span>
                   <span className="hub-cell">{r.source ?? "—"}</span>
-                  {/* Flag, then the country's name. CountryFlag also prints
-                      the ISO code, which beside the name reads as "US United
-                      States"; the code is hidden here (see .aq-calc-country
-                      in asset-hub.css) rather than dropping the name, because
-                      a name is what an operator scanning a column reads and
-                      the flag is what they spot. A row with no country still
-                      renders the component, so the neutral glyph holds the
-                      column's alignment instead of a bare dash. */}
+                  {/* Flag then country name. CountryFlag's ISO code is
+                      hidden here (.aq-calc-country in asset-hub.css) so the
+                      cell does not read "US United States". */}
                   <span className="hub-cell aq-calc-country">
                     <CountryFlag country={r.country} />
                     {r.country ? countryName(r.country) : null}
@@ -710,15 +670,10 @@ export default function CalculatorAnalyticsPage() {
   );
 }
 
-// The funnel stages, in the order they happen. Fixed order and fixed colours,
-// not derived from the data: a stage keeps its colour when a timeframe
-// contains none of it, which is the case a shifting palette gets wrong exactly
-// when an operator is looking for a missing stage.
-//
-// "Flipped" leads the list but is only passed to the chart on the one surface
-// that has a switch. Showing it everywhere would put a legend entry on two
-// pages that can never produce it, and a permanent zero in a legend reads as a
-// broken stage rather than an absent one.
+// Funnel stages in the order they happen, with fixed colours so a stage keeps
+// its colour when a timeframe contains none of it. "Flipped" is passed only
+// to the surface that has a switch; elsewhere it would be a legend entry that
+// can never fire.
 const FLIP_STAGE = { key: "switch", label: "Flipped to it", color: "#B07AA1" } as const;
 const STAGES = [
   { key: "start", label: "Started", color: "#4E79A7" },
