@@ -1226,22 +1226,40 @@ const LANDING_LABELS: Record<string, string> = {
   "/report/aerodrome": "Aerodrome LP Report",
   "/best-crypto-casino-bonus": "Crypto Casino Bonus",
   "/ko/xrp-rich-list": "XRP Rich List (KO)",
+  "/research/usdc-yield-report-november-2026": "USDC Yield Report (Nov 2026)",
 };
+
+// Research pages without an entry above read as a title from their slug,
+// e.g. /research/eth-yield-report-december-2026 -> "Eth Yield Report December 2026".
+const researchLabel = (path: string) =>
+  path
+    .replace(/^\/research\//, "")
+    .split("-")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+
 // Editorial landings that are never folded into "Other" and are listed in the
 // legend even with no sessions in the window, so their traffic stays one click
 // from isolation regardless of how they rank against the product pages that
-// day. Reports match by prefix; anything else is named here.
-const PINNED_LANDINGS: readonly string[] = ["/best-crypto-casino-bonus"];
+// day. /report/ and /research/ pages match by prefix; the ones named here also
+// keep a legend entry on days they have no sessions.
+const PINNED_LANDINGS: readonly string[] = [
+  "/best-crypto-casino-bonus",
+  "/research/usdc-yield-report-november-2026",
+];
 const NO_PINS: readonly string[] = [];
 const isPinnedLanding = (k: string, pins: readonly string[]) =>
-  k.startsWith("/report/") || pins.includes(k);
+  k.startsWith("/report/") || k.startsWith("/research/") || pins.includes(k);
 
 // Legend/tooltip label: friendly name for report landings, otherwise strip the
 // leading slash off landing paths so they read compactly; engines and "Other"
 // pass through unchanged.
 function catLabel(cat: string, dimension: ChartDimension): string {
   if (dimension === "landing" && cat !== OTHER)
-    return LANDING_LABELS[cat] ?? cat.replace(/^\//, "");
+    return (
+      LANDING_LABELS[cat] ??
+      (cat.startsWith("/research/") ? researchLabel(cat) : cat.replace(/^\//, ""))
+    );
   return cat;
 }
 

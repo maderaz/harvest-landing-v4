@@ -214,6 +214,7 @@ const EDITORIAL_PAGES: Record<string, string> = {
   "report/xrp-yield-ranking": "XRP Yield Report",
   "report/aerodrome": "Aerodrome LP Report",
   "best-crypto-casino-bonus": "Crypto Casino Bonus",
+  "research/usdc-yield-report-november-2026": "USDC Yield Report (Nov 2026)",
 };
 // An hsid lives in per-tab sessionStorage, so it can persist for many hours
 // across a kept-open tab - the same visitor returning hours apart shares one
